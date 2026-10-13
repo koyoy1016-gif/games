@@ -116,14 +116,14 @@ h2{font-size:34px}
     </div>
     <div class="right">
       <div class="row"><span class="chip" id="level">かんたん</span><button id="mute" type="button">音 ON</button></div>
-      <div class="row"><span class="shl">クリアまで</span><span class="goal" id="goal">あと30回</span></div>
+      <div class="row"><span class="shl">クリアまで</span><span class="goal" id="goal">あと15回</span></div>
     </div>
   </div>
 
   <div id="manB" class="bubble man" hidden><span class="txt"></span></div>
   <div id="womanB" class="bubble woman" hidden><span class="txt"></span></div>
   <div id="toast"></div>
-  <div id="hint" hidden>「つ」が丸に重なったら、同じ色のボタンを押す</div>
+  <div id="hint" hidden>点線より左で決まった色を、丸に重なった瞬間に押す</div>
   <div id="fx"></div>
   <div id="pad" role="group" aria-label="花火の色">
     <button type="button" class="c0" data-c="0">赤<small>D</small></button>
@@ -139,8 +139,9 @@ h2{font-size:34px}
     <ul class="rules">
       <li>彼が「俺と……」と言いかけたら要注意。</li>
       <li>上のレーンを流れてくる<span class="mini">つ</span>は<b>4色</b>（<span class="cr">赤</span>・<span class="cb">青</span>・<span class="cy">黄</span>・<span class="cg">緑</span>）。左の丸に重なった瞬間に<b>同じ色のボタン</b>を押すと、その色の花火で告白をかき消せます。</li>
-      <li><b>1回でもミス</b>（見逃し・色ちがい・早押し）したら告白成功。<b>30回</b>かき消し続けたら……。</li>
-      <li>全6段。「つ」の色が途中からしか見えない、チラつく、一瞬だけ。だんだん手強くなります。</li>
+      <li>段が上がると「つ」の色が途中で<b>最大3回</b>変わります。点線より左の<b>色確定ゾーン</b>に入った時の色が答え。</li>
+      <li><b>1回でもミス</b>（見逃し・色ちがい・早押し）したら告白成功。<b>15回</b>かき消し続けたら……。</li>
+      <li>全5段。最初から速めで、3回ごとに手強くなります。</li>
     </ul>
     <button class="btn" id="startBtn" type="button">はじめる</button>
     <p class="fine" id="bestLine">キーボードは D / F / J / K（赤・青・黄・緑）</p>
@@ -475,13 +476,23 @@ function boomText(x,y,txt,cls){const d=document.createElement('div');d.className
 function toast(msg){const el=$('toast');el.textContent=msg;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 
 /* ---------- game ---------- */
-const LV=[{name:'一段 かんたん',col:'#5fd4c0',msg:''},{name:'二段 ふつう',col:'#a6e35d',msg:'二段：間と速さがバラバラに'},{name:'三段 むずかしい',col:'#ffb547',msg:'三段：「つ」の色は途中から・フェイントあり'},{name:'四段 鬼',col:'#ff5a7a',msg:'四段：色は半分すぎてから・さらに速く'},{name:'五段 地獄',col:'#c47bff',msg:'五段：色がチラつく・消える「つ」'},{name:'六段 神',col:'#ffe066',msg:'六段：色は一瞬だけ'}];
-const GOAL=30;
-const levelOf=n=>n<5?0:n<10?1:n<15?2:n<20?3:n<25?4:5;
+const LV=[{name:'一段',col:'#5fd4c0',msg:''},{name:'二段',col:'#a6e35d',msg:'二段：間と速さがバラバラ・フェイントあり'},{name:'三段',col:'#ffb547',msg:'三段：「つ」の色が1回変わる'},{name:'四段',col:'#ff5a7a',msg:'四段：色が2回変わる'},{name:'五段',col:'#c47bff',msg:'五段：色が3回変わる・さらに速く'}];
+const GOAL=15;
+const levelOf=n=>n<3?0:n<6?1:n<9?2:n<12?3:4;
 const W_LINES=['わぁ…！','きれい…！','え、なに？','見て、花火！','ん？今なんか言った？','すごーい！','また上がった！','音おっきいね！'];
 const M_THOUGHTS=['（くっ…）','（なんで今…）','（タイミング…）','（もう一回…）','（花火め…）','（落ち着け俺…）'];
-function diff(n){const lv=levelOf(n);return{approach:n<4?1.8:Math.max(.72,1.8-(n-3)*.04),ok:Math.max(.075,.16-n*.0028),pmin:Math.max(.15,.75-n*.022),pmax:Math.min(3,1.7+n*.04),gap:Math.max(.45,1.8-n*.045),
-  rise:[1.9,1.65,1.45,1.3,1.15,1][lv],rev0:0,rev1:1,flick:false,decoys:0,nr0:[1,1,.66,.5,.62,.78][lv],nr1:[-1,-1,-1,-1,-1,.5][lv],nflick:lv>=4};}
+function diff(n){const lv=levelOf(n);return{approach:Math.max(.95,1.35-n*.03),ok:Math.max(.085,.12-n*.0025),pmin:Math.max(.15,.6-n*.03),pmax:Math.min(2.6,1.6+n*.07),gap:Math.max(.5,1.3-n*.05),
+  rise:[1.4,1.3,1.2,1.1,1][lv],rev0:0,rev1:1,flick:false,decoys:0,changes:[0,0,1,2,3][lv]};}
+/* 「つ」の色: 右から来る間に何回か変わり、確定ゾーン(残り1/3)に入る前に最後の色になる */
+const ZONE=1/3;
+function colorPlan(answer,ch){
+  const seq=[answer];
+  for(let i=0;i<ch;i++){let c;do{c=Math.floor(Math.random()*4);}while(c===seq[0]);seq.unshift(c);}
+  const sw=[];for(let k=1;k<=ch;k++)sw.push(Math.max(ZONE+.015,1-(1-ZONE)*(k/ch)*rand(.9,.97)));
+  sw.sort((a,b)=>b-a);
+  return {seq,sw};
+}
+function noteColor(a,prog){let i=0;for(const s of a.sw)if(prog<=s)i++;return a.seq[Math.min(i,a.seq.length-1)];}
 function launchFor(a,isMain,ci,burstAt,x,flick){
   const d=diff(n),t=now(),dur=Math.max(.35,burstAt-t);
   const by=rand(skyTop()+20,Math.max(skyTop()+40,hy-90));
@@ -506,7 +517,7 @@ const later=(t,fn)=>timers.push({t,fn});
 
 function makeAttempt(t,gap){
   const d=diff(n),lv=levelOf(n);
-  const feint=lv>=2&&lastKind!=='feint'&&Math.random()<.2;
+  const feint=lv>=1&&lastKind!=='feint'&&Math.random()<.2;
   const toks=[];let r=0;
   if(n>=3&&Math.random()<.35){for(const ch of pick(['あのさ、','えっと、','その…','なあ、'])){toks.push({r,s:ch});r+=.09;}r+=.3;}
   const say2=()=>{for(const ch of '俺と'){toks.push({r,s:ch});r+=.16;}};
@@ -523,7 +534,8 @@ function makeAttempt(t,gap){
   }else{
     const ap=d.approach*(lv>=1?rand(.78,1.28):1);
     const start=Math.max(t+gap,t+.25+ap-hitR);
-    a={type:'real',tokens:toks.map(k=>({t:start+k.r,s:k.s,dot:k.dot})),speakStart:start,hitT:start+hitR,approach:ap,ok:d.ok,good:d.ok*.45,doron:lv>=4&&Math.random()<(lv>=5?.5:.3),color:Math.floor(Math.random()*4),nr0:d.nr0,nr1:d.nr1,nflick:d.nflick};
+    a={type:'real',tokens:toks.map(k=>({t:start+k.r,s:k.s,dot:k.dot})),speakStart:start,hitT:start+hitR,approach:ap,ok:d.ok,good:d.ok*.45,doron:false,color:Math.floor(Math.random()*4)};
+    Object.assign(a,colorPlan(a.color,d.changes));
   }
   a.tokens.sort((x,y)=>x.t-y.t);
   if(a.type==='real')scheduleRockets(a);
@@ -588,7 +600,7 @@ function block(t,d){
   renderShells();
   if(n>=GOAL){updateHud();winGame(t);return;}
   const lv=levelOf(n);if(lv!==curLv){curLv=lv;renderLevel();toast(LV[lv].msg);}
-  const quick=n>=18&&Math.random()<.25;
+  const quick=n>=9&&Math.random()<.25;
   const nx=makeAttempt(t,quick?.3:diff(n).gap);cur=nx;
   later(t+.35,()=>{if(state==='play')womanSay(pick(W_LINES),1.4);});
   later(t+.75,()=>{if(state==='play'&&cur===nx&&now()<nx.speakStart-.25){setBubble(manB,esc(pick(M_THOUGHTS)),'man thought');owner=null;}});
@@ -639,7 +651,7 @@ function winGame(t){
   later(t+11.6,()=>showResult(true));
 }
 
-function rankOf(){return cleared?'告白クラッシャー（神）':n<3?'秒で落ちた':n<8?'見習い花火師':n<13?'一人前の花火師':n<18?'色読みの職人':n<23?'邪魔のプロ':n<28?'鉄壁の夜空':'あと一歩の花火師';}
+function rankOf(){return cleared?'告白クラッシャー（神）':n<2?'秒で落ちた':n<5?'見習い花火師':n<8?'一人前の花火師':n<11?'色読みの職人':n<14?'邪魔のプロ':'あと一歩の花火師';}
 function showResult(win){
   state='result';
   $('rTitle').textContent=cleared?'ふられた。':'告白、成立。';
@@ -668,6 +680,13 @@ function drawLane(t){
   ctx.fillStyle='rgba(9,8,28,.8)';rr(ctx,x0,y,x1-x0,h,h/2);ctx.fill();
   ctx.strokeStyle='rgba(255,198,92,.5)';ctx.lineWidth=1.5;ctx.stroke();
   ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(judgeX,cy);ctx.lineTo(laneEnd,cy);ctx.stroke();
+  const zx=judgeX+(laneEnd-judgeX)*ZONE;
+  ctx.save();rr(ctx,x0,y,x1-x0,h,h/2);ctx.clip();
+  const zg=ctx.createLinearGradient(x0,0,zx,0);zg.addColorStop(0,'rgba(255,198,92,.16)');zg.addColorStop(1,'rgba(255,198,92,.07)');
+  ctx.fillStyle=zg;ctx.fillRect(x0,y,zx-x0,h);ctx.restore();
+  ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(255,198,92,.85)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(zx,y+4);ctx.lineTo(zx,y+h-4);ctx.stroke();ctx.setLineDash([]);
+  ctx.font='900 10px "Zen Maru Gothic", sans-serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle='rgba(255,214,140,.95)';
+  ctx.fillText('色確定',(judgeX+24+zx)/2,y+5);
   const hg=t-lastHitT;
   if(hg<.3){const a=1-hg/.3,g=ctx.createRadialGradient(judgeX,cy,4,judgeX,cy,42);g.addColorStop(0,`rgba(255,198,92,${.85*a})`);g.addColorStop(1,'rgba(255,198,92,0)');ctx.fillStyle=g;circ(ctx,judgeX,cy,42);ctx.fill();}
   ctx.lineWidth=2.5;ctx.strokeStyle='rgba(255,255,255,.78)';circ(ctx,judgeX,cy,24);ctx.stroke();
@@ -677,8 +696,11 @@ function drawLane(t){
     if(prog<=1){
       const nx=judgeX+prog*(laneEnd-judgeX);
       let a=1;if(cur.doron)a=prog>.5?1:prog>.4?(prog-.4)/.1:0;
-      const show=prog<=cur.nr0&&prog>=cur.nr1&&!(cur.nflick&&Math.sin(t*38)>.2);
-      if(a>0)drawNote(nx,cy,a,show?cur.color:null);
+      const ci=noteColor(cur,prog);
+      if(cur.lastCi!==ci){cur.lastCi=ci;cur.swT=t;}
+      if(a>0)drawNote(nx,cy,a,ci);
+      if(t-cur.swT<.18&&cur.sw.length){ctx.strokeStyle='rgba(255,255,255,'+(1-(t-cur.swT)/.18)+')';ctx.lineWidth=3;circ(ctx,nx,cy,24+(t-cur.swT)*60);ctx.stroke();}
+      if(prog<=ZONE){ctx.strokeStyle='rgba(255,214,140,.9)';ctx.lineWidth=2;circ(ctx,nx,cy,27);ctx.stroke();}
     }
   }
   judg=judg.filter(j=>t-j.t0<.7);
