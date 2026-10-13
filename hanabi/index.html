@@ -89,6 +89,21 @@ h2{font-size:34px}
 .btn{pointer-events:auto;font-family:var(--f-display);font-size:20px;letter-spacing:.08em;color:#fff;background:var(--don);border:none;border-radius:999px;padding:14px 20px;cursor:pointer;box-shadow:0 4px 0 #a02a20,0 10px 24px rgba(255,75,62,.35)}
 .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #a02a20}
 .btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:4px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+.seg button{pointer-events:auto;font:900 14px var(--f-body);color:var(--mute);background:transparent;border:0;border-radius:10px;padding:8px 4px;cursor:pointer;display:grid;gap:1px;line-height:1.25}
+.seg button small{font-size:10px;font-weight:700;opacity:.85}
+.seg button[aria-pressed="true"]{background:var(--gold);color:#2a1c33}
+.seg button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.modeDesc{margin:-6px 0 0;font-size:12px;color:var(--mute);font-weight:700;text-align:center;min-height:1.6em}
+.rowbtn{display:flex;gap:8px}
+.rowbtn .btn{flex:1}
+.btn.sub{background:rgba(255,255,255,.1);box-shadow:none;font-size:15px;color:var(--ink);border:1px solid rgba(255,255,255,.2)}
+.rankL{font-family:var(--f-display);font-size:44px;line-height:1;color:var(--gold);margin-left:auto;text-shadow:0 0 18px rgba(255,198,92,.5)}
+.bigrow{display:flex;align-items:flex-end;gap:10px}
+#count{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-family:var(--f-display);font-size:clamp(70px,22vw,120px);color:#fff6d8;-webkit-text-stroke:3px var(--don);paint-order:stroke fill;text-shadow:0 0 30px rgba(255,190,90,.8);pointer-events:none}
+#count.go{font-size:clamp(44px,13vw,72px)}
+#count.pop{animation:cpop .5s cubic-bezier(.2,1.5,.4,1)}
+@keyframes cpop{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
 .fine{margin:0;font-size:12px;color:var(--mute);text-align:center;font-weight:700}
 .big{font-family:var(--f-display);font-size:58px;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums}
 .big small{font-family:var(--f-body);font-weight:900;font-size:16px;color:var(--ink);margin-left:6px}
@@ -123,8 +138,9 @@ h2{font-size:34px}
   <div id="manB" class="bubble man" hidden><span class="txt"></span></div>
   <div id="womanB" class="bubble woman" hidden><span class="txt"></span></div>
   <div id="toast"></div>
-  <div id="hint" hidden>点線の左で決まった色を押す。2個同時は両方！</div>
+  <div id="hint" hidden>丸に重なった瞬間に同じ色！2個同時は両方</div>
   <div id="fx"></div>
+  <div id="count" hidden></div>
   <div id="pad" role="group" aria-label="花火の色">
     <button type="button" class="c0" data-c="0">赤<small>D</small></button>
     <button type="button" class="c1" data-c="1">青<small>F</small></button>
@@ -138,11 +154,15 @@ h2{font-size:34px}
     <div class="demo" aria-hidden="true"><span class="judge"></span><span class="note">つ</span><span class="tap">ドーン!</span></div>
     <ul class="rules">
       <li>彼は15秒間ずっと「俺と……」と言いかけています。</li>
-      <li>上のレーンを流れてくる<span class="mini">つ</span>は<b>4色</b>（<span class="cr">赤</span>・<span class="cb">青</span>・<span class="cy">黄</span>・<span class="cg">緑</span>）。左の丸に重なった瞬間に<b>同じ色のボタン</b>を押すと、その色の花火で告白をかき消せます。</li>
-      <li>「つ」は<b>次々に</b>流れてきて、<b>2個同時</b>（両方の色を押す）や連打も。途中で色が変わることもありますが、点線より左の<b>色確定ゾーン</b>に入った時の色が答え。</li>
-      <li><b>1回でもミス</b>（見逃し・色ちがい・早押し）したら告白成功。<b>15秒</b>耐えきったら……。</li>
-      <li>3秒ごとに一段ずつ手強くなります。</li>
+      <li>流れてくる<span class="mini">つ</span>が左の丸に重なった瞬間に、<b>同じ色のボタン</b>（<span class="cr">赤</span>・<span class="cb">青</span>・<span class="cy">黄</span>・<span class="cg">緑</span>）を押して告白をかき消そう。</li>
+      <li><b>2個同時</b>は両方の色を押す。<b>1回でもミス</b>したら告白成功。<b>15秒</b>耐えきったら……？</li>
     </ul>
+    <div class="seg" role="group" aria-label="難易度">
+      <button type="button" data-m="0" aria-pressed="false">やさしい<small id="b0">-</small></button>
+      <button type="button" data-m="1" aria-pressed="true">ふつう<small id="b1">-</small></button>
+      <button type="button" data-m="2" aria-pressed="false">むずかしい<small id="b2">-</small></button>
+    </div>
+    <p class="modeDesc" id="modeDesc"></p>
     <button class="btn" id="startBtn" type="button">はじめる</button>
     <p class="fine" id="bestLine">キーボードは D / F / J / K（赤・青・黄・緑）</p>
   </section>
@@ -150,7 +170,7 @@ h2{font-size:34px}
   <section class="panel" id="resultP" hidden>
     <p class="eyebrow" id="rEyebrow">結果</p>
     <h2 id="rTitle">告白、成立。</h2>
-    <div class="big"><span id="rSec">0.0</span><small>秒 耐えた</small></div>
+    <div class="bigrow"><div class="big"><span id="rSec">0.0</span><small>秒 耐えた</small></div><span class="rankL" id="rLetter"></span></div>
     <p class="rank">称号：<em id="rRank"></em></p>
     <dl class="stats">
       <div><dt>阻止</dt><dd id="rBlocks">0</dd></div>
@@ -158,7 +178,8 @@ h2{font-size:34px}
       <div><dt>良</dt><dd id="rGood">0</dd></div>
     </dl>
     <p class="fine" id="rBest"></p>
-    <button class="btn" id="againBtn" type="button">もう一回</button>
+    <div class="rowbtn"><button class="btn" id="againBtn" type="button">もう一回</button><button class="btn sub" id="toTitle" type="button">難易度</button></div>
+    <button class="btn sub" id="shareBtn" type="button">結果をコピー</button>
   </section>
 </div>
 
@@ -476,12 +497,13 @@ function boomText(x,y,txt,cls){const d=document.createElement('div');d.className
 function toast(msg){const el=$('toast');el.textContent=msg;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 
 /* ---------- game ---------- */
-const LV=[{name:'一段',col:'#5fd4c0',msg:''},{name:'二段',col:'#a6e35d',msg:'二段：2個同時・連打が来る'},{name:'三段',col:'#ffb547',msg:'三段：さらに密に'},{name:'四段',col:'#ff5a7a',msg:'四段：色が2回変わる'},{name:'五段',col:'#c47bff',msg:'ラスト3秒！色が3回変わる'}];
+const LV=[{name:'一段',col:'#5fd4c0',msg:''},{name:'二段',col:'#a6e35d',msg:'2個同時・連打が来る！'},{name:'三段',col:'#ffb547',msg:'三段：さらに速く'},{name:'四段',col:'#ff5a7a',msg:'四段：もっと密に'},{name:'五段',col:'#c47bff',msg:''}];
 const DUR=15;
 const levelAt=e=>e<3?0:e<6?1:e<9?2:e<12?3:4;
 const W_LINES=['わぁ…！','きれい…！','え、なに？','見て、花火！','すごーい！','音おっきいね！','止まらないね！','連発だ！'];
 /* 「つ」の色: 右から来る間に何回か変わり、色確定ゾーン(レーンの左半分)に入る前に最後の色になる */
 const ZONE=1/2;
+const showZone=()=>MODES[mode].ch.some(x=>x>0);
 function colorPlan(answer,ch){
   const seq=[answer];
   for(let i=0;i<ch;i++){let c;do{c=Math.floor(Math.random()*4);}while(c===seq[0]);seq.unshift(c);}
@@ -491,16 +513,22 @@ function colorPlan(answer,ch){
 }
 function noteColor(a,prog){let i=0;for(const s of a.sw)if(prog<=s)i++;return a.seq[Math.min(i,a.seq.length-1)];}
 /* 15秒ぶんの譜面を作る */
+const MODES=[
+  {name:'やさしい',desc:'ゆっくり・2個同時は少なめ',ap:[1.4,1.3,1.22,1.16,1.1],gap:[.8,.72,.66,.62,.58],dbl:[0,.12,.16,.2,.22],pair:[0,.12,.16,.2,.22],ok:.16,ch:[0,0,0,0,0]},
+  {name:'ふつう',desc:'テンポよく連発。まずはここから',ap:[1.25,1.16,1.08,1.02,.96],gap:[.68,.6,.55,.5,.47],dbl:[0,.18,.22,.26,.3],pair:[0,.16,.2,.24,.28],ok:.13,ch:[0,0,0,0,0]},
+  {name:'むずかしい',desc:'速い＋「つ」の色が途中で変わる',ap:[1.1,1.02,.96,.9,.85],gap:[.58,.5,.46,.42,.39],dbl:[0,.22,.28,.32,.36],pair:[0,.2,.26,.3,.34],ok:.115,ch:[0,1,1,2,2]}
+];
+let mode=+(store.get('kk-mode')||1);if(!(mode>=0&&mode<3))mode=1;
 function makeChart(t0){
-  const out=[];let e=.9;
+  const M=MODES[mode],out=[];let e=.6;
   while(e<DUR-.15){
-    const lv=levelAt(e),ap=[1.15,1.05,.98,.92,.86][lv],ch=[0,1,1,2,3][lv],ok=[.13,.12,.11,.105,.1][lv];
-    const mk=(hit,color)=>{const nt={hitT:t0+hit,approach:ap,ok,good:ok*.45,color,lane:0};Object.assign(nt,colorPlan(color,Math.random()<.75?ch:Math.max(0,ch-1)));return nt;};
+    const lv=levelAt(e),ap=M.ap[lv],ok=M.ok;
+    const mk=(hit,color,slow)=>{const a=slow?ap*1.25:ap;const nt={hitT:t0+hit,approach:a,ok:slow?ok+.03:ok,good:ok*.45,color,lane:0};Object.assign(nt,colorPlan(color,slow?0:M.ch[lv]));return nt;};
     const r=Math.random(),c1=Math.floor(Math.random()*4);
     let c2;do{c2=Math.floor(Math.random()*4);}while(c2===c1);
-    if(lv>=1&&r<[0,.22,.28,.32,.38][lv]){const a=mk(e,c1),b=mk(e,c2);a.lane=-1;b.lane=1;out.push(a,b);e+=[.7,.62,.58,.54,.5][lv];}
-    else if(lv>=1&&r<[0,.38,.46,.52,.58][lv]){out.push(mk(e,c1));out.push(mk(e+.2,c2));e+=.2+[.55,.5,.46,.42,.4][lv];}
-    else{out.push(mk(e,c1));e+=[.62,.52,.46,.42,.38][lv]*rand(.85,1.15);}
+    if(r<M.dbl[lv]&&e>1.2){e+=.25;const a=mk(e,c1,true),b=mk(e,c2,true);a.lane=-1;b.lane=1;out.push(a,b);e+=M.gap[lv]+.45;}
+    else if(r<M.dbl[lv]+M.pair[lv]){out.push(mk(e,c1));out.push(mk(e+.24,c2));e+=.24+M.gap[lv]+.08;}
+    else{out.push(mk(e,c1));e+=M.gap[lv]*rand(.88,1.12);}
   }
   return out.filter(x=>x.hitT<=t0+DUR);
 }
@@ -509,6 +537,7 @@ function scheduleRocket(nt){
     nt.rocket=launch(x,by,{x0:x,dur:Math.max(.3,nt.hitT-now()),size:.75,pal:[col.c,col.l],trail:col.c,main:true,kind:'peony'});});
 }
 
+let lastLetter='';
 let state='title',startT=0,final=0,n=0,combo=0,maxCombo=0,goods=0,shells=3,cur=null,lastKind='',curLv=0,timers=[],lastHitT=-9,judg=[],nextAttract=0;
 let owner=null,shownCount=-1,nextAmb=0,cleared=false,notes=[],nextWomanT=0,nextTalkT=0;
 const later=(t,fn)=>timers.push({t,fn});
@@ -527,18 +556,31 @@ function renderSpeech(t){
 
 function renderShells(){}
 function renderLeft(t){const g=$('goal'),v=state==='play'?Math.max(0,DUR-(t-startT)):cleared?0:DUR-final;const tx=cleared&&state!=='play'?'クリア！':v.toFixed(1)+'秒';if(g.textContent!==tx)g.textContent=tx;}
-function renderLevel(){const l=LV[curLv];$('level').textContent=l.name;$('level').style.setProperty('--lv',l.col);}
-function updateHud(){$('blocks').textContent=n;$('combo').textContent=combo;hint.hidden=!(state==='play'&&n<4);}
+function renderLevel(){const l=LV[curLv];$('level').textContent=MODES[mode].name+' · '+l.name;$('level').style.setProperty('--lv',l.col);}
+function updateHud(){$('blocks').textContent=n;$('combo').textContent=combo;hint.hidden=!(state==='play'&&n<4);
+  $('level').textContent=MODES[mode].name+' · '+LV[curLv].name;}
 
+let countEnd=0,countShown='';
 function startGame(){
   initAudio();
   $('titleP').hidden=true;$('resultP').hidden=true;manB.hidden=true;womanB.hidden=true;
   const t=now();
-  state='play';startT=t;n=0;combo=0;maxCombo=0;goods=0;shells=3;curLv=0;timers=[];judg=[];hearts=[];heartsUntil=0;
-  man.win=false;man.flUntil=0;woman.blush=0;woman.lookUntil=0;owner=null;lastKind='';cleared=false;nextAmb=t+1.5;
-  notes=makeChart(t);notes.forEach(scheduleRocket);nextWomanT=t+1.5;nextTalkT=t+.3;
-  cur={type:'talk',tokens:[],speakStart:t};
+  state='count';countEnd=t+2.4;countShown='';final=0;n=0;combo=0;maxCombo=0;goods=0;curLv=0;timers=[];judg=[];hearts=[];heartsUntil=0;notes=[];
+  man.win=false;man.flUntil=0;woman.blush=0;woman.lookUntil=0;owner=null;cleared=false;
+  setBubble(manB,'あのさ……','man');man.talkUntil=t+.3;
   renderLevel();updateHud();
+}
+function beginPlay(t){
+  state='play';startT=t;nextAmb=t+1.5;
+  notes=makeChart(t);notes.forEach(scheduleRocket);nextWomanT=t+1.5;nextTalkT=t+.3;said3=false;
+  cur={type:'talk',tokens:[],speakStart:t};
+}
+let said3=false;
+function updateCount(t){
+  const left=countEnd-t,txt=left>1.6?'3':left>.8?'2':left>0?'1':'スタート!';
+  const el=$('count');
+  if(txt!==countShown){countShown=txt;el.hidden=false;el.textContent=txt;el.className=txt.length>1?'go':'';void el.offsetWidth;el.classList.add('pop');sfx.blip(txt.length>1);}
+  if(left<=0){beginPlay(t);setTimeout(()=>{if(state==='play')$('count').hidden=true;},450);$('count').hidden=false;}
 }
 
 function tap(x,y){
@@ -563,7 +605,9 @@ function block(c,t,d){
   c.resolved=true;
   n++;combo++;maxCombo=Math.max(maxCombo,combo);
   const good=Math.abs(d)<=c.good;if(good)goods++;
-  judg.push({txt:good?'良':'可',col:good?'#ffc65c':'#ffffff',t0:t,y:c.lane});lastHitT=t;
+  judg.push({txt:good?'良':'可',col:good?'#ffc65c':'#ffffff',t0:t,y:c.lane});
+  if(combo%10===0)toast(combo+'コンボ！');
+  try{navigator.vibrate&&navigator.vibrate(good?18:10);}catch(e){}lastHitT=t;
   sfx.don();
   setBubble(manB,esc(pick(FRAG))+'<span class="drown">っ</span>','man');owner=null;
   man.flUntil=t+.8;man.talkUntil=0;
@@ -577,7 +621,7 @@ function block(c,t,d){
 }
 
 function wrong(ci,t,nt){
-  combo=0;judg.push({txt:'色ちがい',col:COLS[ci].c,t0:t,y:nt.lane});sfx.dud();
+  combo=0;try{navigator.vibrate&&navigator.vibrate([60,40,90]);}catch(e){}judg.push({txt:'色ちがい',col:COLS[ci].c,t0:t,y:nt.lane});sfx.dud();
   const r=nt.rocket,p=r&&r.cx!=null?[r.cx,r.cy]:skyPoint();
   boomText(p[0],p[1],'ぷすっ','dud');
   for(let i=0;i<18;i++){const a=rand(0,6.283),sp=rand(20,70)*S;parts.push({x:p[0],y:p[1],vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,c:COLS[ci].c,life:.5,max:.5,w:1.4,g:60,drag:2,tr:.04});}
@@ -627,9 +671,13 @@ function showResult(win){
   $('rEyebrow').textContent=cleared?'クリア！ 15秒耐えきった':'失敗… あと'+Math.max(0,DUR-final).toFixed(1)+'秒だった';
   $('rSec').textContent=final.toFixed(1);$('rRank').textContent=rankOf();
   $('rBlocks').textContent=n;$('rCombo').textContent=maxCombo;$('rGood').textContent=goods;
-  const best=parseFloat(store.get('kk-best')||'0');
-  if(final>best){store.set('kk-best',final.toFixed(1));$('rBest').innerHTML='自己ベスト更新<span class="new">NEW!</span>';}
-  else $('rBest').textContent=`自己ベスト ${best.toFixed(1)}秒`;
+  const ratio=n?goods/n:0,letter=!cleared?'':ratio>=.85?'S':ratio>=.6?'A':ratio>=.35?'B':'C';
+  $('rLetter').textContent=letter;lastLetter=letter;
+  const key='kk-best-'+mode,best=parseFloat(store.get(key)||'0'),bk='kk-rank-'+mode,br=store.get(bk)||'';
+  if(cleared&&(!br||'SABC'.indexOf(letter)<'SABC'.indexOf(br)))store.set(bk,letter);
+  if(final>best+.001){store.set(key,final.toFixed(1));$('rBest').innerHTML=MODES[mode].name+' 自己ベスト更新<span class="new">NEW!</span>';}
+  else $('rBest').textContent=`${MODES[mode].name} 自己ベスト ${best>=DUR?'クリア':best.toFixed(1)+'秒'}`;
+  renderModes();
   $('resultP').hidden=false;$('againBtn').focus({preventScroll:true});
 }
 
@@ -650,12 +698,12 @@ function drawLane(t){
   ctx.strokeStyle='rgba(255,198,92,.5)';ctx.lineWidth=1.5;ctx.stroke();
   ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(judgeX,cy);ctx.lineTo(laneEnd,cy);ctx.stroke();
   const zx=judgeX+(laneEnd-judgeX)*ZONE;
-  ctx.save();rr(ctx,x0,y,x1-x0,h,h/2);ctx.clip();
+  if(showZone()){ctx.save();rr(ctx,x0,y,x1-x0,h,h/2);ctx.clip();
   const zg=ctx.createLinearGradient(x0,0,zx,0);zg.addColorStop(0,'rgba(255,198,92,.16)');zg.addColorStop(1,'rgba(255,198,92,.07)');
   ctx.fillStyle=zg;ctx.fillRect(x0,y,zx-x0,h);ctx.restore();
   ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(255,198,92,.85)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(zx,y+4);ctx.lineTo(zx,y+h-4);ctx.stroke();ctx.setLineDash([]);
   ctx.font='900 10px "Zen Maru Gothic", sans-serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle='rgba(255,214,140,.95)';
-  ctx.textAlign='left';ctx.fillText('◀ 色確定',zx+5,y+4);
+  ctx.textAlign='left';ctx.fillText('◀ 色確定',zx+5,y+4);}
   const hg=t-lastHitT;
   if(hg<.3){const a=1-hg/.3,g=ctx.createRadialGradient(judgeX,cy,4,judgeX,cy,42);g.addColorStop(0,`rgba(255,198,92,${.85*a})`);g.addColorStop(1,'rgba(255,198,92,0)');ctx.fillStyle=g;circ(ctx,judgeX,cy,42);ctx.fill();}
   ctx.lineWidth=2.5;ctx.strokeStyle='rgba(255,255,255,.78)';circ(ctx,judgeX,cy,24);ctx.stroke();
@@ -670,7 +718,7 @@ function drawLane(t){
       if(nt.lastCi!==ci){if(nt.lastCi!=null)nt.swT=t;nt.lastCi=ci;}
       ctx.save();ctx.translate(nx,ny);ctx.scale(sc,sc);drawNote(0,0,1,ci);
       if(nt.swT&&t-nt.swT<.18){ctx.strokeStyle='rgba(255,255,255,'+(1-(t-nt.swT)/.18)+')';ctx.lineWidth=3;circ(ctx,0,0,24+(t-nt.swT)*60);ctx.stroke();}
-      if(prog<=ZONE){ctx.strokeStyle='rgba(255,214,140,.9)';ctx.lineWidth=2;circ(ctx,0,0,27);ctx.stroke();}
+      if(showZone()&&prog<=ZONE){ctx.strokeStyle='rgba(255,214,140,.9)';ctx.lineWidth=2;circ(ctx,0,0,27);ctx.stroke();}
       ctx.restore();
       if(nt.lane===1){const o=notes[i-1];if(o&&o.hitT===nt.hitT&&!o.resolved){ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(nx,cy-14+16);ctx.lineTo(nx,cy+14-16);ctx.stroke();}}
     }
@@ -687,12 +735,14 @@ function update(t,dt){
   if(timers.length){const due=timers.filter(x=>x.t<=t);timers=timers.filter(x=>x.t>t);due.forEach(x=>x.fn());}
   if(state==='play'){
     const e=t-startT,lv=levelAt(e);
-    if(lv!==curLv){curLv=lv;renderLevel();toast(LV[lv].msg);}
+    if(lv!==curLv){curLv=lv;renderLevel();if(lv<4)toast(LV[lv].msg);}
+    if(!said3&&e>=DUR-3){said3=true;toast('あと3秒！');}
     const missed=notes.find(nt=>!nt.resolved&&t>nt.hitT+nt.ok);
     if(missed){judg.push({txt:'見逃し',col:'#8fa0d8',t0:t,y:missed.lane});endGame('miss',t);}
     else if(e>=DUR&&notes.every(nt=>nt.resolved)){updateHud();winGame(t);}
     else if(t>nextTalkT&&t>man.flUntil){nextTalkT=t+rand(.5,.9);setBubble(manB,esc(pick(['俺と…','俺と……','あの、俺と…','俺と…！'])),'man');owner=null;man.talkUntil=t+.15;sfx.blip(false);}
-  }else if(state==='ending')renderSpeech(t);
+  }else if(state==='count')updateCount(t);
+  else if(state==='ending')renderSpeech(t);
   if((state==='title'||state==='result')&&t>nextAttract){const k=Math.random()<.4?2:1;for(let i=0;i<k;i++){const p=skyPoint();launch(p[0],p[1],{sound:!!AC&&state==='result'&&i===0,size:rand(.8,1.2)});}nextAttract=t+rand(.35,.85);}
   if(state==='play'&&t>nextAmb){const p=skyPoint();launch(p[0],p[1],{size:rand(.4,.65),dur:rand(.8,1.2),pal:pick(AMB_PAL),kind:pick(['peony','willow','ring'])});nextAmb=t+rand(1.1,2);}
   if(!womanB.hidden&&t>womanHideAt)womanB.hidden=true;
@@ -742,12 +792,24 @@ window.addEventListener('keydown',e=>{
   if(e.code in map){e.preventDefault();if(!e.repeat)press(map[e.code]);return;}
   if(e.code==='Space'&&(state==='title'||state==='result')&&document.activeElement&&document.activeElement.tagName!=='BUTTON'){e.preventDefault();startGame();}
 });
+function renderModes(){
+  document.querySelectorAll('.seg button').forEach(b=>{const m=+b.dataset.m;b.setAttribute('aria-pressed',m===mode?'true':'false');
+    const bs=parseFloat(store.get('kk-best-'+m)||'0'),rk=store.get('kk-rank-'+m);$('b'+m).textContent=rk?'クリア '+rk:bs?bs.toFixed(1)+'秒':'未プレイ';});
+  $('modeDesc').textContent=MODES[mode].desc;
+}
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{mode=+b.dataset.m;store.set('kk-mode',mode);renderModes();sfx.blip(true);}));
+$('toTitle').addEventListener('click',()=>{$('resultP').hidden=true;$('titleP').hidden=false;state='title';manB.hidden=true;womanB.hidden=true;});
+$('shareBtn').addEventListener('click',()=>{
+  const txt=cleared?`告白阻止花火【${MODES[mode].name}】15秒耐えきって、彼をふられさせた！ランク${lastLetter}（${n}発・最大${maxCombo}コンボ）`:`告白阻止花火【${MODES[mode].name}】${final.toFixed(1)}秒で告白されちゃった…（${n}発阻止）`;
+  const full=txt+' '+location.href.split('#')[0];
+  const done=()=>{$('shareBtn').textContent='コピーしました';setTimeout(()=>$('shareBtn').textContent='結果をコピー',1600);};
+  try{navigator.clipboard.writeText(full).then(done,()=>{prompt('コピーしてね',full);});}catch(e){prompt('コピーしてね',full);}
+});
 $('startBtn').addEventListener('click',startGame);
 $('againBtn').addEventListener('click',startGame);
 window.addEventListener('resize',resize);
 
-const best=store.get('kk-best');
-if(best)$('bestLine').textContent=`自己ベスト ${best}秒 · キーは D F J K（赤青黄緑）`;
+renderModes();
 renderMute();renderShells();renderLevel();
 resize();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(resize);
