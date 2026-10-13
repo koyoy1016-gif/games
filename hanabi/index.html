@@ -481,14 +481,14 @@ const GOAL=15;
 const levelOf=n=>n<3?0:n<6?1:n<9?2:n<12?3:4;
 const W_LINES=['わぁ…！','きれい…！','え、なに？','見て、花火！','ん？今なんか言った？','すごーい！','また上がった！','音おっきいね！'];
 const M_THOUGHTS=['（くっ…）','（なんで今…）','（タイミング…）','（もう一回…）','（花火め…）','（落ち着け俺…）'];
-function diff(n){const lv=levelOf(n);return{approach:Math.max(.95,1.35-n*.03),ok:Math.max(.085,.12-n*.0025),pmin:Math.max(.15,.6-n*.03),pmax:Math.min(2.6,1.6+n*.07),gap:Math.max(.5,1.3-n*.05),
-  rise:[1.4,1.3,1.2,1.1,1][lv],rev0:0,rev1:1,flick:false,decoys:0,changes:[0,0,1,2,3][lv]};}
+function diff(n){const lv=levelOf(n);return{approach:Math.max(.8,1.05-n*.017),ok:Math.max(.085,.12-n*.0025),pmin:.08,pmax:Math.min(.85,.4+n*.03),gap:Math.max(.25,.5-n*.017),
+  rise:[1,.95,.9,.85,.8][lv],rev0:0,rev1:1,flick:false,decoys:0,changes:[0,0,1,2,3][lv]};}
 /* 「つ」の色: 右から来る間に何回か変わり、確定ゾーン(残り1/3)に入る前に最後の色になる */
-const ZONE=1/3;
+const ZONE=1/6;
 function colorPlan(answer,ch){
   const seq=[answer];
   for(let i=0;i<ch;i++){let c;do{c=Math.floor(Math.random()*4);}while(c===seq[0]);seq.unshift(c);}
-  const sw=[];for(let k=1;k<=ch;k++)sw.push(Math.max(ZONE+.015,1-(1-ZONE)*(k/ch)*rand(.9,.97)));
+  const sw=[];for(let k=1;k<=ch;k++)sw.push(Math.max(ZONE+.12,1-.64*(k/ch)*rand(.9,1)));
   sw.sort((a,b)=>b-a);
   return {seq,sw};
 }
@@ -517,23 +517,23 @@ const later=(t,fn)=>timers.push({t,fn});
 
 function makeAttempt(t,gap){
   const d=diff(n),lv=levelOf(n);
-  const feint=lv>=1&&lastKind!=='feint'&&Math.random()<.2;
+  const feint=lv>=1&&lastKind!=='feint'&&Math.random()<.12;
   const toks=[];let r=0;
-  if(n>=3&&Math.random()<.35){for(const ch of pick(['あのさ、','えっと、','その…','なあ、'])){toks.push({r,s:ch});r+=.09;}r+=.3;}
-  const say2=()=>{for(const ch of '俺と'){toks.push({r,s:ch});r+=.16;}};
+  if(n>=3&&Math.random()<.2){for(const ch of pick(['あのさ、','えっと、','なあ、'])){toks.push({r,s:ch});r+=.06;}r+=.12;}
+  const say2=()=>{for(const ch of '俺と'){toks.push({r,s:ch});r+=.12;}};
   say2();
-  if(lv>=1&&Math.random()<.25){toks.push({r:r+.25,s:'…',dot:1});r+=.6;say2();}
-  const P=rand(d.pmin,d.pmax),units=P<.3?0:Math.max(1,Math.round(P/.55));
+  if(lv>=1&&Math.random()<.2){toks.push({r:r+.12,s:'…',dot:1});r+=.3;say2();}
+  const P=rand(d.pmin,d.pmax),units=P<.3?0:Math.max(1,Math.round(P/.35));
   for(let i=0;i<units;i++)toks.push({r:r+P*(i+1)/(units+1),s:'…',dot:1});
   const hitR=r+P;
   let a;
   if(feint){
-    let q=hitR;for(const ch of pick(['…いや、なんでもない','…花火、きれいだな','…あ、寒くない？','…やっぱ、あとで'])){toks.push({r:q,s:ch,dot:ch==='…'});q+=.07;}
+    let q=hitR;for(const ch of pick(['…いや、なんでもない','…あ、寒くない？','…やっぱ、あとで'])){toks.push({r:q,s:ch,dot:ch==='…'});q+=.045;}
     const start=t+gap;
-    a={type:'feint',tokens:toks.map(k=>({t:start+k.r,s:k.s,dot:k.dot})),speakStart:start,endT:start+q+.8};
+    a={type:'feint',tokens:toks.map(k=>({t:start+k.r,s:k.s,dot:k.dot})),speakStart:start,endT:start+q+.35};
   }else{
-    const ap=d.approach*(lv>=1?rand(.78,1.28):1);
-    const start=Math.max(t+gap,t+.25+ap-hitR);
+    const ap=d.approach*(lv>=1?rand(.85,1.15):1);
+    const start=Math.max(t+gap,t+.15+ap-hitR);
     a={type:'real',tokens:toks.map(k=>({t:start+k.r,s:k.s,dot:k.dot})),speakStart:start,hitT:start+hitR,approach:ap,ok:d.ok,good:d.ok*.45,doron:false,color:Math.floor(Math.random()*4)};
     Object.assign(a,colorPlan(a.color,d.changes));
   }
@@ -564,7 +564,7 @@ function startGame(){
   const t=now();
   state='play';startT=t;n=0;combo=0;maxCombo=0;goods=0;shells=3;curLv=0;timers=[];judg=[];hearts=[];heartsUntil=0;
   man.win=false;man.flUntil=0;woman.blush=0;woman.lookUntil=0;owner=null;lastKind='';cleared=false;nextAmb=t+1.5;
-  cur=makeAttempt(t,1.3);
+  cur=makeAttempt(t,.8);
   renderShells();renderLevel();updateHud();
 }
 
@@ -600,8 +600,8 @@ function block(t,d){
   renderShells();
   if(n>=GOAL){updateHud();winGame(t);return;}
   const lv=levelOf(n);if(lv!==curLv){curLv=lv;renderLevel();toast(LV[lv].msg);}
-  const quick=n>=9&&Math.random()<.25;
-  const nx=makeAttempt(t,quick?.3:diff(n).gap);cur=nx;
+  const quick=n>=6&&Math.random()<.3;
+  const nx=makeAttempt(t,quick?.15:diff(n).gap);cur=nx;
   later(t+.35,()=>{if(state==='play')womanSay(pick(W_LINES),1.4);});
   later(t+.75,()=>{if(state==='play'&&cur===nx&&now()<nx.speakStart-.25){setBubble(manB,esc(pick(M_THOUGHTS)),'man thought');owner=null;}});
   updateHud();
@@ -686,7 +686,7 @@ function drawLane(t){
   ctx.fillStyle=zg;ctx.fillRect(x0,y,zx-x0,h);ctx.restore();
   ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(255,198,92,.85)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(zx,y+4);ctx.lineTo(zx,y+h-4);ctx.stroke();ctx.setLineDash([]);
   ctx.font='900 10px "Zen Maru Gothic", sans-serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle='rgba(255,214,140,.95)';
-  ctx.fillText('色確定',(judgeX+24+zx)/2,y+5);
+  ctx.textAlign='left';ctx.fillText('◀ 色確定',zx+5,y+4);
   const hg=t-lastHitT;
   if(hg<.3){const a=1-hg/.3,g=ctx.createRadialGradient(judgeX,cy,4,judgeX,cy,42);g.addColorStop(0,`rgba(255,198,92,${.85*a})`);g.addColorStop(1,'rgba(255,198,92,0)');ctx.fillStyle=g;circ(ctx,judgeX,cy,42);ctx.fill();}
   ctx.lineWidth=2.5;ctx.strokeStyle='rgba(255,255,255,.78)';circ(ctx,judgeX,cy,24);ctx.stroke();
