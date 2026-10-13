@@ -448,36 +448,94 @@ function drawMan(t){
   c.restore();
 }
 
+const WSTY=[
+  {skin:'#e9b48c',skinSh:'#d39a72',top:'#ff5fa8',topSh:'#d8418a',hair:'#e9b65c',hairSh:'#c99236',lip:'#ff5f8f'},
+  {skin:'#f9dfcf',skinSh:'#ebc2ac',top:'#ec93a8',topSh:'#c86f86',hair:'#3b2420',hairSh:'#2a1814',lip:'#8a2e3c'},
+  {skin:'#fbe6dc',skinSh:'#eac6b6',top:'#5b2a86',topSh:'#3f1a62',hair:'#5a3424',hairSh:'#3e2218',lip:'#c4153a'}
+];
+const SPARK=Array.from({length:22},(_,i)=>[(Math.sin(i*12.9898)*43758.5453%1+1)%1,(Math.sin(i*78.233)*12345.678%1+1)%1]);
 function drawWoman(t){
-  const c=ctx,lk=pose.look;
-  const skin='#f9dfcf',skinSh='#ebc2ac',coat='#ec93a8',coatSh='#c86f86',hair='#3b2420',scarf='#fbf5ea';
+  const c=ctx,lk=pose.look,st=typeof mode==='number'?mode:1,Y=WSTY[st];
+  const skin=Y.skin,skinSh=Y.skinSh,coat=Y.top,coatSh=Y.topSh,hair=Y.hair;
   c.save();c.translate(womanX,gy);c.scale(-S,S);
-  c.fillStyle='rgba(0,0,0,.35)';ell(c,2,0,30,5);c.fill();
+  c.fillStyle='rgba(0,0,0,.35)';ell(c,2,0,st===2?34:30,5);c.fill();
   const headT=()=>{c.translate(4,-160);c.rotate(-.3*lk);c.translate(-4,160);};
-  c.save();headT();c.fillStyle=hair;c.beginPath();c.moveTo(-22,-200);c.quadraticCurveTo(-36,-160,-27,-116);c.quadraticCurveTo(-12,-108,2,-120);c.lineTo(8,-172);c.closePath();c.fill();c.restore();
-  limb([-6,-144],[-6,-118],[4,-106],coatSh,11);
-  c.fillStyle='#2c2340';rr(c,-10,-82,9,76,4);c.fill();rr(c,2,-82,9,76,4);c.fill();
-  c.fillStyle='#6a4334';rr(c,-12,-24,14,24,5);c.fill();rr(c,0,-24,17,24,5);c.fill();
-  c.fillStyle=coat;c.beginPath();c.moveTo(-16,-150);c.quadraticCurveTo(2,-157,20,-150);c.lineTo(31,-78);c.quadraticCurveTo(2,-70,-29,-78);c.closePath();c.fill();
-  c.fillStyle=coatSh;circ(c,16,-128,2.2);c.fill();circ(c,19,-110,2.2);c.fill();
-  c.fillStyle=skinSh;rr(c,-3,-168,12,14,4);c.fill();
-  c.fillStyle=scarf;rr(c,-14,-161,32,13,6);c.fill();rr(c,8,-153,9,24,4);c.fill();
+  // 後ろ髪
+  c.save();headT();c.fillStyle=st===0?Y.hairSh:hair;c.beginPath();
+  if(st===0){c.moveTo(-24,-202);c.quadraticCurveTo(-42,-150,-30,-96);c.quadraticCurveTo(-12,-88,4,-100);c.lineTo(10,-172);}
+  else if(st===2){c.moveTo(-22,-200);c.quadraticCurveTo(-40,-170,-30,-140);c.quadraticCurveTo(-40,-118,-24,-104);c.quadraticCurveTo(-8,-100,0,-116);c.lineTo(8,-172);}
+  else{c.moveTo(-22,-200);c.quadraticCurveTo(-36,-160,-27,-116);c.quadraticCurveTo(-12,-108,2,-120);c.lineTo(8,-172);}
+  c.closePath();c.fill();
+  if(st===2){c.fillStyle=Y.hairSh;[[-30,-150,7],[-33,-128,7],[-26,-110,6]].forEach(([x,y,r])=>{circ(c,x,y,r);c.fill();});}
+  c.restore();
+  limb([-6,-144],[-6,-118],[4,-106],st===2?skinSh:coatSh,st===2?8:11);
+  if(st===0){
+    // ギャル: 小麦肌の脚・ルーズソックス・厚底
+    c.fillStyle=skin;rr(c,-10,-86,9,64,4);c.fill();rr(c,2,-86,9,64,4);c.fill();
+    c.fillStyle='#fbfbf6';[[-11.5,-36],[0.5,-36]].forEach(([x,y])=>{rr(c,x,y,12,30,5);c.fill();});
+    c.strokeStyle='rgba(0,0,0,.12)';c.lineWidth=1;for(let k=0;k<4;k++){const yy=-32+k*6;c.beginPath();c.moveTo(-11,yy);c.lineTo(0,yy+1);c.moveTo(1,yy);c.lineTo(12,yy+1);c.stroke();}
+    c.fillStyle='#2a1a1a';rr(c,-13,-9,15,9,3);c.fill();rr(c,0,-9,19,9,3);c.fill();
+    c.fillStyle='#6b5bd6';rr(c,-13,-4,15,4,2);c.fill();rr(c,0,-4,19,4,2);c.fill();
+    // ミニスカート
+    c.fillStyle='#2d3170';c.beginPath();c.moveTo(-17,-104);c.lineTo(21,-104);c.lineTo(28,-82);c.lineTo(-24,-82);c.closePath();c.fill();
+    c.strokeStyle='rgba(255,90,120,.7)';c.lineWidth=1.2;c.beginPath();c.moveTo(-20,-93);c.lineTo(25,-93);c.moveTo(-6,-104);c.lineTo(-9,-82);c.moveTo(8,-104);c.lineTo(10,-82);c.stroke();
+    // パーカー
+    c.fillStyle=coat;c.beginPath();c.moveTo(-17,-150);c.quadraticCurveTo(2,-158,21,-150);c.lineTo(26,-100);c.quadraticCurveTo(2,-95,-22,-100);c.closePath();c.fill();
+    c.fillStyle=coatSh;rr(c,-20,-106,44,7,3);c.fill();
+    c.fillStyle='#fff';ell(c,6,-128,6,4);c.fill();c.fillStyle=coat;ell(c,6,-128,3,2);c.fill();
+    c.fillStyle=skinSh;rr(c,-3,-166,12,12,4);c.fill();
+    c.strokeStyle='#fbfbf6';c.lineWidth=2;c.beginPath();c.moveTo(2,-150);c.lineTo(0,-136);c.moveTo(10,-150);c.lineTo(12,-136);c.stroke();
+  }else if(st===2){
+    // キャバ嬢: ロングドレス・ヒール
+    c.fillStyle='#d8b25a';rr(c,-10,-6,12,6,2);c.fill();rr(c,3,-6,14,6,2);c.fill();
+    c.fillStyle=coat;c.beginPath();c.moveTo(-14,-150);c.quadraticCurveTo(3,-146,19,-150);c.quadraticCurveTo(24,-118,16,-96);c.quadraticCurveTo(14,-60,32,-4);c.quadraticCurveTo(2,2,-30,-4);c.quadraticCurveTo(-12,-60,-14,-96);c.quadraticCurveTo(-20,-120,-14,-150);c.closePath();c.fill();
+    c.fillStyle=coatSh;c.beginPath();c.moveTo(6,-96);c.quadraticCurveTo(10,-50,22,-4);c.lineTo(14,-3);c.quadraticCurveTo(4,-50,6,-96);c.fill();
+    c.fillStyle='rgba(255,240,255,.85)';SPARK.forEach(([a,b],k)=>{const yy=-148+b*142,hw=12+b*16;const tw=.5+.5*Math.sin(t*3+k);c.globalAlpha=tw;circ(c,-hw+a*hw*2+2,yy,1.1);c.fill();});c.globalAlpha=1;
+    c.fillStyle=skin;c.beginPath();c.moveTo(-14,-152);c.quadraticCurveTo(3,-142,19,-152);c.lineTo(17,-166);c.lineTo(-10,-166);c.closePath();c.fill();
+    c.fillStyle=skinSh;rr(c,-3,-170,12,12,4);c.fill();
+    c.strokeStyle='#e9d6a0';c.lineWidth=1.6;c.beginPath();c.arc(4,-160,9,.15*Math.PI,.85*Math.PI);c.stroke();
+    c.fillStyle='#fff6dc';circ(c,4,-151,2.4);c.fill();
+  }else{
+    c.fillStyle='#2c2340';rr(c,-10,-82,9,76,4);c.fill();rr(c,2,-82,9,76,4);c.fill();
+    c.fillStyle='#6a4334';rr(c,-12,-24,14,24,5);c.fill();rr(c,0,-24,17,24,5);c.fill();
+    c.fillStyle=coat;c.beginPath();c.moveTo(-16,-150);c.quadraticCurveTo(2,-157,20,-150);c.lineTo(31,-78);c.quadraticCurveTo(2,-70,-29,-78);c.closePath();c.fill();
+    c.fillStyle=coatSh;circ(c,16,-128,2.2);c.fill();circ(c,19,-110,2.2);c.fill();
+    c.fillStyle=skinSh;rr(c,-3,-168,12,14,4);c.fill();
+    c.fillStyle='#fbf5ea';rr(c,-14,-161,32,13,6);c.fill();rr(c,8,-153,9,24,4);c.fill();
+  }
   c.save();headT();
   c.fillStyle=skin;circ(c,4,-184,27);c.fill();
+  // 前髪
   c.fillStyle=hair;c.beginPath();c.arc(3,-187,29,Math.PI*.78,Math.PI*1.95);
-  c.lineTo(30,-188);c.quadraticCurveTo(24,-193,20,-190);c.quadraticCurveTo(14,-197,8,-191);c.quadraticCurveTo(2,-199,-6,-192);c.lineTo(-12,-180);c.closePath();c.fill();
-  c.beginPath();c.moveTo(-14,-180);c.quadraticCurveTo(-19,-160,-12,-145);c.quadraticCurveTo(-5,-160,-6,-182);c.closePath();c.fill();
+  if(st===2){c.lineTo(31,-190);c.quadraticCurveTo(18,-206,4,-196);c.quadraticCurveTo(-6,-192,-12,-180);}
+  else{c.lineTo(30,-188);c.quadraticCurveTo(24,-193,20,-190);c.quadraticCurveTo(14,-197,8,-191);c.quadraticCurveTo(2,-199,-6,-192);c.lineTo(-12,-180);}
+  c.closePath();c.fill();
+  if(st===2){c.fillStyle=hair;circ(c,-2,-214,17);c.fill();circ(c,10,-216,12);c.fill();c.fillStyle=Y.hairSh;circ(c,-8,-208,7);c.fill();
+    c.fillStyle='#f3e3a8';circ(c,-14,-220,3);c.fill();circ(c,-9,-225,2.4);c.fill();}
+  c.fillStyle=st===0?Y.hairSh:hair;c.beginPath();c.moveTo(-14,-180);c.quadraticCurveTo(-19,-160,-12,-145);c.quadraticCurveTo(-5,-160,-6,-182);c.closePath();c.fill();
+  if(st===0){c.fillStyle='rgba(255,255,255,.35)';c.beginPath();c.arc(3,-187,24,Math.PI*1.2,Math.PI*1.45);c.lineTo(3,-187);c.closePath();c.fill();}
+  // 耳飾り
+  if(st===0){c.strokeStyle='#ffd34d';c.lineWidth=2;circ(c,-8,-165,6);c.stroke();}
+  if(st===2){c.strokeStyle='#e9d6a0';c.lineWidth=1.2;c.beginPath();c.moveTo(-8,-171);c.lineTo(-8,-160);c.stroke();c.fillStyle='#fff6dc';circ(c,-8,-158,2.6);c.fill();}
   const blink=(t%4.3)<.12,sp=pose.surp;
   c.fillStyle='#2a1416';
-  if(blink)c.fillRect(15,-181,8,2);else{ell(c,19,-181,3.1+sp*.6,4.5+sp*.8);c.fill();c.fillStyle='#fff';circ(c,20.2,-183,1.3);c.fill();}
-  c.strokeStyle='#2a1416';c.lineWidth=1.8;c.lineCap='round';c.beginPath();c.moveTo(15,-186);c.lineTo(22,-187.5);c.lineTo(25,-190);c.stroke();
-  c.strokeStyle=hair;c.lineWidth=1.6;c.beginPath();c.moveTo(15,-193);c.lineTo(24,-194);c.stroke();
+  if(blink)c.fillRect(15,-181,8,2);else{ell(c,19,-181,3.1+sp*.6+(st!==1?.4:0),4.5+sp*.8);c.fill();c.fillStyle='#fff';circ(c,20.2,-183,1.3);c.fill();}
+  c.strokeStyle='#2a1416';c.lineWidth=st===1?1.8:2.6;c.lineCap='round';c.beginPath();c.moveTo(15,-186);c.lineTo(22,-187.5);c.lineTo(25,-190);
+  if(st!==1){c.moveTo(24,-188.5);c.lineTo(27.5,-190.5);}c.stroke();
+  if(st===0){c.fillStyle='rgba(255,255,255,.75)';ell(c,19,-174,4,1.6);c.fill();}
+  if(st===2){c.fillStyle='rgba(150,90,200,.35)';ell(c,19,-188,5,2);c.fill();}
+  c.strokeStyle=st===0?Y.hairSh:hair;c.lineWidth=1.6;c.beginPath();c.moveTo(15,-193);c.lineTo(24,-194);c.stroke();
   c.strokeStyle=skinSh;c.lineWidth=1.6;c.beginPath();c.moveTo(30,-178);c.lineTo(31,-174);c.stroke();
-  c.fillStyle=`rgba(255,105,140,${.32+.5*pose.blush})`;ell(c,16,-171,6.5,3.2);c.fill();
-  c.fillStyle='#8a2e3c';c.strokeStyle='#8a2e3c';
-  if(sp>.4){ell(c,25,-166,2.4,3);c.fill();}else{c.lineWidth=1.8;c.beginPath();c.arc(24,-169,3.5,.15*Math.PI,.85*Math.PI);c.stroke();}
+  c.fillStyle=`rgba(255,105,140,${(st===0?.45:.32)+.5*pose.blush})`;ell(c,16,-171,6.5,3.2);c.fill();
+  c.fillStyle=Y.lip;c.strokeStyle=Y.lip;
+  if(sp>.4){ell(c,25,-166,2.4,3);c.fill();}
+  else if(st===2){ell(c,24.5,-167.5,3.4,1.9);c.fill();}
+  else{c.lineWidth=st===0?2.4:1.8;c.beginPath();c.arc(24,-169,3.5,.15*Math.PI,.85*Math.PI);c.stroke();}
   c.restore();
-  limb([6,-146],[12,-120],[20,-108],coat,11);c.fillStyle=skin;circ(c,20,-106,5.5);c.fill();
+  if(st===2){limb([6,-146],[12,-120],[20,-108],skin,8);c.fillStyle='#e9d6a0';rr(c,14,-114,8,3,1.5);c.fill();c.fillStyle=skin;circ(c,20,-106,5);c.fill();
+    c.fillStyle='#1b1020';rr(c,13,-104,16,10,3);c.fill();c.fillStyle='#e9d6a0';c.fillRect(15,-100,12,1.2);}
+  else{limb([6,-146],[12,-120],[20,-108],coat,11);c.fillStyle=skin;circ(c,20,-106,5.5);c.fill();
+    if(st===0){c.fillStyle='#ff9ad0';rr(c,17,-120,6,11,2);c.fill();c.fillStyle='#ffd34d';circ(c,20,-110,1.6);c.fill();}}
   c.restore();
 }
 let hearts=[],heartsUntil=0;
@@ -500,7 +558,16 @@ function toast(msg){const el=$('toast');el.textContent=msg;el.classList.remove('
 const LV=[{name:'一段',col:'#5fd4c0',msg:''},{name:'二段',col:'#a6e35d',msg:'2個同時・連打が来る！'},{name:'三段',col:'#ffb547',msg:'三段：さらに速く'},{name:'四段',col:'#ff5a7a',msg:'四段：もっと密に'},{name:'五段',col:'#c47bff',msg:''}];
 const DUR=15;
 const levelAt=e=>e<3?0:e<6?1:e<9?2:e<12?3:4;
-const W_LINES=['わぁ…！','きれい…！','え、なに？','見て、花火！','すごーい！','音おっきいね！','止まらないね！','連発だ！'];
+const W_LINES_ALL=[
+  ['え、ヤバ！','マジ卍〜！','エモすぎん？','映えるぅ〜！','ウケる！','てか連発ヤバ！','ストーリー上げよ〜'],
+  ['わぁ…！','きれい…！','え、なに？','見て、花火！','すごーい！','音おっきいね！','止まらないね！','連発だ！'],
+  ['あら、素敵。','ふふ、派手ね','シャンパンみたい','ねえ、見て？','今夜は特別ね','すごい音…','綺麗だわ']
+];
+const W_TALK=[
+  {yes:'え、いいよ〜！よろ〜♡',ang:'てか「俺と」「俺と」ってなに！？',no:'ハッキリしない男とかマジ無理〜。おつ〜',man:'（ギャルにも、ふられた……）'},
+  {yes:'……はい。よろしくね',ang:'もう！「俺と」「俺と」ばっかり！',no:'はっきりしない男、ほんと無理。ごめんね。',man:'（え……花火のせいなのに……）'},
+  {yes:'……ふふ、いいわよ。今夜は特別ね',ang:'「俺と」……その続きは？',no:'はっきりしない人は、指名お断りよ。ごめんなさいね',man:'（ボトル入れとけばよかった……）'}
+];
 /* 「つ」の色: 右から来る間に何回か変わり、色確定ゾーン(レーンの左半分)に入る前に最後の色になる */
 const ZONE=1/2;
 const showZone=()=>MODES[mode].ch.some(x=>x>0);
@@ -514,9 +581,9 @@ function colorPlan(answer,ch){
 function noteColor(a,prog){let i=0;for(const s of a.sw)if(prog<=s)i++;return a.seq[Math.min(i,a.seq.length-1)];}
 /* 15秒ぶんの譜面を作る */
 const MODES=[
-  {name:'やさしい',desc:'ゆっくり・2個同時は少なめ',ap:[1.4,1.3,1.22,1.16,1.1],gap:[.8,.72,.66,.62,.58],dbl:[0,.12,.16,.2,.22],pair:[0,.12,.16,.2,.22],ok:.16,ch:[0,0,0,0,0]},
-  {name:'ふつう',desc:'テンポよく連発。まずはここから',ap:[1.25,1.16,1.08,1.02,.96],gap:[.68,.6,.55,.5,.47],dbl:[0,.18,.22,.26,.3],pair:[0,.16,.2,.24,.28],ok:.13,ch:[0,0,0,0,0]},
-  {name:'むずかしい',desc:'速い＋「つ」の色が途中で変わる',ap:[1.1,1.02,.96,.9,.85],gap:[.58,.5,.46,.42,.39],dbl:[0,.22,.28,.32,.36],pair:[0,.2,.26,.3,.34],ok:.115,ch:[0,1,1,2,2]}
+  {name:'やさしい',desc:'相手：ギャル ／ ゆっくり・2個同時は少なめ',ap:[1.4,1.3,1.22,1.16,1.1],gap:[.8,.72,.66,.62,.58],dbl:[0,.12,.16,.2,.22],pair:[0,.12,.16,.2,.22],ok:.16,ch:[0,0,0,0,0]},
+  {name:'ふつう',desc:'相手：ふつうの女の子 ／ テンポよく連発',ap:[1.25,1.16,1.08,1.02,.96],gap:[.68,.6,.55,.5,.47],dbl:[0,.18,.22,.26,.3],pair:[0,.16,.2,.24,.28],ok:.13,ch:[0,0,0,0,0]},
+  {name:'むずかしい',desc:'相手：キャバ嬢 ／ 速い＋「つ」の色が変わる',ap:[1.1,1.02,.96,.9,.85],gap:[.58,.5,.46,.42,.39],dbl:[0,.22,.28,.32,.36],pair:[0,.2,.26,.3,.34],ok:.115,ch:[0,1,1,2,2]}
 ];
 let mode=+(store.get('kk-mode')||1);if(!(mode>=0&&mode<3))mode=1;
 function makeChart(t0){
@@ -616,7 +683,7 @@ function block(c,t,d){
   if(r&&rockets.includes(r)){r.size=good?1.25:1.05;r.force=true;r.cb=cb;r.kind=pick(['peony','chrys','ring']);}
   else{const p=r&&r.cx!=null?[r.cx,r.cy]:skyPoint();launch(p[0],p[1],{dur:.1,size:good?1.25:1.05,pal,cb,kind:pick(['peony','chrys','ring'])});}
   if(good&&parts.length<5000)later(t+.15,()=>{const q=skyPoint();launch(q[0],q[1],{dur:rand(.3,.5),size:rand(.6,.9),pal:pick(PAL)});});
-  if(t>nextWomanT){nextWomanT=t+rand(1.8,2.6);later(t+.3,()=>{if(state==='play')womanSay(pick(W_LINES),1.2);});}
+  if(t>nextWomanT){nextWomanT=t+rand(1.8,2.6);later(t+.3,()=>{if(state==='play')womanSay(pick(W_LINES_ALL[mode]),1.2);});}
   updateHud();
 }
 
@@ -646,7 +713,7 @@ function endGame(reason,t){
   else{setBubble(manB,'（今だ…！）','man thought');owner=null;speakStart=t+.6;[...'俺と付き合ってください！'].forEach((ch,i)=>toks.push({t:t+.6+i*.075,s:ch}));}
   cur={type:'end',tokens:toks,speakStart};
   const done=toks[toks.length-1].t;
-  later(done+.6,()=>{woman.blush=1;womanSay('……はい。よろしくね',3.4);sfx.chime();heartsUntil=now()+2.6;});
+  later(done+.6,()=>{woman.blush=1;womanSay(W_TALK[mode].yes,3.4);sfx.chime();heartsUntil=now()+2.6;});
   later(done+1,()=>launch(W/2,skyTop()+(hy-skyTop())*.3,{kind:'heart',size:1.35,pal:['#ff7aa8','#ffd1e0'],dur:.9,sound:true}));
   for(let i=0;i<6;i++)later(done+1.4+i*.3,()=>{const p=skyPoint();launch(p[0],p[1],{sound:i%2===0});});
   later(done+4.2,()=>showResult(false));
@@ -656,10 +723,10 @@ function winGame(t){
   state='ending';final=t-startT;hint.hidden=true;cleared=true;
   const toks=[];[...'俺と……'].forEach((ch,i)=>toks.push({t:t+1+i*.2,s:ch,dot:ch==='…'}));
   cur={type:'end',tokens:toks,speakStart:t+1};
-  later(t+2.4,()=>{manB.hidden=true;woman.lookUntil=0;pose.surp=0;womanSay('もう！「俺と」「俺と」ばっかり！',2.6);sfx.dud();});
+  later(t+2.4,()=>{manB.hidden=true;woman.lookUntil=0;pose.surp=0;womanSay(W_TALK[mode].ang,2.6);sfx.dud();});
   later(t+2.6,()=>{man.win=false;man.flUntil=now()+30;});
-  later(t+5.2,()=>{manB.hidden=true;womanSay('はっきりしない男、ほんと無理。ごめんね。',3.2);});
-  later(t+8.6,()=>{setBubble(manB,'（え……花火のせいなのに……）','man thought');owner=null;});
+  later(t+5.2,()=>{manB.hidden=true;womanSay(W_TALK[mode].no,3.2);});
+  later(t+8.6,()=>{setBubble(manB,esc(W_TALK[mode].man),'man thought');owner=null;});
   for(let i=0;i<24;i++)later(t+8.8+i*.12+Math.random()*.08,()=>{const p=skyPoint();launch(p[0],p[1],{sound:i%3===0,size:rand(.8,1.3),dur:rand(.6,1)});});
   later(t+11.6,()=>showResult(true));
 }
