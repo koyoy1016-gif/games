@@ -215,8 +215,8 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
       </ul>
       <p class="sec-label">難易度</p>
       <div class="diff" role="radiogroup" aria-label="難易度">
-        <button class="dbtn" role="radio" data-d="easy" aria-checked="false">かんたん</button>
-        <button class="dbtn" role="radio" data-d="normal" aria-checked="true">ふつう</button>
+        <button class="dbtn" role="radio" data-d="easy" aria-checked="true">かんたん</button>
+        <button class="dbtn" role="radio" data-d="normal" aria-checked="false">ふつう</button>
         <button class="dbtn" role="radio" data-d="hard" aria-checked="false">むずかしい</button>
       </div>
       <p id="diffDesc"></p>
@@ -291,7 +291,8 @@ const DIFFS={
    desc:'口が閉じる：4秒ごとに0.6秒（かなり暗い・予告あり）／ゴロゴロ食べ物：2〜3秒ごとに1〜2個・落下地点表示あり／金の輪：10個でハート回復・12個でフィーバー（8秒）／ハート5'},
  hard:{label:'むずかしい',period:2.4,openMin:2.4,openMax:3.8,closeDur:0.9,dark:0.97,overlay:0.45,warn:false,rollMin:1.1,rollMax:1.9,rollN:[2,2],rollExtra:19,sizeMin:1,sizeMax:1.45,spread:1.0,markers:false,chase:1.0,hp:4,mult:1.3,drop:{every:[0.6,1.0],n:[1,2]},ringR:1.65,ringHeal:15,comboT:3.2,surge:[9,14],feverN:15,feverDur:7,
    desc:'口が閉じる：3秒ごとに0.9秒（ほぼ真っ暗・予告なし）／ゴロゴロ食べ物：1〜2秒ごとに2個・大きめ・表示なし（音の「ゴロゴロ」だけが頼り）／上から食べ物が次々に降ってくる（落ちてくる影に注意）／金の輪：小さめ・15個でハート回復・15個でフィーバー（7秒）／ハート4'}};
-let DIFF='normal';try{const v=localStorage.getItem('taisnow-diff');if(v&&DIFFS[v])DIFF=v;}catch(e){}
+// every visit starts on かんたん; a different choice only lasts until the page is reloaded
+let DIFF='easy';
 let D=DIFFS[DIFF];
 // Launch: the giant's jaw opens and closes smoothly; faster on higher difficulty.
 // Same rhythm as before, but the jaw snaps open a little faster and closes a little slower, so the open window lasts longer
