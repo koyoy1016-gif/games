@@ -127,7 +127,21 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
 #bestLine{margin:-4px 0 0;font-size:13px;font-weight:900;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 #bestLine .chip{font-size:12px;padding:1px 9px;background:var(--gold)}
 #exitHud{top:calc(env(safe-area-inset-top,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);font-size:12px;font-weight:900;color:var(--ink);background:rgba(255,250,246,.85);border:2px solid var(--ink);border-radius:999px;padding:4px 12px}
-#bigText{top:24%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-display);font-size:clamp(40px,13vw,72px);color:#fff;-webkit-text-stroke:2px var(--ink);text-shadow:0 5px 0 var(--ink);white-space:nowrap;opacity:0;transition:opacity .2s}
+#uw{inset:0;opacity:0;background:radial-gradient(ellipse at 50% 42%,rgba(60,170,240,0) 35%,rgba(8,60,130,.6) 100%),repeating-linear-gradient(112deg,rgba(190,240,255,.09) 0 12px,rgba(190,240,255,0) 12px 46px),repeating-linear-gradient(68deg,rgba(190,240,255,.06) 0 10px,rgba(190,240,255,0) 10px 58px);background-size:100% 100%,260px 260px,300px 300px;animation:caust 4s linear infinite}
+@keyframes caust{to{background-position:0 0,260px 90px,-300px 120px}}
+#feverFx{inset:0;opacity:0;transition:opacity .35s;box-shadow:inset 0 0 70px 26px #ff2fb4,inset 0 0 160px 40px rgba(255,220,40,.45);animation:hue 1.1s linear infinite}
+#feverFx.on{opacity:1}
+@keyframes hue{to{filter:hue-rotate(360deg)}}
+#feverBox{display:flex;align-items:center;gap:6px;font-family:var(--font-display);font-size:12px;letter-spacing:.06em;color:var(--gold)}
+#feverBar{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.2);overflow:hidden;min-width:90px}
+#feverBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd84a,#ff8a3c);border-radius:4px}
+#feverBox.full #feverBar i{animation:pulse2 .3s infinite alternate}
+#feverBox.on #feverLabel{color:#fff;animation:hue .6s linear infinite;text-shadow:0 0 6px #ff3fd0}
+#feverBox.on #feverBar i{background:linear-gradient(90deg,#ff4a5c,#ffb21e,#f5ee7a,#7be08a,#5ad0ff,#b37cff);animation:hue .8s linear infinite}
+@keyframes pulse2{to{filter:brightness(1.6)}}
+.stats .stat:last-child:nth-child(even){grid-column:1/-1}
+@media (prefers-reduced-motion:reduce){#uw,#feverFx,#feverBox.on #feverLabel,#feverBox.on #feverBar i{animation:none}}
+#bigText{top:36%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-display);font-size:clamp(40px,13vw,72px);color:#fff;-webkit-text-stroke:2px var(--ink);text-shadow:0 5px 0 var(--ink);white-space:nowrap;opacity:0;transition:opacity .2s}
 #bigText.show{opacity:1;animation:pop .35s ease-out}
 @keyframes pop{from{transform:translate(-50%,-50%) scale(1.6)}to{transform:translate(-50%,-50%) scale(1)}}
 .steps li span.new{background:var(--gold);color:var(--ink)}
@@ -136,6 +150,8 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
 
 <div id="app">
   <canvas id="c"></canvas>
+  <div class="hud" id="uw"></div>
+  <div class="hud" id="feverFx"></div>
   <div class="hud" id="dark"></div>
 
   <div class="hud" id="launchHud" hidden>
@@ -149,6 +165,7 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
     <div id="dist">体内 0.00m / 8.73m</div>
     <div id="distBar"><i></i></div>
     <div id="mouthState"><span id="mouthText">口：ひらいてる（明るい）</span><div id="mouthBar"><i></i></div></div>
+    <div id="feverBox"><span id="feverLabel">FEVER</span><div id="feverBar"><i></i></div></div>
   </div>
   <div class="hud" id="hudR" hidden>
     <div id="hearts"></div>
@@ -192,6 +209,8 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
         <li><span>STEP 1</span>画面を下に引っぱって、はなすとスノーボーダーが飛ぶ。口がひらいた瞬間に口の中へ！</li>
         <li><span>STEP 2</span>管の中は360°どこでも滑れる。◀ ▶（A・D）で回りこみ、ジャンプでよけろ。うしろから食べ物がゴロゴロ転がってくる！口が閉じると一瞬まっくらに。</li>
         <li><span class="new">ジャンプ台</span><div>オレンジのジャンプ台で大ジャンプ！<b>金色の輪</b>をくぐるとポイント、続けてくぐるとコンボ。空中でジャンプ＝フリップ、◀▶＝スピン。着地失敗に注意！</div></li>
+        <li><span class="new">水</span><div>ときどき<b>うしろから水が流れてくる</b>。乗れば一気に加速！青い<b>水中ゾーン</b>ではふわっと浮いて操作がゆっくりに。ジャンプ連打で泳げ。</div></li>
+        <li><span class="new">FEVER</span><div>金の輪でゲージをためると<b>フィーバータイム</b>！管が虹色に光り、無敵・得点2倍。虹色の輪をくぐると即フィーバー。</div></li>
         <li><span>最終関門</span>直腸では水が流れこんで激流に。肛門が開いた瞬間に飛びこめばゴール。</li>
       </ul>
       <p class="sec-label">難易度</p>
@@ -230,6 +249,7 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
         <div class="stat"><small>くぐった金の輪</small><b id="rRing">0/0</b></div>
         <div class="stat"><small>最大コンボ</small><b id="rCombo">0</b></div>
         <div class="stat"><small>決めたトリック</small><b id="rTrick">0回</b></div>
+        <div class="stat"><small>フィーバー</small><b id="rFever">0回</b></div>
         <div class="stat"><small>集めた栄養素・水分</small><b id="rNut">0こ</b></div>
         <div class="stat"><small>ダメージ</small><b id="rHit">0回</b></div>
         <div class="stat"><small>トライ（発射）</small><b id="rTry">1回</b></div>
@@ -266,14 +286,14 @@ const pick=arr=>arr[Math.floor(rnd()*arr.length)];
 
 // Difficulty tunes two things the player asked for: how often/long the mouth shuts (blackouts) and the rolling food from behind.
 const DIFFS={
- easy:{label:'かんたん',period:3.6,openMin:5,openMax:7,closeDur:0.35,dark:0.7,overlay:0.12,warn:true,rollMin:3.2,rollMax:4.6,rollN:[1,1],rollExtra:11,sizeMin:0.75,sizeMax:0.95,spread:0.5,markers:true,chase:0.94,hp:5,mult:0.8,ringR:2.4,ringHeal:6,comboT:4.5,
-   desc:'口が閉じる：6秒ごとに0.35秒（少し暗い・予告あり）／ゴロゴロ食べ物：約4秒ごとに1個・小さめ・落下地点表示あり／金の輪：特大・6個でハート回復／ハート5'},
- normal:{label:'ふつう',period:3.0,openMin:3.4,openMax:5,closeDur:0.6,dark:0.9,overlay:0.3,warn:true,rollMin:1.8,rollMax:2.8,rollN:[1,2],rollExtra:15,sizeMin:0.85,sizeMax:1.25,spread:0.8,markers:true,chase:0.98,hp:5,mult:1,ringR:2.0,ringHeal:10,comboT:3.8,
-   desc:'口が閉じる：4秒ごとに0.6秒（かなり暗い・予告あり）／ゴロゴロ食べ物：2〜3秒ごとに1〜2個・落下地点表示あり／金の輪：10個でハート回復／ハート5'},
- hard:{label:'むずかしい',period:2.4,openMin:2.4,openMax:3.8,closeDur:0.9,dark:0.97,overlay:0.45,warn:false,rollMin:1.1,rollMax:1.9,rollN:[2,2],rollExtra:19,sizeMin:1,sizeMax:1.45,spread:1.0,markers:false,chase:1.0,hp:4,mult:1.3,ringR:1.65,ringHeal:15,comboT:3.2,
-   desc:'口が閉じる：3秒ごとに0.9秒（ほぼ真っ暗・予告なし）／ゴロゴロ食べ物：1〜2秒ごとに2個・大きめ・表示なし（音の「ゴロゴロ」だけが頼り）／金の輪：小さめ・15個でハート回復／ハート4'},
- oni:{label:'鬼',period:1.9,openMin:1.6,openMax:2.8,closeDur:1.2,dark:1,overlay:0.62,warn:false,rollMin:0.7,rollMax:1.3,rollN:[2,3],rollExtra:23,sizeMin:1.05,sizeMax:1.8,spread:1.3,markers:false,chase:1.02,hp:3,mult:1.6,ringR:1.35,ringHeal:0,comboT:2.6,
-   desc:'口が閉じる：2秒ごとに1.2秒（真っ暗）／ゴロゴロ食べ物：1秒ごとに2〜3個・ジャンプで越えられない巨大サイズも／金の輪：極小・回復なし／ハート3'}};
+ easy:{label:'かんたん',period:3.6,openMin:5,openMax:7,closeDur:0.35,dark:0.7,overlay:0.12,warn:true,rollMin:3.2,rollMax:4.6,rollN:[1,1],rollExtra:11,sizeMin:0.75,sizeMax:0.95,spread:0.5,markers:true,chase:0.94,hp:5,mult:0.8,ringR:2.4,ringHeal:6,comboT:4.5,surge:[7,11],feverN:8,feverDur:10,
+   desc:'口が閉じる：6秒ごとに0.35秒（少し暗い・予告あり）／ゴロゴロ食べ物：約4秒ごとに1個・小さめ・落下地点表示あり／金の輪：特大・6個でハート回復・8個でフィーバー（10秒）／ハート5'},
+ normal:{label:'ふつう',period:3.0,openMin:3.4,openMax:5,closeDur:0.6,dark:0.9,overlay:0.3,warn:true,rollMin:1.8,rollMax:2.8,rollN:[1,2],rollExtra:15,sizeMin:0.85,sizeMax:1.25,spread:0.8,markers:true,chase:0.98,hp:5,mult:1,ringR:2.0,ringHeal:10,comboT:3.8,surge:[8,13],feverN:12,feverDur:8,
+   desc:'口が閉じる：4秒ごとに0.6秒（かなり暗い・予告あり）／ゴロゴロ食べ物：2〜3秒ごとに1〜2個・落下地点表示あり／金の輪：10個でハート回復・12個でフィーバー（8秒）／ハート5'},
+ hard:{label:'むずかしい',period:2.4,openMin:2.4,openMax:3.8,closeDur:0.9,dark:0.97,overlay:0.45,warn:false,rollMin:1.1,rollMax:1.9,rollN:[2,2],rollExtra:19,sizeMin:1,sizeMax:1.45,spread:1.0,markers:false,chase:1.0,hp:4,mult:1.3,ringR:1.65,ringHeal:15,comboT:3.2,surge:[9,14],feverN:15,feverDur:7,
+   desc:'口が閉じる：3秒ごとに0.9秒（ほぼ真っ暗・予告なし）／ゴロゴロ食べ物：1〜2秒ごとに2個・大きめ・表示なし（音の「ゴロゴロ」だけが頼り）／金の輪：小さめ・15個でハート回復・15個でフィーバー（7秒）／ハート4'},
+ oni:{label:'鬼',period:1.9,openMin:1.6,openMax:2.8,closeDur:1.2,dark:1,overlay:0.62,warn:false,rollMin:0.7,rollMax:1.3,rollN:[2,3],rollExtra:23,sizeMin:1.05,sizeMax:1.8,spread:1.3,markers:false,chase:1.02,hp:3,mult:1.6,ringR:1.35,ringHeal:0,comboT:2.6,surge:[10,15],feverN:18,feverDur:6,
+   desc:'口が閉じる：2秒ごとに1.2秒（真っ暗）／ゴロゴロ食べ物：1秒ごとに2〜3個・ジャンプで越えられない巨大サイズも／金の輪：極小・回復なし・18個でフィーバー（6秒）／ハート3'}};
 let DIFF='normal';try{const v=localStorage.getItem('taisnow-diff');if(v&&DIFFS[v])DIFF=v;}catch(e){}
 let D=DIFFS[DIFF];
 // Launch: the giant's jaw opens and closes smoothly; faster on higher difficulty.
@@ -281,13 +301,13 @@ function launchMouth(t){return clamp(0.5+0.95*Math.sin(t*TAU/D.period),0,1);}
 
 /* ================= Sound (synthesized with WebAudio, no files) ================= */
 const SFX=(function(){
-  let ac=null,master=null,noiseBuf=null,rumbleG=null,flowG=null,muted=false;
+  let ac=null,master=null,lp=null,noiseBuf=null,rumbleG=null,flowG=null,muted=false;
   try{muted=localStorage.getItem('taisnow-mute')==='1';}catch(e){}
   function init(){
     if(ac){if(ac.state==='suspended')ac.resume();return;}
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
     try{ac=new AC();}catch(e){ac=null;return;}
-    master=ac.createGain();master.gain.value=muted?0:0.6;master.connect(ac.destination);
+    master=ac.createGain();master.gain.value=muted?0:0.6;lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=18000;lp.Q.value=0.7;master.connect(lp);lp.connect(ac.destination);
     noiseBuf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
     // looping beds: low rumble for rolling food, filtered hiss for rushing water
     const bed=(type,f,q)=>{const src=ac.createBufferSource();src.buffer=noiseBuf;src.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=0;src.connect(fl);fl.connect(g);g.connect(master);src.start();return g;};
@@ -316,7 +336,14 @@ const SFX=(function(){
     splash(){noise(0.9,1600,0.5,0.55,'bandpass',300);tone(90,0.4,'sine',0.35,45);},
     flush(){noise(2.6,300,0.7,0.4,'bandpass',1400);noise(2.2,120,0.8,0.3,'lowpass',60,0.4);},
     fanfare(){[0,4,7,12,16,19,24].forEach((n,i)=>tone(523*Math.pow(2,n/12),0.22,'triangle',0.16,null,i*0.08));},
-    setRumble(v){bed(rumbleG,v*0.9);},setFlow(v){bed(flowG,v*0.25);}};
+    setRumble(v){bed(rumbleG,v*0.9);},setFlow(v){bed(flowG,v*0.25);},
+    setUnder(v){if(lp&&ac)lp.frequency.setTargetAtTime(18000*Math.pow(700/18000,v),ac.currentTime,0.1);},
+    swim(){noise(0.25,700,1.5,0.18,'bandpass',300);tone(300,0.12,'sine',0.06,520);},
+    dive(){noise(0.5,1200,0.6,0.35,'bandpass',250);tone(140,0.3,'sine',0.2,60);},
+    surge(){noise(1.2,200,0.7,0.3,'bandpass',1800);tone(110,0.8,'sawtooth',0.05,220);},
+    smash(){noise(0.15,900,1,0.3,'bandpass',200);tone(700,0.1,'square',0.08,1400);},
+    fever(){[0,4,7,11,12,16,19,24].forEach((n,i)=>tone(392*Math.pow(2,n/12),0.16,'square',0.09,null,i*0.05));noise(0.6,3000,0.5,0.15,'highpass');},
+    note(n,acc){tone(523*Math.pow(2,n/12),0.11,'square',acc?0.07:0.045);if(acc)tone(131*Math.pow(2,n%12/12),0.12,'triangle',0.12);}};
 })();
 
 /* ================= Renderer ================= */
@@ -406,6 +433,11 @@ const NS=Math.floor(LEN);
 const PTS=curve.getSpacedPoints(NS);
 const FR=curve.computeFrenetFrames(NS,false);
 {const k=LEN/AREAS.turtle;let acc=0;AREAS.forEach(a=>{a.s0*=k;a.s1*=k;a.realStart=acc;acc+=a.real;});}
+// Underwater pools: stretches that are full of liquid (drinks pooled in the stomach, intestinal juice, water in the colon)
+const WATER_ZONES=[['stomach',0.72,0.95,'胃にたまった飲み物'],['small',0.3,0.4,'腸液のプール'],['small',0.66,0.76,'腸液のプール'],['colon',0.4,0.49,'大腸の水たまり']]
+  .map(([k,f0,f1,name])=>{const a=AREAS.find(x=>x.key===k);return{s0:a.s0+(a.s1-a.s0)*f0,s1:a.s0+(a.s1-a.s0)*f1,name};});
+function waterZoneAt(s){for(const z of WATER_ZONES)if(s>=z.s0&&s<z.s1)return z;return null;}
+function waterEdge(s){let w=0;for(const z of WATER_ZONES)w=Math.max(w,smooth((s-z.s0+2)/5)*smooth((z.s1-s+2)/5));return w;}
 
 const fr={c:new V(),t:new V(),n:new V(),b:new V()};
 function frameAt(s,o){o=o||fr;let x=clamp(s/LEN*NS,0,NS-1e-4);const i=Math.floor(x),f=x-i;
@@ -698,7 +730,7 @@ const tubeMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.5,me
   const u=new V(),c=[0,0,0],b2=[0,0,0];
   for(let j=0;j<rings;j++){
     const s=Math.min(LEN-0.01,j*step);frameAt(s);const i=blendAt(s,b2);const A=AREAS[b2[0]],B=AREAS[b2[1]],t=b2[2];const key=AREAS[i].key;
-    const br=baseR(s);
+    const br=baseR(s),wet=waterEdge(s);
     for(let k=0;k<=RSg;k++){
       const th=k/RSg*TAU;const m=wallMod(s,th);const r=br*m;
       u.copy(fr.n).multiplyScalar(Math.cos(th)).addScaledVector(fr.b,Math.sin(th));
@@ -712,6 +744,7 @@ const tubeMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.5,me
       if(key==='mouth'){const d=wrapA(th+Math.PI/2);const tg=Math.exp(-d*d/0.45);c[0]+=0.1*tg;c[1]-=0.06*tg;c[2]+=0.02*tg;}
       if(key==='stomach'){c[1]+=0.04*Math.pow(0.5+0.5*Math.cos(th*11+Math.sin(s*0.05)*1.4),4);}
       if(key==='rectum'){c[2]+=0.05;}
+      if(wet>0){c[0]=lerp(c[0],0.32,wet*0.55);c[1]=lerp(c[1],0.6,wet*0.55);c[2]=lerp(c[2],0.85,wet*0.55);}
       col[o]=clamp(lerp(c[0]*sh,0.45,vein*0.5),0,1);col[o+1]=clamp(lerp(c[1]*sh,0.08,vein*0.5),0,1);col[o+2]=clamp(lerp(c[2]*sh,0.14,vein*0.5),0,1);
     }
   }
@@ -725,6 +758,9 @@ const lightDisc=new THREE.Mesh(new THREE.CircleGeometry(1,40),new THREE.MeshBasi
 const exitDisc=new THREE.Mesh(new THREE.CircleGeometry(1,40),new THREE.MeshBasicMaterial({color:0xfffbea,fog:false,side:THREE.DoubleSide}));
 {frameAt(LEN-0.4);exitDisc.position.copy(fr.c);exitDisc.lookAt(fr.c.clone().add(fr.t));exitDisc.scale.setScalar(5);RS.scene.add(exitDisc);}
 mouthLight.position.copy(frameAt(1).c);
+// shimmering water surfaces at both ends of each pool
+const surfMat=new THREE.MeshStandardMaterial({color:0x6cc8f5,emissive:0x0a4a7a,transparent:true,opacity:0.42,roughness:0.05,metalness:0.3,side:THREE.DoubleSide,depthWrite:false});
+const waterSurfs=[];for(const z of WATER_ZONES)for(const s of[z.s0,z.s1]){const m=new THREE.Mesh(new THREE.CircleGeometry(1,40),surfMat);frameAt(s);m.position.copy(fr.c);m.lookAt(fr.c.clone().add(fr.t));m.scale.setScalar(baseR(s)*0.99);RS.scene.add(m);waterSurfs.push(m);}
 
 /* ---- wall placement ---- */
 const _u=new V(),_x=new V(),_up=new V(),_z=new V(),_m4=new THREE.Matrix4();
@@ -762,6 +798,9 @@ function rampMesh(W,L,H){const g=new THREE.Group();
   return g;}
 function addRamp(s,th,W,L,H,kick){return addObs({type:'ramp',s,th,w:W,len:L,H,kick,slope:Math.atan2(H,L),mesh:rampMesh(W,L,H),lift:-0.06});}
 function addRing(s,th,h,ground){const m=makeGoldRing();RS.scene.add(m);const o={type:'ring',s,th,h,ground,mesh:m,taken:false,pop:0};obs.push(o);return o;}
+// rainbow ring: one per few ramps at the top of the arc; collecting it starts FEVER right away
+const RAINBOW_MAT=new THREE.MeshStandardMaterial({color:0xff60c0,metalness:0.6,roughness:0.2,emissive:0x802060,emissiveIntensity:1});
+function makeRainbow(o){o.rainbow=true;const sw=o.mesh.userData.sway;sw.children[0].material=RAINBOW_MAT;sw.children[1].scale.setScalar(1.25);}
 let TOTAL_RINGS=0;
 // ring size depends on difficulty, so rings are (re)placed whenever a ride starts
 function sizeRings(){const R=D.ringR;for(const o of obs)if(o.type==='ring'){o.R=R;o.hc=o.ground?Math.max(1.15,R*0.75):o.h;o.mesh.scale.setScalar(R);placeOnWall(o.mesh,o.s,o.th,o.hc);}}
@@ -818,14 +857,15 @@ function genCourse(){
   // ---- jump ramps with golden ring arcs, and ground ring lines that make you carve around the tube ----
   {const clearZone=(s0,s1,th,latW)=>{for(let i=obs.length-1;i>=0;i--){const o=obs[i];if(o.s<s0||o.s>s1)continue;if(!['lump','acid','gum','gas','nut','jet'].includes(o.type))continue;
       const lat=Math.abs(wrapA(o.th-th))*baseR(o.s);if(lat<latW+(o.w||1)){if(o.mesh)RS.scene.remove(o.mesh);obs.splice(i,1);}}};
-    const blocked=(s0,s1)=>obs.some(o=>(o.type==='hole'||o.type==='gate'||o.type==='ramp')&&o.s>s0-12&&o.s<s1+12);
+    const blocked=(s0,s1)=>obs.some(o=>(o.type==='hole'||o.type==='gate'||o.type==='ramp')&&o.s>s0-12&&o.s<s1+12)||WATER_ZONES.some(z=>s1>z.s0-14&&s0<z.s1+6);
+    let rampN=0;
     const RAMPS={mouth:[3.6,7,1.3,15],stomach:[5,10,1.9,17.5],small:[3.4,7,1.3,14.5],colon:[3.8,7.5,1.4,16],rectum:[3.6,8,1.5,16.5]};
     const rampAt=(key,f,th)=>{const a=A(key),[W,L,H,kick]=RAMPS[key];const v=a.speed*(key==='rectum'?1.6:1)*(key==='mouth'?0.92:1);const T=(kick+Math.sqrt(kick*kick+64*H))/32;const dist=v*T;
       let s=span(a,f),tries=0;while(blocked(s-L,s+dist)&&tries++<8)s+=14;if(s+dist>a.s1-6||blocked(s-L,s+dist))return;
       if(th===undefined)th=RR(0,TAU);
       clearZone(s-L-4,s+4,th,W/2+0.8);clearZone(s+dist*0.55,s+dist*1.4,th,1.8);
-      addRamp(s,th,W,L,H,kick);
-      for(const q of[0.24,0.5,0.76]){const t=q*T;addRing(s+v*t,th,H+kick*t-16*t*t+1.1,false);}};
+      addRamp(s,th,W,L,H,kick);rampN++;
+      for(const q of[0.24,0.5,0.76]){const t=q*T;const o=addRing(s+v*t,th,H+kick*t-16*t*t+1.1,false);if(q===0.5&&rampN%4===2)makeRainbow(o);}};
     const ringLine=(key,f,n)=>{const a=A(key);const s=span(a,f);if(blocked(s,s+n*6))return;let th=RR(0,TAU);const dir=rnd()<0.5?-1:1;
       for(let i=0;i<n;i++){addRing(s+i*6,th,0,true);th=wrapA(th+dir*0.3);}};
     rampAt('mouth',0.3,-Math.PI/2);
@@ -834,7 +874,10 @@ function genCourse(){
     ringLine('duo',0.42,5);
     for(const f of[0.08,0.26,0.44,0.62,0.8])rampAt('small',f);for(const f of[0.17,0.35,0.53,0.71,0.89])ringLine('small',f,6);
     for(const f of[0.12,0.38,0.62,0.84])rampAt('colon',f);for(const f of[0.25,0.5,0.73])ringLine('colon',f,6);
-    ringLine('rectum',0.2,5);rampAt('rectum',0.45);}
+    ringLine('rectum',0.2,5);rampAt('rectum',0.45);
+    // underwater: rings bob up and down along a slow spiral, so you have to swim (tap jump) to reach the high ones
+    for(const z of WATER_ZONES){let th=RR(0,TAU);const dir=rnd()<0.5?-1:1;let i=0;
+      for(let s=z.s0+12;s<z.s1-8;s+=7,i++){addRing(s,th,2.2+1.5*(0.5+0.5*Math.sin(i*0.75)),false).water=true;th=wrapA(th+dir*0.16);}}}
   TOTAL_RINGS=obs.filter(o=>o.type==='ring').length;
   obs.sort((p,q)=>p.s-q.s);
 }
@@ -856,6 +899,11 @@ const chaser=(function(){const g=new THREE.Group();const body=new THREE.Mesh(new
   g.visible=false;RS.scene.add(g);return g;})();
 const wave=(function(){const g=new THREE.Group();const d=new THREE.Mesh(GEO.disc,new THREE.MeshStandardMaterial({color:0x3aa7e8,transparent:true,opacity:0.72,emissive:0x0a3a66,side:THREE.DoubleSide}));g.add(d);
   const foam=new THREE.Mesh(GEO.torus,stdMat(0xe8f7ff,{roughness:0.3,emissive:0x335566}));g.add(foam);g.visible=false;RS.scene.add(g);g.userData={d,foam};return g;})();
+
+// Water surge: every so often a rush of water comes down the tract from behind. Get caught in it and you speed up.
+const surge={state:'idle',t:6,s:0};
+const surgeMesh=(function(){const g=new THREE.Group();const d=new THREE.Mesh(GEO.disc,new THREE.MeshStandardMaterial({color:0x4ab6f0,transparent:true,opacity:0.5,emissive:0x0a3a66,side:THREE.DoubleSide,depthWrite:false}));g.add(d);
+  const foam=new THREE.Mesh(GEO.torus,stdMat(0xeaf8ff,{roughness:0.3,emissive:0x335566,transparent:true,opacity:0.9}));g.add(foam);g.visible=false;RS.scene.add(g);g.userData={d,foam};return g;})();
 // Round foods that roll down the tube from behind (unit radius; scaled by size).
 const ROLL_KINDS={
   apple:()=>{const g=new THREE.Group();const a=new THREE.Mesh(GEO.blob,mat('rApple',0xd8283a,{roughness:0.28}));g.add(a);
@@ -888,8 +936,10 @@ genCourse();
 
 /* ================= Ride state ================= */
 const P={s:10,th:-Math.PI/2,h:0,vh:0,speed:0,hp:5,inv:0,stuck:0,boost:0,steer:0,score:0,nuts:0,hits:0,time:0,area:-1,sub:'',checkpoint:10,lastMouth:1,
-  rings:0,combo:0,maxCombo:0,lastRingT:-99,healCnt:0,tricks:0,onRamp:null,airRamp:false,flipping:false,flipT:0,flips:0,spin:0,ollieT:0,tilt:0,heartT:0,sprayT:0};
+  rings:0,combo:0,maxCombo:0,lastRingT:-99,healCnt:0,tricks:0,onRamp:null,airRamp:false,flipping:false,flipT:0,flips:0,spin:0,ollieT:0,tilt:0,heartT:0,sprayT:0,
+  inWater:false,water:0,surgeT:0,fever:0,feverT:0,fevers:0,feverBeat:0,feverStep:0};
 const FLIP_DUR=0.5;
+const rsTrail=makeParticles(RS.scene,420,0.13,true),rsBubble=makeParticles(RS.scene,220,0.16,false);
 const rsSpark=makeParticles(RS.scene,260,0.1,true),rsSpray=makeParticles(RS.scene,320,0.15,false);
 const chase={active:false,kind:'food',s:0,done:false};
 let camShake=0,dark=0;const chew={open:true,t:4,warned:false};
@@ -899,7 +949,7 @@ function renderHearts(){let h='';for(let i=0;i<D.hp;i++)h+=hpSvg(i<P.hp);$('hear
 function resetRide(fromS){
   P.s=fromS;P.th=fromS<20?-Math.PI/2:P.th;P.h=0;P.vh=0;P.speed=0;P.hp=D.hp;P.inv=1.5;P.stuck=0;P.boost=0;P.area=-1;P.sub='';P.time=fromS<20?0:P.time;
   if(fromS<20){P.score=0;P.nuts=0;P.hits=0;P.rings=0;P.maxCombo=0;P.tricks=0;}
-  P.combo=0;P.lastRingT=-99;P.healCnt=0;P.onRamp=null;P.airRamp=false;P.flipping=false;P.flipT=0;P.flips=0;P.spin=0;P.ollieT=0;P.tilt=0;
+  P.combo=0;P.lastRingT=-99;P.healCnt=0;P.inWater=false;P.water=0;P.surgeT=0;endFever(true);P.fever=0;if(fromS<20)P.fevers=0;surge.state='idle';surge.t=RR(5,8);surgeMesh.visible=false;rsTrail.clear();rsBubble.clear();SFX.setUnder(0);P.onRamp=null;P.airRamp=false;P.flipping=false;P.flipT=0;P.flips=0;P.spin=0;P.ollieT=0;P.tilt=0;
   obs.forEach(o=>{if(o.type==='nut'&&o.taken&&o.s>fromS){o.taken=false;o.mesh.visible=true;}
     if(o.type==='ring'&&o.taken&&o.s>fromS){o.taken=false;o.pop=0;o.mesh.visible=true;P.rings=Math.max(0,P.rings-1);}});
   sizeRings();rsSpark.clear();rsSpray.clear();$('combo').classList.remove('show');updateRingHud();
@@ -916,13 +966,15 @@ function show(id,v){$(id).hidden=!v;}
 let toastT=0;function toast(t,dur){const el=$('toast');el.textContent=t;el.classList.add('show');toastT=dur||1.4;}
 let bannerT=0;function banner(a){$('bannerChip').textContent=a.label;$('bannerChip').style.background=a.chip;$('bannerName').textContent=a.name+'エリア';$('bannerInfo').textContent=a.info;$('bannerTip').textContent=a.tip;$('banner').classList.add('show');bannerT=5;}
 let flashT=0;
-function hurt(msg){if(P.inv>0)return false;P.hp--;P.hits++;P.inv=1.3;SFX.hit();if(P.combo>1)trickPop('コンボ終了','×'+P.combo,true);P.combo=0;$('combo').classList.remove('show');flashT=0.35;$('flash').style.opacity=1;renderHearts();toast(msg);if(navigator.vibrate)try{navigator.vibrate(60);}catch(e){}
+function hurt(msg){if(P.inv>0||P.feverT>0)return false;P.fever*=0.6;P.hp--;P.hits++;P.inv=1.3;SFX.hit();if(P.combo>1)trickPop('コンボ終了','×'+P.combo,true);P.combo=0;$('combo').classList.remove('show');flashT=0.35;$('flash').style.opacity=1;renderHearts();toast(msg);if(navigator.vibrate)try{navigator.vibrate(60);}catch(e){}
   if(P.hp<=0){gameOver();}return true;}
 function updateRingHud(){$('ringCount').innerHTML='<i></i>'+P.rings+' / '+TOTAL_RINGS;}
 let popT=0;function trickPop(main,sub,fail){const el=$('trickPop');el.innerHTML='';el.append(main);if(sub){const sm=document.createElement('small');sm.textContent=sub;el.append(sm);}el.classList.toggle('fail',!!fail);el.classList.add('show');popT=1.3;}
 function collectRing(o){o.taken=true;o.pop=0.01;P.rings++;
   P.combo=(P.time-P.lastRingT<D.comboT)?P.combo+1:1;P.lastRingT=P.time;P.maxCombo=Math.max(P.maxCombo,P.combo);
-  const pts=100+100*Math.min(P.combo,10);P.score+=pts;SFX.ring(P.combo);updateRingHud();
+  const pts=(100+100*Math.min(P.combo,10))*FM();P.score+=pts;SFX.ring(P.combo);updateRingHud();
+  if(o.rainbow){if(P.feverT<=0){P.fever=1;trickPop('レインボーリング！','フィーバー突入');}else P.feverT=Math.min(D.feverDur,P.feverT+3);}
+  else if(P.feverT<=0)P.fever=Math.min(1,P.fever+(1+Math.min(P.combo,5)*0.1)/D.feverN);
   if(P.combo>=2){$('comboNum').textContent='×'+P.combo;$('combo').classList.add('show');}
   toast('金の輪 +'+pts,0.7);
   for(let k=0;k<20;k++){const a=k/20*TAU;_t1.set(Math.cos(a),Math.sin(a),0).applyQuaternion(o.mesh.quaternion).multiplyScalar(o.R*4);rsSpark.spawn(o.mesh.position,_t1.multiplyScalar(0.3),k%2?0xffd84a:0xfff0a0,0.45,null,4);}
@@ -934,9 +986,16 @@ function landTricks(){const half=Math.round(Math.abs(P.spin)/Math.PI),resid=Math
   if(midFlip){SFX.fail();P.speed*=0.4;trickPop('着地失敗！','フリップが回りきってない',true);if(P.inv<=0)hurt('ズザーッ！');P.flips=0;P.spin=0;return;}
   if(half>0&&resid>0.75){SFX.fail();P.speed*=0.6;trickPop('グラッ…','スピンの向きがずれた',true);P.flips=0;P.spin=wrapA(P.spin);return;}
   const parts=[];let pts=0;if(flips){parts.push(flips>1?'フリップ×'+flips:'フリップ');pts+=flips*300;}if(half){parts.push(half*180+'°');pts+=half*150;}
-  if(pts){const mult=1+Math.min(P.combo,10)*0.1;pts=Math.round(pts*mult);P.score+=pts;P.tricks++;P.lastRingT=P.time;SFX.trick();trickPop(parts.join(' + ')+'！','+'+pts+(P.combo>1?'（コンボ×'+P.combo+'）':''));}
+  if(pts){const mult=(1+Math.min(P.combo,10)*0.1)*FM();pts=Math.round(pts*mult);if(P.feverT<=0)P.fever=Math.min(1,P.fever+1.5/D.feverN);P.score+=pts;P.tricks++;P.lastRingT=P.time;SFX.trick();trickPop(parts.join(' + ')+'！','+'+pts+(P.combo>1?'（コンボ×'+P.combo+'）':''));}
   else{SFX.land();}
   P.flips=0;P.spin=wrapA(P.spin);}
+const FM=()=>P.feverT>0?2:1;
+// FEVER: the gauge fills from golden rings and tricks; when full the tube goes rainbow, you're invincible and everything scores double
+function startFever(){P.feverT=D.feverDur;P.fever=1;P.fevers++;P.feverStep=0;P.feverBeat=0;bigText('FEVER!!');SFX.fever();$('feverFx').classList.add('on');$('feverBox').classList.add('on');
+  trickPop('フィーバータイム！','無敵・得点2倍・スピードアップ');camShake=Math.max(camShake,0.3);}
+function endFever(silent){const was=P.feverT>0;P.feverT=0;tubeMat.color.set(0xffffff);GOLD_MAT.color.set(0xffc928);GOLD_MAT.emissive.set(0x8a5a00);$('feverFx').classList.remove('on');$('feverBox').classList.remove('on');
+  if(was&&!silent){P.fever=0;toast('フィーバー終了',1.2);P.inv=Math.max(P.inv,1.2);}}
+const FEVER_TUNE=[0,4,7,12,7,4,9,12,16,12,9,4,7,11,14,19];
 // minimap: front view of the digestive tract, like the textbook diagram
 const MAP={mouth:[[50,22],[50,25]],pharynx:[[50,25],[50,33]],eso:[[50,33],[50,48],[51,60]],stomach:[[51,60],[58,56],[66,60],[67,70],[61,77],[54,78]],duo:[[54,78],[47,79],[44,85],[48,90],[54,89]],
  small:[[54,89],[62,93],[56,98],[42,96],[38,102],[50,105],[63,103],[64,110],[50,113],[39,111],[40,118],[52,120],[44,124],[36,126]],cecum:[[36,126],[31,127],[29,122]],
@@ -985,7 +1044,7 @@ function toggleMute(){SFX.init();SFX.setMuted(!SFX.muted);renderMute();}
 $('muteBtn').onclick=toggleMute;renderMute();
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='ride'&&!paused)togglePause();});$('resumeBtn').onclick=togglePause;
 $('quitBtn').onclick=()=>{paused=false;show('pauseOv',false);toTitle();};
-function toTitle(){mode='title';SFX.setRumble(0);SFX.setFlow(0);EX.active=false;show('exitHud',false);$('bigText').classList.remove('show');$('dark').style.opacity=0;['hudL','hudR','ctrl','keys','chase','launchHud','overOv','resultOv'].forEach(i=>show(i,false));show('titleOv',true);launch.tries=1;resetLaunch();}
+function toTitle(){mode='title';endFever(true);SFX.setUnder(0);$('uw').style.opacity=0;SFX.setRumble(0);SFX.setFlow(0);EX.active=false;show('exitHud',false);$('bigText').classList.remove('show');$('dark').style.opacity=0;['hudL','hudR','ctrl','keys','chase','launchHud','overOv','resultOv'].forEach(i=>show(i,false));show('titleOv',true);launch.tries=1;resetLaunch();}
 function toLaunch(){mode='launch';EX.active=false;show('exitHud',false);$('bigText').classList.remove('show');$('dark').style.opacity=0;['titleOv','overOv','resultOv','hudL','hudR','ctrl','keys','chase'].forEach(i=>show(i,false));show('launchHud',true);$('fade').style.opacity=0;resetLaunch();}
 function setDiff(k){DIFF=k;D=DIFFS[k];try{localStorage.setItem('taisnow-diff',k);}catch(e){}
   document.querySelectorAll('.dbtn').forEach(b=>b.setAttribute('aria-checked',b.dataset.d===k?'true':'false'));$('diffDesc').textContent=D.desc;
@@ -996,7 +1055,7 @@ $('againBtn').onclick=()=>{SFX.init();launch.tries=1;toLaunch();};
 $('titleBtn').onclick=()=>toTitle();
 $('restartBtn').onclick=()=>{launch.tries=1;toLaunch();};
 $('retryBtn').onclick=()=>{show('overOv',false);mode='ride';resetRide(P.checkpoint);toast('リトライ！',1.2);};
-function gameOver(){mode='over';SFX.setRumble(0);SFX.setFlow(0);SFX.fail();$('overText').textContent=AREAS[areaIndexAt(P.s)].name+'エリアで力つきた…（難易度：'+D.label+'）';$('dark').style.opacity=0;show('overOv',true);show('chase',false);}
+function gameOver(){mode='over';endFever(true);SFX.setUnder(0);$('uw').style.opacity=0;SFX.setRumble(0);SFX.setFlow(0);SFX.fail();$('overText').textContent=AREAS[areaIndexAt(P.s)].name+'エリアで力つきた…（難易度：'+D.label+'）';$('dark').style.opacity=0;show('overOv',true);show('chase',false);}
 const PAR=AREAS.reduce((a,A)=>a+(A.s1-A.s0)/(A.speed*(A.key==='rectum'?1.6:1)),0);
 let resultScene='ride',countRaf=0;
 function bestKey(){return 'taisnow-best-'+DIFF;}
@@ -1004,10 +1063,10 @@ function loadBest(){try{return JSON.parse(localStorage.getItem(bestKey())||'null
 function finish(){mode='result';resultScene=EX.active?'exit':'ride';EX.active=false;$('dark').style.opacity=0;$('rumble').style.opacity=0;show('chase',false);show('exitHud',false);SFX.setRumble(0);SFX.setFlow(0);
   const timeBonus=Math.max(0,Math.round((160-P.time)*40));const score=Math.round((P.score+P.hp*500+timeBonus)*D.mult);$('rDiff').textContent=D.label;$('rTry').textContent=launch.tries+'回';
   $('rTime').textContent=P.time.toFixed(1)+'秒';$('rNut').textContent=P.nuts+'こ';$('rHit').textContent=P.hits+'回';
-  $('rRing').textContent=P.rings+'/'+TOTAL_RINGS;$('rCombo').textContent=P.maxCombo>1?'×'+P.maxCombo:'—';$('rTrick').textContent=P.tricks+'回';
+  $('rRing').textContent=P.rings+'/'+TOTAL_RINGS;$('rCombo').textContent=P.maxCombo>1?'×'+P.maxCombo:'—';$('rTrick').textContent=P.tricks+'回';$('rFever').textContent=P.fevers+'回';
   // rank: golden rings collected, hearts left, and pace against par time (fair on every difficulty)
   const ringRate=TOTAL_RINGS?P.rings/TOTAL_RINGS:0,tf=clamp((PAR*1.6-P.time)/(PAR*0.6),0,1);
-  const rp=45*ringRate+30*(P.hp/D.hp)+25*tf+Math.min(8,P.tricks*1.2);
+  const rp=45*ringRate+30*(P.hp/D.hp)+25*tf+Math.min(8,P.tricks*1.2)+Math.min(6,P.fevers*3);
   const rank=rp>=85?'S':rp>=68?'A':rp>=50?'B':'C';$('rank').textContent=rank;
   const best=loadBest(),isNew=!best||score>best.score;$('newRec').hidden=!isNew;
   if(isNew)try{localStorage.setItem(bestKey(),JSON.stringify({score,rank}));}catch(e){}
@@ -1026,6 +1085,13 @@ function sprayAt(side,up){frameAt(P.s);_u.copy(fr.n).multiplyScalar(Math.cos(P.t
   _sp.copy(rider.position).addScaledVector(fr.t,RR(-1.2,0.4)).addScaledVector(_u,-0.1);
   _sv.copy(fr.t).multiplyScalar(P.speed*RR(0.2,0.5)).addScaledVector(_x,side*4).addScaledVector(_u,-up);_sg.copy(_u).multiplyScalar(30);
   const A=AREAS[areaIndexAt(P.s)].color;tmpCol.setRGB(Math.min(1,A[0]*1.25+0.15),Math.min(1,A[1]*1.25+0.15),Math.min(1,A[2]*1.25+0.15));rsSpray.spawn(_sp,_sv,tmpCol.getHex(),RR(0.25,0.5),_sg,1.5);}
+// bubbles drift up toward the middle of the tube (away from the wall)
+const _bp=new V(),_bv=new V(),_bg=new V();
+function bubbleAt(spread,up){frameAt(P.s);_u.copy(fr.n).multiplyScalar(Math.cos(P.th)).addScaledVector(fr.b,Math.sin(P.th));
+  _bp.copy(rider.position).addScaledVector(_u,-RR(0.3,1.8)).addScaledVector(fr.t,RR(-1.5,1.5)).addScaledVector(fr.b,RR(-spread,spread)).addScaledVector(fr.n,RR(-spread,spread));
+  _bv.copy(_u).multiplyScalar(-up).addScaledVector(fr.t,P.speed*RR(0.1,0.5));_bg.copy(_u).multiplyScalar(-2.5);rsBubble.spawn(_bp,_bv,pick([0xd8f4ff,0xb4e6ff,0xffffff]),RR(0.8,1.6),_bg,1.2);}
+function smash(pos){P.score+=50*FM();SFX.smash();toast('バキッ！ +'+50*FM(),0.5);camShake=Math.max(camShake,0.2);
+  for(let k=0;k<16;k++){tmpCol.setHSL(Math.random(),1,0.6);_bv.set(RR(-1,1),RR(-1,1),RR(-1,1)).setLength(RR(3,8));rsSpark.spawn(pos,_bv,tmpCol.getHex(),0.5,null,3);}}
 function updateRide(dt,t){
   P.time+=dt;
   const ai=areaIndexAt(P.s),A=AREAS[ai],af=(P.s-A.s0)/(A.s1-A.s0);
@@ -1038,11 +1104,29 @@ function updateRide(dt,t){
   if(A.key==='eso'){for(const [c,txt] of [[0.06,'第1狭窄部（食道の入口）'],[0.4,'第2狭窄部（気管が分かれる所）'],[0.93,'第3狭窄部（横隔膜をくぐる所）']]){const cs=A.s0+(A.s1-A.s0)*c;if(P.s<cs&&P.s+P.speed*dt*1.01+0.0001>=cs)toast(txt,1.6);}}
   // water floods in
   if(A.key==='rectum'&&!waterOn&&af>0.05){waterOn=true;chase.active=true;chase.kind='water';chase.s=P.s-50;toast('水が流れこんできた！激流だ！',2);}
+  // underwater pools
+  const wz=waterZoneAt(P.s),inW=!!wz&&!finishing;
+  if(inW!==P.inWater){P.inWater=inW;SFX.dive();camShake=Math.max(camShake,0.2);for(let k=0;k<30;k++)bubbleAt(RR(0.3,2.5),RR(1,4));
+    if(inW){if(P.airRamp){P.airRamp=false;P.flipping=false;P.flips=0;}trickPop('ザブン！ 水中ゾーン',wz.name+'　ジャンプ連打で泳げ');}
+    else{toast('ザバァ！ 水から出た',1);P.vh=Math.max(P.vh,7);}}
+  P.water=lerp(P.water,inW?1:0,1-Math.exp(-5*dt));SFX.setUnder(P.water*0.85);
+  // water surges from behind
+  if(surge.state==='idle'){surge.t-=dt;if(surge.t<=0){if(P.s>30&&!P.inWater&&!finishing&&A.key!=='rectum'&&!waterZoneAt(P.s+60)){surge.state='come';surge.s=P.s-70;SFX.surge();trickPop('うしろから水が流れてくる！','のみこまれると一気に加速');}else surge.t=2;}}
+  if(surge.state!=='idle'){const before=surge.s;surge.s+=(A.speed*1.9+16)*dt;
+    if(surge.state==='come'&&before<P.s&&surge.s>=P.s){surge.state='pass';P.surgeT=4.5;SFX.launch();trickPop('水流ブースト！','スピードアップ');camShake=Math.max(camShake,0.25);}
+    if(surge.s>P.s+45||surge.s>LEN-30||waterZoneAt(surge.s)){surge.state='idle';surge.t=RR(D.surge[0],D.surge[1]);surgeMesh.visible=false;}
+    else{surgeMesh.visible=true;frameAt(Math.max(0.5,surge.s));const r=baseR(surge.s);surgeMesh.position.copy(fr.c);surgeMesh.lookAt(_t1.copy(fr.c).add(fr.t));
+      const ud=surgeMesh.userData;ud.d.scale.setScalar(r*1.01);ud.foam.scale.set(r*0.95,r*0.95,r*0.7);ud.foam.rotation.z+=dt*3;ud.d.material.opacity=surge.state==='pass'?0.25:0.5;}}
+  P.surgeT=Math.max(0,P.surgeT-dt);
+  // fever
+  if(P.feverT<=0&&P.fever>=1)startFever();
+  if(P.feverT>0){P.feverT-=dt;P.fever=P.feverT/D.feverDur;if(P.feverT<=0)endFever();}
   // input
   let steer=(keys.ArrowRight||keys.KeyD||btn.r?1:0)-(keys.ArrowLeft||keys.KeyA||btn.l?1:0)+dragSteer;steer=clamp(steer,-1,1);
-  P.steer=lerp(P.steer,steer,1-Math.exp(-10*dt));
+  P.steer=lerp(P.steer,steer,1-Math.exp(-(P.inWater?2.6:10)*dt));
   if(jumpQ){
-    if(P.onRamp){P.ollieT=0.4;}
+    if(P.inWater){P.vh=Math.min(P.vh+7.5,10);SFX.swim();for(let k=0;k<8;k++)bubbleAt(RR(0.2,1),RR(1,3));}
+    else if(P.onRamp){P.ollieT=0.4;}
     else if(P.h<=0.05){P.vh=13.5;P.h=0.06;SFX.jump();if(P.stuck>0){P.stuck=0;toast('脱出！',0.8);}}
     else if(P.airRamp&&!P.flipping&&P.h>0.6){P.flipping=true;P.flipT=0;SFX.flip();}
     jumpQ=false;}
@@ -1050,16 +1134,21 @@ function updateRide(dt,t){
   if(P.flipping){P.flipT+=dt;if(P.flipT>=FLIP_DUR){P.flipping=false;P.flipT=0;P.flips++;}}
   if(P.airRamp)P.spin+=P.steer*7.8*dt;else P.spin*=Math.exp(-9*dt);
   // speed
-  let target=A.speed*(waterOn?1.6:1)+(P.boost>0?14:0);if(P.stuck>0)target=4;
+  let target=A.speed*(waterOn?1.6:1)*(P.surgeT>0?1.55:1)*(P.feverT>0?1.25:1)*(P.inWater?0.62:1)+(P.boost>0?14:0);if(P.stuck>0)target=4;
   if(finishing)target=40;
   P.speed+=(target-P.speed)*(1-Math.exp(-(P.speed<target?1.4:4)*dt));
   P.boost=Math.max(0,P.boost-dt);P.stuck=Math.max(0,P.stuck-dt);P.inv=Math.max(0,P.inv-dt);
   const prevS=P.s;P.s+=P.speed*dt;
   const rHere=baseR(P.s);
-  P.th-=P.steer*16/Math.max(3,rHere)*dt;
+  P.th-=P.steer*16*(P.inWater?0.6:1)/Math.max(3,rHere)*dt;
+  if(P.surgeT>0&&!waterOn)P.th+=Math.sin(t*2.3)*2.5/rHere*dt;
   if(waterOn)P.th+=Math.sin(t*1.7)*Math.cos(t*0.6)*5.5/rHere*dt;
   P.th=wrapA(P.th);
-  if(P.h>0||P.vh>0){const fall=P.vh;P.h+=P.vh*dt;P.vh-=32*dt;
+  if(P.inWater){// buoyancy: float about 1.3 above the wall, bob slowly, heavy drag
+    P.vh+=(7*(1.3-P.h)+Math.sin(t*2.1)*1.4)*dt;P.vh*=Math.exp(-1.6*dt);P.h+=P.vh*dt;
+    const cap=2*rHere-3.2;if(P.h>cap){P.h=cap;P.vh=Math.min(P.vh,0);}if(P.h<0){P.h=0;P.vh=Math.max(0,P.vh);}
+    if(Math.random()<dt*14)bubbleAt(RR(0.2,0.8),RR(0.8,2));}
+  else if(P.h>0||P.vh>0){const fall=P.vh;P.h+=P.vh*dt;P.vh-=32*dt;
     const cap=2*rHere-3.2;if(P.h>cap){P.h=cap;if(P.vh>0)P.vh=-2;}
     if(P.h<=0){P.h=0;P.vh=0;if(P.airRamp)landTricks();if(fall<-9)for(let k=0;k<14;k++)sprayAt(RR(-1,1),RR(2,5));}}
 
@@ -1067,6 +1156,7 @@ function updateRide(dt,t){
   const ps=P.s;let rampGround=0,rampObj=null,rampLaunched=false;
   for(const o of obs){
     if(o.s<ps-30){if(o.mesh&&o.mesh.visible&&o.type!=='gate')o.mesh.visible=false;continue;}
+    if(o.smashed)continue;
     if(o.s>ps+170){if(o.mesh)o.mesh.visible=false;continue;}
     if(o.mesh&&!((o.type==='nut'||o.type==='ring')&&o.taken))o.mesh.visible=true;
     const ds=o.s-ps;
@@ -1085,13 +1175,14 @@ function updateRide(dt,t){
       continue;}
     if(Math.abs(ds)>8)continue;
     const r=wallR(o.s,o.th),lat=Math.abs(wrapA(o.th-P.th))*r;
+    if(P.feverT>0&&o.type!=='nut'){if(o.type==='lump'&&!o.hitT&&Math.abs(ds)<1.3&&lat<o.w+0.55&&P.h<o.hgt){o.hitT=1;o.mesh.visible=false;o.smashed=true;smash(o.mesh.position);}continue;}
     switch(o.type){
       case 'lump':if(Math.abs(ds)<1.3&&lat<o.w+0.55&&P.h<o.hgt&&!o.hitT){if(hurt(pick(['ドカッ！','ぶつかった！','いてっ！']))){P.speed*=0.45;o.hitT=1;}}break;
       case 'acid':if(Math.abs(ds)<o.len&&lat<o.w&&P.h<0.3){hurt('胃酸でジュッ！ pH1〜2！');}break;
       case 'hole':if(Math.abs(ds)<o.len&&lat<o.w&&P.h<0.3){if(P.inv<=0){P.s=o.s-o.len-14;P.speed=4;}hurt(o.msg);}break;
       case 'gum':if(Math.abs(ds)<o.len&&lat<o.w&&P.h<0.25&&P.stuck<=0&&!o.cool){P.stuck=1.4;P.speed=Math.min(P.speed,5);o.cool=true;toast('ガムにくっついた！ジャンプで脱出',1.3);}break;
       case 'gas':{const gh=2.4+Math.sin(t*2+o.bob)*0.5;if(Math.abs(ds)<1.7&&lat<1.9&&Math.abs(P.h+1-gh)<1.9&&!o.popped){o.popped=true;o.mesh.visible=false;P.speed*=0.55;P.th+=0.6*(rnd()<0.5?-1:1);toast('ガスの泡がはじけた！プゥ〜',1.1);}break;}
-      case 'nut':if(!o.taken&&Math.abs(ds)<1.6&&lat<1.6&&P.h<2.4){o.taken=true;o.mesh.visible=false;P.score+=100;P.nuts++;toast('+'+o.name,0.6);SFX.ring(-6);}break;
+      case 'nut':if(!o.taken&&Math.abs(ds)<1.6&&lat<1.6&&P.h<2.4){o.taken=true;o.mesh.visible=false;P.score+=100*FM();P.nuts++;toast('+'+o.name,0.6);SFX.ring(-6);}break;
       case 'jet':{const ph=((t+o.phase)%2.6)/2.6;const on=ph<0.42;if(on&&Math.abs(ds)<1.1&&lat<o.w+0.5)hurt('胆汁ジェット直撃！');break;}
     }
   }
@@ -1131,14 +1222,15 @@ function updateRide(dt,t){
       const m=ROLL_KINDS[kind]();m.scale.setScalar(size);const holder=new THREE.Group();holder.add(m);RS.scene.add(holder);
       rolls.push({s:P.s-RR(30,40)-k*6,th:wrapA(P.th+RR(-D.spread,D.spread)),size,kind,mesh:holder,ball:m,roll:RR(0,TAU),wob:RR(0,TAU),drift:RR(-0.25,0.25)});}}}
   let nearest=99;
-  for(let i=rolls.length-1;i>=0;i--){const p=rolls[i];const before=p.s;const sp=A.speed*(waterOn?1.6:1)+D.rollExtra;p.s+=sp*dt;p.roll+=sp*dt/p.size;
+  for(let i=rolls.length-1;i>=0;i--){const p=rolls[i];const before=p.s;const sp=(A.speed*(waterOn?1.6:1)+D.rollExtra)*(waterZoneAt(p.s)?0.6:1);p.s+=sp*dt;p.roll+=sp*dt/p.size;
     p.th=wrapA(p.th+p.drift*dt*6/Math.max(3,baseR(p.s)));
     if(p.s<P.s)nearest=Math.min(nearest,P.s-p.s);
-    if(before<P.s&&p.s>=P.s&&!p.hit){const lat=Math.abs(wrapA(p.th-P.th))*baseR(P.s);if(lat<p.size+0.75&&P.h<p.size*1.75){p.hit=true;if(hurt(ROLL_NAME[p.kind]+'にひかれた！'))P.speed*=0.55;}}
+    if(before<P.s&&p.s>=P.s&&!p.hit){const lat=Math.abs(wrapA(p.th-P.th))*baseR(P.s);if(lat<p.size+0.75&&P.h<p.size*1.75){p.hit=true;
+      if(P.feverT>0){smash(p.mesh.position);RS.scene.remove(p.mesh);rolls.splice(i,1);continue;}if(hurt(ROLL_NAME[p.kind]+'にひかれた！'))P.speed*=0.55;}}
     if(p.s>P.s+80||p.s>LEN-20){RS.scene.remove(p.mesh);rolls.splice(i,1);continue;}
     const bounce=Math.abs(Math.sin(p.roll*1.3+p.wob))*0.25*p.size;
     placeOnWall(p.mesh,p.s,p.th,p.size*0.96+bounce);p.ball.rotation.set(p.roll,p.wob,0);}
-  SFX.setRumble(nearest<34&&!finishing?clamp((34-nearest)/24,0,1):0);SFX.setFlow(waterOn&&!finishing?1:0);
+  SFX.setRumble(nearest<34&&!finishing?clamp((34-nearest)/24,0,1):0);SFX.setFlow((waterOn||P.surgeT>0)&&!finishing?1:0);
   P.heartT-=dt;P.beat=(P.beat||0)*Math.exp(-7*dt);if(P.heartT<=0){P.heartT=P.hp<=1?0.55:0.95;SFX.heart(P.hp<=1);P.beat=1;}
   const rum=$('rumble');if(nearest<34){rum.style.opacity=clamp((34-nearest)/20,0.25,1);if(nearest<16&&!finishing){camShake=Math.max(camShake,0.12*(16-nearest)/16);}}else rum.style.opacity=0;
   // landing markers (easy/normal only)
@@ -1148,7 +1240,7 @@ function updateRide(dt,t){
   const r=placeOnWall(rider,P.s,P.th,P.h);
   rider.rotateZ(P.steer*0.42*(P.airRamp?0.3:1));const air=clamp(P.h/2.5,0,1);
   rider.userData.inner.rotation.set(clamp(-P.vh*0.025,-0.35,0.35)-P.tilt,Math.PI/2*0.12+(P.airRamp?0:air*Math.sin(clamp(P.h,0,3)*1.2)*0.5),0);rider.userData.inner.position.y=-1+air*0.15;
-  rider.userData.pivot.rotation.set(P.flipping?-TAU*smooth(P.flipT/FLIP_DUR):0,P.spin,0);
+  rider.userData.pivot.rotation.set(P.flipping?-TAU*smooth(P.flipT/FLIP_DUR):0,P.spin,Math.sin(t*1.7)*0.3*P.water);
   // board spray when carving hard on the wall, like snow off an edge
   if(P.h<0.05&&!P.onRamp&&P.speed>12&&Math.abs(P.steer)>0.35){P.sprayT-=dt;if(P.sprayT<=0){P.sprayT=0.016;for(let k=0;k<2;k++)sprayAt(-Math.sign(P.steer)*RR(0.4,1),RR(1.5,3.5));}}
   rsSpark.update(dt);rsSpray.update(dt);
@@ -1167,6 +1259,11 @@ function updateRide(dt,t){
   _t1.copy(rider.position).addScaledVector(fr.t,9).addScaledVector(_t2,0.9);cam.lookAt(_t1);
   cam.fov=lerp(cam.fov,70+P.speed*0.35,1-Math.exp(-3*dt));cam.updateProjectionMatrix();
   frameAt(Math.min(LEN-1,P.s+5),fr2);lamp.position.copy(fr2.c);lamp.distance=40+rHere*5;
+  // rainbow trail + chiptune during FEVER
+  if(P.feverT>0){const hh=(t*0.45)%1;for(let k=0;k<5;k++){tmpCol.setHSL((hh+k*0.12)%1,1,0.6);_sp.copy(rider.position).addScaledVector(_t2,RR(0.2,1.8)).addScaledVector(fr.t,RR(-0.8,0.2));_sv.copy(fr.t).multiplyScalar(-P.speed*0.15).addScaledVector(_t2,RR(-1,1));rsTrail.spawn(_sp,_sv,tmpCol.getHex(),0.7,null,1.5);}
+    P.feverBeat-=dt;if(P.feverBeat<=0){P.feverBeat+=0.115;SFX.note(FEVER_TUNE[P.feverStep%16],P.feverStep%4===0);P.feverStep++;}}
+  rsTrail.update(dt);rsBubble.update(dt);
+  if(bigT>0){bigT-=dt;if(bigT<=0)$('bigText').classList.remove('show');}
 
   // lighting: the mouth opening and closing makes the oral cavity go bright and dark
   // the giant's mouth keeps chewing: while it is shut, the whole body goes dark for a moment
@@ -1179,17 +1276,25 @@ function updateRide(dt,t){
   mouthLight.intensity=1.3*bright*nearMouth;lightDisc.material.opacity=bright;
   const ib=blendAt(P.s,_bl);fogCol.setHex(AREAS[_bl[0]].fog);tmpCol.setHex(AREAS[_bl[1]].fog);fogCol.lerp(tmpCol,_bl[2]);
   if(nearMouth>0){tmpCol.setHex(0x8a4048);fogCol.lerp(tmpCol,0.45*nearMouth);}
-  fogCol.lerp(blackCol,dark);
+  const fh=(t*0.45)%1;
+  if(P.water>0.01){tmpCol.setHex(0x0b4a80);fogCol.lerp(tmpCol,0.75*P.water);}
+  if(P.feverT>0){tmpCol.setHSL(fh,0.85,0.3);fogCol.lerp(tmpCol,0.7);}
+  fogCol.lerp(blackCol,dark*(P.feverT>0?0.4:1));
   RS.scene.fog.color.copy(fogCol);RS.scene.background.copy(fogCol);
-  RS.scene.fog.far=lerp(135,18,dark);
-  hemi.intensity=0.8*(1-dark*0.94);tubeMat.emissive.setRGB(0.13*bright,0.02*bright,0.03*bright);lamp.intensity=0.95*(1-dark*0.9)*(1+0.1*P.beat);
-  $('dark').style.opacity=(dark*D.overlay).toFixed(3);
+  RS.scene.fog.far=lerp(lerp(135,18,dark),60,P.water*0.8);
+  hemi.intensity=0.8*(1-dark*0.94);tubeMat.emissive.setRGB((0.13+0.12*P.fever)*bright,(0.02+0.09*P.fever)*bright,(0.03+0.02*P.fever+0.08*P.water)*bright);lamp.intensity=0.95*(1-dark*0.9)*(1+0.1*P.beat)*(1+0.45*P.fever);
+  // the tube glows warmer as the fever gauge fills, then goes full rainbow during FEVER
+  RAINBOW_MAT.color.setHSL((t*0.6)%1,1,0.6);RAINBOW_MAT.emissive.setHSL((t*0.6)%1,1,0.3);
+  if(P.feverT>0){tubeMat.color.setHSL(fh,0.9,0.72);tubeMat.emissive.setHSL((fh+0.5)%1,1,0.24+0.1*P.beat);GOLD_MAT.color.setHSL((fh+0.3)%1,1,0.6);GOLD_MAT.emissive.setHSL((fh+0.3)%1,1,0.3);hemi.intensity=Math.max(hemi.intensity,0.7);}
+  $('uw').style.opacity=(P.water*0.9).toFixed(3);
+  $('feverBar').firstChild.style.width=(P.fever*100).toFixed(1)+'%';$('feverBox').classList.toggle('full',P.fever>0.85&&P.feverT<=0);
+  $('dark').style.opacity=(dark*D.overlay*(P.feverT>0?0.25:1)).toFixed(3);
   const ms=$('mouthState');ms.className=chew.open?(warn?'warn':''):'closed';
   $('mouthText').textContent=chew.open?(warn?'口：もうすぐ閉じる！':'口：ひらいてる（明るい）'):'口：とじてる（まっくら）';
   $('mouthText').style.color=chew.open?'#f5ee7a':'#cdd3f7';
   $('mouthBar').hidden=!D.warn;if(D.warn){const bi=$('mouthBar').firstChild;bi.style.width=(chew.open?clamp(chew.t/D.openMax,0,1):clamp(1-chew.t/D.closeDur,0,1))*100+'%';bi.style.background=chew.open?'#f5ee7a':'#cdd3f7';}
   // water streaks
-  streaks.visible=waterOn;if(waterOn){const arr=streakGeo.attributes.position.array;for(let i=0;i<NSTREAK;i++){const d=streakData[i];d.ds+=(d.v-P.speed*0.15)*dt*0.4;if(d.ds>70)d.ds-=85;
+  const flow=waterOn||P.surgeT>0;streaks.visible=flow;if(flow){const arr=streakGeo.attributes.position.array;for(let i=0;i<NSTREAK;i++){const d=streakData[i];d.ds+=(d.v-P.speed*0.15)*dt*0.4;if(d.ds>70)d.ds-=85;
       const s=clamp(P.s+d.ds,0,LEN-1);frameAt(s);const rr=baseR(s)-d.lift;_u.copy(fr.n).multiplyScalar(Math.cos(d.th)).addScaledVector(fr.b,Math.sin(d.th));
       arr[i*3]=fr.c.x+_u.x*rr;arr[i*3+1]=fr.c.y+_u.y*rr;arr[i*3+2]=fr.c.z+_u.z*rr;}streakGeo.attributes.position.needsUpdate=true;}
   // HUD
@@ -1241,7 +1346,7 @@ const TL={};
 const EX={active:false,t:0,phase:0,q:0,pos:new V(),vel:new V(),ang:0,rad:0,shake:0,spin:0.4,skip:false};
 let bigT=0;
 function bigText(t){const el=$('bigText');el.textContent=t;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');bigT=1.0;}
-function startExit(){mode='exit';EX.active=true;['hudL','hudR','ctrl','keys','chase'].forEach(i=>show(i,false));show('exitHud',true);$('combo').classList.remove('show');$('trickPop').classList.remove('show');
+function startExit(){mode='exit';EX.active=true;endFever(true);SFX.setUnder(0);$('uw').style.opacity=0;surgeMesh.visible=false;['hudL','hudR','ctrl','keys','chase'].forEach(i=>show(i,false));show('exitHud',true);$('combo').classList.remove('show');$('trickPop').classList.remove('show');
   $('dark').style.opacity=0;$('rumble').style.opacity=0;SFX.setRumble(0);SFX.setFlow(0);
   EX.t=0;EX.phase=0;EX.q=0;EX.skip=false;EX.shake=0;EX.spin=0.4;EX.pos.set(0.5,18,-0.5);EX.vel.set(-0.2,-3,0.2);
   const r=TL.rider;r.visible=true;r.position.copy(EX.pos);r.scale.setScalar(1);r.rotation.set(0,0.7,0);r.userData.pivot.rotation.set(0,0,0);
@@ -1297,7 +1402,7 @@ function frame(now){requestAnimationFrame(frame);let dt=Math.min(0.05,(now-last)
   else{if(mode==='launch')updateLaunch(dt,T);else{updateFace(T);LS.cam.position.set(Math.sin(T*0.2)*12,13,24+camBack());LS.cam.lookAt(0,26,-60);}renderer.render(LS.scene,LS.cam);}
 }
 requestAnimationFrame(frame);
-window.__game={step(n,dt){for(let i=0;i<n;i++){T+=dt;if(mode==='ride')updateRide(dt,T);else if(mode==='exit')updateExit(dt);}},hold(v){paused=v;},get mode2(){return mode;},keys,obs,LRINGS,get TOTAL_RINGS(){return TOTAL_RINGS;},startExit,EX,launch,MOUTH,P,get chew(){return chew;},AREAS,LEN,startRide,toLaunch,get mode(){return mode;},setS:s=>{P.s=s;}};
+window.__game={get chew2(){return chew;},surge,step(n,dt){for(let i=0;i<n;i++){T+=dt;if(mode==='ride')updateRide(dt,T);else if(mode==='exit')updateExit(dt);}},hold(v){paused=v;},get mode2(){return mode;},keys,obs,LRINGS,get TOTAL_RINGS(){return TOTAL_RINGS;},startExit,EX,launch,MOUTH,P,get chew(){return chew;},AREAS,LEN,startRide,toLaunch,get mode(){return mode;},setS:s=>{P.s=s;}};
 })();
 </script>
 
