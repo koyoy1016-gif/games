@@ -668,6 +668,41 @@ button{font-family:inherit}
 .rc-h b{font-size:24px;display:block}
 .rc-h small{color:var(--app-sub)}
 .rc-l{margin:0 16px 18px;padding:12px 16px 12px 34px;border-radius:12px;background:var(--app-card);line-height:1.9;font-size:15px}
+
+/* v3: clock, 3D, LINE block */
+.clk .sw-fg{background:#000}
+.clk-list{flex:1;overflow:auto}
+.clk-row.lap{font-size:16px;padding:12px 18px;font-variant-numeric:tabular-nums}
+.clk-big.sw{padding:56px 0 28px;font-size:min(72px,19cqw)}
+.clk-btns{display:flex;justify-content:space-between;padding:6px 20px 18px}
+.cbt{all:unset;width:84px;height:84px;border-radius:50%;display:grid;place-items:center;font-size:15px;cursor:pointer;background:#333;color:#fff;box-shadow:0 0 0 3px #000,0 0 0 5px #333}
+.cbt.go{background:#0e3a1b;color:#30d158;box-shadow:0 0 0 3px #000,0 0 0 5px #0e3a1b}
+.cbt.stop{background:#3d1210;color:#ff453a;box-shadow:0 0 0 3px #000,0 0 0 5px #3d1210}
+.cbt.pause{background:#3d2a05;color:#ff9f0a;box-shadow:0 0 0 3px #000,0 0 0 5px #3d2a05}
+.cbt:disabled{opacity:.45;cursor:default}
+.alm{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:.5px solid #333;color:#fff}
+.alm b{font-size:46px;font-weight:200;font-variant-numeric:tabular-nums;display:block;line-height:1.1}
+.alm small{font-size:13px;color:#ccc}
+.alm.off b,.alm.off small{color:#666}
+.alm .tg{border:0;padding:0;cursor:pointer;background:#39393d}
+.alm .tg.on{background:#34c759}
+.alm-pick{display:flex;justify-content:center;align-items:center;gap:14px;color:#fff}
+.alm-pick b{font-size:40px;font-weight:200}
+.alm-pick select{all:unset;cursor:pointer;font-size:40px;font-weight:300;padding:10px 18px;border-radius:14px;background:#2c2c2e;color:#fff;text-align:center;font-variant-numeric:tabular-nums}
+.tm-pre{display:flex;justify-content:center;gap:8px;margin:22px 0 18px}
+.tm-pre button{all:unset;cursor:pointer;padding:7px 14px;border-radius:16px;background:#2c2c2e;color:#fff;font-size:13px}
+.tm-pre button.on{background:#ff9f0a;color:#000;font-weight:700}
+.tm-ring{position:relative;width:72%;aspect-ratio:1;margin:22px auto 18px}
+.tm-ring svg{width:100%;height:100%}
+.tm-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:min(54px,14cqw);font-weight:200;color:#fff;font-variant-numeric:tabular-nums}
+.call.alarm{background:linear-gradient(170deg,#3a2a12,#120d05)}
+.alm-now{font-size:72px!important;font-weight:200!important;margin:30px 0 0!important;font-variant-numeric:tabular-nums}
+.scn-box{position:relative;margin:6px 0 0;border-radius:18px;overflow:hidden;background:#1d1626;min-height:120px}
+.scn-box .scn{margin:0;border-radius:0}
+.scn3d{display:block;width:100%!important;height:auto!important;border-radius:18px}
+.scn-tag{position:absolute;right:10px;top:10px;font-size:11px;color:#fff;background:rgba(0,0,0,.4);padding:3px 9px;border-radius:10px}
+.ln-head .nb svg{width:22px;height:22px;fill:none;stroke:var(--app-fg);stroke-width:1.8}
+.ln-blk{margin:0 16px;padding:8px 12px;border-radius:10px;background:var(--app-bg2);font-size:12px;color:var(--app-sub);text-align:center}
 </style>
 
 <div class="stage">
@@ -757,10 +792,11 @@ function newState(){
   return{
     started:false,over:false,len,left:len,elapsed:0,app:null,
     home:['cal','photos','camera','clock','weather','calc','memo','settings','store','pay','spark','kakeibo','route','farm'],
-    dock:['tel','browser','talk','music'],
+    dock:['tel','talk','music'],
     set:{airplane:false,wifi:true,bt:true,dark:false,bright:.85,trueTone:true,predictive:true,learned:true,autoCap:true,wall:0,notif:{talk:true,pay:true,spark:true}},
     installed:{spark:true,kakeibo:true,route:true,farm:true},dl:{},chats,queue:[],
-    pay:initPay(),blocked:{},vault:{seen:false},
+    pay:initPay(),blocked:{},lnBlocked:{},vault:{seen:false},snooze:0,
+    alarms:[{id:'a1',t:'07:00',label:'起床',on:true},{id:'a2',t:'08:30',label:'バイトの日',on:false},{id:'a3',t:'01:00',label:'ゆいにおやすみ電話📞',on:true},{id:'a4',t:'06:30',label:'ジム（たける）',on:false}],
     hist:[
       {name:'Spark Gold（1か月）',sub:'Spark - 出会い・マッチング',price:'¥3,400',date:'2026/10/02',key:'spark'},
       {name:'Spark - 出会い・マッチング',sub:'App',price:'無料',date:'2026/10/02',key:'spark'},
@@ -859,7 +895,7 @@ const tileHTML=(id,extra='')=>`<span class="tile" style="background:${ICONS[id][
 const miniTile=(id,w=58)=>`<span class="tile" style="width:${w}px;background:${ICONS[id][0]};box-shadow:none"><svg viewBox="0 0 60 60">${ICONS[id][1]}</svg></span>`;
 
 /* ----- network ----- */
-const NET=new Set(['store','browser','weather','pay','spark','route']);
+const NET=new Set(['store','weather','pay','spark','route']);
 const offline=()=>!!(S&&S.set.airplane&&!S.set.wifi);
 const isOff=id=>NET.has(id)&&offline();
 const AIR_SVG='<svg viewBox="0 0 16 16"><path d="M15 9.5V8L9.5 5V1.6a1.5 1.5 0 0 0-3 0V5L1 8v1.5l5.5-1.6v3.6L5 12.6V14l3-.8 3 .8v-1.4l-1.5-1.1V7.9z"/></svg>';
@@ -912,7 +948,7 @@ function renderHome(){
     <div class="grid">${p1.map(id=>iconHTML(id)).join('')}</div></div>
     ${pages>1?`<div class="pg"><div class="grid">${p2.map(id=>iconHTML(id)).join('')}</div></div>`:''}</div>
     <div class="dots">${Array.from({length:pages},(_,i)=>`<i class="${i===HP.pg?'on':''}" data-a="hpg" data-v="${i}"></i>`).join('')}</div>
-    <div class="dock">${S.dock.map(id=>iconHTML(id,true)).join('')}</div>`;
+    <div class="dock" style="grid-template-columns:repeat(${S.dock.length},1fr)">${S.dock.map(id=>iconHTML(id,true)).join('')}</div>`;
   const pg=$('#pages');
   pg.scrollLeft=HP.pg*pg.clientWidth;
   pg.addEventListener('scroll',()=>{const i=Math.round(pg.scrollLeft/Math.max(1,pg.clientWidth));if(i!==HP.pg){HP.pg=i;$$('#home .dots i').forEach((d,j)=>d.classList.toggle('on',j===i))}},{passive:true});
@@ -1095,10 +1131,10 @@ APPS.talk={cls:'ln',
       title='ホーム';right=IC.addf;
       body=`<div class="ln-search">${IC.search.replace('<svg','<svg width="15" height="15" style="fill:none;stroke:currentColor;stroke-width:2"')}検索</div>
       <div class="ln-me" data-a="lnProf" data-v="me">${avatar('me',56)}<div><b>見せて</b><small>ステータスメッセージを入力</small></div></div>
-      <div class="ln-sec">友だち ${FRIENDS.length}</div>
-      ${FRIENDS.map(id=>`<button class="ln-row" type="button" data-a="lnProf" data-v="${id}">${avatar(id,42)}<span class="mid"><span class="nm">${esc(PEOPLE[id].name)}</span>${PEOPLE[id].status?`<span class="lm">${esc(PEOPLE[id].status)}</span>`:''}</span></button>`).join('')}
+      <div class="ln-sec">友だち ${FRIENDS.filter(i=>!S.lnBlocked[i]).length}</div>
+      ${FRIENDS.filter(i=>!S.lnBlocked[i]).map(id=>`<button class="ln-row" type="button" data-a="lnProf" data-v="${id}">${avatar(id,42)}<span class="mid"><span class="nm">${esc(PEOPLE[id].name)}</span>${PEOPLE[id].status?`<span class="lm">${esc(PEOPLE[id].status)}</span>`:''}</span></button>`).join('')}
       <div class="ln-sec">グループ 1</div>
-      <button class="ln-row" type="button" data-a="lnRoom" data-v="baito">${avatar('baito',42)}<span class="mid"><span class="nm">${esc(PEOPLE.baito.name)}</span></span></button>`;
+      <button class="ln-row" type="button" data-a="lnRoom" data-v="baito">${avatar('baito',42)}<span class="mid"><span class="nm">${esc(PEOPLE.baito.name)}</span></span></button>${(()=>{const b=FRIENDS.filter(i=>S.lnBlocked[i]);return b.length?`<div class="ln-sec">ブロックリスト ${b.length}</div>${b.map(i=>`<div class="ln-row" style="cursor:default">${avatar(i,42)}<span class="mid"><span class="nm">${esc(PEOPLE[i].name)}</span><span class="lm">ブロック中</span></span><button class="get" type="button" data-a="lnUnblock" data-v="${i}">解除</button></div>`).join('')}`:''})()}`;
     }else if(tab==='talk'){
       title='トーク';
       const ids=Object.keys(S.chats).filter(k=>S.chats[k].msgs.length&&!S.chats[k].hidden)
@@ -1133,11 +1169,15 @@ LP.lnChat=id=>{
   const c=S.chats[id];
   sheet({title:PEOPLE[id].name,btns:[
     {t:c.pin?'ピン留めを解除':'ピン留め',fn:()=>{c.pin=!c.pin;rerender()}},
+    ...(PEOPLE[id].group||PEOPLE[id].official||id==='misaki'?[]:[{t:S.lnBlocked[id]?'ブロック解除':'ブロック',fn:()=>ACT.lnBlockAsk(id)}]),
     {t:'非表示',fn:()=>ACT.lnHide(id)},
     {t:'削除',red:true,fn:()=>ACT.lnDel(id)},
   ]});
 };
 ACT.lnHide=id=>{const c=S.chats[id];c.hidden=true;c.pin=false;rerender();renderHome()};
+ACT.lnMenu=id=>{const p=PEOPLE[id],bl=S.lnBlocked[id];sheet({title:p.name,btns:[{t:'通知オフ',fn:()=>toast('通知をオフにしました')},...(p.group||p.official||id==='misaki'?[]:[{t:bl?'ブロック解除':'ブロック',red:!bl,fn:()=>ACT.lnBlockAsk(id)}]),{t:'トーク履歴を削除',red:true,fn:()=>ACT.lnDel(id)}]})};
+ACT.lnBlockAsk=id=>{const n=PEOPLE[id].name;if(S.lnBlocked[id]){ACT.lnUnblock(id);return}alertBox({title:`${n}をブロックしますか？`,msg:'ブロックすると、相手からのメッセージや通話が届かなくなり、友だちリストにも表示されなくなります。トーク履歴は残ります。',btns:[{t:'キャンセル'},{t:'ブロック',red:true,fn:()=>{S.lnBlocked[id]=true;rerender();toast(`${n}をブロックしました`)}}]})};
+ACT.lnUnblock=id=>{S.lnBlocked[id]=false;rerender();toast('ブロックを解除しました')};
 ACT.lnDel=id=>alertBox({title:'トーク履歴を削除',msg:'削除したトーク履歴は復元できません。削除しますか？',btns:[{t:'キャンセル'},{t:'削除',red:true,fn:()=>{const c=S.chats[id];c.msgs=[];c.unread=0;c.hidden=false;c.pin=false;rerender();renderHome()}}]});
 
 LP.lnMsg=v=>{
@@ -1171,7 +1211,7 @@ function keyHTML(k){
 function renderRoom(el){
   const id=L.room,c=S.chats[id];
   const msgs=c.msgs.map((m,i)=>msgHTML(id,m,i)).join('');
-  el.innerHTML=`<div class="ln-head"><button class="nb" type="button" data-a="lnBack" aria-label="戻る" style="color:var(--app-fg);font-size:28px;padding:0 8px">‹</button><b>${esc(PEOPLE[id].name)}</b>${IC.search}${IC.phone}${IC.menu}</div>
+  el.innerHTML=`<div class="ln-head"><button class="nb" type="button" data-a="lnBack" aria-label="戻る" style="color:var(--app-fg);font-size:28px;padding:0 8px">‹</button><b>${esc(PEOPLE[id].name)}</b>${IC.search}<button class="nb" type="button" data-a="lnCall" aria-label="通話">${IC.phone}</button><button class="nb" type="button" data-a="lnMenu" data-v="${id}" aria-label="メニュー">${IC.menu}</button></div>${S.lnBlocked[id]?'<div class="ln-blk" style="margin:6px 16px">ブロック中のユーザーです。メッセージや通話は届きません。</div>':''}
   <div class="ln-msgs" id="msgs" data-a="lnKbX">${c.msgs.length?'<span class="day">今日</span>':'<span class="sysm">トーク履歴はありません</span>'}${msgs}${L.typing===id?`<div class="m typing">${avatar(id,34)}<div class="bub"><i></i><i></i><i></i></div></div>`:''}</div>
   <div class="ln-in ${L.kb?'':'pad'}"><button class="ib" type="button" aria-label="追加">${IC.plus}</button><button class="ib" type="button" aria-label="カメラ">${IC.cam}</button>
   <input id="msgIn" inputmode="none" autocomplete="off" placeholder="メッセージを入力" value="${esc(L.draft)}" data-a="lnKb" aria-label="メッセージ">
@@ -1241,6 +1281,7 @@ ACT.lnSend=()=>{
   setTimeout(()=>{if(S.over||g!==GID)return;L.typing=null;deliverMsg(id,txt)},2100);
 };
 function deliverMsg(id,text){
+  if(S.lnBlocked[id])return;
   const c=S.chats[id];c.msgs.push({from:'them',t:hhmm(),text});c.hidden=false;
   const viewing=S.app==='talk'&&L.room===id;
   if(!viewing){c.unread++;if(S.set.notif.talk)banner('talk',PEOPLE[id].name,text,()=>{openApp('talk');ACT.lnRoom(id)})}
@@ -1679,16 +1720,109 @@ ACT.phRestore=()=>{const p=S.photos.find(x=>x.id===PH.view);if(p)p.del=false;PH.
 ACT.phKill=()=>alertBox({title:'この写真を完全に削除しますか？',msg:'この操作は取り消せません。',btns:[{t:'キャンセル'},{t:'完全に削除',red:true,fn:()=>{S.photos=S.photos.filter(x=>x.id!==PH.view);PH.view=null;rerender()}}]});
 ACT.phKillAll=()=>alertBox({title:'すべて削除しますか？',msg:'最近削除した項目の写真が完全に削除されます。',btns:[{t:'キャンセル'},{t:'すべて削除',red:true,fn:()=>{S.photos=S.photos.filter(x=>!x.del);rerender()}}]});
 ACT.phVault=()=>{const p=S.photos.find(x=>x.id===PH.view);if(!p)return;p.vault=true;PH.view=null;rerender();toast('電卓Pro の金庫に移動しました')};
-/* 時計 */
+/* 時計（世界時計・アラーム・ストップウォッチ・タイマー） */
+const CLK={tab:'world',edit:false,sw:{run:false,t0:0,acc:0,laps:[]},tm:{run:false,end:0,left:0,set:180},raf:null,lastMin:'23:41',cities:3};
+const CLK_TABS=[['world','世界時計'],['alarm','アラーム'],['sw','ストップウォッチ'],['timer','タイマー']];
+const CITIES=[['ニューヨーク',-13],['ロンドン',-8],['ホノルル',-19],['パリ',-7],['シドニー',2],['ソウル',0]];
+const swMs=()=>CLK.sw.acc+(CLK.sw.run?Date.now()-CLK.sw.t0:0);
+const fmtSW=ms=>`${String(Math.floor(ms/60000)).padStart(2,'0')}:${String(Math.floor(ms/1000)%60).padStart(2,'0')},${String(Math.floor(ms/10)%100).padStart(2,'0')}`;
+const tmLeft=()=>CLK.tm.run?Math.max(0,CLK.tm.end-Date.now()):CLK.tm.left;
+const fmtTM=ms=>{const s=Math.ceil(ms/1000),h=Math.floor(s/3600),m=Math.floor(s/60)%60,x=s%60;return(h?h+':'+String(m).padStart(2,'0'):String(m).padStart(2,'0'))+':'+String(x).padStart(2,'0')};
+const tmIdle=()=>!CLK.tm.run&&!CLK.tm.left;
+function clkLoop(){
+  cancelAnimationFrame(CLK.raf);
+  const f=()=>{
+    if(!S||S.app!=='clock'){CLK.raf=null;return}
+    const a=$('#swT');if(a)a.textContent=fmtSW(swMs());
+    const b=$('#tmT');if(b){const l=tmLeft();b.textContent=fmtTM(l);const r=$('#tmR');if(r)r.style.strokeDashoffset=(1-l/(CLK.tm.set*1000))*691}
+    timerCheck();
+    CLK.raf=requestAnimationFrame(f);
+  };
+  CLK.raf=requestAnimationFrame(f);
+}
+function timerCheck(){if(CLK.tm.run&&Date.now()>=CLK.tm.end){CLK.tm.run=false;CLK.tm.left=0;if(S.app==='clock')rerender();ringAlarm('タイマー','タイマーが終了しました')}}
 APPS.clock={cls:'clk',light:true,
+  open(){CLK.edit=false;clkLoop()},
+  close(){cancelAnimationFrame(CLK.raf);CLK.raf=null},
   render(el){
-    const s=gsec(),ss=String(s%60).padStart(2,'0');
-    const w=[['ニューヨーク','昨日、-13時間',-13],['ロンドン','今日、-8時間',-8],['ホノルル','昨日、-19時間',-19]];
-    el.innerHTML=`<div class="nav" style="background:#000"><h2 style="color:#fff">世界時計</h2></div><div class="clk-big">${hhmm(s)}<span style="font-size:.45em;opacity:.6">:${ss}</span></div><div style="text-align:center;color:#8e8e93;font-size:13px;margin-bottom:18px">東京　10月13日 火曜日</div>
-    <div style="flex:1;overflow:auto">${w.map(([n,d,o])=>`<div class="clk-row"><span><small>${d}</small>${n}</span><b>${hhmm(s+o*3600+86400)}</b></div>`).join('')}</div>
-    <nav class="ln-tabs" style="background:#000;border-color:#222">${['世界時計','アラーム','ストップウォッチ','タイマー'].map((t,i)=>`<button class="ln-tab ${i?'':'on'}" type="button" style="font-size:11px;${i?'':'color:#ff9f0a'}">${t}</button>`).join('')}</nav>`;
+    const tabs=`<nav class="ln-tabs" style="background:#000;border-color:#222">${CLK_TABS.map(([k,t])=>`<button class="ln-tab ${CLK.tab===k?'on':''}" type="button" data-a="clkTab" data-v="${k}" style="font-size:11px;${CLK.tab===k?'color:#ff9f0a':'color:#8e8e93'}">${t}</button>`).join('')}</nav>`;
+    const nav=(t,r='')=>`<div class="nav" style="background:#000"><button class="nb" type="button" data-a="home" style="color:#ff9f0a">‹ ホーム</button><h2 style="color:#fff">${t}</h2>${r}</div>`;
+    if(CLK.tab==='alarm'&&CLK.edit){
+      const H=Array.from({length:24},(_,i)=>String(i).padStart(2,'0')),Mn=Array.from({length:12},(_,i)=>String(i*5).padStart(2,'0'));
+      const now=gsec()+300,h0=String(Math.floor(now/3600)%24).padStart(2,'0'),m0=String(Math.floor(now/60)%60-Math.floor(now/60)%60%5).padStart(2,'0');
+      el.innerHTML=`<div class="nav" style="background:#1c1c1e"><button class="nb" type="button" data-a="almCancel" style="color:#ff9f0a">キャンセル</button><h2 style="color:#fff">アラームを追加</h2><button class="nb r" type="button" data-a="almSave" style="color:#ff9f0a;font-weight:600">保存</button></div>
+      <div style="flex:1;overflow:auto;background:#1c1c1e;padding-top:20px"><div class="alm-pick"><select id="almH" aria-label="時">${H.map(h=>`<option ${h===h0?'selected':''}>${h}</option>`).join('')}</select><b>:</b><select id="almM" aria-label="分">${Mn.map(m=>`<option ${m===m0?'selected':''}>${m}</option>`).join('')}</select></div>
+      <div class="grp" style="background:#2c2c2e;margin-top:24px"><input class="fin" id="almL" placeholder="ラベル（アラーム）" maxlength="20" style="color:#fff" autocomplete="off"></div>
+      <div class="grp-f" style="margin-top:-12px">ゲーム内の時刻（今は ${hhmm()}）になると鳴ります。</div></div>`;
+      return;
+    }
+    if(CLK.tab==='alarm'){
+      const list=[...S.alarms].sort((a,b)=>a.t.localeCompare(b.t));
+      el.innerHTML=nav('アラーム','<button class="nb r" type="button" data-a="almAdd" aria-label="アラームを追加" style="color:#ff9f0a;font-size:30px;line-height:20px;padding:0 6px">+</button>')+`<div class="clk-list">${list.length?list.map(a=>swRow(`<div class="alm ${a.on?'':'off'}"><div><b>${a.t}</b><small>${esc(a.label)}</small></div><button class="tg ${a.on?'on':''}" type="button" data-a="almTg" data-v="${a.id}" aria-label="${esc(a.label)}をオン・オフ"></button></div>`,swBoth(swb('削除','red','almDel',a.id)))).join(''):'<div class="empty">アラームはありません</div>'}<div class="grp-f" style="margin:14px 20px">左右にスワイプで削除</div></div>${tabs}`;
+      return;
+    }
+    if(CLK.tab==='sw'){
+      const s=CLK.sw,ms=swMs();
+      const laps=s.laps.map((l,i)=>[i+1,l]).reverse();
+      el.innerHTML=nav('ストップウォッチ')+`<div class="clk-big sw" id="swT">${fmtSW(ms)}</div>
+      <div class="clk-btns"><button class="cbt" type="button" data-a="swL" ${!s.run&&!ms?'disabled':''}>${s.run?'ラップ':'リセット'}</button><button class="cbt ${s.run?'stop':'go'}" type="button" data-a="swS">${s.run?'停止':'開始'}</button></div>
+      <div class="clk-list">${s.run||ms?`<div class="clk-row lap"><span>ラップ ${s.laps.length+1}</span><span>計測中</span></div>`:''}${laps.map(([n,l])=>`<div class="clk-row lap"><span>ラップ ${n}</span><span>${fmtSW(l)}</span></div>`).join('')}</div>${tabs}`;
+      return;
+    }
+    if(CLK.tab==='timer'){
+      const t=CLK.tm;
+      if(tmIdle()){
+        const mm=Math.floor(t.set/60),ss=t.set%60;
+        el.innerHTML=nav('タイマー')+`<div class="clk-list" style="padding-top:20px"><div class="alm-pick"><select id="tmM" aria-label="分">${Array.from({length:60},(_,i)=>`<option value="${i}" ${i===mm?'selected':''}>${i} 分</option>`).join('')}</select><select id="tmS" aria-label="秒">${Array.from({length:12},(_,i)=>i*5).map(i=>`<option value="${i}" ${i===ss?'selected':''}>${i} 秒</option>`).join('')}</select></div>
+        <div class="tm-pre">${[[60,'1分'],[180,'3分'],[300,'5分'],[600,'10分']].map(([v,l])=>`<button type="button" data-a="tmPre" data-v="${v}" class="${t.set===v?'on':''}">${l}</button>`).join('')}</div>
+        <div class="clk-btns"><button class="cbt" type="button" disabled>キャンセル</button><button class="cbt go" type="button" data-a="tmGo">開始</button></div></div>${tabs}`;
+      }else{
+        el.innerHTML=nav('タイマー')+`<div class="tm-ring"><svg viewBox="0 0 240 240"><circle cx="120" cy="120" r="110" fill="none" stroke="#333" stroke-width="8"/><circle id="tmR" cx="120" cy="120" r="110" fill="none" stroke="#ff9f0a" stroke-width="8" stroke-linecap="round" stroke-dasharray="691" style="stroke-dashoffset:${(1-tmLeft()/(t.set*1000))*691}" transform="rotate(-90 120 120)"/></svg><b id="tmT">${fmtTM(tmLeft())}</b></div>
+        <div class="clk-btns"><button class="cbt" type="button" data-a="tmCancel">キャンセル</button><button class="cbt ${t.run?'pause':'go'}" type="button" data-a="tmPause">${t.run?'一時停止':'再開'}</button></div>${tabs}`;
+      }
+      return;
+    }
+    const s=gsec(),sec=String(s%60).padStart(2,'0');
+    el.innerHTML=nav('世界時計',CLK.cities<CITIES.length?'<button class="nb r" type="button" data-a="clkCity" aria-label="都市を追加" style="color:#ff9f0a;font-size:30px;line-height:20px;padding:0 6px">+</button>':'')+`<div class="clk-big">${hhmm(s)}<span style="font-size:.45em;opacity:.6">:${sec}</span></div><div style="text-align:center;color:#8e8e93;font-size:13px;margin-bottom:18px">東京　10月13日 火曜日</div>
+    <div class="clk-list">${CITIES.slice(0,CLK.cities).map(([n,o])=>{const t=s+o*3600,d=t>=86400?'明日':t<0?'昨日':'今日';return `<div class="clk-row"><span><small>${d}、${o>=0?'+':''}${o}時間</small>${n}</span><b>${hhmm(t+86400)}</b></div>`}).join('')}</div>${tabs}`;
   }
 };
+ACT.clkTab=v=>{CLK.tab=v;CLK.edit=false;rerender()};
+ACT.clkCity=()=>{CLK.cities=Math.min(CITIES.length,CLK.cities+1);rerender()};
+ACT.almAdd=()=>{CLK.edit=true;rerender()};
+ACT.almCancel=()=>{CLK.edit=false;rerender()};
+ACT.almSave=()=>{const t=$('#almH').value+':'+$('#almM').value,l=($('#almL').value||'').trim()||'アラーム';S.alarms.push({id:'a'+Date.now(),t,label:l,on:true});CLK.edit=false;rerender();toast(`${t} にアラームをセットしました`)};
+ACT.almTg=v=>{const a=S.alarms.find(x=>x.id===v);if(a)a.on=!a.on;rerender()};
+ACT.almDel=v=>{S.alarms=S.alarms.filter(x=>x.id!==v);rerender()};
+ACT.swS=()=>{const s=CLK.sw;if(s.run){s.acc+=Date.now()-s.t0;s.run=false}else{s.t0=Date.now();s.run=true}rerender()};
+ACT.swL=()=>{const s=CLK.sw;if(s.run){const tot=swMs(),prev=s.laps.reduce((a,b)=>a+b,0);s.laps.push(tot-prev)}else{s.acc=0;s.laps=[]}rerender()};
+ACT.tmPre=v=>{CLK.tm.set=+v;rerender()};
+ACT.tmGo=()=>{const m=+$('#tmM').value,s=+$('#tmS').value,tot=m*60+s;if(!tot){toast('時間をえらんでね');return}const t=CLK.tm;t.set=tot;t.end=Date.now()+tot*1000;t.run=true;rerender()};
+ACT.tmPause=()=>{const t=CLK.tm;if(t.run){t.left=Math.max(1,t.end-Date.now());t.run=false}else{t.end=Date.now()+t.left;t.run=true}rerender()};
+ACT.tmCancel=()=>{Object.assign(CLK.tm,{run:false,left:0});rerender()};
+
+/* アラーム音（WebAudio） */
+let BEEP=null;
+function beepStart(){beepStop();try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();AC.resume&&AC.resume();const o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.value=880;g.gain.value=0;o.connect(g);g.connect(AC.destination);o.start();let k=0;const iv=setInterval(()=>{g.gain.value=(k++%4<2&&k%8<6)?.05:0},110);BEEP={o,g,iv}}catch(_){}}
+function beepStop(){if(BEEP){clearInterval(BEEP.iv);try{BEEP.o.stop()}catch(_){}BEEP=null}}
+function ringAlarm(title,sub){
+  if(!S||S.over)return;
+  closeLayer();
+  let c=$('#alarmUI');if(!c){c=document.createElement('div');c.id='alarmUI';$('#screen').insertBefore(c,$('#banner'))}
+  c.className='call alarm';
+  c.innerHTML=`<small>${esc(sub)}</small><h3 class="alm-now">${hhmm()}</h3><h3>${esc(title)}</h3><div class="sub">⏰</div><div class="cbtns"><button type="button" data-a="almSnooze"><i style="background:#ff9f0a">${'<svg viewBox="0 0 24 24"><path d="M14 3a8 8 0 1 0 7 11A7 7 0 0 1 14 3z"/></svg>'}</i>スヌーズ</button><button type="button" data-a="almStop"><i style="background:#fff"><svg viewBox="0 0 24 24" style="fill:#111"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></i>停止</button></div>`;
+  beepStart();try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(_){}
+}
+function alarmOff(){beepStop();const c=$('#alarmUI');if(c)c.remove()}
+ACT.almStop=()=>alarmOff();
+ACT.almSnooze=()=>{alarmOff();S.snooze=gsec()+60;toast('1分後にもう一度鳴ります')};
+function alarmTick(){
+  if(!S.started)return;
+  const now=hhmm();
+  if(now!==CLK.lastMin){CLK.lastMin=now;S.alarms.filter(a=>a.on&&a.t===now).forEach(a=>ringAlarm(a.label,'アラーム'))}
+  if(S.snooze&&gsec()>=S.snooze){S.snooze=0;ringAlarm('スヌーズ','アラーム')}
+  if(S.app!=='clock')timerCheck();
+}
 /* 天気 */
 APPS.weather={cls:'wx',light:true,
   render(el){
@@ -1812,6 +1946,7 @@ ACT.telClear=()=>{if(!S.calls.length)return;sheet({btns:[{t:'すべての履歴�
 /* ----- LINE 着信イベント ----- */
 const CALLV={who:null,state:null,timer:null,sec:0,lines:[],tk:null};
 function incomingCall(id){
+  if(S.lnBlocked[id])return;
   if(offline()){S.queue.push({call:id});return}
   if(CALLV.state)return;
   closeLayer();closeCC();swClose();
@@ -1851,6 +1986,7 @@ function endCall(kind){
   if(S.app)rerender();else renderHome();
 }
 function missedCall(id){
+  if(S.lnBlocked[id])return;
   S.calls.unshift({id:'k'+Date.now()+id,who:id,k:'不在着信',via:'LINE オーディオ',t:hhmm()});
   const c=S.chats[id];c.hidden=false;c.msgs.push({from:'them',t:hhmm(),text:'',call:'不在着信'});c.unread++;
   banner('tel','不在着信',`${PEOPLE[id].name}（LINE オーディオ）`,()=>openApp('tel'));
@@ -2030,6 +2166,216 @@ APPS.kakeibo={
 ACT.kkAdd=()=>{const n=($('#kkN').value||'').trim(),a=parseInt(($('#kkA').value||'').replace(/[^0-9]/g,''),10);if(!n||!a){toast('品目と金額を入れてね');return}S.kk.unshift({n,a,d:'10/13'});rerender()};
 ACT.kkDel=v=>{S.kk.splice(+v,1);rerender()};
 
+/* ===== 3D エンディング（three.js） ===== */
+const THREE_URL='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+let threeP=null;
+function loadThree(){
+  if(window.THREE)return Promise.resolve(window.THREE);
+  if(threeP)return threeP;
+  threeP=new Promise((res,rej)=>{
+    const s=document.createElement('script');s.src=THREE_URL;s.async=true;
+    s.onload=()=>window.THREE?res(window.THREE):rej('no THREE');
+    s.onerror=()=>{threeP=null;rej('load error')};
+    document.head.appendChild(s);
+    setTimeout(()=>rej('timeout'),8000);
+  });
+  return threeP;
+}
+const S3={r:null,raf:null,ev:null,ro:null};
+function stop3D(){
+  cancelAnimationFrame(S3.raf);S3.raf=null;S3.ev=null;
+  if(S3.ro){S3.ro.disconnect();S3.ro=null}
+  if(S3.r){try{S3.r.dispose();S3.r.forceContextLoss()}catch(_){}S3.r=null}
+}
+function toonMat(T,color,extra){
+  if(!toonMat.gm){const g=new T.DataTexture(new Uint8Array([110,190,255]),3,1,T.LuminanceFormat);g.minFilter=g.magFilter=T.NearestFilter;g.needsUpdate=true;toonMat.gm=g}
+  return new T.MeshToonMaterial(Object.assign({color,gradientMap:toonMat.gm},extra||{}));
+}
+function sprite(T,draw,size=128,scale=.3){
+  const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');draw(x,size);
+  const tx=new T.CanvasTexture(c);const sp=new T.Sprite(new T.SpriteMaterial({map:tx,transparent:true,depthWrite:false}));sp.scale.set(scale,scale,1);return sp;
+}
+const drawHeart=(col)=>(x,s)=>{x.fillStyle=col;x.beginPath();const k=s/100;x.moveTo(50*k,85*k);x.bezierCurveTo(5*k,55*k,10*k,15*k,50*k,32*k);x.bezierCurveTo(90*k,15*k,95*k,55*k,50*k,85*k);x.fill()};
+const drawAnger=(x,s)=>{x.strokeStyle='#ff2d55';x.lineWidth=s*.11;x.lineCap='round';const a=s*.18,b=s*.42,c=s*.5;[[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([i,j])=>{x.beginPath();x.moveTo(c+i*a,c+j*b);x.lineTo(c+i*a,c+j*a);x.lineTo(c+i*b,c+j*a);x.stroke()})};
+const drawDrop=(x,s)=>{x.fillStyle='#8fd3ff';x.beginPath();x.moveTo(s*.5,s*.1);x.bezierCurveTo(s*.85,s*.55,s*.8,s*.9,s*.5,s*.9);x.bezierCurveTo(s*.2,s*.9,s*.15,s*.55,s*.5,s*.1);x.fill()};
+const drawText=(t,col,px)=>(x,s)=>{x.fillStyle=col;x.font=`900 ${px||s*.6}px sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(t,s/2,s/2)};
+
+/* ちびキャラ（頭・体・腕・脚・顔パーツ） */
+function person(T,o){
+  const M=c=>toonMat(T,c),g=new T.Group(),P={g};
+  const leg=(side)=>{
+    const hip=new T.Group();hip.position.set(side*.1,.8,0);
+    const up=new T.Mesh(new T.CylinderGeometry(.085,.075,.42,12),M(o.bottom));up.position.y=-.21;up.castShadow=true;hip.add(up);
+    const knee=new T.Group();knee.position.y=-.42;hip.add(knee);
+    const lo=new T.Mesh(new T.CylinderGeometry(.072,.062,.38,12),M(o.bottom));lo.position.y=-.19;lo.castShadow=true;knee.add(lo);
+    const ft=new T.Mesh(new T.SphereGeometry(.075,12,8),M(o.skin));ft.scale.set(1,.55,1.5);ft.position.set(0,-.38,.04);knee.add(ft);
+    g.add(hip);return{hip,knee};
+  };
+  P.legL=leg(1);P.legR=leg(-1);
+  const torso=new T.Group();torso.position.y=.8;g.add(torso);P.torso=torso;
+  const body=new T.Mesh(new T.CylinderGeometry(o.girl?.16:.19,o.girl?.23:.2,.58,18),M(o.top));body.position.y=.29;body.castShadow=true;torso.add(body);
+  if(o.hood){const h=new T.Mesh(new T.TorusGeometry(.15,.045,8,18),M(o.hood));h.rotation.x=Math.PI/2;h.position.y=.56;torso.add(h)}
+  const arm=(side)=>{
+    const sh=new T.Group();sh.position.set(side*(o.girl?.19:.23),.52,0);
+    const a=new T.Mesh(new T.CylinderGeometry(.058,.05,.48,10),M(o.top));a.position.y=-.24;a.castShadow=true;sh.add(a);
+    const hd=new T.Mesh(new T.SphereGeometry(.062,12,10),M(o.skin));hd.position.y=-.5;sh.add(hd);
+    torso.add(sh);return{sh,hand:hd};
+  };
+  P.armL=arm(1);P.armR=arm(-1);
+  const head=new T.Group();head.position.y=.82;torso.add(head);P.head=head;
+  const sk=new T.Mesh(new T.SphereGeometry(.24,28,20),M(o.skin));sk.castShadow=true;head.add(sk);
+  const cap=new T.Mesh(new T.SphereGeometry(.252,28,20,0,Math.PI*2,0,Math.PI*.52),M(o.hair));cap.rotation.x=-.32;head.add(cap);
+  if(o.girl){
+    const back=new T.Mesh(new T.CylinderGeometry(.24,.27,.56,20,1,true,Math.PI*.5,Math.PI),M(o.hair));back.material.side=T.DoubleSide;back.position.y=-.2;head.add(back);P.back=back;
+    if(o.towel){const tw=new T.Mesh(new T.SphereGeometry(.27,24,16,0,Math.PI*2,0,Math.PI*.5),M('#ffffff'));tw.scale.set(1.04,.82,1.04);tw.position.y=.06;tw.rotation.x=-.25;head.add(tw);
+      const knot=new T.Mesh(new T.SphereGeometry(.09,12,10),M('#f4f4fa'));knot.position.set(.1,.28,-.08);head.add(knot)}
+  }else{
+    const fr=new T.Mesh(new T.SphereGeometry(.07,10,8),M(o.hair));fr.scale.set(1.8,.7,.8);fr.position.set(.06,.15,.2);fr.rotation.z=.4;head.add(fr);
+  }
+  const F={};const black=M('#2a1d1a');
+  F.eyes=[1,-1].map(s=>{const e=new T.Mesh(new T.SphereGeometry(.032,12,10),black);e.scale.set(1,1.25,.6);e.position.set(s*.085,.0,.222);head.add(e);return e});
+  F.closed=[1,-1].map(s=>{const e=new T.Mesh(new T.TorusGeometry(.03,.008,6,12,Math.PI),black);e.rotation.z=Math.PI;e.position.set(s*.085,.01,.226);e.visible=false;head.add(e);return e});
+  F.brows=[1,-1].map(s=>{const b=new T.Mesh(new T.BoxGeometry(.075,.016,.01),black);b.position.set(s*.085,.075,.218);head.add(b);return b});
+  F.mouth=new T.Mesh(new T.TorusGeometry(.035,.009,6,12,Math.PI),M('#a5534a'));F.mouth.position.set(0,-.095,.218);head.add(F.mouth);
+  F.blush=[1,-1].map(s=>{const b=new T.Mesh(new T.SphereGeometry(.036,10,8),new T.MeshBasicMaterial({color:'#ff7f9e',transparent:true,opacity:.55}));b.scale.set(1,.55,.3);b.position.set(s*.14,-.05,.2);head.add(b);return b});
+  P.face=F;
+  P.set=(k)=>{ // angry | worried | sleep | happy
+    const ang=k==='angry',wor=k==='worried',slp=k==='sleep';
+    F.eyes.forEach(e=>e.visible=!slp);F.closed.forEach(e=>e.visible=slp);
+    F.brows.forEach((b,i)=>{const s=i?-1:1;b.rotation.z=ang?s*.45:wor?-s*.35:0;b.position.y=ang?.06:.08});
+    F.mouth.rotation.z=ang||wor?0:Math.PI; F.mouth.position.y=ang||wor?-.11:-.095; F.mouth.scale.set(wor?.7:1,ang?.6:1,1);
+    F.blush.forEach(b=>b.material.opacity=ang?.75:.5);
+  };
+  P.set('happy');
+  return P;
+}
+function room(T,scene,{night}){
+  const M=c=>toonMat(T,c);
+  const floor=new T.Mesh(new T.PlaneGeometry(10,10),M(night?'#3a2d48':'#6b4c3b'));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+  const wall=new T.Mesh(new T.PlaneGeometry(10,5),M(night?'#2a2440':'#4a3a58'));wall.position.set(0,2.5,-1.6);wall.receiveShadow=true;scene.add(wall);
+  const win=new T.Mesh(new T.PlaneGeometry(1.2,.95),new T.MeshBasicMaterial({color:'#0f1a3a'}));win.position.set(night?1.2:-1.35,1.75,-1.59);scene.add(win);
+  const fr=new T.Mesh(new T.BoxGeometry(1.32,1.07,.04),M('#2b2236'));fr.position.copy(win.position);fr.position.z-=.02;scene.add(fr);
+  const bar=new T.Mesh(new T.BoxGeometry(.04,.95,.03),M('#2b2236'));bar.position.copy(win.position);bar.position.z+=.01;scene.add(bar);
+  const moon=new T.Mesh(new T.CircleGeometry(.13,24),new T.MeshBasicMaterial({color:'#fff4c2'}));moon.position.copy(win.position);moon.position.x+=.3;moon.position.y+=.2;moon.position.z+=.005;scene.add(moon);
+  for(let i=0;i<7;i++){const st=new T.Mesh(new T.CircleGeometry(.012,6),new T.MeshBasicMaterial({color:'#ffffff'}));st.position.set(win.position.x-.5+Math.random()*.9,win.position.y-.35+Math.random()*.7,win.position.z+.004);scene.add(st)}
+  return{win};
+}
+function buildFight(T,scene,cam,big){
+  scene.background=new T.Color('#1d1626');scene.fog=new T.Fog('#1d1626',5,10);
+  room(T,scene,{night:false});
+  const M=c=>toonMat(T,c);
+  const rug=new T.Mesh(new T.CircleGeometry(1.5,40),M('#5a3f66'));rug.rotation.x=-Math.PI/2;rug.position.y=.005;rug.receiveShadow=true;scene.add(rug);
+  const lampP=new T.Group();lampP.position.set(1.8,0,-1.1);scene.add(lampP);
+  const pole=new T.Mesh(new T.CylinderGeometry(.03,.03,1.4,8),M('#4b3a55'));pole.position.y=.7;lampP.add(pole);
+  const shade=new T.Mesh(new T.CylinderGeometry(.16,.28,.3,20,1,true),new T.MeshBasicMaterial({color:'#ffcf7a',side:T.DoubleSide}));shade.position.y=1.48;lampP.add(shade);
+  scene.add(new T.HemisphereLight('#c9b6ff','#3a2440',.55));
+  const key=new T.PointLight('#ffc27a',1.25,9,1.6);key.position.set(1.7,1.6,-.6);key.castShadow=true;key.shadow.mapSize.set(1024,1024);scene.add(key);
+  const fill=new T.DirectionalLight('#9fb4ff',.45);fill.position.set(-3,3,3);scene.add(fill);
+  const boy=person(T,{skin:'#ffd9c2',hair:'#2b2230',top:'#4a6fb5',bottom:'#2b3550',hood:'#3a5a99'});
+  boy.g.position.set(-.62,-.6,.1);boy.g.rotation.y=Math.PI/2;
+  [boy.legL,boy.legR].forEach(l=>{l.hip.rotation.x=-Math.PI/2;l.knee.rotation.x=Math.PI*.96});
+  boy.armL.sh.rotation.x=-.5;boy.armR.sh.rotation.x=-.5;boy.armL.sh.rotation.z=.15;boy.armR.sh.rotation.z=-.15;
+  boy.set('worried');scene.add(boy.g);
+  const girl=person(T,{skin:'#ffd9c2',hair:'#5a3a2e',top:'#ff9ec0',bottom:'#f08db0',girl:true,towel:true});
+  girl.g.position.set(.62,0,.05);girl.g.rotation.y=-Math.PI/2;girl.set('angry');scene.add(girl.g);
+  girl.armL.sh.rotation.z=.9;girl.armL.sh.rotation.x=.2;
+  const phone=new T.Group();
+  const pb=new T.Mesh(new T.BoxGeometry(.1,.19,.014),M('#111'));phone.add(pb);
+  const scr=new T.Mesh(new T.PlaneGeometry(.085,.17),new T.MeshBasicMaterial({color:'#ffe9a8'}));scr.position.z=.0085;phone.add(scr);
+  phone.position.set(0,-.56,.06);phone.rotation.x=Math.PI/2;girl.armR.sh.add(phone);
+  const glow=new T.PointLight('#fff1b8',.5,1.2);phone.add(glow);
+  const anger=sprite(T,drawAnger,128,.24);girl.head.add(anger);anger.position.set(.2,.28,0);
+  let anger2=null;if(big){anger2=sprite(T,drawAnger,128,.18);girl.head.add(anger2);anger2.position.set(-.22,.22,.05)}
+  const bang=sprite(T,drawText('!?','#ffb84d',70),128,.3);boy.head.add(bang);bang.position.set(0,.42,0);
+  const drops=[0,1].map(i=>{const d=sprite(T,drawDrop,64,.08);boy.head.add(d);return d});
+  const pillow=new T.Mesh(new T.SphereGeometry(.2,20,14),M('#f4eef3'));pillow.scale.set(1.3,.55,.9);pillow.visible=false;pillow.castShadow=true;scene.add(pillow);
+  const pow=sprite(T,drawText('ボフッ','#ffffff',38),128,.5);pow.visible=false;scene.add(pow);
+  let throwT=-1;
+  cam.position.set(0,1.6,4.2);
+  return{
+    ev:k=>{if(k==='throw')throwT=-2},
+    update(t,dt){
+      if(throwT===-2)throwT=t;
+      cam.position.x=Math.sin(t*.28)*.8;cam.position.y=1.6+Math.sin(t*.4)*.05;
+      let shake=0;
+      girl.armR.sh.rotation.x=-1.35+Math.sin(t*7)*.12;
+      girl.torso.rotation.z=Math.sin(t*13)*(big?.03:.015);
+      girl.head.rotation.x=.12+Math.sin(t*3)*.04;
+      const ps=1+Math.abs(Math.sin(t*6))*.35;anger.scale.set(.24*ps,.24*ps,1);if(anger2)anger2.scale.set(.18*ps,.18*ps,1);
+      boy.torso.rotation.x=.42+Math.sin(t*1.6)*.06;boy.head.rotation.x=.25;
+      bang.material.opacity=.6+.4*Math.sin(t*4);
+      drops.forEach((d,i)=>{const p=((t*.8)+i*.5)%1;d.position.set(i?-.27:.27,.15-p*.3,.05);d.material.opacity=1-p});
+      if(throwT>0){
+        const a=(t-throwT)/.6;
+        if(a<1){pillow.visible=true;const from=new T.Vector3(.4,1.25,.1),to=new T.Vector3(-.55,.95,.1);pillow.position.lerpVectors(from,to,a);pillow.position.y+=Math.sin(a*Math.PI)*.4;pillow.rotation.z=a*6;girl.armL.sh.rotation.x=-2.4*(1-a)}
+        else if(a<2.2){const b=a-1;pillow.position.set(-.55-b*.35,Math.max(.12,.95-b*b*1.6),.1+b*.2);pillow.rotation.z=6+b*3;boy.torso.rotation.x=-.25+b*.3;pow.visible=b<.7;pow.position.set(-.6,1.35,.2);pow.material.opacity=1-b/.7;shake=(1-b/1.2)*.05}
+        else{pillow.position.y=.12;pow.visible=false}
+      }
+      cam.position.x+=shake*Math.sin(t*90);
+      cam.lookAt(0,.98,0);
+    }
+  };
+}
+function buildBed(T,scene,cam){
+  scene.background=new T.Color('#121530');scene.fog=new T.Fog('#121530',5,10);
+  room(T,scene,{night:true});
+  const M=c=>toonMat(T,c);
+  const bed=new T.Group();scene.add(bed);
+  const base=new T.Mesh(new T.BoxGeometry(2.1,.32,2.3),M('#5b4064'));base.position.set(0,.16,.05);base.castShadow=base.receiveShadow=true;bed.add(base);
+  const mat=new T.Mesh(new T.BoxGeometry(2.0,.22,2.2),M('#ece6f3'));mat.position.set(0,.43,.05);mat.receiveShadow=true;bed.add(mat);
+  const hb=new T.Mesh(new T.BoxGeometry(2.2,1.0,.14),M('#6b4a5e'));hb.position.set(0,.75,-1.1);hb.castShadow=true;bed.add(hb);
+  [-.45,.45].forEach(x=>{const p=new T.Mesh(new T.SphereGeometry(.34,24,16),M('#ffffff'));p.scale.set(1.15,.38,.75);p.position.set(x,.66,-.74);p.receiveShadow=true;bed.add(p)});
+  const boy=person(T,{skin:'#ffd9c2',hair:'#2b2230',top:'#4a6fb5',bottom:'#2b3550'});
+  const girl=person(T,{skin:'#ffd9c2',hair:'#5a3a2e',top:'#ff9ec0',bottom:'#f08db0',girl:true});
+  [[boy,-.36],[girl,.3]].forEach(([p,x])=>{p.g.rotation.x=-Math.PI/2;p.g.position.set(x,.8,.85);p.set('sleep');p.torso.children.forEach(c=>{if(c!==p.head)c.visible=false});[p.legL,p.legR].forEach(l=>l.hip.visible=false);scene.add(p.g)});
+  boy.head.rotation.y=-.25;girl.head.rotation.y=.5;girl.g.position.x=.27;if(girl.back){girl.back.rotation.z=Math.PI;girl.back.position.y=.16}
+  boy.armR.sh.rotation.z=-1.3;
+  const blanket=new T.Mesh(new T.BoxGeometry(2.05,.2,1.6),M('#f48db2'));blanket.position.set(0,.64,.44);blanket.castShadow=true;scene.add(blanket);
+  const fold=new T.Mesh(new T.CylinderGeometry(.09,.09,2.06,16),M('#ffc4d8'));fold.rotation.z=Math.PI/2;fold.position.set(0,.72,-.36);scene.add(fold);
+  for(let i=0;i<10;i++){const h=sprite(T,drawHeart('#ffc4d8'),64,.09);h.position.set(-.9+i*.2,.75+(i%2)*.01,.0+(i%3)*.4);scene.add(h)}
+  scene.add(new T.HemisphereLight('#8fa0ff','#2a1f3d',.4));
+  const moon=new T.DirectionalLight('#b8c6ff',.5);moon.position.set(2.5,4,1);moon.castShadow=true;moon.shadow.mapSize.set(1024,1024);scene.add(moon);
+  const fillB=new T.DirectionalLight('#ffd9c8',.35);fillB.position.set(.5,3,3);scene.add(fillB);
+  const lamp=new T.PointLight('#ffb36b',.7,4,1.5);lamp.position.set(-1.4,1,-.6);scene.add(lamp);
+  const nl=new T.Mesh(new T.SphereGeometry(.1,16,12),new T.MeshBasicMaterial({color:'#ffcf8a'}));nl.position.set(-1.4,.75,-.75);scene.add(nl);
+  const stand=new T.Mesh(new T.BoxGeometry(.4,.65,.4),M('#4b3a55'));stand.position.set(-1.4,.32,-.75);scene.add(stand);
+  const hearts=[0,1,2,3].map(i=>{const h=sprite(T,drawHeart(['#ff4d78','#ff7a9a','#ffb3c6','#ff4d78'][i]),128,.16);scene.add(h);return h});
+  const zz=[0,1,2].map(i=>{const z=sprite(T,drawText(i?'z':'Z','#cfd4ff',70),128,.2-i*.04);scene.add(z);return z});
+  cam.position.set(.6,2.6,1.4);
+  return{
+    ev:()=>{},
+    update(t){
+      const br=1+Math.sin(t*1.6)*.03;blanket.scale.y=br;
+      const z=Math.min(1,t/9);cam.position.set(.5+Math.sin(t*.22)*.4,2.6-z*.4,1.4-z*.35);
+      cam.lookAt(-.02,.78,-.62);
+      hearts.forEach((h,i)=>{const p=((t*.3)+i/4)%1;h.position.set(-.04+Math.sin(p*6+i)*.12,.95+p*.75,-.6);h.material.opacity=p<.15?p/.15:1-p;const s=.12+p*.1;h.scale.set(s,s,1)});
+      zz.forEach((z,i)=>{const p=((t*.35)+i/3)%1;z.position.set(-.5+p*.22,.95+p*.55,-.85);z.material.opacity=Math.sin(p*Math.PI)});
+      girl.head.rotation.x=Math.sin(t*1.6)*.03;
+    }
+  };
+}
+async function mount3D(box,kind,big){
+  let T;try{T=await loadThree()}catch(e){return false}
+  if(!box.isConnected)return false;
+  try{
+    stop3D();
+    const W=box.clientWidth||320,H=Math.round(W*.75);
+    const r=new T.WebGLRenderer({antialias:true});
+    r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));r.setSize(W,H);
+    r.shadowMap.enabled=true;r.shadowMap.type=T.PCFSoftShadowMap;
+    const scene=new T.Scene(),cam=new T.PerspectiveCamera(36,W/H,.1,60);
+    const api=kind==='bed'?buildBed(T,scene,cam):buildFight(T,scene,cam,big);
+    r.domElement.className='scn3d';r.domElement.setAttribute('role','img');r.domElement.setAttribute('aria-label',kind==='bed'?'ベッドで寄りそって眠るふたり（3D）':'スマホを突きつける彼女と、正座する彼氏（3D）');
+    box.innerHTML='';box.appendChild(r.domElement);
+    S3.r=r;S3.ev=api.ev;
+    if(window.ResizeObserver){S3.ro=new ResizeObserver(()=>{const w=box.clientWidth;if(!w||!S3.r)return;const h=Math.round(w*.75);S3.r.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()});S3.ro.observe(box)}
+    const t0=performance.now();let last=t0;
+    const loop=now=>{S3.raf=requestAnimationFrame(loop);const t=(now-t0)/1000,dt=(now-last)/1000;last=now;api.update(t,dt);r.render(scene,cam)};
+    S3.raf=requestAnimationFrame(loop);
+    return true;
+  }catch(e){console.warn('3D failed',e);stop3D();return false}
+}
+
 /* ===== game loop ===== */
 let GID=0;
 const mmss=s=>Math.floor(Math.max(0,s)/60)+':'+String(Math.max(0,s)%60).padStart(2,'0');
@@ -2038,11 +2384,12 @@ function tick(){
   if(!S||!S.started||S.over)return;
   S.elapsed++;S.left--;hud();sbUpdate();
   if(RUN.on)RUN.sec++;
-  if(S.app==='clock'||S.app==='farm'||(S.app==='run'&&RUN.on))rerender();
+  if((S.app==='clock'&&CLK.tab==='world'&&!$('#layer').innerHTML)||S.app==='farm'||(S.app==='run'&&RUN.on))rerender();
+  alarmTick();
   if(MUS.play){MUS.pos=(MUS.pos+1)%MUS.dur;if(S.app==='music'){const b=$('.mus-bar i');if(b)b.style.width=MUS.pos/MUS.dur*100+'%';const p=$('#mpos');if(p)p.textContent=mt(MUS.pos)}}
   const e=S.elapsed,n=S.len;
-  if(e===Math.round(n*.25))incoming('yui','ねぇまだ起きてる？声ききたいな');
-  if(e===Math.round(n*.5))incomingCall('ayaka');
+  if(e===Math.round(n*.25)&&!S.lnBlocked.yui)incoming('yui','ねぇまだ起きてる？声ききたいな');
+  if(e===Math.round(n*.5)&&!S.lnBlocked.ayaka)incomingCall('ayaka');
   if(e===Math.round(n*.8))incoming('misaki','もうすぐあがる〜');
   if(S.left===15)incoming('misaki','髪かわかしたら行くね');
   if(S.left<=0)finish(true);
@@ -2071,11 +2418,16 @@ function judge(){
     add({k:'air',t:'機内モード',d:gq?`オフにした瞬間、女の子からの通知が${gq}件届いた`:'渡す直前に機内モードにしてた',p:gq?-12:-5,line:gq?'…今の通知なに？誰から？':'なんで機内モードにしてんの？'});
   }
   add(S.installed.spark?{k:'spark',t:'マッチングアプリ',d:'ホーム画面に Spark が入ってる',p:-20,line:'マッチングアプリ入ってるんだけど。しかもGOLD会員？'}:{k:'spark',ok:1,t:'マッチングアプリ',d:'ホーム画面には見当たらない'});
-  GIRLS.forEach(id=>{const c=S.chats[id],n=PEOPLE[id].name;
-    if(!c.msgs.length)add({k:'chat:'+id,ok:1,t:`トーク：${n}`,d:'トーク一覧にも、友だちから開いても何もなかった'});
+  GIRLS.forEach(id=>{const c=S.chats[id],n=PEOPLE[id].name,bl=S.lnBlocked[id];
+    if(!c.msgs.length&&bl)add({k:'chat:'+id,ok:1,t:`トーク：${n}`,d:'トークを削除してブロック。友だちにも出てこない'});
+    else if(!c.msgs.length)add({k:'empty:'+id,t:`トーク：${n}（会話ゼロ）`,d:'友だちに入ってるのに、トークが1件もない。不自然',p:-4,line:`${n}って友だちなのに、一回も話してないの？…本当に？`});
+    else if(c.hidden&&bl)add({k:'chat:'+id,ok:1,t:`トーク：${n}`,d:'非表示にしてブロック。友だちからも開けなかった'});
     else if(c.hidden)add({k:'hid:'+id,t:`トーク：${n}（非表示）`,d:`友だちリストから${n}を開いたら、非表示のトークが全部復元された`,p:-10,line:`非表示にしても、友だちから開いたら全部出てくるんだよ？「${lastText(lastOf(c)).slice(0,12)}」って何`});
     else add({k:'chat:'+id,t:`トーク：${n}`,d:`一覧にそのまま残ってた「${lastText(lastOf(c)).slice(0,18)}」`,p:-15,line:`「${lastText(lastOf(c)).slice(0,14)}」…${n}って誰？`});
   });
+  const few=['takeru','kenta','mom','baito'].filter(k=>!S.chats[k].msgs.length).length;
+  const gEmpty=GIRLS.filter(k=>!S.chats[k].msgs.length).length;
+  if(few>=2||few+gEmpty>=5)add({k:'few',t:'トーク一覧がスカスカ',d:`今日のトークがほとんど残ってない（${few+gEmpty}件消えてる）`,p:-6,line:'今日こんなに誰ともトークしてないなんて、本当？消したでしょ'});
   if(!S.chats.misaki.msgs.length)add({k:'mi',t:'トーク：みさき（削除）',d:'彼女とのトークまで消えてた。やりすぎ',p:-8,line:'てか、なんで私とのトークまで消えてんの？'});
   add(S.set.learned?{k:'kb',t:'キーボードの予測変換',d:S.set.predictive?'「す」で「好きだよ」「すぐ会いたい」…':'予測をオフにしてたけど、オンにしたら「好きだよ」が出てきた',p:-10,line:'「す」って打ったら「好きだよ」って出たんだけど。誰に打ってたの？'}:{k:'kb',ok:1,t:'キーボードの予測変換',d:'変な候補は出てこない'});
   S.pay.filter(p=>p.sus).forEach(p=>{const n=PEOPLE[p.id].name,t=p.tx[0];
@@ -2087,6 +2439,8 @@ function judge(){
   if(gc.length){const ns=[...new Set(gc.map(c=>PEOPLE[c.who].name))];add({k:'tel',cid:gc[0].id,t:`電話の履歴：LINE通話 ${gc.length}件`,d:`${ns.join('・')}とLINE通話してる`,p:-4*gc.length,line:`${ns[0]}と${/:/.test(gc[0].t)?gc[0].t+'に':''}LINE通話してるよね？`})}
   else if(!S.calls.length)add({k:'telclr',t:'電話の履歴',d:'履歴がぜんぶ消えてた。逆に怪しい',p:-5,line:'電話の履歴、ぜんぶ消えてるんだけど…逆に怪しくない？'});
   else add({k:'tel',ok:1,t:'電話の履歴',d:'あやしい通話はなし'});
+  const sa=S.alarms.filter(a=>SUSRX.test(a.label));
+  if(sa.length)add({k:'alarm',aid:sa[0].id,t:`アラーム「${sa[0].label}」`,d:`${sa[0].t} に女の子の名前のアラーム`,p:-6*sa.length,line:`${sa[0].t}の「${sa[0].label}」って何？毎晩かけてるの？`});
   const ge=S.events.filter(e=>SUSRX.test(e.title)).sort((a,b)=>a.d-b.d);
   if(ge.length)add({k:'cal',days:[...new Set(ge.map(e=>e.d))],t:`カレンダー：女の子との予定 ${ge.length}件`,d:ge.slice(0,3).map(e=>`10/${e.d}「${e.title}」`).join(' ')+(ge.length>3?' ほか':''),p:-4*ge.length,line:`10/${ge[0].d}の「${ge[0].title}」ってなに？`});
   else add({k:'cal',ok:1,t:'カレンダー',d:'女の子の名前は出てこない'});
@@ -2114,7 +2468,7 @@ function finish(timeUp){
   closeLayer();closeCC();swClose();
   if(CALLV.state){clearTimeout(CALLV.timer);clearInterval(CALLV.tk);CALLV.state=null;CALLV.who=null}
   const cu=$('#callUI');if(cu)cu.remove();
-  stopSleep();RUN.on=false;
+  stopSleep();RUN.on=false;alarmOff();
   hud();
   inspect(timeUp);
 }
@@ -2188,14 +2542,15 @@ async function talkDemo(){
     await tapEl($('[data-a="lnBack"]'),()=>ACT.lnBack(),500);
   }
   const mi=F('mi');if(mi)await found(mi);
-  if(!hit&&!mi)await say('ふーん…一覧はふつうか','calm',900);
+  const fw=F('few');if(fw)await found(fw);
+  if(!hit&&!mi&&!fw)await say('ふーん…一覧はふつうか','calm',900);
   await tapEl($('.ln-tab[data-v="home"]'),()=>ACT.lnTab('home'),700);
   await say('友だちリストも見せてね','doubt',900);
   for(const id of GIRLS){
-    if(F('chat:'+id))continue;
+    if(F('chat:'+id)||S.lnBlocked[id])continue;
     await tapEl($(`.ln-row[data-a="lnProf"][data-v="${id}"]`),()=>ACT.lnProf(id),700);
     await tapEl($('.pf-acts [data-a="lnRoom"]'),()=>ACT.lnRoom(id),1100);
-    const it=F('hid:'+id);
+    const it=F('hid:'+id)||F('empty:'+id);
     if(it)await found(it);else await say(`${PEOPLE[id].name}…トークは何もないね`,'doubt',1000);
     await tapEl($('[data-a="lnBack"]'),()=>ACT.lnBack(),500);
   }
@@ -2248,6 +2603,13 @@ async function calDemo(){
   if(an)await found(an);
   else await say(it?'…記念日はちゃんと入れてるんだ':'26日、記念日ちゃんと入れてるんだ♡',it?'doubt':'love',1200);
 }
+async function clockDemo(){
+  const it=F('alarm');if(!it)return;
+  await openDemo('clock');
+  await tapEl($('[data-a="clkTab"][data-v="alarm"]'),()=>ACT.clkTab('alarm'),800);
+  const row=$(`[data-a="almTg"][data-v="${it.aid}"]`);const r=row&&row.closest('.alm');
+  await point(r);await found(it,r);
+}
 async function memoDemo(){
   await openDemo('memo');
   const its=INS.items.filter(x=>!x.ok&&x.k.startsWith('memo:'));
@@ -2280,6 +2642,7 @@ async function storeDemo(){
   if(!a&&!b)await say('購入履歴も…ふつうだね','calm',900);
 }
 async function inspect(timeUp){
+  loadThree().catch(()=>{});
   INS.on=true;INS.skip=false;INS.anger=0;INS.speed=1;
   INS.items=judge();
   girlUI(true);
@@ -2308,7 +2671,7 @@ async function inspect(timeUp){
       await say('ホーム画面は…','doubt',800);
       if(S.home.length>PAGE1){ACT.hpg(1);await wait(900);await say(S.home.includes('vault')?'電卓が2個ある…？まぁいっか':'ふーん、ゲームとか入れてるんだ','calm',1100);ACT.hpg(0);await wait(500)}
     }
-    await talkDemo();await payDemo();await telDemo();await calDemo();await memoDemo();await photoDemo();await storeDemo();
+    await talkDemo();await payDemo();await telDemo();await calDemo();await clockDemo();await memoDemo();await photoDemo();await storeDemo();
     await homeDemo();
     const ng=INS.items.filter(x=>!x.ok);
     await say(ng.length?(ng.length>=6?'……ねぇ。ちょっとそこ座って':'…ねぇ、ちょっと話あるんだけど'):'…なんにもないじゃん。疑ってごめんね',ng.length?'rage':'love',1700);
@@ -2395,15 +2758,17 @@ function showScene(){
   const ex=['ち、ちがうんだって…！','それは、その…友だちで…','説明させて…ください…'];
   const lines=love?[['みさき','なんにもなかった…疑ってごめんね'],['あなた','ううん。信じてくれてありがとう'],['みさき','…ぎゅってして、一緒に寝よ？'],['あなた','（あ、あぶなかった……）'],['','ふたりは、くっついて眠りました。おやすみなさい 💤']]
     :[...ng.slice(0,3).map(x=>['みさき',x.line]),['あなた',ex[Math.min(2,Math.floor(ng.length/3))]],['みさき',line],...(big?[['','（まくらが飛んできた）','throw']]:[]),['あなた','……ごめんなさい'],['',big?'その夜、あなたはソファで寝ました。':'長い夜の、事情聴取がはじまった。']];
-  ov(`<div class="card2 scene-card" role="dialog" aria-label="エンディング"><div class="eye">${love?'0:12　ベッドにて':'0:12　リビングにて'}</div>${love?BED_SVG:FIGHT_SVG(big)}<div class="dlg" id="dlg" aria-live="polite"><b></b><span></span></div><button class="btn" type="button" id="nextBtn">次へ ▶</button><button class="btn ghost" type="button" id="resBtn">答え合わせを見る</button></div>`);
-  const svg=$('#ov .scn');let i=0;
+  ov(`<div class="card2 scene-card" role="dialog" aria-label="エンディング"><div class="eye">${love?'0:12　ベッドにて':'0:12　リビングにて'}</div><div class="scn-box" id="scnBox">${love?BED_SVG:FIGHT_SVG(big)}<span class="scn-tag">3D読み込み中…</span></div><div class="dlg" id="dlg" aria-live="polite"><b></b><span></span></div><button class="btn" type="button" id="nextBtn">次へ ▶</button><button class="btn ghost" type="button" id="resBtn">答え合わせを見る</button></div>`);
+  stop3D();let i=0,pend=null;
+  const box=$('#scnBox');
+  mount3D(box,love?'bed':'fight',big).then(ok=>{if(!ok){const tg=$('#ov .scn-tag');if(tg)tg.remove()}else if(pend)S3.ev&&S3.ev(pend)});
   const show=()=>{
     clearTimeout(SC.T);
     if(i>=lines.length){showResult();return}
     const [who,t,fx]=lines[i++];const box=$('#dlg');if(!box)return;
     box.className='dlg '+(who==='あなた'?'boy':who?'':'nar');box.style.animation='none';void box.offsetWidth;box.style.animation='';
     box.innerHTML=`<b>${esc(who)}</b><span>${esc(t)}</span>`;
-    if(fx==='throw'&&svg)svg.classList.add('throw');
+    if(fx==='throw'){const svg=$('#ov svg.scn');if(svg)svg.classList.add('throw');if(S3.ev)S3.ev('throw');else pend='throw'}
     $('#nextBtn').textContent=i>=lines.length?'答え合わせへ ▶':'次へ ▶';
     SC.T=setTimeout(show,2800);
   };
@@ -2411,7 +2776,7 @@ function showScene(){
   show();
 }
 function showResult(){
-  clearTimeout(SC.T);
+  clearTimeout(SC.T);stop3D();
   const {it,ng,score,rank,line}=S.score;
   ov(`<div class="card2" role="dialog" aria-labelledby="t2"><div class="eye">答え合わせ</div>
   <div class="score"><b>${score}</b><span>/ 100 点</span></div><div class="rank" id="t2">${rank}</div>
@@ -2427,7 +2792,7 @@ function bindResult(){
   $('#peekBtn').onclick=()=>{ov('');const hb=$('#handBtn');hb.textContent='結果を見る';hb.onclick=showResult};
 }
 function boot(){
-  GID++;INS.skip=true;clearTimeout(SC.T);
+  GID++;INS.skip=true;clearTimeout(SC.T);stop3D();alarmOff();Object.assign(CLK,{tab:'world',edit:false,lastMin:'23:41',cities:3});Object.assign(CLK.sw,{run:false,acc:0,laps:[]});Object.assign(CLK.tm,{run:false,left:0,set:180});
   stopSleep();
   S=newState();
   Object.assign(L,{tab:'home',room:null,prof:null,kb:false,draft:'',typing:null});
