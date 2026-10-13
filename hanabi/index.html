@@ -110,20 +110,20 @@ h2{font-size:34px}
 <div id="ui">
   <div class="hud" id="hud">
     <div>
-      <div class="tlabel">阻止タイム</div>
+      <div class="tlabel">耐えた時間</div>
       <div class="tval"><span id="time">0.0</span><small>秒</small></div>
       <div class="sub"><span id="blocks">0</span>回阻止 · <span id="combo">0</span>コンボ</div>
     </div>
     <div class="right">
       <div class="row"><span class="chip" id="level">かんたん</span><button id="mute" type="button">音 ON</button></div>
-      <div class="row"><span class="shl">クリアまで</span><span class="goal" id="goal">あと15回</span></div>
+      <div class="row"><span class="shl">のこり</span><span class="goal" id="goal">15.0秒</span></div>
     </div>
   </div>
 
   <div id="manB" class="bubble man" hidden><span class="txt"></span></div>
   <div id="womanB" class="bubble woman" hidden><span class="txt"></span></div>
   <div id="toast"></div>
-  <div id="hint" hidden>点線より左で決まった色を、丸に重なった瞬間に押す</div>
+  <div id="hint" hidden>点線の左で決まった色を押す。2個同時は両方！</div>
   <div id="fx"></div>
   <div id="pad" role="group" aria-label="花火の色">
     <button type="button" class="c0" data-c="0">赤<small>D</small></button>
@@ -137,11 +137,11 @@ h2{font-size:34px}
     <h1><span>その「つ」を消せ</span>告白阻止花火</h1>
     <div class="demo" aria-hidden="true"><span class="judge"></span><span class="note">つ</span><span class="tap">ドーン!</span></div>
     <ul class="rules">
-      <li>彼が「俺と……」と言いかけたら要注意。</li>
+      <li>彼は15秒間ずっと「俺と……」と言いかけています。</li>
       <li>上のレーンを流れてくる<span class="mini">つ</span>は<b>4色</b>（<span class="cr">赤</span>・<span class="cb">青</span>・<span class="cy">黄</span>・<span class="cg">緑</span>）。左の丸に重なった瞬間に<b>同じ色のボタン</b>を押すと、その色の花火で告白をかき消せます。</li>
-      <li>段が上がると「つ」の色が途中で<b>最大3回</b>変わります。点線より左の<b>色確定ゾーン</b>に入った時の色が答え。</li>
-      <li><b>1回でもミス</b>（見逃し・色ちがい・早押し）したら告白成功。<b>15回</b>かき消し続けたら……。</li>
-      <li>全5段。最初から速めで、3回ごとに手強くなります。</li>
+      <li>「つ」は<b>次々に</b>流れてきて、<b>2個同時</b>（両方の色を押す）や連打も。途中で色が変わることもありますが、点線より左の<b>色確定ゾーン</b>に入った時の色が答え。</li>
+      <li><b>1回でもミス</b>（見逃し・色ちがい・早押し）したら告白成功。<b>15秒</b>耐えきったら……。</li>
+      <li>3秒ごとに一段ずつ手強くなります。</li>
     </ul>
     <button class="btn" id="startBtn" type="button">はじめる</button>
     <p class="fine" id="bestLine">キーボードは D / F / J / K（赤・青・黄・緑）</p>
@@ -150,7 +150,7 @@ h2{font-size:34px}
   <section class="panel" id="resultP" hidden>
     <p class="eyebrow" id="rEyebrow">結果</p>
     <h2 id="rTitle">告白、成立。</h2>
-    <div class="big"><span id="rSec">0.0</span><small>秒 阻止</small></div>
+    <div class="big"><span id="rSec">0.0</span><small>秒 耐えた</small></div>
     <p class="rank">称号：<em id="rRank"></em></p>
     <dl class="stats">
       <div><dt>阻止</dt><dd id="rBlocks">0</dd></div>
@@ -476,71 +476,42 @@ function boomText(x,y,txt,cls){const d=document.createElement('div');d.className
 function toast(msg){const el=$('toast');el.textContent=msg;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 
 /* ---------- game ---------- */
-const LV=[{name:'一段',col:'#5fd4c0',msg:''},{name:'二段',col:'#a6e35d',msg:'二段：間と速さがバラバラ・フェイントあり'},{name:'三段',col:'#ffb547',msg:'三段：「つ」の色が1回変わる'},{name:'四段',col:'#ff5a7a',msg:'四段：色が2回変わる'},{name:'五段',col:'#c47bff',msg:'五段：色が3回変わる・さらに速く'}];
-const GOAL=15;
-const levelOf=n=>n<3?0:n<6?1:n<9?2:n<12?3:4;
-const W_LINES=['わぁ…！','きれい…！','え、なに？','見て、花火！','ん？今なんか言った？','すごーい！','また上がった！','音おっきいね！'];
-const M_THOUGHTS=['（くっ…）','（なんで今…）','（タイミング…）','（もう一回…）','（花火め…）','（落ち着け俺…）'];
-function diff(n){const lv=levelOf(n);return{approach:Math.max(.8,1.05-n*.017),ok:Math.max(.085,.12-n*.0025),pmin:.08,pmax:Math.min(.85,.4+n*.03),gap:Math.max(.25,.5-n*.017),
-  rise:[1,.95,.9,.85,.8][lv],rev0:0,rev1:1,flick:false,decoys:0,changes:[0,0,1,2,3][lv]};}
-/* 「つ」の色: 右から来る間に何回か変わり、確定ゾーン(残り1/3)に入る前に最後の色になる */
-const ZONE=1/6;
+const LV=[{name:'一段',col:'#5fd4c0',msg:''},{name:'二段',col:'#a6e35d',msg:'二段：2個同時・連打が来る'},{name:'三段',col:'#ffb547',msg:'三段：さらに密に'},{name:'四段',col:'#ff5a7a',msg:'四段：色が2回変わる'},{name:'五段',col:'#c47bff',msg:'ラスト3秒！色が3回変わる'}];
+const DUR=15;
+const levelAt=e=>e<3?0:e<6?1:e<9?2:e<12?3:4;
+const W_LINES=['わぁ…！','きれい…！','え、なに？','見て、花火！','すごーい！','音おっきいね！','止まらないね！','連発だ！'];
+/* 「つ」の色: 右から来る間に何回か変わり、色確定ゾーン(レーンの左半分)に入る前に最後の色になる */
+const ZONE=1/2;
 function colorPlan(answer,ch){
   const seq=[answer];
   for(let i=0;i<ch;i++){let c;do{c=Math.floor(Math.random()*4);}while(c===seq[0]);seq.unshift(c);}
-  const sw=[];for(let k=1;k<=ch;k++)sw.push(Math.max(ZONE+.12,1-.64*(k/ch)*rand(.9,1)));
+  const sw=[];for(let k=1;k<=ch;k++)sw.push(1-(1-ZONE-.06)*(k/ch)*rand(.92,1));
   sw.sort((a,b)=>b-a);
   return {seq,sw};
 }
 function noteColor(a,prog){let i=0;for(const s of a.sw)if(prog<=s)i++;return a.seq[Math.min(i,a.seq.length-1)];}
-function launchFor(a,isMain,ci,burstAt,x,flick){
-  const d=diff(n),t=now(),dur=Math.max(.35,burstAt-t);
-  const by=rand(skyTop()+20,Math.max(skyTop()+40,hy-90));
-  const col=COLS[ci];
-  return launch(x,by,{x0:x,dur,size:isMain?.85:.6,pal:[col.c,col.l],trail:col.c,rev0:dur<d.rise*.6?0:d.rev0,rev1:d.rev1,flick,main:isMain,kind:isMain?'peony':pick(['peony','chrys'])});
-}
-function scheduleRockets(a){
-  const d=diff(n),mx=rand(W*.22,W*.78);
-  later(Math.max(now(),a.hitT-d.rise),()=>{if(state==='play'&&cur===a&&!a.resolved)a.rocket=launchFor(a,true,a.color,a.hitT,mx,d.flick);});
-  const used=[a.color];
-  for(let i=0;i<d.decoys;i++){
-    let ci;do{ci=Math.floor(Math.random()*4);}while(used.includes(ci)&&used.length<4);used.push(ci);
-    const off=(i%2?1:-1)*rand(.28,.6),bt=a.hitT+off;
-    let x=rand(W*.12,W*.88);if(Math.abs(x-mx)<W*.12)x=mx+(x<mx?-1:1)*W*.16;x=clamp(x,W*.08,W*.92);
-    later(Math.max(now(),bt-d.rise*rand(.85,1.1)),()=>{if(state==='play')launchFor(a,false,ci,bt,x,d.flick);});
+/* 15秒ぶんの譜面を作る */
+function makeChart(t0){
+  const out=[];let e=.9;
+  while(e<DUR-.15){
+    const lv=levelAt(e),ap=[1.15,1.05,.98,.92,.86][lv],ch=[0,1,1,2,3][lv],ok=[.13,.12,.11,.105,.1][lv];
+    const mk=(hit,color)=>{const nt={hitT:t0+hit,approach:ap,ok,good:ok*.45,color,lane:0};Object.assign(nt,colorPlan(color,Math.random()<.75?ch:Math.max(0,ch-1)));return nt;};
+    const r=Math.random(),c1=Math.floor(Math.random()*4);
+    let c2;do{c2=Math.floor(Math.random()*4);}while(c2===c1);
+    if(lv>=1&&r<[0,.22,.28,.32,.38][lv]){const a=mk(e,c1),b=mk(e,c2);a.lane=-1;b.lane=1;out.push(a,b);e+=[.7,.62,.58,.54,.5][lv];}
+    else if(lv>=1&&r<[0,.38,.46,.52,.58][lv]){out.push(mk(e,c1));out.push(mk(e+.2,c2));e+=.2+[.55,.5,.46,.42,.4][lv];}
+    else{out.push(mk(e,c1));e+=[.62,.52,.46,.42,.38][lv]*rand(.85,1.15);}
   }
+  return out.filter(x=>x.hitT<=t0+DUR);
+}
+function scheduleRocket(nt){
+  later(Math.max(now(),nt.hitT-.8),()=>{if(state!=='play'||nt.resolved)return;const col=COLS[nt.color],x=rand(W*.15,W*.85),by=rand(skyTop()+20,Math.max(skyTop()+40,hy-90));
+    nt.rocket=launch(x,by,{x0:x,dur:Math.max(.3,nt.hitT-now()),size:.75,pal:[col.c,col.l],trail:col.c,main:true,kind:'peony'});});
 }
 
 let state='title',startT=0,final=0,n=0,combo=0,maxCombo=0,goods=0,shells=3,cur=null,lastKind='',curLv=0,timers=[],lastHitT=-9,judg=[],nextAttract=0;
-let owner=null,shownCount=-1,nextAmb=0,cleared=false;
+let owner=null,shownCount=-1,nextAmb=0,cleared=false,notes=[],nextWomanT=0,nextTalkT=0;
 const later=(t,fn)=>timers.push({t,fn});
-
-function makeAttempt(t,gap){
-  const d=diff(n),lv=levelOf(n);
-  const feint=lv>=1&&lastKind!=='feint'&&Math.random()<.12;
-  const toks=[];let r=0;
-  if(n>=3&&Math.random()<.2){for(const ch of pick(['あのさ、','えっと、','なあ、'])){toks.push({r,s:ch});r+=.06;}r+=.12;}
-  const say2=()=>{for(const ch of '俺と'){toks.push({r,s:ch});r+=.12;}};
-  say2();
-  if(lv>=1&&Math.random()<.2){toks.push({r:r+.12,s:'…',dot:1});r+=.3;say2();}
-  const P=rand(d.pmin,d.pmax),units=P<.3?0:Math.max(1,Math.round(P/.35));
-  for(let i=0;i<units;i++)toks.push({r:r+P*(i+1)/(units+1),s:'…',dot:1});
-  const hitR=r+P;
-  let a;
-  if(feint){
-    let q=hitR;for(const ch of pick(['…いや、なんでもない','…あ、寒くない？','…やっぱ、あとで'])){toks.push({r:q,s:ch,dot:ch==='…'});q+=.045;}
-    const start=t+gap;
-    a={type:'feint',tokens:toks.map(k=>({t:start+k.r,s:k.s,dot:k.dot})),speakStart:start,endT:start+q+.35};
-  }else{
-    const ap=d.approach*(lv>=1?rand(.85,1.15):1);
-    const start=Math.max(t+gap,t+.15+ap-hitR);
-    a={type:'real',tokens:toks.map(k=>({t:start+k.r,s:k.s,dot:k.dot})),speakStart:start,hitT:start+hitR,approach:ap,ok:d.ok,good:d.ok*.45,doron:false,color:Math.floor(Math.random()*4)};
-    Object.assign(a,colorPlan(a.color,d.changes));
-  }
-  a.tokens.sort((x,y)=>x.t-y.t);
-  if(a.type==='real')scheduleRockets(a);
-  lastKind=a.type;return a;
-}
 
 function renderSpeech(t){
   const o=cur;if(!o||t<o.speakStart)return;
@@ -554,9 +525,10 @@ function renderSpeech(t){
   }
 }
 
-function renderShells(){const g=$('goal');g.textContent=n>=GOAL?'クリア！':'あと'+(GOAL-n)+'回';g.classList.remove('pop');void g.offsetWidth;g.classList.add('pop');}
+function renderShells(){}
+function renderLeft(t){const g=$('goal'),v=state==='play'?Math.max(0,DUR-(t-startT)):cleared?0:DUR-final;const tx=cleared&&state!=='play'?'クリア！':v.toFixed(1)+'秒';if(g.textContent!==tx)g.textContent=tx;}
 function renderLevel(){const l=LV[curLv];$('level').textContent=l.name;$('level').style.setProperty('--lv',l.col);}
-function updateHud(){$('blocks').textContent=n;$('combo').textContent=combo;hint.hidden=!(state==='play'&&n<3);}
+function updateHud(){$('blocks').textContent=n;$('combo').textContent=combo;hint.hidden=!(state==='play'&&n<4);}
 
 function startGame(){
   initAudio();
@@ -564,8 +536,9 @@ function startGame(){
   const t=now();
   state='play';startT=t;n=0;combo=0;maxCombo=0;goods=0;shells=3;curLv=0;timers=[];judg=[];hearts=[];heartsUntil=0;
   man.win=false;man.flUntil=0;woman.blush=0;woman.lookUntil=0;owner=null;lastKind='';cleared=false;nextAmb=t+1.5;
-  cur=makeAttempt(t,.8);
-  renderShells();renderLevel();updateHud();
+  notes=makeChart(t);notes.forEach(scheduleRocket);nextWomanT=t+1.5;nextTalkT=t+.3;
+  cur={type:'talk',tokens:[],speakStart:t};
+  renderLevel();updateHud();
 }
 
 function tap(x,y){
@@ -577,45 +550,41 @@ function press(ci){
   if(state==='title'||state==='result'){initAudio();const p=skyPoint();launch(p[0],p[1],{sound:!!AC,pal:[COLS[ci].c,COLS[ci].l]});return;}
   if(state!=='play')return;
   initAudio();
-  const c=cur;
-  if(c&&c.type==='real'&&!c.resolved){const d=t-c.hitT;if(Math.abs(d)<=c.ok){if(ci===c.color)block(t,d);else wrong(ci,t);return;}}
-  dud(ci,t);
+  const near=notes.filter(nt=>!nt.resolved&&Math.abs(t-nt.hitT)<=nt.ok).sort((a,b)=>a.hitT-b.hitT);
+  const hit=near.find(nt=>nt.color===ci);
+  if(hit){block(hit,t,t-hit.hitT);return;}
+  if(near.length){wrong(ci,t,near[0]);return;}
+  const soon=notes.find(nt=>!nt.resolved&&nt.hitT-t>0&&nt.hitT-t<.28);
+  if(soon)dud(ci,t);
 }
 
-function block(t,d){
-  const c=cur;c.resolved=true;
+const FRAG=['俺と','俺と付き合','あのさ俺と','俺と','俺とつ','だから俺と','俺と付き'];
+function block(c,t,d){
+  c.resolved=true;
   n++;combo++;maxCombo=Math.max(maxCombo,combo);
   const good=Math.abs(d)<=c.good;if(good)goods++;
-  judg.push({txt:good?'良':'可',col:good?'#ffc65c':'#ffffff',t0:t});lastHitT=t;
+  judg.push({txt:good?'良':'可',col:good?'#ffc65c':'#ffffff',t0:t,y:c.lane});lastHitT=t;
   sfx.don();
-  const said=c.tokens.filter(k=>k.t<=t).map(k=>k.s).join('');
-  setBubble(manB,esc(said)+'<span class="drown">つ</span>','man');owner=null;
-  man.flUntil=t+1.3;man.talkUntil=0;
+  setBubble(manB,esc(pick(FRAG))+'<span class="drown">っ</span>','man');owner=null;
+  man.flUntil=t+.8;man.talkUntil=0;
   const col=COLS[c.color],pal=[col.c,col.l],r=c.rocket;
-  const cb=(bx,by)=>{boomText(bx,by,good?'ドーン!!':'ドン!',good?'':'small');sfx.boom(good?1:.8);woman.lookUntil=now()+1.5;};
-  if(r&&rockets.includes(r)){r.size=good?1.4:1.15;r.force=true;r.cb=cb;r.kind=pick(['peony','chrys','ring']);}
-  else{const p=r&&r.cx!=null?[r.cx,r.cy]:skyPoint();launch(p[0],p[1],{dur:.1,size:good?1.4:1.15,pal,cb,kind:pick(['peony','chrys','ring'])});}
-  const extra=good?5:3;
-  for(let i=0;i<extra;i++)later(t+.12+i*.13,()=>{const q=skyPoint();launch(q[0],q[1],{dur:rand(.3,.55),size:rand(.7,1.05),pal:i%2?pal:pick(PAL)});});
-  renderShells();
-  if(n>=GOAL){updateHud();winGame(t);return;}
-  const lv=levelOf(n);if(lv!==curLv){curLv=lv;renderLevel();toast(LV[lv].msg);}
-  const quick=n>=6&&Math.random()<.3;
-  const nx=makeAttempt(t,quick?.15:diff(n).gap);cur=nx;
-  later(t+.35,()=>{if(state==='play')womanSay(pick(W_LINES),1.4);});
-  later(t+.75,()=>{if(state==='play'&&cur===nx&&now()<nx.speakStart-.25){setBubble(manB,esc(pick(M_THOUGHTS)),'man thought');owner=null;}});
+  const cb=(bx,by)=>{if(good||Math.random()<.5)boomText(bx,by,good?'ドーン!!':'ドン!',good?'':'small');sfx.boom(good?.9:.7);woman.lookUntil=now()+1.2;};
+  if(r&&rockets.includes(r)){r.size=good?1.25:1.05;r.force=true;r.cb=cb;r.kind=pick(['peony','chrys','ring']);}
+  else{const p=r&&r.cx!=null?[r.cx,r.cy]:skyPoint();launch(p[0],p[1],{dur:.1,size:good?1.25:1.05,pal,cb,kind:pick(['peony','chrys','ring'])});}
+  if(good&&parts.length<5000)later(t+.15,()=>{const q=skyPoint();launch(q[0],q[1],{dur:rand(.3,.5),size:rand(.6,.9),pal:pick(PAL)});});
+  if(t>nextWomanT){nextWomanT=t+rand(1.8,2.6);later(t+.3,()=>{if(state==='play')womanSay(pick(W_LINES),1.2);});}
   updateHud();
 }
 
-function wrong(ci,t){
-  combo=0;judg.push({txt:'色ちがい',col:COLS[ci].c,t0:t});sfx.dud();
-  const r=cur.rocket,p=r&&r.cx!=null?[r.cx,r.cy]:skyPoint();
+function wrong(ci,t,nt){
+  combo=0;judg.push({txt:'色ちがい',col:COLS[ci].c,t0:t,y:nt.lane});sfx.dud();
+  const r=nt.rocket,p=r&&r.cx!=null?[r.cx,r.cy]:skyPoint();
   boomText(p[0],p[1],'ぷすっ','dud');
   for(let i=0;i<18;i++){const a=rand(0,6.283),sp=rand(20,70)*S;parts.push({x:p[0],y:p[1],vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,c:COLS[ci].c,life:.5,max:.5,w:1.4,g:60,drag:2,tr:.04});}
   updateHud();endGame('wrong',t);
 }
 function dud(ci,t){
-  combo=0;judg.push({txt:'早い！',col:'#8fa0d8',t0:t});sfx.dud();
+  combo=0;judg.push({txt:'早い！',col:'#8fa0d8',t0:t,y:0});sfx.dud();
   const p=skyPoint();
   for(let i=0;i<14;i++){const a=rand(0,6.283),sp=rand(20,70)*S;parts.push({x:p[0],y:p[1],vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,c:'#9a8fb8',life:.5,max:.5,w:1.4,g:60,drag:2,tr:.04});}
   boomText(p[0],p[1],'ぷすっ','dud');
@@ -625,12 +594,12 @@ function dud(ci,t){
 function endGame(reason,t){
   state='ending';final=t-startT;hint.hidden=true;cleared=false;
   man.win=true;man.flUntil=0;woman.lookUntil=0;
-  const toks=[];let speakStart=t;const c=cur;
-  const spoken=(c&&c.tokens)?c.tokens.filter(k=>k.t<=t):[];
+  const toks=[];let speakStart=t;
+  const spoken=[];
   if(spoken.length){for(const k of spoken)toks.push({t:k.t,s:k.s,dot:k.dot});
     const said=spoken.map(k=>k.s).join(''),rest=said.includes('俺と')?'付き合ってください！':'俺と付き合ってください！';
     [...rest].forEach((ch,i)=>toks.push({t:t+.05+i*.075,s:ch}));}
-  else{setBubble(manB,'（今だ…！）','man thought');owner=null;speakStart=t+.9;[...'俺と付き合ってください！'].forEach((ch,i)=>toks.push({t:t+.9+i*.075,s:ch}));}
+  else{setBubble(manB,'（今だ…！）','man thought');owner=null;speakStart=t+.6;[...'俺と付き合ってください！'].forEach((ch,i)=>toks.push({t:t+.6+i*.075,s:ch}));}
   cur={type:'end',tokens:toks,speakStart};
   const done=toks[toks.length-1].t;
   later(done+.6,()=>{woman.blush=1;womanSay('……はい。よろしくね',3.4);sfx.chime();heartsUntil=now()+2.6;});
@@ -651,11 +620,11 @@ function winGame(t){
   later(t+11.6,()=>showResult(true));
 }
 
-function rankOf(){return cleared?'告白クラッシャー（神）':n<2?'秒で落ちた':n<5?'見習い花火師':n<8?'一人前の花火師':n<11?'色読みの職人':n<14?'邪魔のプロ':'あと一歩の花火師';}
+function rankOf(){return cleared?'告白クラッシャー（神）':final<2?'秒で落ちた':final<5?'見習い花火師':final<8?'一人前の花火師':final<11?'色読みの職人':final<14?'邪魔のプロ':'あと一歩の花火師';}
 function showResult(win){
   state='result';
   $('rTitle').textContent=cleared?'ふられた。':'告白、成立。';
-  $('rEyebrow').textContent=cleared?'クリア！ '+GOAL+'回阻止':'失敗… あと'+(GOAL-n)+'回だった';
+  $('rEyebrow').textContent=cleared?'クリア！ 15秒耐えきった':'失敗… あと'+Math.max(0,DUR-final).toFixed(1)+'秒だった';
   $('rSec').textContent=final.toFixed(1);$('rRank').textContent=rankOf();
   $('rBlocks').textContent=n;$('rCombo').textContent=maxCombo;$('rGood').textContent=goods;
   const best=parseFloat(store.get('kk-best')||'0');
@@ -691,21 +660,24 @@ function drawLane(t){
   if(hg<.3){const a=1-hg/.3,g=ctx.createRadialGradient(judgeX,cy,4,judgeX,cy,42);g.addColorStop(0,`rgba(255,198,92,${.85*a})`);g.addColorStop(1,'rgba(255,198,92,0)');ctx.fillStyle=g;circ(ctx,judgeX,cy,42);ctx.fill();}
   ctx.lineWidth=2.5;ctx.strokeStyle='rgba(255,255,255,.78)';circ(ctx,judgeX,cy,24);ctx.stroke();
   ctx.lineWidth=1.5;ctx.strokeStyle='rgba(255,255,255,.28)';circ(ctx,judgeX,cy,16);ctx.stroke();
-  if(state==='play'&&cur&&cur.type==='real'&&!cur.resolved){
-    const prog=(cur.hitT-t)/cur.approach;
-    if(prog<=1){
-      const nx=judgeX+prog*(laneEnd-judgeX);
-      let a=1;if(cur.doron)a=prog>.5?1:prog>.4?(prog-.4)/.1:0;
-      const ci=noteColor(cur,prog);
-      if(cur.lastCi!==ci){cur.lastCi=ci;cur.swT=t;}
-      if(a>0)drawNote(nx,cy,a,ci);
-      if(t-cur.swT<.18&&cur.sw.length){ctx.strokeStyle='rgba(255,255,255,'+(1-(t-cur.swT)/.18)+')';ctx.lineWidth=3;circ(ctx,nx,cy,24+(t-cur.swT)*60);ctx.stroke();}
-      if(prog<=ZONE){ctx.strokeStyle='rgba(255,214,140,.9)';ctx.lineWidth=2;circ(ctx,nx,cy,27);ctx.stroke();}
+  if(state==='play'){
+    for(let i=notes.length-1;i>=0;i--){const nt=notes[i];
+      if(nt.resolved)continue;
+      const prog=(nt.hitT-t)/nt.approach;
+      if(prog>1||prog<-.3)continue;
+      const nx=judgeX+prog*(laneEnd-judgeX),sc=nt.lane?.72:1,ny=cy+nt.lane*14;
+      const ci=noteColor(nt,prog);
+      if(nt.lastCi!==ci){if(nt.lastCi!=null)nt.swT=t;nt.lastCi=ci;}
+      ctx.save();ctx.translate(nx,ny);ctx.scale(sc,sc);drawNote(0,0,1,ci);
+      if(nt.swT&&t-nt.swT<.18){ctx.strokeStyle='rgba(255,255,255,'+(1-(t-nt.swT)/.18)+')';ctx.lineWidth=3;circ(ctx,0,0,24+(t-nt.swT)*60);ctx.stroke();}
+      if(prog<=ZONE){ctx.strokeStyle='rgba(255,214,140,.9)';ctx.lineWidth=2;circ(ctx,0,0,27);ctx.stroke();}
+      ctx.restore();
+      if(nt.lane===1){const o=notes[i-1];if(o&&o.hitT===nt.hitT&&!o.resolved){ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(nx,cy-14+16);ctx.lineTo(nx,cy+14-16);ctx.stroke();}}
     }
   }
   judg=judg.filter(j=>t-j.t0<.7);
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='22px "Dela Gothic One", sans-serif';
-  for(const j of judg){const k=(t-j.t0)/.7,yy=y+h+16-8*k;ctx.globalAlpha=1-k;ctx.lineWidth=4;ctx.strokeStyle='#120a1e';ctx.strokeText(j.txt,judgeX,yy);ctx.fillStyle=j.col;ctx.fillText(j.txt,judgeX,yy);}
+  for(const j of judg){const k=(t-j.t0)/.7,yy=y+h+16-8*k+(j.y||0)*0;ctx.globalAlpha=1-k;ctx.lineWidth=4;ctx.strokeStyle='#120a1e';ctx.strokeText(j.txt,judgeX,yy);ctx.fillStyle=j.col;ctx.fillText(j.txt,judgeX,yy);}
   ctx.globalAlpha=1;
 }
 
@@ -714,9 +686,12 @@ let lastT=now();
 function update(t,dt){
   if(timers.length){const due=timers.filter(x=>x.t<=t);timers=timers.filter(x=>x.t>t);due.forEach(x=>x.fn());}
   if(state==='play'){
-    renderSpeech(t);
-    if(cur.type==='real'&&!cur.resolved&&t>cur.hitT+cur.ok)endGame('miss',t);
-    else if(cur.type==='feint'&&t>=cur.endT)cur=makeAttempt(t,.25);
+    const e=t-startT,lv=levelAt(e);
+    if(lv!==curLv){curLv=lv;renderLevel();toast(LV[lv].msg);}
+    const missed=notes.find(nt=>!nt.resolved&&t>nt.hitT+nt.ok);
+    if(missed){judg.push({txt:'見逃し',col:'#8fa0d8',t0:t,y:missed.lane});endGame('miss',t);}
+    else if(e>=DUR&&notes.every(nt=>nt.resolved)){updateHud();winGame(t);}
+    else if(t>nextTalkT&&t>man.flUntil){nextTalkT=t+rand(.5,.9);setBubble(manB,esc(pick(['俺と…','俺と……','あの、俺と…','俺と…！'])),'man');owner=null;man.talkUntil=t+.15;sfx.blip(false);}
   }else if(state==='ending')renderSpeech(t);
   if((state==='title'||state==='result')&&t>nextAttract){const k=Math.random()<.4?2:1;for(let i=0;i<k;i++){const p=skyPoint();launch(p[0],p[1],{sound:!!AC&&state==='result'&&i===0,size:rand(.8,1.2)});}nextAttract=t+rand(.35,.85);}
   if(state==='play'&&t>nextAmb){const p=skyPoint();launch(p[0],p[1],{size:rand(.4,.65),dur:rand(.8,1.2),pal:pick(AMB_PAL),kind:pick(['peony','willow','ring'])});nextAmb=t+rand(1.1,2);}
@@ -731,7 +706,8 @@ function update(t,dt){
   pose.surp+=((t<woman.lookUntil-.8?1:0)-pose.surp)*k;
   pose.blush+=(woman.blush-pose.blush)*k*.5;
   updateFx(t,dt);
-  const tv=(state==='play'?t-startT:state==='title'?0:final).toFixed(1);
+  renderLeft(t);
+  const tv=(state==='play'?Math.min(DUR,t-startT):state==='title'?0:final).toFixed(1);
   const te=$('time');if(te.textContent!==tv)te.textContent=tv;
 }
 function draw(t){
