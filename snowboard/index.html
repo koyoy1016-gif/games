@@ -44,7 +44,7 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
 #rumble{left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 168px);font-family:var(--font-display);font-size:22px;color:#ffd84a;text-shadow:0 3px 0 var(--ink),0 0 10px rgba(0,0,0,.8);white-space:nowrap;opacity:0}
 #rumble span{display:inline-block;animation:shake .09s infinite alternate}
 @keyframes shake{from{transform:translate(-1px,1px) rotate(-3deg)}to{transform:translate(1px,-1px) rotate(3deg)}}
-.diff{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.diff{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .dbtn{font-family:var(--font-display);font-size:14px;padding:9px 4px;border-radius:12px;border:2px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
 .dbtn[aria-checked="true"]{background:var(--flesh);color:#fff;box-shadow:0 3px 0 var(--ink)}
 #diffDesc{margin:0;font-size:13px;font-weight:700;line-height:1.55;background:#f7ece6;border-radius:12px;padding:8px 12px}
@@ -218,7 +218,6 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
         <button class="dbtn" role="radio" data-d="easy" aria-checked="false">かんたん</button>
         <button class="dbtn" role="radio" data-d="normal" aria-checked="true">ふつう</button>
         <button class="dbtn" role="radio" data-d="hard" aria-checked="false">むずかしい</button>
-        <button class="dbtn" role="radio" data-d="oni" aria-checked="false">鬼</button>
       </div>
       <p id="diffDesc"></p>
       <p id="bestLine"></p>
@@ -290,14 +289,13 @@ const DIFFS={
    desc:'口が閉じる：6秒ごとに0.35秒（少し暗い・予告あり）／ゴロゴロ食べ物：約4秒ごとに1個・小さめ・落下地点表示あり／金の輪：特大・6個でハート回復・8個でフィーバー（10秒）／ハート5'},
  normal:{label:'ふつう',period:3.0,openMin:3.4,openMax:5,closeDur:0.6,dark:0.9,overlay:0.3,warn:true,rollMin:1.8,rollMax:2.8,rollN:[1,2],rollExtra:15,sizeMin:0.85,sizeMax:1.25,spread:0.8,markers:true,chase:0.98,hp:5,mult:1,ringR:2.0,ringHeal:10,comboT:3.8,surge:[8,13],feverN:12,feverDur:8,
    desc:'口が閉じる：4秒ごとに0.6秒（かなり暗い・予告あり）／ゴロゴロ食べ物：2〜3秒ごとに1〜2個・落下地点表示あり／金の輪：10個でハート回復・12個でフィーバー（8秒）／ハート5'},
- hard:{label:'むずかしい',period:2.4,openMin:2.4,openMax:3.8,closeDur:0.9,dark:0.97,overlay:0.45,warn:false,rollMin:1.1,rollMax:1.9,rollN:[2,2],rollExtra:19,sizeMin:1,sizeMax:1.45,spread:1.0,markers:false,chase:1.0,hp:4,mult:1.3,ringR:1.65,ringHeal:15,comboT:3.2,surge:[9,14],feverN:15,feverDur:7,
-   desc:'口が閉じる：3秒ごとに0.9秒（ほぼ真っ暗・予告なし）／ゴロゴロ食べ物：1〜2秒ごとに2個・大きめ・表示なし（音の「ゴロゴロ」だけが頼り）／金の輪：小さめ・15個でハート回復・15個でフィーバー（7秒）／ハート4'},
- oni:{label:'鬼',period:1.9,openMin:1.6,openMax:2.8,closeDur:1.2,dark:1,overlay:0.62,warn:false,rollMin:0.7,rollMax:1.3,rollN:[2,3],rollExtra:23,sizeMin:1.05,sizeMax:1.8,spread:1.3,markers:false,chase:1.02,hp:3,mult:1.6,ringR:1.35,ringHeal:0,comboT:2.6,surge:[10,15],feverN:18,feverDur:6,
-   desc:'口が閉じる：2秒ごとに1.2秒（真っ暗）／ゴロゴロ食べ物：1秒ごとに2〜3個・ジャンプで越えられない巨大サイズも／金の輪：極小・回復なし・18個でフィーバー（6秒）／ハート3'}};
+ hard:{label:'むずかしい',period:2.4,openMin:2.4,openMax:3.8,closeDur:0.9,dark:0.97,overlay:0.45,warn:false,rollMin:1.1,rollMax:1.9,rollN:[2,2],rollExtra:19,sizeMin:1,sizeMax:1.45,spread:1.0,markers:false,chase:1.0,hp:4,mult:1.3,drop:{every:[0.6,1.0],n:[1,2]},ringR:1.65,ringHeal:15,comboT:3.2,surge:[9,14],feverN:15,feverDur:7,
+   desc:'口が閉じる：3秒ごとに0.9秒（ほぼ真っ暗・予告なし）／ゴロゴロ食べ物：1〜2秒ごとに2個・大きめ・表示なし（音の「ゴロゴロ」だけが頼り）／上から食べ物が次々に降ってくる（落ちてくる影に注意）／金の輪：小さめ・15個でハート回復・15個でフィーバー（7秒）／ハート4'}};
 let DIFF='normal';try{const v=localStorage.getItem('taisnow-diff');if(v&&DIFFS[v])DIFF=v;}catch(e){}
 let D=DIFFS[DIFF];
 // Launch: the giant's jaw opens and closes smoothly; faster on higher difficulty.
-function launchMouth(t){return clamp(0.5+0.95*Math.sin(t*TAU/D.period),0,1);}
+// Same rhythm as before, but the jaw snaps open a little faster and closes a little slower, so the open window lasts longer
+function launchMouth(t){const p=t/D.period;return clamp(0.5+0.95*Math.sin(TAU*p+0.42*Math.sin(TAU*p)),0,1);}
 
 /* ================= Sound (synthesized with WebAudio, no files) ================= */
 const SFX=(function(){
@@ -335,6 +333,8 @@ const SFX=(function(){
     boing(){tone(160,0.35,'sine',0.25,620);},
     splash(){noise(0.9,1600,0.5,0.55,'bandpass',300);tone(90,0.4,'sine',0.35,45);},
     flush(){noise(2.6,300,0.7,0.4,'bandpass',1400);noise(2.2,120,0.8,0.3,'lowpass',60,0.4);},
+    gurgle(){for(let i=0;i<9;i++){const f=90+Math.random()*160;tone(f,0.09,'sine',0.28,f*0.6,i*0.09+Math.random()*0.04);}noise(0.9,180,1,0.25,'lowpass',60);},
+    whoosh(){noise(1.6,250,0.8,0.35,'bandpass',1200);tone(80,1.2,'sine',0.2,40);},
     fanfare(){[0,4,7,12,16,19,24].forEach((n,i)=>tone(523*Math.pow(2,n/12),0.22,'triangle',0.16,null,i*0.08));},
     setRumble(v){bed(rumbleG,v*0.9);},setFlow(v){bed(flowG,v*0.25);},
     setUnder(v){if(lp&&ac)lp.frequency.setTargetAtTime(18000*Math.pow(700/18000,v),ac.currentTime,0.1);},
@@ -692,11 +692,11 @@ function updateLaunch(dt,t){
         if(dx*dx+dy*dy<sq(g.R*0.95)){g.taken=true;g.pop=0.01;launch.bonus+=g.pts;SFX.ring(g.pts>400?6:1);toast('金の輪！ +'+g.pts,1.2);
           for(let k=0;k<40;k++){const a=k/40*TAU;lsSpark.spawn(g.mesh.position,_lv.set(Math.cos(a)*g.R*3,Math.sin(a)*g.R*3,RR(-2,2)),k%2?0xffd84a:0xfff3b0,0.8,null,2);}}}}
     if(launch.state==='fly'&&prevZ>=MOUTH.z&&launch.pos.z<MOUTH.z){
-      const o=launchMouth(t),hh=MOUTH.hh+0.7;const ex=(launch.pos.x-MOUTH.x)/(MOUTH.a+0.6),ey=(launch.pos.y+0.8-MOUTH.y)/hh;
+      const o=launchMouth(t),hh=MOUTH.hh*1.4+1.8;const ex=(launch.pos.x-MOUTH.x)/(MOUTH.a*1.3+1.3),ey=(launch.pos.y+0.8-MOUTH.y)/hh;
       const inMouth=ex*ex+ey*ey<1;
-      if(inMouth&&o>0.3){launch.state='enter';launch.t=0;toast(launch.bonus?'ナイス！口の中へ！（ボーナス +'+launch.bonus+'）':'ナイス！口の中へ！');SFX.trick();}
+      if(inMouth&&o>0.18){launch.state='enter';launch.t=0;toast(launch.bonus?'ナイス！口の中へ！（ボーナス +'+launch.bonus+'）':'ナイス！口の中へ！');SFX.trick();}
       else{const onFace=(launch.pos.x*launch.pos.x)/(23*23)+((launch.pos.y-HEAD.pos.y)**2)/(30*30)<1;
-        if(onFace){SFX.hit();launch.state='bounce';launch.vel.set(launch.vel.x*0.3,7,14);toast(Math.abs(ex)<1.3&&Math.abs(launch.pos.y-MOUTH.y)<6?(o<=0.3?'ペッ！口が閉じてた':'おしい！くちびるに当たった'):'ゴツン！顔にぶつかった');}
+        if(onFace){SFX.hit();launch.state='bounce';launch.vel.set(launch.vel.x*0.3,7,14);toast(Math.abs(ex)<1.3&&Math.abs(launch.pos.y-MOUTH.y)<6?(o<=0.18?'ペッ！口が閉じてた':'おしい！くちびるに当たった'):'ゴツン！顔にぶつかった');}
         launch.msgT=1.6;}
     }
     if(launch.state==='fly'&&(launch.pos.y<0||launch.pos.z<MOUTH.z-30)){launch.state='bounce';launch.msgT=1.2;toast('はずれ！もう一回');}
@@ -924,6 +924,8 @@ const ROLL_BY_AREA={mouth:['apple','mikan','tomato','onigiri','meat'],pharynx:['
   stomach:['onigiri','meat','chyme'],duo:['chyme'],small:['chyme'],cecum:['chyme','stool'],colon:['stool'],rectum:['stool']};
 const ROLL_NAME={apple:'リンゴ',mikan:'みかん',tomato:'トマト',onigiri:'おにぎり',meat:'肉だんご',chyme:'ドロドロのかたまり',stool:'便のかたまり'};
 const rolls=[];const markers=[];
+// むずかしい: food raining down from the far side of the tube, with a shadow on the wall where it will land
+const drops=[];let dropTimer=2;const SHADOW_MAT=new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.4,depthWrite:false});
 for(let i=0;i<6;i++){const m=new THREE.Group();const r=new THREE.Mesh(GEO.torus,new THREE.MeshBasicMaterial({color:0xff3050,transparent:true,opacity:0.8,fog:false}));r.rotation.x=-Math.PI/2;r.scale.set(1.1,1.1,0.25);m.add(r);m.visible=false;RS.scene.add(m);markers.push(m);}
 const waves=[];// peristalsis rings
 const waveMat=new THREE.MeshStandardMaterial({color:0xf3a9b4,emissive:0x5a1020,roughness:0.3,transparent:true,opacity:0.85});
@@ -955,7 +957,7 @@ function resetRide(fromS){
   sizeRings();rsSpark.clear();rsSpray.clear();$('combo').classList.remove('show');updateRingHud();
   const ai=areaIndexAt(fromS);chase.done=false;chase.active=false;
   if(ai<=2){chase.active=true;chase.kind='food';chase.s=fromS-32;}
-  waterOn=false;finishing=0;rolls.forEach(p=>RS.scene.remove(p.mesh));rolls.length=0;rollTimer=1.5;chew.open=true;chew.t=D.openMax;dark=0;waves.forEach(w=>RS.scene.remove(w.mesh));waves.length=0;
+  waterOn=false;finishing=0;rolls.forEach(p=>RS.scene.remove(p.mesh));rolls.length=0;drops.forEach(d=>{RS.scene.remove(d.mesh);RS.scene.remove(d.shadow);});drops.length=0;dropTimer=2;P.dropWarned=false;rollTimer=1.5;chew.open=true;chew.t=D.openMax;dark=0;waves.forEach(w=>RS.scene.remove(w.mesh));waves.length=0;
   camInit=true;renderHearts();
 }
 function startRide(){mode='ride';$('fade').style.opacity=0;show('launchHud',false);show('hudL',true);show('hudR',true);show('ctrl',true);show('keys',true);
@@ -1218,7 +1220,7 @@ function updateRide(dt,t){
   // food rolling down from behind (ゴロゴロ)
   if(!finishing){rollTimer-=dt;if(rollTimer<=0&&P.s>25){rollTimer=RR(D.rollMin,D.rollMax);const cnt=D.rollN[0]+Math.floor(rnd()*(D.rollN[1]-D.rollN[0]+1));
     const kinds=ROLL_BY_AREA[A.key];
-    for(let k=0;k<cnt;k++){const kind=pick(kinds);let size=RR(D.sizeMin,D.sizeMax);if(DIFF==='oni'&&rnd()<0.25)size=Math.min(baseR(P.s)*0.5,2.3);
+    for(let k=0;k<cnt;k++){const kind=pick(kinds);let size=RR(D.sizeMin,D.sizeMax);
       const m=ROLL_KINDS[kind]();m.scale.setScalar(size);const holder=new THREE.Group();holder.add(m);RS.scene.add(holder);
       rolls.push({s:P.s-RR(30,40)-k*6,th:wrapA(P.th+RR(-D.spread,D.spread)),size,kind,mesh:holder,ball:m,roll:RR(0,TAU),wob:RR(0,TAU),drift:RR(-0.25,0.25)});}}}
   let nearest=99;
@@ -1230,6 +1232,20 @@ function updateRide(dt,t){
     if(p.s>P.s+80||p.s>LEN-20){RS.scene.remove(p.mesh);rolls.splice(i,1);continue;}
     const bounce=Math.abs(Math.sin(p.roll*1.3+p.wob))*0.25*p.size;
     placeOnWall(p.mesh,p.s,p.th,p.size*0.96+bounce);p.ball.rotation.set(p.roll,p.wob,0);}
+  if(D.drop&&!finishing&&P.s>40){dropTimer-=dt;if(dropTimer<=0){dropTimer=RR(D.drop.every[0],D.drop.every[1]);
+      if(!P.dropWarned){P.dropWarned=true;trickPop('上から食べ物が降ってくる！','壁の影をよけろ');}
+      const cnt=D.drop.n[0]+Math.floor(rnd()*(D.drop.n[1]-D.drop.n[0]+1)),kinds=ROLL_BY_AREA[A.key];
+      for(let k=0;k<cnt;k++){const kind=pick(kinds),size=RR(0.7,1.1),fallT=RR(1.05,1.35)*(P.inWater?1.6:1);const s=P.s+P.speed*fallT+RR(-3,10);if(s>LEN-30)continue;
+        const R=baseR(s),h0=Math.max(size*2,2*R-size*1.2-0.6);const m=ROLL_KINDS[kind]();m.scale.setScalar(size);const holder=new THREE.Group();holder.add(m);RS.scene.add(holder);
+        const sh=new THREE.Mesh(GEO.disc,SHADOW_MAT.clone());sh.rotation.x=-Math.PI/2;const shg=new THREE.Group();shg.add(sh);RS.scene.add(shg);
+        drops.push({s,th:wrapA(P.th+RR(-0.9,0.9)),size,kind,h:h0,h0,vh:0,g:2*(h0-size)/(fallT*fallT),mesh:holder,ball:m,shadow:shg,landed:false,life:0,spin:RR(-6,6)});}}}
+  for(let i=drops.length-1;i>=0;i--){const d=drops[i];d.life+=dt;
+    if(!d.landed){d.vh+=d.g*dt;d.h-=d.vh*dt;d.ball.rotation.x+=d.spin*dt;if(d.h<=d.size*0.95){d.h=d.size*0.95;d.landed=true;d.shadow.visible=false;if(Math.abs(d.s-P.s)<25){SFX.land();camShake=Math.max(camShake,0.12);}}}
+    if(!d.hit&&prevS<d.s&&P.s>=d.s){const lat=Math.abs(wrapA(d.th-P.th))*baseR(d.s);if(lat<d.size+0.7&&d.h-d.size<P.h+2.2&&d.h+d.size>P.h){d.hit=true;
+      if(P.feverT>0){smash(d.mesh.position);d.life=99;}else if(hurt(ROLL_NAME[d.kind]+'が降ってきた！'))P.speed*=0.55;}}
+    if(d.life>5||d.s<P.s-30){RS.scene.remove(d.mesh);RS.scene.remove(d.shadow);drops.splice(i,1);continue;}
+    placeOnWall(d.mesh,d.s,d.th,d.h);
+    if(!d.landed){placeOnWall(d.shadow,d.s,d.th,0.07);const q=clamp(1-(d.h-d.size)/(d.h0-d.size),0,1);d.shadow.children[0].scale.setScalar(d.size*(0.5+0.7*q));d.shadow.children[0].material.opacity=0.15+0.5*q;}}
   SFX.setRumble(nearest<34&&!finishing?clamp((34-nearest)/24,0,1):0);SFX.setFlow((waterOn||P.surgeT>0)&&!finishing?1:0);
   P.heartT-=dt;P.beat=(P.beat||0)*Math.exp(-7*dt);if(P.heartT<=0){P.heartT=P.hp<=1?0.55:0.95;SFX.heart(P.hp<=1);P.beat=1;}
   const rum=$('rumble');if(nearest<34){rum.style.opacity=clamp((34-nearest)/20,0.25,1);if(nearest<16&&!finishing){camShake=Math.max(camShake,0.12*(16-nearest)/16);}}else rum.style.opacity=0;
@@ -1304,105 +1320,183 @@ function updateRide(dt,t){
   if(finishing){finishing+=dt;$('fade').style.background='#fffbea';$('fade').style.opacity=clamp((finishing-0.6)/0.8,0,1);if(finishing>1.6){startExit();}}
 }
 
-/* ================= Finale: out of the body and into the toilet ================= */
-const ES={scene:new THREE.Scene(),cam:new THREE.PerspectiveCamera(48,1,0.1,300)};
-ES.scene.background=new THREE.Color(0xb9d0d8);ES.scene.fog=new THREE.Fog(0xb9d0d8,45,95);
-ES.scene.add(new THREE.HemisphereLight(0xffffff,0x6f808a,0.5));
-{const d=new THREE.DirectionalLight(0xfff3e4,0.62);d.position.set(10,20,12);ES.scene.add(d);const f=new THREE.DirectionalLight(0xd8ecff,0.22);f.position.set(-12,8,6);ES.scene.add(f);}
+/* ================= Finale: out of the body, into the toilet, and down the drain ================= */
+const ES={scene:new THREE.Scene(),cam:new THREE.PerspectiveCamera(48,1,0.05,300)};
+ES.scene.background=new THREE.Color(0xc6d3d8);ES.scene.fog=new THREE.Fog(0xc6d3d8,45,100);
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+// a soft "bathroom" environment map so porcelain, chrome and water get real reflections
+ES.scene.environment=(function(){const sc=new THREE.Scene();sc.background=new THREE.Color(0xd9e2e5);
+  const bm=c=>new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide});
+  const room=new THREE.Mesh(new THREE.BoxGeometry(40,24,40),new THREE.MeshBasicMaterial({color:0x7c8c92,side:THREE.BackSide}));room.position.y=6;sc.add(room);
+  const lamp=new THREE.Mesh(new THREE.PlaneGeometry(9,9),bm(0xffffff));lamp.position.set(0,17.8,2);lamp.rotation.x=Math.PI/2;sc.add(lamp);
+  const win=new THREE.Mesh(new THREE.PlaneGeometry(12,9),bm(0xf2f9ff));win.position.set(19.8,9,0);win.rotation.y=-Math.PI/2;sc.add(win);
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(40,40),bm(0x5f7781));fl.rotation.x=-Math.PI/2;fl.position.y=-5.8;sc.add(fl);
+  sc.background=new THREE.Color(0x8d9ca2);const pm=new THREE.PMREMGenerator(renderer);const t=pm.fromScene(sc,0.03).texture;pm.dispose();return t;})();
+const ESh=new THREE.HemisphereLight(0xffffff,0x5d6c74,0.3);ES.scene.add(ESh);
+const ESsun=new THREE.DirectionalLight(0xfff1dc,0.85);ESsun.position.set(4,22,9);ESsun.castShadow=true;ESsun.shadow.mapSize.set(1024,1024);
+{const c=ESsun.shadow.camera;c.left=-12;c.right=12;c.top=12;c.bottom=-12;c.near=1;c.far=50;}ESsun.shadow.bias=-0.0008;ESsun.shadow.radius=4;ES.scene.add(ESsun);
+{const w=new THREE.DirectionalLight(0xdcecff,0.3);w.position.set(16,9,4);ES.scene.add(w);}
+const pipeLight=new THREE.PointLight(0xfff3dd,0,9,1.6);ES.scene.add(pipeLight);
 const WY=1.25;
-const TL={};
+// inner bowl profile (radius, height) — also tells us how wide the water is at any level
+const BOWL_IN=[[0.9,-0.3],[1.2,0.2],[1.9,1.0],[2.6,1.9],[3.15,2.9],[3.5,3.7],[3.62,4.1]];
+function waterR(y){for(let i=1;i<BOWL_IN.length;i++){const a=BOWL_IN[i-1],b=BOWL_IN[i];if(y<=b[1]){const q=clamp((y-a[1])/(b[1]-a[1]),0,1);return lerp(a[0],b[0],q);}}return 3.62;}
+const TL={level:WY,V:0,swirl:0.3,rip:[]};
 (function(){const sc=ES.scene;
-  const tileTex=(rep,grout,a,b)=>{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');g.fillStyle=grout;g.fillRect(0,0,128,128);
-    for(let i=0;i<2;i++)for(let j=0;j<2;j++){g.fillStyle=(i+j)%2?b:a;g.fillRect(i*64+3,j*64+3,58,58);}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep[0],rep[1]);return t;};
-  const floor=new THREE.Mesh(new THREE.PlaneGeometry(70,70),new THREE.MeshStandardMaterial({map:tileTex([14,14],'#55707c','#8fb0bd','#c9dde3'),roughness:0.3}));floor.rotation.x=-Math.PI/2;floor.position.y=-4.3;sc.add(floor);
-  const wall=new THREE.Mesh(new THREE.PlaneGeometry(70,36),new THREE.MeshStandardMaterial({map:tileTex([14,7],'#8fb3bf','#d6eaee','#d6eaee'),roughness:0.5}));wall.position.set(0,13.7,-8.6);sc.add(wall);
-  const por=new THREE.MeshStandardMaterial({color:0xeef3f5,roughness:0.12,metalness:0.05,side:THREE.DoubleSide});
-  // porcelain bowl lathed from a profile: inner wall up to the rim, then the outside down to the pedestal
-  const prof=[[0.85,-0.25],[1.25,0.35],[1.95,1.2],[2.6,2.2],[3.1,3.1],[3.45,3.8],[3.62,4.15],[3.8,4.32],[4.0,4.18],[3.95,3.4],[3.35,1.8],[2.5,0.3],[1.9,-1.8],[2.15,-3.7],[2.7,-4.3]].map(p=>new THREE.Vector2(p[0],p[1]));
-  const bowl=new THREE.Mesh(new THREE.LatheGeometry(prof,72),por);bowl.scale.z=1.22;sc.add(bowl);
-  const drain=new THREE.Mesh(new THREE.CircleGeometry(0.85,32),new THREE.MeshBasicMaterial({color:0x26323a}));drain.rotation.x=-Math.PI/2;drain.position.y=-0.2;drain.scale.y=1.22;sc.add(drain);
-  const swirl=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');const gr=g.createRadialGradient(128,128,8,128,128,128);gr.addColorStop(0,'#4f9fc8');gr.addColorStop(0.55,'#86c8e6');gr.addColorStop(1,'#cdeefa');g.fillStyle=gr;g.fillRect(0,0,256,256);
-    g.strokeStyle='rgba(255,255,255,0.55)';g.lineCap='round';for(let a=0;a<6;a++){g.lineWidth=5;g.beginPath();for(let k=0;k<=40;k++){const q=k/40,ang=a/6*TAU+q*3.2,r=18+q*104;const x=128+Math.cos(ang)*r,y=128+Math.sin(ang)*r;k?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();}
-    return new THREE.CanvasTexture(c);})();
-  const water=new THREE.Mesh(new THREE.CircleGeometry(2.02,56),new THREE.MeshStandardMaterial({map:swirl,transparent:true,opacity:0.9,roughness:0.04,metalness:0.2}));
-  water.rotation.x=-Math.PI/2;water.scale.y=1.22;water.position.y=WY;sc.add(water);TL.water=water;
-  const seatG=new THREE.Group();seatG.position.y=4.55;seatG.scale.set(1,0.5,1.22);const seat=new THREE.Mesh(new THREE.TorusGeometry(3.5,0.32,16,72),new THREE.MeshStandardMaterial({color:0xf6f1ea,roughness:0.3}));seat.rotation.x=Math.PI/2;seatG.add(seat);sc.add(seatG);
-  const hinge=new THREE.Group();hinge.position.set(0,4.75,-4.3);hinge.rotation.x=1.22;sc.add(hinge);
-  const lid=new THREE.Mesh(new THREE.CylinderGeometry(3.5,3.5,0.28,56),new THREE.MeshStandardMaterial({color:0xf6f1ea,roughness:0.3}));lid.scale.z=1.22;lid.position.z=-4.27;hinge.add(lid);
-  const tank=new THREE.Mesh(new THREE.BoxGeometry(7.4,5.2,2.6),por);tank.position.set(0,7.2,-7.2);sc.add(tank);
-  const tankTop=new THREE.Mesh(new THREE.BoxGeometry(7.8,0.4,3),por);tankTop.position.set(0,9.95,-7.2);sc.add(tankTop);
-  const chrome=new THREE.MeshStandardMaterial({color:0xd5dde0,metalness:1,roughness:0.18});
-  const lever=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,1.2,10),chrome);lever.rotation.z=Math.PI/2;lever.position.set(-3.1,8.9,-5.8);sc.add(lever);TL.lever=lever;
-  const rollM=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1.7,28),new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.9}));rollM.rotation.z=Math.PI/2;rollM.position.set(8.4,3.4,-7.4);sc.add(rollM);
-  const sheet=new THREE.Mesh(new THREE.PlaneGeometry(1.7,2.4),new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.9,side:THREE.DoubleSide}));sheet.position.set(8.4,2.0,-6.42);sc.add(sheet);
-  // the shaft of light the rider drops out of
-  const beam=new THREE.Mesh(new THREE.CylinderGeometry(1.2,2.4,17,32,1,true),new THREE.MeshBasicMaterial({color:0xfff1c4,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
-  beam.position.y=13;sc.add(beam);TL.beam=beam;
-  TL.rider=makeRider();sc.add(TL.rider);TL.rider.visible=false;
-  TL.splash=makeParticles(sc,300,0.34,false);
-  TL.ripples=[];const rmat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.8});
-  for(let i=0;i<4;i++){const m=new THREE.Mesh(new THREE.TorusGeometry(1,0.045,6,56),rmat.clone());m.rotation.x=Math.PI/2;m.position.y=WY+0.03;m.visible=false;sc.add(m);TL.ripples.push({m,t:-1});}
+  const tex=(w,h,draw,rep)=>{const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep[0],rep[1]);t.anisotropy=4;return t;};
+  const r=mulberry(31);
+  // subway tiles on the wall, larger matte tiles on the floor
+  const wallT=tex(256,256,(g,w,h)=>{g.fillStyle='#9fb6bd';g.fillRect(0,0,w,h);for(let y=0;y<4;y++)for(let x=-1;x<3;x++){const ox=(y%2)*64;const v=226+r()*14|0;g.fillStyle='rgb('+(v-8)+','+v+','+(v+3)+')';g.fillRect(x*128+ox+3,y*64+3,122,58);
+    const gr=g.createLinearGradient(0,y*64,0,y*64+64);gr.addColorStop(0,'rgba(255,255,255,.35)');gr.addColorStop(1,'rgba(0,0,0,.06)');g.fillStyle=gr;g.fillRect(x*128+ox+3,y*64+3,122,58);}},[9,6]);
+  const floorT=tex(256,256,(g,w,h)=>{g.fillStyle='#4b5f67';g.fillRect(0,0,w,h);for(let y=0;y<2;y++)for(let x=0;x<2;x++){const v=120+r()*22|0;g.fillStyle='rgb('+v+','+(v+14)+','+(v+20)+')';g.fillRect(x*128+3,y*128+3,122,122);
+    for(let k=0;k<160;k++){g.fillStyle='rgba(255,255,255,'+(r()*0.06)+')';g.fillRect(x*128+3+r()*120,y*128+3+r()*120,2,2);}}},[10,10]);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({map:floorT,roughness:0.28,metalness:0.05}));floor.rotation.x=-Math.PI/2;floor.position.y=-4.3;floor.receiveShadow=true;sc.add(floor);
+  const wallM=new THREE.MeshStandardMaterial({map:wallT,roughness:0.22,metalness:0.02});
+  const wall=new THREE.Mesh(new THREE.PlaneGeometry(60,36),wallM);wall.position.set(0,13.7,-9.4);wall.receiveShadow=true;sc.add(wall);
+  const side=new THREE.Mesh(new THREE.PlaneGeometry(40,36),wallM);side.position.set(-11,13.7,6);side.rotation.y=Math.PI/2;side.receiveShadow=true;sc.add(side);
+  const base=new THREE.Mesh(new THREE.BoxGeometry(60,0.8,0.3),new THREE.MeshStandardMaterial({color:0x3d4e55,roughness:0.4}));base.position.set(0,-3.9,-9.25);sc.add(base);
+  const por=new THREE.MeshPhysicalMaterial({color:0xeef1f2,roughness:0.16,metalness:0,clearcoat:1,clearcoatRoughness:0.06,envMapIntensity:0.55,side:THREE.DoubleSide});
+  const plastic=new THREE.MeshPhysicalMaterial({color:0xf6f3ee,roughness:0.3,clearcoat:0.5,clearcoatRoughness:0.2});
+  const chrome=new THREE.MeshStandardMaterial({color:0xe9eef0,metalness:1,roughness:0.1});
+  const shadowy=m=>{m.castShadow=true;m.receiveShadow=true;return m;};
+  // bowl: inner wall, rolled rim, outer wall, pedestal
+  const prof=BOWL_IN.concat([[3.75,4.32],[3.95,4.37],[4.1,4.26],[4.13,4.0],[4.0,3.2],[3.62,2.0],[3.05,0.9],[2.62,0.0],[2.42,-1.2],[2.5,-2.8],[2.85,-3.9],[3.05,-4.3]]).map(p=>new THREE.Vector2(p[0],p[1]));
+  const bowl=shadowy(new THREE.Mesh(new THREE.LatheGeometry(prof,112),por));bowl.scale.z=1.25;sc.add(bowl);
+  const drain=new THREE.Mesh(new THREE.CircleGeometry(0.9,40),new THREE.MeshBasicMaterial({color:0x10171b}));drain.rotation.x=-Math.PI/2;drain.position.y=-0.28;drain.scale.y=1.25;sc.add(drain);
+  // rim jets: little dark slots under the rim where the flush water comes out
+  for(let i=0;i<28;i++){const a=i/28*TAU;const d=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.06,0.05),new THREE.MeshBasicMaterial({color:0x56626a}));d.position.set(Math.cos(a)*3.55,4.02,Math.sin(a)*3.55*1.25);d.lookAt(0,4.02,0);sc.add(d);}
+  // water: a disc with radial rings so it can ripple and pull into a flush vortex
+  const wg=new THREE.RingGeometry(0.02,1,96,30);wg.rotateX(-Math.PI/2);const wp=wg.attributes.position;TL.wbase=new Float32Array(wp.count*2);
+  for(let i=0;i<wp.count;i++){TL.wbase[i*2]=wp.getX(i);TL.wbase[i*2+1]=wp.getZ(i);}
+  TL.water=new THREE.Mesh(wg,new THREE.MeshPhysicalMaterial({color:0x3f9fc6,roughness:0.03,metalness:0,clearcoat:1,clearcoatRoughness:0.02,transparent:true,opacity:0.86,envMapIntensity:1.1}));
+  TL.water.receiveShadow=true;sc.add(TL.water);
+  // seat (closed rounded cross-section lathed around), hinges, raised lid
+  const seatP=[];for(let k=0;k<=32;k++){const a=k/32*TAU,c=Math.cos(a),s=Math.sin(a);seatP.push(new THREE.Vector2(3.55+0.52*Math.sign(c)*Math.pow(Math.abs(c),0.6),4.56+0.15*Math.sign(s)*Math.pow(Math.abs(s),0.6)));}
+  const seat=shadowy(new THREE.Mesh(new THREE.LatheGeometry(seatP,112),plastic));seat.scale.z=1.25;sc.add(seat);
+  for(const sx of[-1,1]){const h=shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,0.7,16),chrome));h.rotation.z=Math.PI/2;h.position.set(sx*1.3,4.7,-4.75);sc.add(h);}
+  const lidP=[new THREE.Vector2(0,0.16),new THREE.Vector2(3.55,0.16),new THREE.Vector2(3.72,0.1),new THREE.Vector2(3.78,0),new THREE.Vector2(3.72,-0.1),new THREE.Vector2(3.55,-0.16),new THREE.Vector2(0,-0.16)];
+  const hinge=new THREE.Group();hinge.position.set(0,4.75,-4.75);hinge.rotation.x=1.43;sc.add(hinge);
+  const lid=shadowy(new THREE.Mesh(new THREE.LatheGeometry(lidP,96),plastic));lid.scale.z=1.25;lid.position.z=-4.7;hinge.add(lid);
+  // tank with rounded edges and a dual flush button
+  const rr=(w,d,rad)=>{const s=new THREE.Shape(),x=-w/2,y=-d/2;s.moveTo(x+rad,y);s.lineTo(x+w-rad,y);s.quadraticCurveTo(x+w,y,x+w,y+rad);s.lineTo(x+w,y+d-rad);s.quadraticCurveTo(x+w,y+d,x+w-rad,y+d);s.lineTo(x+rad,y+d);s.quadraticCurveTo(x,y+d,x,y+d-rad);s.lineTo(x,y+rad);s.quadraticCurveTo(x,y,x+rad,y);return s;};
+  const tg=new THREE.ExtrudeGeometry(rr(7.4,2.6,0.5),{depth:5.2,bevelEnabled:true,bevelThickness:0.2,bevelSize:0.2,bevelSegments:4,curveSegments:10});tg.rotateX(-Math.PI/2);
+  const tank=shadowy(new THREE.Mesh(tg,por));tank.position.set(0,5.0,-7.7);sc.add(tank);
+  const tl=new THREE.ExtrudeGeometry(rr(7.9,3.0,0.6),{depth:0.35,bevelEnabled:true,bevelThickness:0.08,bevelSize:0.08,bevelSegments:3,curveSegments:10});tl.rotateX(-Math.PI/2);
+  const tlid=shadowy(new THREE.Mesh(tl,por));tlid.position.set(0,10.45,-7.7);sc.add(tlid);
+  TL.btn=[];for(const sx of[-0.45,0.45]){const b=shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,0.16,32),chrome));b.position.set(sx,10.95,-7.7);sc.add(b);TL.btn.push(b);}
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.95,0.06,8,40),chrome);ring.rotation.x=Math.PI/2;ring.position.set(0,10.9,-7.7);sc.add(ring);
+  // supply pipe and angle valve
+  const sup=new THREE.CatmullRomCurve3([new V(-2.9,-1.2,-9.4),new V(-2.9,-1.2,-8.7),new V(-2.9,-0.6,-8.3),new V(-2.9,4.2,-8.3),new V(-2.9,5.1,-8.3)]);
+  sc.add(shadowy(new THREE.Mesh(new THREE.TubeGeometry(sup,40,0.13,10,false),chrome)));
+  const valve=shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,0.5,16),chrome));valve.rotation.x=Math.PI/2;valve.position.set(-2.9,-1.2,-9.1);sc.add(valve);
+  // paper holder on the side wall
+  const bar=shadowy(new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,2.2,10),chrome));bar.rotation.z=Math.PI/2;bar.rotation.y=Math.PI/2;bar.position.set(-10.2,2.2,0.5);sc.add(bar);
+  const roll=shadowy(new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.05,1.8,32),new THREE.MeshStandardMaterial({color:0xfbfbf8,roughness:0.95})));roll.rotation.x=Math.PI/2;roll.position.set(-9.6,2.2,0.5);sc.add(roll);
+  const sheet=shadowy(new THREE.Mesh(new THREE.PlaneGeometry(1.8,2.6),new THREE.MeshStandardMaterial({color:0xfbfbf8,roughness:0.95,side:THREE.DoubleSide})));sheet.rotation.y=Math.PI/2;sheet.position.set(-8.56,0.9,0.5);sc.add(sheet);
+  // the drain pipe with its S-trap, running back under the floor (only seen from inside)
+  TL.pipeCurve=new THREE.CatmullRomCurve3([new V(0,1.2,0),new V(0,-0.4,0),new V(0,-2.0,0.05),new V(0,-3.0,-0.8),new V(0,-2.4,-1.8),new V(0,-3.0,-2.8),new V(0,-5.1,-3.7),new V(0,-6.0,-6),new V(0.6,-6.2,-11),new V(0,-6.4,-18)],false,'centripetal');
+  const pipeT=tex(64,256,(g,w,h)=>{g.fillStyle='#6f7670';g.fillRect(0,0,w,h);for(let k=0;k<400;k++){g.fillStyle='rgba('+(r()<0.5?'40,48,44':'150,150,135')+','+(r()*0.18)+')';g.fillRect(r()*w,r()*h,1+r()*3,2+r()*10);}g.fillStyle='rgba(20,24,22,.55)';g.fillRect(0,0,w,6);},[4,22]);
+  TL.pipe=new THREE.Mesh(new THREE.TubeGeometry(TL.pipeCurve,240,0.82,24,false),new THREE.MeshStandardMaterial({map:pipeT,color:0x9aa39c,roughness:0.3,metalness:0.2,envMapIntensity:0.12,side:THREE.BackSide}));TL.pipe.visible=false;sc.add(TL.pipe);
+  TL.rider=makeRider();TL.rider.traverse(m=>{if(m.isMesh)m.castShadow=true;});sc.add(TL.rider);TL.rider.visible=false;
+  TL.splash=makeParticles(sc,420,0.3,false);TL.pipeFx=makeParticles(sc,200,0.07,false);
+  // splash crown and the jet that shoots back up after it
+  TL.crown=new THREE.Mesh((()=>{const g=new THREE.CylinderGeometry(1.25,0.85,1,48,1,true);g.translate(0,0.5,0);return g;})(),new THREE.MeshPhysicalMaterial({color:0xeef9ff,roughness:0.05,clearcoat:1,transparent:true,opacity:0.75,side:THREE.DoubleSide,depthWrite:false}));TL.crown.visible=false;sc.add(TL.crown);
+  TL.jet=new THREE.Mesh((()=>{const g=new THREE.CylinderGeometry(0.1,0.24,1,14);g.translate(0,0.5,0);return g;})(),TL.crown.material);TL.jet.visible=false;sc.add(TL.jet);
+  TL.ripples=[];const rmat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.6,depthWrite:false});
+  for(let i=0;i<4;i++){const m=new THREE.Mesh(new THREE.TorusGeometry(1,0.035,6,64),rmat.clone());m.rotation.x=Math.PI/2;m.visible=false;sc.add(m);TL.ripples.push({m,t:-1,delay:0});}
 })();
-const EX={active:false,t:0,phase:0,q:0,pos:new V(),vel:new V(),ang:0,rad:0,shake:0,spin:0.4,skip:false};
+// water surface: ripples from the impact, idle wobble, and the flush vortex (depth V) twisting into spiral arms
+const _wn=new V();
+function updateWater(t){const R=waterR(TL.level),w=TL.water,pa=w.geometry.attributes.position,B=TL.wbase;w.position.y=TL.level;w.scale.set(R,1,R*1.25);
+  const V=TL.V,ix=TL.ix||0,iz=TL.iz||0,rt=TL.ripT;
+  for(let i=0;i<pa.count;i++){const x=B[i*2],z=B[i*2+1],rho=Math.min(1,Math.hypot(x,z)),th=Math.atan2(z,x);
+    let y=0.025*Math.sin(x*5+t*1.7)*Math.sin(z*4-t*1.3)*(1-rho*0.5);
+    if(V>0){const f=Math.pow(1-rho,2.2);y+=-V*f*R*0.9+V*0.07*Math.sin(5*th+13*rho-t*11)*(1-rho)*rho;}
+    if(rt>=0&&rt<3){const d=Math.hypot(x*R-ix,z*R*1.25-iz);if(d<rt*3.2+0.4)y+=0.35*Math.exp(-1.6*rt)*Math.sin(5*d-15*rt)*Math.exp(-0.5*d);}
+    pa.setY(i,y);}
+  pa.needsUpdate=true;w.geometry.computeVertexNormals();}
+function surfaceY(x,z){const R=waterR(TL.level),rho=Math.min(1,Math.hypot(x/R,z/(R*1.25)));return TL.level-(TL.V>0?TL.V*Math.pow(1-rho,2.2)*R*0.9:0);}
+const EX={active:false,t:0,phase:0,q:0,pos:new V(),vel:new V(),ang:0,rad:0,shake:0,skip:false,pu:0};
 let bigT=0;
 function bigText(t){const el=$('bigText');el.textContent=t;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');bigT=1.0;}
+function calmToilet(){TL.level=WY;TL.V=0;TL.ripT=-1;TL.swirl=0.3;TL.crown.visible=false;TL.jet.visible=false;TL.pipe.visible=false;pipeLight.intensity=0;TL.rider.visible=false;TL.splash.clear();
+  TL.ripples.forEach(x=>{x.t=-1;x.m.visible=false;});TL.btn.forEach(b=>b.position.y=10.95);TL.pipeFx.clear();ESsun.intensity=0.85;ESh.intensity=0.3;ES.cam.position.set(0,8.5,14.5);ES.cam.lookAt(0,3.2,0);updateWater(0);}
 function startExit(){mode='exit';EX.active=true;endFever(true);SFX.setUnder(0);$('uw').style.opacity=0;surgeMesh.visible=false;['hudL','hudR','ctrl','keys','chase'].forEach(i=>show(i,false));show('exitHud',true);$('combo').classList.remove('show');$('trickPop').classList.remove('show');
-  $('dark').style.opacity=0;$('rumble').style.opacity=0;SFX.setRumble(0);SFX.setFlow(0);
-  EX.t=0;EX.phase=0;EX.q=0;EX.skip=false;EX.shake=0;EX.spin=0.4;EX.pos.set(0.5,18,-0.5);EX.vel.set(-0.2,-3,0.2);
+  $('dark').style.opacity=0;$('rumble').style.opacity=0;SFX.setRumble(0);SFX.setFlow(0);calmToilet();
+  EX.t=0;EX.phase=0;EX.q=0;EX.skip=false;EX.gurgled=false;EX.shake=0;EX.pos.set(0.6,17,-0.4);EX.vel.set(-0.25,-2,0.15);
   const r=TL.rider;r.visible=true;r.position.copy(EX.pos);r.scale.setScalar(1);r.rotation.set(0,0.7,0);r.userData.pivot.rotation.set(0,0,0);
-  TL.water.position.y=WY;TL.splash.clear();TL.ripples.forEach(x=>{x.t=-1;x.m.visible=false;});TL.lever.rotation.x=0;
-  ES.cam.position.set(0,9,15);ES.cam.lookAt(0,9,0);
+  ES.cam.position.set(0,7.2,12.5);ES.cam.lookAt(0,9,0);
   $('fade').style.background='#fffbea';$('fade').style.opacity=1;$('toast').classList.remove('show');toastT=0;$('banner').classList.remove('show');SFX.launch();bigText('スポーン！');}
-function exitWater(dt){TL.water.rotation.z-=EX.spin*dt;
-  for(const x of TL.ripples){if(x.t<0)continue;x.t+=dt;const tt=x.t-(x.delay||0);if(tt<0){x.m.visible=false;continue;}const rr=0.2+tt*1.6;if(rr>1.95){x.m.visible=false;x.t=-1;continue;}x.m.visible=true;x.m.scale.set(rr,rr*1.22,rr);x.m.material.opacity=0.8*(1-rr/1.95);}
-  TL.splash.update(dt);}
-const _ev=new V(),_ep=new V();
-function updateExit(dt){EX.t+=dt;const r=TL.rider;
-  if(EX.t>0.05&&$('fade').style.opacity!=='0')$('fade').style.opacity=0;
-  if(EX.t>0.9)$('fade').style.background='#000';
+function exitFx(dt){for(const x of TL.ripples){if(x.t<0)continue;x.t+=dt;const tt=x.t-x.delay;if(tt<0){x.m.visible=false;continue;}const rr=0.25+tt*1.7,R=waterR(TL.level)*0.98;
+    if(rr>R){x.m.visible=false;x.t=-1;continue;}x.m.visible=true;x.m.position.set(TL.ix,TL.level+0.03,TL.iz);x.m.scale.set(rr,rr,rr);x.m.material.opacity=0.6*(1-rr/R);}
+  TL.splash.update(dt);TL.pipeFx.update(dt);if(TL.ripT>=0)TL.ripT+=dt;}
+const _ev=new V(),_ep=new V(),_eg=new V(0,-24,0);
+function updateExit(dt){EX.t+=dt;const r=TL.rider,T2=EX.t;
+  if(EX.t>0.05&&EX.phase<3&&$('fade').style.opacity!=='0')$('fade').style.opacity=0;
   if(bigT>0){bigT-=dt;if(bigT<=0)$('bigText').classList.remove('show');}
-  if(EX.skip){r.visible=false;$('bigText').classList.remove('show');finish();return;}
-  TL.beam.material.opacity=EX.phase===0?0.16*smooth(EX.t/0.25):Math.max(0,TL.beam.material.opacity-dt*0.6);
-  if(EX.phase===0){// slow-motion fall out of the light with a front flip
-    const d=dt*(EX.t<0.8?0.42:1);EX.vel.y-=26*d;EX.pos.addScaledVector(EX.vel,d);r.position.copy(EX.pos);r.userData.pivot.rotation.x-=d*7.2;r.rotation.y+=d*1.2;
-    ES.cam.position.lerp(_ev.set(0,8.6,13.2),1-Math.exp(-2*dt));ES.cam.lookAt(0,Math.max(WY+2,EX.pos.y*0.55+1.5),0);
-    if(EX.pos.y<=WY+0.25){EX.phase=1;EX.q=0;SFX.splash();bigText('ドボン！');EX.shake=0.5;if(navigator.vibrate)try{navigator.vibrate(80);}catch(e){}
-      for(let k=0;k<220;k++){const a=RR(0,TAU),sp=RR(1,5.5);_ep.set(EX.pos.x+Math.cos(a)*0.4,WY+0.1,EX.pos.z+Math.sin(a)*0.4);_ev.set(Math.cos(a)*sp,RR(5,14),Math.sin(a)*sp*1.22);
-        TL.splash.spawn(_ep,_ev,pick([0xffffff,0xd8f2ff,0xa6dcf2]),RR(0.8,1.5),_t2.set(0,-26,0),0.3);}
-      TL.ripples.forEach((x,i)=>{x.t=0;x.delay=i*0.28;});}
-  }else if(EX.phase===1){// bobbing in the water
-    EX.q+=dt;r.position.y=WY-0.75+Math.sin(EX.q*6)*0.18*Math.exp(-EX.q*2);r.userData.pivot.rotation.x=lerp(r.userData.pivot.rotation.x,-TAU*Math.round(r.userData.pivot.rotation.x/-TAU)-0.25,1-Math.exp(-6*dt));
-    ES.cam.position.lerp(_ev.set(0,11.5,9.8),1-Math.exp(-1.8*dt));ES.cam.lookAt(0,WY+0.3,0);
-    if(EX.q>1.05){EX.phase=2;EX.q=0;SFX.flush();bigText('ジャーーッ！');TL.lever.rotation.x=-0.6;EX.ang=Math.atan2(r.position.z/1.22,r.position.x);EX.rad=Math.min(1.5,Math.hypot(r.position.x,r.position.z/1.22)+0.7);}
-  }else{// flush: swirl down the drain
-    EX.q+=dt;const q=EX.q;EX.spin=lerp(EX.spin,9,1-Math.exp(-2*dt));EX.rad=Math.max(0,EX.rad-dt*0.75);EX.ang+=dt*(2.5+q*4);
-    r.position.set(Math.cos(EX.ang)*EX.rad,WY-0.75-q*q*0.5,Math.sin(EX.ang)*EX.rad*1.22);r.rotation.y+=dt*(6+q*6);r.scale.setScalar(Math.max(0.05,1-q*0.42));
-    TL.water.position.y=WY-0.55*smooth(q/1.4);TL.lever.rotation.x=lerp(TL.lever.rotation.x,0,1-Math.exp(-3*dt));
-    if(Math.random()<0.6){const a=RR(0,TAU),rr=RR(0.4,1.9);_ep.set(Math.cos(a)*rr,TL.water.position.y+0.05,Math.sin(a)*rr*1.22);_ev.set(-Math.sin(a)*3,RR(0.5,1.5),Math.cos(a)*3*1.22);TL.splash.spawn(_ep,_ev,0xffffff,0.5,_t2.set(0,-6,0),1);}
-    ES.cam.position.lerp(_ev.set(0,11.5,9.5),1-Math.exp(-1.2*dt));ES.cam.lookAt(0,WY,0);
-    if(q>2.3){r.visible=false;finish();return;}}
-  exitWater(dt);
+  if(EX.skip){$('bigText').classList.remove('show');calmToilet();$('fade').style.opacity=0;finish();return;}
+  if(EX.phase===0){// slow-motion drop with a front flip
+    const d=dt*(EX.t<0.7?0.42:1);EX.vel.y-=26*d;EX.pos.addScaledVector(EX.vel,d);r.position.copy(EX.pos);r.userData.pivot.rotation.x-=d*7.2;r.rotation.y+=d*1.2;
+    ES.cam.position.lerp(_ev.set(0,12.5,11),1-Math.exp(-2*dt));ES.cam.lookAt(0,Math.max(WY+0.5,EX.pos.y*0.75),0);
+    if(EX.pos.y<=WY+0.2){EX.phase=1;EX.q=0;TL.ix=EX.pos.x;TL.iz=EX.pos.z;TL.ripT=0;SFX.splash();bigText('ドボン！');EX.shake=0.55;if(navigator.vibrate)try{navigator.vibrate(80);}catch(e){}
+      for(let k=0;k<260;k++){const a=RR(0,TAU),sp=RR(1.2,6),up=RR(4,14)*(k<80?1.3:1);_ep.set(TL.ix+Math.cos(a)*RR(0.3,0.9),WY+0.15,TL.iz+Math.sin(a)*RR(0.3,0.9));_ev.set(Math.cos(a)*sp,up,Math.sin(a)*sp*1.2);
+        TL.splash.spawn(_ep,_ev,pick([0xffffff,0xe4f6ff,0xb8e2f2]),RR(0.7,1.5),_eg,0.25);}
+      TL.crown.visible=true;TL.crown.position.set(TL.ix,WY-0.05,TL.iz);TL.ripples.forEach((x,i)=>{x.t=0;x.delay=i*0.26;});}
+  }else if(EX.phase===1){// splash crown, rebound jet, bobbing in the water
+    EX.q+=dt;const q=EX.q;
+    if(q<0.5){const c=q/0.5;TL.crown.scale.set(0.5+1.1*c,1.6*Math.sin(Math.PI*c)+0.01,0.5+1.1*c);TL.crown.material.opacity=0.75*(1-c*0.7);}else TL.crown.visible=false;
+    if(q>0.22&&q<0.9){const c=(q-0.22)/0.68;TL.jet.visible=true;TL.jet.position.set(TL.ix+0.15,TL.level-0.05,TL.iz);TL.jet.scale.set(1,3.4*Math.sin(Math.PI*c),1);
+      if(Math.random()<0.5){_ep.set(TL.ix+0.15,TL.level+3.4*Math.sin(Math.PI*c),TL.iz);_ev.set(RR(-0.6,0.6),RR(1,3),RR(-0.6,0.6));TL.splash.spawn(_ep,_ev,0xffffff,0.6,_eg,0.2);}}else TL.jet.visible=false;
+    r.position.set(EX.pos.x,surfaceY(EX.pos.x,EX.pos.z)-0.7+Math.sin(q*6)*0.2*Math.exp(-q*2.2),EX.pos.z);
+    r.userData.pivot.rotation.x=lerp(r.userData.pivot.rotation.x,-TAU*Math.round(r.userData.pivot.rotation.x/-TAU)-0.25,1-Math.exp(-6*dt));
+    ES.cam.position.lerp(_ev.set(0,13,8.2),1-Math.exp(-1.8*dt));ES.cam.lookAt(0,WY+0.2,0.3);
+    if(q>1.15){EX.phase=2;EX.q=0;SFX.flush();bigText('ジャーーッ！');EX.ang=Math.atan2(r.position.z/1.25,r.position.x);EX.rad=Math.min(1.6,Math.hypot(r.position.x,r.position.z/1.25)+0.8);}
+  }else if(EX.phase===2){// flush: rim jets pour in, water rises, a vortex forms, then it drains with a gurgle
+    EX.q+=dt;const q=EX.q;
+    TL.btn[1].position.y=10.95-0.12*(q<0.5?smooth(q/0.12):1-smooth((q-0.5)/0.2));
+    if(q>0.12&&q<1.7){for(let k=0;k<9;k++){const a=RR(0,TAU);_ep.set(Math.cos(a)*3.45,3.95,Math.sin(a)*3.45*1.25);_ev.set(-Math.sin(a)*2.5-Math.cos(a)*1.2,-1.5,(Math.cos(a)*2.5-Math.sin(a)*1.2)*1.25);TL.splash.spawn(_ep,_ev,pick([0xeaf7ff,0xcfeefa]),0.55,_eg,0.4);}}
+    TL.level=WY+0.32*smooth(q/0.9)-1.25*smooth((q-1.85)/0.8);
+    TL.V=2.1*smooth((q-0.45)/1.3);
+    if(q>1.9&&!EX.gurgled){EX.gurgled=true;SFX.gurgle();bigText('ゴボゴボ…');}
+    EX.rad=Math.max(0,EX.rad-dt*(0.35+q*0.35));EX.ang+=dt*(2+q*4.5);
+    const x=Math.cos(EX.ang)*EX.rad,z=Math.sin(EX.ang)*EX.rad*1.25;r.position.set(x,surfaceY(x,z)-0.6-(EX.rad<0.25?(0.25-EX.rad)*8:0),z);
+    r.rotation.y+=dt*(5+q*6);r.userData.pivot.rotation.z=Math.min(0.9,q*0.4);r.scale.setScalar(Math.max(0.3,1-q*0.28));
+    if(q<1.6){ES.cam.position.lerp(_ev.set(0,12.5,5.2),1-Math.exp(-1.5*dt));ES.cam.lookAt(0,TL.level-0.3,0.2);}
+    else{const c=smooth((q-1.6)/1.1);ES.cam.position.lerp(_ev.set(0.02,lerp(11,2.4,c),lerp(4.5,0.3,c)),1-Math.exp(-3*dt));ES.cam.lookAt(0,lerp(TL.level,-1.5,c),0);}
+    if(q>2.75){EX.phase=3;EX.q=0;EX.pu=0;TL.pipe.visible=true;TL.splash.clear();pipeLight.intensity=1.1;ESsun.intensity=0;ESh.intensity=0.05;r.scale.setScalar(0.2);r.userData.pivot.rotation.set(0,0,0);SFX.whoosh();}
+  }else{// down the drain: ride the S-trap into the sewer
+    EX.q+=dt;const q=EX.q;EX.pu=Math.min(0.97,0.03+0.94*Math.pow(q/2.3,1.5));
+    const c=TL.pipeCurve,pr=c.getPointAt(EX.pu),tg=c.getTangentAt(EX.pu);
+    r.position.copy(pr).add(_ev.set(0,-0.55,0));r.rotation.y=Math.atan2(tg.x,tg.z)+Math.PI/2;r.rotation.z=Math.sin(q*9)*0.3;
+    const cp=c.getPointAt(Math.max(0,EX.pu-0.075));ES.cam.position.copy(cp).add(_ev.set(0,0.18,0));ES.cam.lookAt(pr.x,pr.y-0.25,pr.z);pipeLight.position.copy(ES.cam.position);
+    for(let k=0;k<3;k++){_ep.copy(pr).addScaledVector(tg,RR(-0.5,2.5)).add(_ev.set(RR(-0.5,0.5),RR(-0.72,-0.45),RR(-0.5,0.5)));TL.pipeFx.spawn(_ep,tg.clone().multiplyScalar(RR(5,10)),pick([0xd8eef5,0xb9d9e2]),0.4,null,0.5);}
+    if(q>1.7){$('fade').style.background='#06131a';$('fade').style.opacity=1;}
+    if(q>2.35){r.visible=false;calmToilet();setTimeout(()=>{$('fade').style.opacity=0;},60);finish();return;}}
+  updateWater(T2);exitFx(dt);
+  TL.swirl=lerp(TL.swirl,EX.phase===2?6:0.3,1-Math.exp(-1.5*dt));TL.water.rotation.y-=TL.swirl*dt*0.15;
   if(EX.shake>0){EX.shake=Math.max(0,EX.shake-dt*1.2);ES.cam.position.x+=(Math.random()-0.5)*EX.shake;ES.cam.position.y+=(Math.random()-0.5)*EX.shake;}}
-function idleExit(dt){EX.spin=lerp(EX.spin,0.3,1-Math.exp(-1.5*dt));TL.water.position.y=lerp(TL.water.position.y,WY,1-Math.exp(-2*dt));exitWater(dt);if(bigT>0){bigT-=dt;if(bigT<=0)$('bigText').classList.remove('show');}}
+function idleExit(dt){EX.t+=dt;updateWater(EX.t);exitFx(dt);if(bigT>0){bigT-=dt;if(bigT<=0)$('bigText').classList.remove('show');}}
 
 /* ================= Main loop ================= */
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);for(const c of[LS.cam,RS.cam,ES.cam]){c.aspect=w/h;c.updateProjectionMatrix();}ES.cam.fov=w/h<0.8?62:48;ES.cam.updateProjectionMatrix();}
 addEventListener('resize',resize);resize();
 let last=performance.now(),T=0;
 resetLaunch();
+// filmic tone mapping just for the bathroom, so glossy porcelain and water don't blow out to white
+function renderES(){renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.render(ES.scene,ES.cam);renderer.toneMapping=THREE.NoToneMapping;}
 function frame(now){requestAnimationFrame(frame);let dt=Math.min(0.05,(now-last)/1000);last=now;
   const rawDt=dt;if(paused||mode==='over'||mode==='result')dt=0;T+=dt;
   if(toastT>0){toastT-=dt||0.016;if(toastT<=0)$('toast').classList.remove('show');}
   if(bannerT>0){bannerT-=dt||0.016;if(bannerT<=0)$('banner').classList.remove('show');}
   if(flashT>0){flashT-=dt;if(flashT<=0)$('flash').style.opacity=0;}
   if(mode==='ride'&&!paused){updateRide(dt,T);renderer.render(RS.scene,RS.cam);}
-  else if(mode==='exit'){updateExit(dt);renderer.render(ES.scene,ES.cam);}
-  else if(mode==='result'&&resultScene==='exit'){idleExit(rawDt);renderer.render(ES.scene,ES.cam);}
+  else if(mode==='exit'){updateExit(dt);renderES();}
+  else if(mode==='result'&&resultScene==='exit'){idleExit(rawDt);renderES();}
   else if(mode==='over'||mode==='result'||paused){renderer.render(RS.scene,RS.cam);}
   else{if(mode==='launch')updateLaunch(dt,T);else{updateFace(T);LS.cam.position.set(Math.sin(T*0.2)*12,13,24+camBack());LS.cam.lookAt(0,26,-60);}renderer.render(LS.scene,LS.cam);}
 }
 requestAnimationFrame(frame);
-window.__game={get chew2(){return chew;},surge,step(n,dt){for(let i=0;i<n;i++){T+=dt;if(mode==='ride')updateRide(dt,T);else if(mode==='exit')updateExit(dt);}},hold(v){paused=v;},get mode2(){return mode;},keys,obs,LRINGS,get TOTAL_RINGS(){return TOTAL_RINGS;},startExit,EX,launch,MOUTH,P,get chew(){return chew;},AREAS,LEN,startRide,toLaunch,get mode(){return mode;},setS:s=>{P.s=s;}};
+window.__game={drops,get chew2(){return chew;},surge,step(n,dt){for(let i=0;i<n;i++){T+=dt;if(mode==='ride')updateRide(dt,T);else if(mode==='exit')updateExit(dt);}},hold(v){paused=v;},get mode2(){return mode;},keys,obs,LRINGS,get TOTAL_RINGS(){return TOTAL_RINGS;},startExit,EX,launch,MOUTH,P,get chew(){return chew;},AREAS,LEN,startRide,toLaunch,get mode(){return mode;},setS:s=>{P.s=s;}};
 })();
 </script>
 
