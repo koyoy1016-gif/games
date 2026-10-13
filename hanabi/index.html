@@ -75,7 +75,7 @@ h1 span{display:block;font-size:.55em;margin-bottom:4px}
 h2{font-size:34px}
 .demo{position:relative;height:44px;border-radius:22px;background:rgba(9,8,28,.95);border:1.5px solid rgba(255,198,92,.5);overflow:hidden}
 .demo .judge{position:absolute;left:12px;top:50%;width:32px;height:32px;margin-top:-16px;border-radius:50%;border:2.5px solid rgba(255,255,255,.75);animation:jflash 2.2s infinite}
-.demo .note{position:absolute;top:50%;width:30px;height:30px;margin-top:-15px;border-radius:50%;background:#f6f0e4;border:3px solid #fff4ea;box-shadow:0 0 0 2px #1b0c10;color:#2a1c33;font-family:var(--f-display);font-size:14px;display:grid;place-items:center;animation:slide 2.2s linear infinite}
+.demo .note{position:absolute;top:50%;width:30px;height:30px;margin-top:-15px;border-radius:50%;background:#3d9bff;border:3px solid #fff4ea;box-shadow:0 0 0 2px #1b0c10;color:#fff;font-family:var(--f-display);font-size:14px;display:grid;place-items:center;animation:slide 2.2s linear infinite}
 .demo .tap{position:absolute;left:54px;top:50%;transform:translateY(-50%);font-family:var(--f-display);color:var(--gold);font-size:14px;opacity:0;animation:tapw 2.2s infinite}
 @keyframes slide{0%{left:calc(100% - 38px);opacity:1}60%{left:13px;opacity:1}62%,100%{left:13px;opacity:0}}
 @keyframes jflash{0%,58%{box-shadow:none}61%{box-shadow:0 0 0 5px rgba(255,198,92,.6),0 0 22px rgba(255,198,92,.9)}85%,100%{box-shadow:none}}
@@ -85,7 +85,7 @@ h2{font-size:34px}
 .rules li::before{content:"";position:absolute;left:2px;top:.65em;width:6px;height:6px;border-radius:50%;background:var(--gold)}
 .rules b{font-weight:900;color:#fff}
 .cr{color:#ff6b6b}.cb{color:#62b0ff}.cy{color:#ffd84a}.cg{color:#4fe08a}
-.mini{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#f6f0e4;color:#2a1c33;border:2px solid #fff4ea;font-family:var(--f-display);font-size:11px;vertical-align:-4px;margin:0 2px}
+.mini{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#ff4646;color:#fff;border:2px solid #fff4ea;font-family:var(--f-display);font-size:11px;vertical-align:-4px;margin:0 2px}
 .btn{pointer-events:auto;font-family:var(--f-display);font-size:20px;letter-spacing:.08em;color:#fff;background:var(--don);border:none;border-radius:999px;padding:14px 20px;cursor:pointer;box-shadow:0 4px 0 #a02a20,0 10px 24px rgba(255,75,62,.35)}
 .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #a02a20}
 .btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
@@ -123,7 +123,7 @@ h2{font-size:34px}
   <div id="manB" class="bubble man" hidden><span class="txt"></span></div>
   <div id="womanB" class="bubble woman" hidden><span class="txt"></span></div>
   <div id="toast"></div>
-  <div id="hint" hidden>「つ」が丸に重なったら、輪つき花火と同じ色を押す</div>
+  <div id="hint" hidden>「つ」が丸に重なったら、同じ色のボタンを押す</div>
   <div id="fx"></div>
   <div id="pad" role="group" aria-label="花火の色">
     <button type="button" class="c0" data-c="0">赤<small>D</small></button>
@@ -138,9 +138,9 @@ h2{font-size:34px}
     <div class="demo" aria-hidden="true"><span class="judge"></span><span class="note">つ</span><span class="tap">ドーン!</span></div>
     <ul class="rules">
       <li>彼が「俺と……」と言いかけたら要注意。</li>
-      <li>奥で<b>光の輪がついた花火</b>が上がります。軌跡の色を見て、<span class="mini">つ</span>が左の丸に重なった瞬間に<b>同じ色のボタン</b>（<span class="cr">赤</span>・<span class="cb">青</span>・<span class="cy">黄</span>・<span class="cg">緑</span>）を押すと、花火の音で告白をかき消せます。</li>
+      <li>上のレーンを流れてくる<span class="mini">つ</span>は<b>4色</b>（<span class="cr">赤</span>・<span class="cb">青</span>・<span class="cy">黄</span>・<span class="cg">緑</span>）。左の丸に重なった瞬間に<b>同じ色のボタン</b>を押すと、その色の花火で告白をかき消せます。</li>
       <li><b>1回でもミス</b>（見逃し・色ちがい・早押し）したら告白成功。<b>30回</b>かき消し続けたら……。</li>
-      <li>全6段。色が途中からしか見えない、ニセ花火、チラつく色、一瞬だけの色。だんだん手強くなります。</li>
+      <li>全6段。「つ」の色が途中からしか見えない、チラつく、一瞬だけ。だんだん手強くなります。</li>
     </ul>
     <button class="btn" id="startBtn" type="button">はじめる</button>
     <p class="fine" id="bestLine">キーボードは D / F / J / K（赤・青・黄・緑）</p>
@@ -475,13 +475,13 @@ function boomText(x,y,txt,cls){const d=document.createElement('div');d.className
 function toast(msg){const el=$('toast');el.textContent=msg;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}
 
 /* ---------- game ---------- */
-const LV=[{name:'一段 かんたん',col:'#5fd4c0',msg:''},{name:'二段 ふつう',col:'#a6e35d',msg:'二段：間と速さがバラバラに'},{name:'三段 むずかしい',col:'#ffb547',msg:'三段：色は途中から・フェイントあり'},{name:'四段 鬼',col:'#ff5a7a',msg:'四段：ニセ花火がまざる'},{name:'五段 地獄',col:'#c47bff',msg:'五段：色がチラつく・消える「つ」'},{name:'六段 神',col:'#ffe066',msg:'六段：色は一瞬だけ'}];
+const LV=[{name:'一段 かんたん',col:'#5fd4c0',msg:''},{name:'二段 ふつう',col:'#a6e35d',msg:'二段：間と速さがバラバラに'},{name:'三段 むずかしい',col:'#ffb547',msg:'三段：「つ」の色は途中から・フェイントあり'},{name:'四段 鬼',col:'#ff5a7a',msg:'四段：色は半分すぎてから・さらに速く'},{name:'五段 地獄',col:'#c47bff',msg:'五段：色がチラつく・消える「つ」'},{name:'六段 神',col:'#ffe066',msg:'六段：色は一瞬だけ'}];
 const GOAL=30;
 const levelOf=n=>n<5?0:n<10?1:n<15?2:n<20?3:n<25?4:5;
 const W_LINES=['わぁ…！','きれい…！','え、なに？','見て、花火！','ん？今なんか言った？','すごーい！','また上がった！','音おっきいね！'];
 const M_THOUGHTS=['（くっ…）','（なんで今…）','（タイミング…）','（もう一回…）','（花火め…）','（落ち着け俺…）'];
 function diff(n){const lv=levelOf(n);return{approach:n<4?1.8:Math.max(.72,1.8-(n-3)*.04),ok:Math.max(.075,.16-n*.0028),pmin:Math.max(.15,.75-n*.022),pmax:Math.min(3,1.7+n*.04),gap:Math.max(.45,1.8-n*.045),
-  rise:[1.9,1.65,1.45,1.3,1.15,1][lv],rev0:[0,.12,.45,.5,.55,.62][lv],rev1:[1,1,1,1,1,.8][lv],flick:lv>=4,decoys:[0,0,0,1,2,3][lv]};}
+  rise:[1.9,1.65,1.45,1.3,1.15,1][lv],rev0:0,rev1:1,flick:false,decoys:0,nr0:[1,1,.66,.5,.62,.78][lv],nr1:[-1,-1,-1,-1,-1,.5][lv],nflick:lv>=4};}
 function launchFor(a,isMain,ci,burstAt,x,flick){
   const d=diff(n),t=now(),dur=Math.max(.35,burstAt-t);
   const by=rand(skyTop()+20,Math.max(skyTop()+40,hy-90));
@@ -523,11 +523,10 @@ function makeAttempt(t,gap){
   }else{
     const ap=d.approach*(lv>=1?rand(.78,1.28):1);
     const start=Math.max(t+gap,t+.25+ap-hitR);
-    a={type:'real',tokens:toks.map(k=>({t:start+k.r,s:k.s,dot:k.dot})),speakStart:start,hitT:start+hitR,approach:ap,ok:d.ok,good:d.ok*.45,doron:lv>=4&&Math.random()<(lv>=5?.5:.3),color:Math.floor(Math.random()*4)};
+    a={type:'real',tokens:toks.map(k=>({t:start+k.r,s:k.s,dot:k.dot})),speakStart:start,hitT:start+hitR,approach:ap,ok:d.ok,good:d.ok*.45,doron:lv>=4&&Math.random()<(lv>=5?.5:.3),color:Math.floor(Math.random()*4),nr0:d.nr0,nr1:d.nr1,nflick:d.nflick};
   }
   a.tokens.sort((x,y)=>x.t-y.t);
   if(a.type==='real')scheduleRockets(a);
-  else if(lv>=4){const ci=Math.floor(Math.random()*4),x=rand(W*.15,W*.85),bt=a.speakStart+rand(.8,1.4);later(Math.max(t,bt-diff(n).rise),()=>{if(state==='play')launchFor(a,false,ci,bt,x,true);});}
   lastKind=a.type;return a;
 }
 
@@ -654,12 +653,14 @@ function showResult(win){
 }
 
 /* ---------- lane ---------- */
-function drawNote(x,y,a){
+function drawNote(x,y,a,ci){
+  const col=ci==null?null:COLS[ci];
   ctx.globalAlpha=a;
+  if(col){const g=ctx.createRadialGradient(x,y,6,x,y,34);g.addColorStop(0,hexA(col.c,.55));g.addColorStop(1,hexA(col.c,0));ctx.fillStyle=g;circ(ctx,x,y,34);ctx.fill();}
   ctx.fillStyle='#1b0c10';circ(ctx,x,y,23);ctx.fill();
-  ctx.fillStyle='#f6f0e4';circ(ctx,x,y,20);ctx.fill();
-  ctx.lineWidth=3;ctx.strokeStyle='#ffc65c';circ(ctx,x,y,19);ctx.stroke();
-  ctx.fillStyle='#2a1c33';ctx.font='19px "Dela Gothic One", sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('つ',x,y+1);
+  ctx.fillStyle=col?col.c:'#f6f0e4';circ(ctx,x,y,20);ctx.fill();
+  ctx.lineWidth=3;ctx.strokeStyle=col?'#fff4ea':'#8a84a8';circ(ctx,x,y,19);ctx.stroke();
+  ctx.fillStyle=col?(ci===2?'#3a2a00':'#fff'):'#2a1c33';ctx.font='19px "Dela Gothic One", sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('つ',x,y+1);
   ctx.globalAlpha=1;
 }
 function drawLane(t){
@@ -676,7 +677,8 @@ function drawLane(t){
     if(prog<=1){
       const nx=judgeX+prog*(laneEnd-judgeX);
       let a=1;if(cur.doron)a=prog>.5?1:prog>.4?(prog-.4)/.1:0;
-      if(a>0)drawNote(nx,cy,a);
+      const show=prog<=cur.nr0&&prog>=cur.nr1&&!(cur.nflick&&Math.sin(t*38)>.2);
+      if(a>0)drawNote(nx,cy,a,show?cur.color:null);
     }
   }
   judg=judg.filter(j=>t-j.t0<.7);
