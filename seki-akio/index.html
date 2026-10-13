@@ -1,0 +1,330 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>自責他責関暁夫</title></head><body>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700;900&display=swap">
+<style>
+/* Layout: one-screen quiz, TV-caption sentence on top, three portrait "answer buttons" in a row below. Committed dark "都市伝説" look. */
+:root{
+  --ink:#100e1c;        /* night sky */
+  --panel:#1c1930;
+  --line:#34304f;
+  --fg:#f1ece0;
+  --muted:#a29cbc;
+  --owl:#e2a83e;        /* owl-eye amber: 関暁夫 */
+  --self:#58a9d8;       /* 自責 blue */
+  --other:#e5624f;      /* 他責 red */
+  --ok:#5cc98a;
+  --ng:#e5624f;
+  --display:"Dela Gothic One","Hiragino Sans","Yu Gothic",sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--ink);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.6;
+  background-image:radial-gradient(ellipse 80% 50% at 50% -10%, #2a2450 0%, transparent 70%);}
+*{box-sizing:border-box}
+.app{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:14px 24px;min-height:100%;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-family:var(--display);font-size:1.15rem;letter-spacing:.02em;line-height:1.2;margin:0}
+.logo span{color:var(--self)} .logo b{font-weight:400;color:var(--other)} .logo i{font-style:normal;color:var(--owl)}
+.hud{display:flex;gap:12px;font-family:var(--display);font-size:.9rem;font-variant-numeric:tabular-nums;color:var(--muted)}
+.hud strong{color:var(--fg);font-weight:400}
+
+/* ---------- start ---------- */
+.intro h2{font-family:var(--display);font-weight:400;font-size:clamp(1.6rem,7vw,2.3rem);line-height:1.25;margin:4px 0 6px;text-wrap:balance}
+.intro p{margin:0 0 4px;color:var(--muted);max-width:34em}
+.rules{display:grid;gap:8px;margin:12px 0 4px;padding:0;list-style:none}
+.rules li{display:grid;grid-template-columns:5.6em 1fr;gap:10px;align-items:baseline;padding:10px 12px;background:var(--panel);border-radius:10px}
+.rules li b{font-family:var(--display);font-weight:400;font-size:.95rem}
+.rules li span{min-width:0;font-size:.92rem}
+.c-self{color:var(--self)} .c-owl{color:var(--owl)} .c-other{color:var(--other)}
+.startbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.btn{font-family:var(--display);font-size:1.05rem;border:0;border-radius:999px;padding:12px 26px;cursor:pointer;background:var(--owl);color:var(--ink);transition:transform .12s}
+.btn:hover{transform:translateY(-1px)} .btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--fg);border:1.5px solid var(--line)}
+.btn:focus-visible,.pick:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
+.note{font-size:.8rem;color:var(--muted)}
+
+/* ---------- play ---------- */
+.timer{height:6px;background:var(--panel);border-radius:999px;overflow:hidden}
+.timer i{display:block;height:100%;width:100%;background:var(--owl);transform-origin:left;transition:background .3s}
+.timer i.low{background:var(--other)}
+.qno{font-family:var(--display);font-size:.85rem;color:var(--muted);letter-spacing:.08em;margin-bottom:6px}
+.caption{position:relative;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:18px 18px 16px;min-height:7.2em;display:flex;flex-direction:column;justify-content:center}
+.caption::before{content:"";position:absolute;left:18px;top:-1px;width:44px;height:3px;background:var(--owl);border-radius:0 0 3px 3px}
+.say{font-weight:900;font-size:clamp(1.05rem,4.6vw,1.3rem);line-height:1.55;margin:0;text-wrap:pretty}
+.say mark{background:none;color:var(--owl);box-shadow:inset 0 -.45em 0 rgba(226,168,62,.22)}
+.picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pick{appearance:none;border:0;padding:0;background:none;color:inherit;font:inherit;cursor:pointer;text-align:center;display:flex;flex-direction:column;gap:6px;transition:transform .12s}
+.pick:disabled{cursor:default}
+.pick:not(:disabled):hover{transform:translateY(-3px)}
+.pick .ph{position:relative;aspect-ratio:3/4;max-width:100%;border-radius:12px;overflow:hidden;border:3px solid var(--line);background:#222}
+.pick img{width:100%;height:100%;object-fit:cover;display:block}
+.pick[data-k="jiseki"] .ph{border-color:var(--self)}
+.pick[data-k="seki"] .ph{border-color:var(--owl)}
+.pick[data-k="taseki"] .ph{border-color:var(--other)}
+.pick .nm{font-family:var(--display);font-size:clamp(.82rem,3.6vw,1rem);line-height:1.2}
+.pick .sub{font-size:.72rem;color:var(--muted);line-height:1.3}
+.pick .key{position:absolute;top:6px;left:6px;width:22px;height:22px;border-radius:6px;background:rgba(16,14,28,.75);font-family:var(--display);font-size:.75rem;display:grid;place-items:center}
+.pick.dim{opacity:.35}
+.pick .stamp{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:clamp(2.4rem,12vw,3.6rem);color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.pick.right .ph{box-shadow:0 0 0 3px var(--ok)} .pick.right .stamp{background:rgba(92,201,138,.35)}
+.pick.wrong .ph{box-shadow:0 0 0 3px var(--ng)} .pick.wrong .stamp{background:rgba(229,98,79,.4)}
+@keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+.stamp span{animation:pop .35s ease-out both}
+
+.verdict{background:var(--panel);border-radius:14px;padding:14px 16px;display:grid;gap:6px;border-left:5px solid var(--ok)}
+.verdict.ng{border-left-color:var(--ng)}
+.verdict h3{margin:0;font-family:var(--display);font-weight:400;font-size:1.15rem}
+.verdict p{margin:0;font-size:.92rem}
+.verdict .row{display:flex;justify-content:flex-end;margin-top:4px}
+.combo{font-family:var(--display);color:var(--owl);font-size:.9rem}
+
+/* ---------- result ---------- */
+.result{display:grid;gap:14px}
+.score{display:flex;align-items:center;gap:16px}
+.score img{width:96px;aspect-ratio:3/4;object-fit:cover;border-radius:10px;border:3px solid var(--owl);flex:none}
+.score .big{font-family:var(--display);font-size:3rem;line-height:1;font-variant-numeric:tabular-nums}
+.score .big small{font-size:1.1rem;color:var(--muted)}
+.rank{font-family:var(--display);font-size:1.25rem;line-height:1.35;margin:4px 0 0;text-wrap:balance}
+.rankmsg{color:var(--muted);margin:0;font-size:.92rem}
+.review{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.review li{background:var(--panel);border-radius:10px;padding:10px 12px;font-size:.88rem;display:grid;gap:2px}
+.review .ans{font-size:.78rem;color:var(--muted)}
+.sec{font-family:var(--display);font-size:.9rem;color:var(--muted);letter-spacing:.06em;margin:4px 0 0}
+.intro .pick{pointer-events:none}
+.swap{background:var(--panel);border-radius:12px;padding:10px 14px;margin-top:12px}
+.swap summary{cursor:pointer;font-weight:700;font-size:.92rem}
+.swap .note{margin:6px 0 10px}
+.swaprow{display:grid;gap:10px}
+.swaprow label{display:grid;gap:4px;font-size:.85rem}
+.swaprow input{font:inherit;font-size:.8rem;color:var(--muted);max-width:100%}
+.sharebtn{display:inline-block;text-decoration:none;background:var(--fg);color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app" id="app">
+  <header>
+    <h1 class="logo"><span>自責</span><b>他責</b><i>関暁夫</i></h1>
+    <div class="hud" id="hud" hidden>
+      <div>Q <strong id="hq">1</strong>/10</div>
+      <div>正解 <strong id="hs">0</strong></div>
+    </div>
+  </header>
+
+  <!-- START -->
+  <section class="intro" id="start">
+    <h2>その「次第」、誰のせい？</h2>
+    <p>出てくるセリフを読んで、どの暁夫かを写真をタップして答えよう。1問10秒、全10問。</p>
+    <ul class="rules">
+      <li><b class="c-self">自責暁夫</b><span>責任を<strong>自分</strong>で引き受けている。「私次第」「私のせい」</span></li>
+      <li><b class="c-owl">関暁夫</b><span>責任とは<strong>関係ない</strong>「あなた次第」。信じるか信じないかは…</span></li>
+      <li><b class="c-other">他責暁夫</b><span>責任を<strong>相手</strong>に押しつけている。「あなた次第」「あなたのせい」</span></li>
+    </ul>
+    <div class="picks" aria-hidden="true" style="margin-top:12px">
+      <div class="pick" data-k="jiseki"><div class="ph"><img data-img="jiseki" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNDAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzFmMWIzNiIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE4NSIgcj0iMTMwIiBmaWxsPSIjNThhOWQ4IiBvcGFjaXR5PSIuMTYiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTI4IiByPSI0OCIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNNzAgNDAwIEw3OCAyNjIgUTg0IDIxNCAxMzAgMjA2IEwxNzAgMjA2IFEyMTYgMjE0IDIyMiAyNjIgTDIzMCA0MDAgWiIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNMTI4IDIwNiBMMTUwIDI2NiBMMTcyIDIwNiBaIiBmaWxsPSIjMWYxYjM2Ii8+CjxwYXRoIGQ9Ik0xNDQgMjE0IEwxNTYgMjE0IEwxNjEgMzAwIEwxNTAgMzE4IEwxMzkgMzAwIFoiIGZpbGw9IiM1OGE5ZDgiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFmMWIzNiIgc3Ryb2tlLXdpZHRoPSI0MCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDcwLDMzMCAxMjAsMjk0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxZjFiMzYiIHN0cm9rZS13aWR0aD0iNDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjEyMCwyOTQgMTUyLDI3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWYxYjM2IiBzdHJva2Utd2lkdGg9IjIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2VmZTlkYyIgc3Ryb2tlLXdpZHRoPSIyOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDcwLDMzMCAxMjAsMjk0IiBmaWxsPSJub25lIiBzdHJva2U9IiNlZmU5ZGMiIHN0cm9rZS13aWR0aD0iMjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjEyMCwyOTQgMTUyLDI3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWZlOWRjIiBzdHJva2Utd2lkdGg9IjExIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=" alt=""></div><div class="nm c-self">自責暁夫</div></div>
+      <div class="pick" data-k="seki"><div class="ph"><img data-img="seki" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNDAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzFmMWIzNiIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE4NSIgcj0iMTMwIiBmaWxsPSIjZTJhODNlIiBvcGFjaXR5PSIuMTYiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTI4IiByPSI0OCIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNNzAgNDAwIEw3OCAyNjIgUTg0IDIxNCAxMzAgMjA2IEwxNzAgMjA2IFEyMTYgMjE0IDIyMiAyNjIgTDIzMCA0MDAgWiIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNMTI4IDIwNiBMMTUwIDI2NiBMMTcyIDIwNiBaIiBmaWxsPSIjMWYxYjM2Ii8+CjxwYXRoIGQ9Ik0xNDQgMjE0IEwxNTYgMjE0IEwxNjEgMzAwIEwxNTAgMzE4IEwxMzkgMzAwIFoiIGZpbGw9IiNlMmE4M2UiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFmMWIzNiIgc3Ryb2tlLXdpZHRoPSI0MCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDc0LDM4NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWYxYjM2IiBzdHJva2Utd2lkdGg9IjQwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2VmZTlkYyIgc3Ryb2tlLXdpZHRoPSIyOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDc0LDM4NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWZlOWRjIiBzdHJva2Utd2lkdGg9IjI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48Y2lyY2xlIGN4PSIyMzYiIGN5PSI2MiIgcj0iMzQiIGZpbGw9IiNlZmU5ZGMiLz48cGF0aCBkPSJNMjEyIDg0IEwyMDAgMTA0IEwyMjYgOTIgWiIgZmlsbD0iI2VmZTlkYyIvPjxjaXJjbGUgY3g9IjIyMiIgY3k9IjYyIiByPSI1IiBmaWxsPSIjMWYxYjM2Ii8+PGNpcmNsZSBjeD0iMjM2IiBjeT0iNjIiIHI9IjUiIGZpbGw9IiMxZjFiMzYiLz48Y2lyY2xlIGN4PSIyNTAiIGN5PSI2MiIgcj0iNSIgZmlsbD0iIzFmMWIzNiIvPjwvc3ZnPg==" alt=""></div><div class="nm c-owl">関暁夫</div></div>
+      <div class="pick" data-k="taseki"><div class="ph"><img data-img="taseki" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNDAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzFmMWIzNiIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE4NSIgcj0iMTMwIiBmaWxsPSIjZTU2MjRmIiBvcGFjaXR5PSIuMTYiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTI4IiByPSI0OCIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNNzAgNDAwIEw3OCAyNjIgUTg0IDIxNCAxMzAgMjA2IEwxNzAgMjA2IFEyMTYgMjE0IDIyMiAyNjIgTDIzMCA0MDAgWiIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNMTI4IDIwNiBMMTUwIDI2NiBMMTcyIDIwNiBaIiBmaWxsPSIjMWYxYjM2Ii8+CjxwYXRoIGQ9Ik0xNDQgMjE0IEwxNTYgMjE0IEwxNjEgMzAwIEwxNTAgMzE4IEwxMzkgMzAwIFoiIGZpbGw9IiNlNTYyNGYiLz48cG9seWxpbmUgcG9pbnRzPSI5NiwyNDQgNzQsMzg2IiBmaWxsPSJub25lIiBzdHJva2U9IiMxZjFiMzYiIHN0cm9rZS13aWR0aD0iNDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjIwNCwyNDQgMjQ4LDI2MiAyNjYsMjI2IiBmaWxsPSJub25lIiBzdHJva2U9IiMxZjFiMzYiIHN0cm9rZS13aWR0aD0iNDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjI2NiwyMjYgMjc2LDE5OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWYxYjM2IiBzdHJva2Utd2lkdGg9IjIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cG9seWxpbmUgcG9pbnRzPSI5NiwyNDQgNzQsMzg2IiBmaWxsPSJub25lIiBzdHJva2U9IiNlZmU5ZGMiIHN0cm9rZS13aWR0aD0iMjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjIwNCwyNDQgMjQ4LDI2MiAyNjYsMjI2IiBmaWxsPSJub25lIiBzdHJva2U9IiNlZmU5ZGMiIHN0cm9rZS13aWR0aD0iMjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjI2NiwyMjYgMjc2LDE5OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWZlOWRjIiBzdHJva2Utd2lkdGg9IjExIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMjYyIDE4MiBsLTYgLTE2IE0yODAgMTc4IGw0IC0xNyBNMjkyIDE5MiBsMTIgLTgiIHN0cm9rZT0iI2U1NjI0ZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=" alt=""></div><div class="nm c-other">他責暁夫</div></div>
+    </div>
+    <details class="swap">
+      <summary>好きな画像に入れかえる</summary>
+      <p class="note">選んだ画像はこの端末のブラウザの中だけで使われます。リンクを開いた他の人には見えません。</p>
+      <div class="swaprow">
+        <label for="f-jiseki"><span class="c-self">自責暁夫</span>（自分を指差すポーズ）<input type="file" accept="image/*" id="f-jiseki" data-k="jiseki"></label>
+        <label for="f-seki"><span class="c-owl">関暁夫</span>（指差しなし）<input type="file" accept="image/*" id="f-seki" data-k="seki"></label>
+        <label for="f-taseki"><span class="c-other">他責暁夫</span>（相手を指差すポーズ）<input type="file" accept="image/*" id="f-taseki" data-k="taseki"></label>
+        <div><button class="btn ghost" id="reset" type="button">イラストに戻す</button></div>
+      </div>
+    </details>
+    <div class="startbar">
+      <button class="btn" id="go">はじめる</button>
+      <span class="note">キーボードなら 1・2・3 でも答えられます</span>
+    </div>
+  </section>
+
+  <!-- PLAY -->
+  <section id="play" hidden style="display:grid;gap:14px">
+    <div class="timer"><i id="bar"></i></div>
+    <div>
+      <div class="qno" id="qno">QUESTION 1</div>
+      <div class="caption"><p class="say" id="say"></p></div>
+    </div>
+    <div class="picks" id="picks">
+      <button class="pick" data-k="jiseki"><div class="ph"><img data-img="jiseki" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNDAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzFmMWIzNiIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE4NSIgcj0iMTMwIiBmaWxsPSIjNThhOWQ4IiBvcGFjaXR5PSIuMTYiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTI4IiByPSI0OCIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNNzAgNDAwIEw3OCAyNjIgUTg0IDIxNCAxMzAgMjA2IEwxNzAgMjA2IFEyMTYgMjE0IDIyMiAyNjIgTDIzMCA0MDAgWiIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNMTI4IDIwNiBMMTUwIDI2NiBMMTcyIDIwNiBaIiBmaWxsPSIjMWYxYjM2Ii8+CjxwYXRoIGQ9Ik0xNDQgMjE0IEwxNTYgMjE0IEwxNjEgMzAwIEwxNTAgMzE4IEwxMzkgMzAwIFoiIGZpbGw9IiM1OGE5ZDgiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFmMWIzNiIgc3Ryb2tlLXdpZHRoPSI0MCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDcwLDMzMCAxMjAsMjk0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxZjFiMzYiIHN0cm9rZS13aWR0aD0iNDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjEyMCwyOTQgMTUyLDI3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWYxYjM2IiBzdHJva2Utd2lkdGg9IjIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2VmZTlkYyIgc3Ryb2tlLXdpZHRoPSIyOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDcwLDMzMCAxMjAsMjk0IiBmaWxsPSJub25lIiBzdHJva2U9IiNlZmU5ZGMiIHN0cm9rZS13aWR0aD0iMjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjEyMCwyOTQgMTUyLDI3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWZlOWRjIiBzdHJva2Utd2lkdGg9IjExIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=" alt="自責暁夫"><span class="key">1</span><div class="stamp"></div></div><div class="nm c-self">自責暁夫</div><div class="sub">自分のせい</div></button>
+      <button class="pick" data-k="seki"><div class="ph"><img data-img="seki" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNDAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzFmMWIzNiIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE4NSIgcj0iMTMwIiBmaWxsPSIjZTJhODNlIiBvcGFjaXR5PSIuMTYiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTI4IiByPSI0OCIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNNzAgNDAwIEw3OCAyNjIgUTg0IDIxNCAxMzAgMjA2IEwxNzAgMjA2IFEyMTYgMjE0IDIyMiAyNjIgTDIzMCA0MDAgWiIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNMTI4IDIwNiBMMTUwIDI2NiBMMTcyIDIwNiBaIiBmaWxsPSIjMWYxYjM2Ii8+CjxwYXRoIGQ9Ik0xNDQgMjE0IEwxNTYgMjE0IEwxNjEgMzAwIEwxNTAgMzE4IEwxMzkgMzAwIFoiIGZpbGw9IiNlMmE4M2UiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFmMWIzNiIgc3Ryb2tlLXdpZHRoPSI0MCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDc0LDM4NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWYxYjM2IiBzdHJva2Utd2lkdGg9IjQwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2VmZTlkYyIgc3Ryb2tlLXdpZHRoPSIyOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDc0LDM4NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWZlOWRjIiBzdHJva2Utd2lkdGg9IjI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48Y2lyY2xlIGN4PSIyMzYiIGN5PSI2MiIgcj0iMzQiIGZpbGw9IiNlZmU5ZGMiLz48cGF0aCBkPSJNMjEyIDg0IEwyMDAgMTA0IEwyMjYgOTIgWiIgZmlsbD0iI2VmZTlkYyIvPjxjaXJjbGUgY3g9IjIyMiIgY3k9IjYyIiByPSI1IiBmaWxsPSIjMWYxYjM2Ii8+PGNpcmNsZSBjeD0iMjM2IiBjeT0iNjIiIHI9IjUiIGZpbGw9IiMxZjFiMzYiLz48Y2lyY2xlIGN4PSIyNTAiIGN5PSI2MiIgcj0iNSIgZmlsbD0iIzFmMWIzNiIvPjwvc3ZnPg==" alt="関暁夫"><span class="key">2</span><div class="stamp"></div></div><div class="nm c-owl">関暁夫</div><div class="sub">責任と無関係</div></button>
+      <button class="pick" data-k="taseki"><div class="ph"><img data-img="taseki" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNDAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzFmMWIzNiIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE4NSIgcj0iMTMwIiBmaWxsPSIjZTU2MjRmIiBvcGFjaXR5PSIuMTYiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTI4IiByPSI0OCIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNNzAgNDAwIEw3OCAyNjIgUTg0IDIxNCAxMzAgMjA2IEwxNzAgMjA2IFEyMTYgMjE0IDIyMiAyNjIgTDIzMCA0MDAgWiIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNMTI4IDIwNiBMMTUwIDI2NiBMMTcyIDIwNiBaIiBmaWxsPSIjMWYxYjM2Ii8+CjxwYXRoIGQ9Ik0xNDQgMjE0IEwxNTYgMjE0IEwxNjEgMzAwIEwxNTAgMzE4IEwxMzkgMzAwIFoiIGZpbGw9IiNlNTYyNGYiLz48cG9seWxpbmUgcG9pbnRzPSI5NiwyNDQgNzQsMzg2IiBmaWxsPSJub25lIiBzdHJva2U9IiMxZjFiMzYiIHN0cm9rZS13aWR0aD0iNDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjIwNCwyNDQgMjQ4LDI2MiAyNjYsMjI2IiBmaWxsPSJub25lIiBzdHJva2U9IiMxZjFiMzYiIHN0cm9rZS13aWR0aD0iNDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjI2NiwyMjYgMjc2LDE5OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWYxYjM2IiBzdHJva2Utd2lkdGg9IjIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cG9seWxpbmUgcG9pbnRzPSI5NiwyNDQgNzQsMzg2IiBmaWxsPSJub25lIiBzdHJva2U9IiNlZmU5ZGMiIHN0cm9rZS13aWR0aD0iMjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjIwNCwyNDQgMjQ4LDI2MiAyNjYsMjI2IiBmaWxsPSJub25lIiBzdHJva2U9IiNlZmU5ZGMiIHN0cm9rZS13aWR0aD0iMjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjI2NiwyMjYgMjc2LDE5OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWZlOWRjIiBzdHJva2Utd2lkdGg9IjExIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMjYyIDE4MiBsLTYgLTE2IE0yODAgMTc4IGw0IC0xNyBNMjkyIDE5MiBsMTIgLTgiIHN0cm9rZT0iI2U1NjI0ZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=" alt="他責暁夫"><span class="key">3</span><div class="stamp"></div></div><div class="nm c-other">他責暁夫</div><div class="sub">人のせい</div></button>
+    </div>
+    <div class="verdict" id="verdict" hidden>
+      <h3 id="vh"></h3>
+      <p id="vp"></p>
+      <div class="row"><button class="btn" id="next">次へ</button></div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section class="result" id="result" hidden>
+    <div class="score">
+      <img id="rimg" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNDAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzFmMWIzNiIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE4NSIgcj0iMTMwIiBmaWxsPSIjZTJhODNlIiBvcGFjaXR5PSIuMTYiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTI4IiByPSI0OCIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNNzAgNDAwIEw3OCAyNjIgUTg0IDIxNCAxMzAgMjA2IEwxNzAgMjA2IFEyMTYgMjE0IDIyMiAyNjIgTDIzMCA0MDAgWiIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNMTI4IDIwNiBMMTUwIDI2NiBMMTcyIDIwNiBaIiBmaWxsPSIjMWYxYjM2Ii8+CjxwYXRoIGQ9Ik0xNDQgMjE0IEwxNTYgMjE0IEwxNjEgMzAwIEwxNTAgMzE4IEwxMzkgMzAwIFoiIGZpbGw9IiNlMmE4M2UiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFmMWIzNiIgc3Ryb2tlLXdpZHRoPSI0MCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDc0LDM4NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWYxYjM2IiBzdHJva2Utd2lkdGg9IjQwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2VmZTlkYyIgc3Ryb2tlLXdpZHRoPSIyOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDc0LDM4NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWZlOWRjIiBzdHJva2Utd2lkdGg9IjI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48Y2lyY2xlIGN4PSIyMzYiIGN5PSI2MiIgcj0iMzQiIGZpbGw9IiNlZmU5ZGMiLz48cGF0aCBkPSJNMjEyIDg0IEwyMDAgMTA0IEwyMjYgOTIgWiIgZmlsbD0iI2VmZTlkYyIvPjxjaXJjbGUgY3g9IjIyMiIgY3k9IjYyIiByPSI1IiBmaWxsPSIjMWYxYjM2Ii8+PGNpcmNsZSBjeD0iMjM2IiBjeT0iNjIiIHI9IjUiIGZpbGw9IiMxZjFiMzYiLz48Y2lyY2xlIGN4PSIyNTAiIGN5PSI2MiIgcj0iNSIgZmlsbD0iIzFmMWIzNiIvPjwvc3ZnPg==" alt="">
+      <div>
+        <div class="big" id="rbig">0<small> / 10</small></div>
+        <p class="rank" id="rank"></p>
+      </div>
+    </div>
+    <p class="rankmsg" id="rmsg"></p>
+    <div class="startbar"><button class="btn" id="again">もう一回</button><a class="btn sharebtn" id="share" href="https://x.com/intent/post" target="_blank" rel="noopener">結果をXでポスト</a></div>
+    <p class="sec" id="revh">まちがえた問題</p>
+    <ul class="review" id="review"></ul>
+  </section>
+</div>
+
+<script>
+const DEFAULT={jiseki:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNDAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzFmMWIzNiIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE4NSIgcj0iMTMwIiBmaWxsPSIjNThhOWQ4IiBvcGFjaXR5PSIuMTYiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTI4IiByPSI0OCIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNNzAgNDAwIEw3OCAyNjIgUTg0IDIxNCAxMzAgMjA2IEwxNzAgMjA2IFEyMTYgMjE0IDIyMiAyNjIgTDIzMCA0MDAgWiIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNMTI4IDIwNiBMMTUwIDI2NiBMMTcyIDIwNiBaIiBmaWxsPSIjMWYxYjM2Ii8+CjxwYXRoIGQ9Ik0xNDQgMjE0IEwxNTYgMjE0IEwxNjEgMzAwIEwxNTAgMzE4IEwxMzkgMzAwIFoiIGZpbGw9IiM1OGE5ZDgiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFmMWIzNiIgc3Ryb2tlLXdpZHRoPSI0MCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDcwLDMzMCAxMjAsMjk0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxZjFiMzYiIHN0cm9rZS13aWR0aD0iNDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjEyMCwyOTQgMTUyLDI3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWYxYjM2IiBzdHJva2Utd2lkdGg9IjIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2VmZTlkYyIgc3Ryb2tlLXdpZHRoPSIyOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDcwLDMzMCAxMjAsMjk0IiBmaWxsPSJub25lIiBzdHJva2U9IiNlZmU5ZGMiIHN0cm9rZS13aWR0aD0iMjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjEyMCwyOTQgMTUyLDI3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWZlOWRjIiBzdHJva2Utd2lkdGg9IjExIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=",seki:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNDAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzFmMWIzNiIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE4NSIgcj0iMTMwIiBmaWxsPSIjZTJhODNlIiBvcGFjaXR5PSIuMTYiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTI4IiByPSI0OCIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNNzAgNDAwIEw3OCAyNjIgUTg0IDIxNCAxMzAgMjA2IEwxNzAgMjA2IFEyMTYgMjE0IDIyMiAyNjIgTDIzMCA0MDAgWiIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNMTI4IDIwNiBMMTUwIDI2NiBMMTcyIDIwNiBaIiBmaWxsPSIjMWYxYjM2Ii8+CjxwYXRoIGQ9Ik0xNDQgMjE0IEwxNTYgMjE0IEwxNjEgMzAwIEwxNTAgMzE4IEwxMzkgMzAwIFoiIGZpbGw9IiNlMmE4M2UiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFmMWIzNiIgc3Ryb2tlLXdpZHRoPSI0MCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDc0LDM4NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWYxYjM2IiBzdHJva2Utd2lkdGg9IjQwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cG9seWxpbmUgcG9pbnRzPSIyMDQsMjQ0IDIyNiwzODYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2VmZTlkYyIgc3Ryb2tlLXdpZHRoPSIyOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlsaW5lIHBvaW50cz0iOTYsMjQ0IDc0LDM4NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWZlOWRjIiBzdHJva2Utd2lkdGg9IjI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48Y2lyY2xlIGN4PSIyMzYiIGN5PSI2MiIgcj0iMzQiIGZpbGw9IiNlZmU5ZGMiLz48cGF0aCBkPSJNMjEyIDg0IEwyMDAgMTA0IEwyMjYgOTIgWiIgZmlsbD0iI2VmZTlkYyIvPjxjaXJjbGUgY3g9IjIyMiIgY3k9IjYyIiByPSI1IiBmaWxsPSIjMWYxYjM2Ii8+PGNpcmNsZSBjeD0iMjM2IiBjeT0iNjIiIHI9IjUiIGZpbGw9IiMxZjFiMzYiLz48Y2lyY2xlIGN4PSIyNTAiIGN5PSI2MiIgcj0iNSIgZmlsbD0iIzFmMWIzNiIvPjwvc3ZnPg==",taseki:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNDAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzFmMWIzNiIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE4NSIgcj0iMTMwIiBmaWxsPSIjZTU2MjRmIiBvcGFjaXR5PSIuMTYiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTI4IiByPSI0OCIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNNzAgNDAwIEw3OCAyNjIgUTg0IDIxNCAxMzAgMjA2IEwxNzAgMjA2IFEyMTYgMjE0IDIyMiAyNjIgTDIzMCA0MDAgWiIgZmlsbD0iI2VmZTlkYyIvPgo8cGF0aCBkPSJNMTI4IDIwNiBMMTUwIDI2NiBMMTcyIDIwNiBaIiBmaWxsPSIjMWYxYjM2Ii8+CjxwYXRoIGQ9Ik0xNDQgMjE0IEwxNTYgMjE0IEwxNjEgMzAwIEwxNTAgMzE4IEwxMzkgMzAwIFoiIGZpbGw9IiNlNTYyNGYiLz48cG9seWxpbmUgcG9pbnRzPSI5NiwyNDQgNzQsMzg2IiBmaWxsPSJub25lIiBzdHJva2U9IiMxZjFiMzYiIHN0cm9rZS13aWR0aD0iNDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjIwNCwyNDQgMjQ4LDI2MiAyNjYsMjI2IiBmaWxsPSJub25lIiBzdHJva2U9IiMxZjFiMzYiIHN0cm9rZS13aWR0aD0iNDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjI2NiwyMjYgMjc2LDE5OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWYxYjM2IiBzdHJva2Utd2lkdGg9IjIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cG9seWxpbmUgcG9pbnRzPSI5NiwyNDQgNzQsMzg2IiBmaWxsPSJub25lIiBzdHJva2U9IiNlZmU5ZGMiIHN0cm9rZS13aWR0aD0iMjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjIwNCwyNDQgMjQ4LDI2MiAyNjYsMjI2IiBmaWxsPSJub25lIiBzdHJva2U9IiNlZmU5ZGMiIHN0cm9rZS13aWR0aD0iMjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5bGluZSBwb2ludHM9IjI2NiwyMjYgMjc2LDE5OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWZlOWRjIiBzdHJva2Utd2lkdGg9IjExIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMjYyIDE4MiBsLTYgLTE2IE0yODAgMTc4IGw0IC0xNyBNMjkyIDE5MiBsMTIgLTgiIHN0cm9rZT0iI2U1NjI0ZiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4="};
+const IMG={...DEFAULT};
+const GAME_URL=/^https?:/.test(location.href)?location.href.split("#")[0]:"";
+function paintImgs(){document.querySelectorAll("img[data-img]").forEach(im=>{im.src=IMG[im.dataset.img]})}
+try{for(const k in IMG){const v=localStorage.getItem("jtsk-img-"+k);if(v)IMG[k]=v}}catch(e){}
+function loadFile(input){
+  const f=input.files&&input.files[0];if(!f)return;const k=input.dataset.k;
+  const url=URL.createObjectURL(f);const im=new Image();
+  im.onload=()=>{
+    const W=360,H=480,c=document.createElement("canvas");c.width=W;c.height=H;
+    const sc=Math.max(W/im.width,H/im.height),w=im.width*sc,h=im.height*sc;
+    c.getContext("2d").drawImage(im,(W-w)/2,0,w,h); // 上寄せで顔を残す
+    IMG[k]=c.toDataURL("image/jpeg",.82);URL.revokeObjectURL(url);
+    try{localStorage.setItem("jtsk-img-"+k,IMG[k])}catch(e){}
+    paintImgs();
+  };
+  im.src=url;
+}
+const NAME={jiseki:"自責暁夫",seki:"関暁夫",taseki:"他責暁夫"};
+const WHY={
+  jiseki:"責任を自分で引き受けているので自責暁夫。",
+  seki:"「あなた次第」でも、責任の話ではないので関暁夫。",
+  taseki:"責任を相手に押しつけているので他責暁夫。"
+};
+// [セリフ, 正解, 強調するキーワード]
+const POOL=[
+  // 自責
+  ["この失敗をどう取り返すかは、私次第です。","jiseki","私次第"],
+  ["チームが勝てるかどうかは、キャプテンである私の頑張り次第です。","jiseki","私の頑張り次第"],
+  ["締め切りに間に合わなかったのは、私の責任です。","jiseki","私の責任"],
+  ["遅刻したのは、目覚ましをかけ忘れた私のせいです。","jiseki","私のせい"],
+  ["カレーが焦げたのは、鍋から目を離した私のせいです。","jiseki","私のせい"],
+  ["テストが赤点だったのは、勉強しなかった私の責任です。","jiseki","私の責任"],
+  ["部下のミスは、指導しきれなかった上司の私の責任です。","jiseki","私の責任"],
+  ["許してくれるかどうかはあなた次第ですが、悪いのは全部私です。","jiseki","悪いのは全部私"],
+  ["このお店を立て直せるかどうかは、店長の私次第です。","jiseki","私次第"],
+  ["記念日を忘れていたのは私です。本当にごめんなさい。","jiseki","忘れていたのは私"],
+  // 他責
+  ["このプロジェクトが成功するかどうかは、あなた次第です。失敗しても私は知りません。","taseki","私は知りません"],
+  ["遅刻したのは、起こしてくれなかったあなたのせいです。","taseki","あなたのせい"],
+  ["試合に負けたのは、あなたがパスを出さなかったからです。","taseki","あなたが"],
+  ["部屋が散らかっているのは、あなたが片付けないからです。","taseki","あなたが片付けない"],
+  ["売上が落ちたのは、営業担当のあなたの責任です。","taseki","あなたの責任"],
+  ["傘を忘れたのは、天気予報を教えてくれなかったあなたのせいです。","taseki","あなたのせい"],
+  ["私が太ったのは、あなたが毎晩おやつを買ってくるからです。","taseki","あなたが"],
+  ["私が失敗したのは、あなたの指示が悪かったからです。","taseki","あなたの指示が悪かった"],
+  ["間に合うかどうかはあなた次第。間に合わなかったら全部あなたの責任ですからね。","taseki","全部あなたの責任"],
+  ["カレーが焦げたのは、話しかけてきたあなたのせいです。","taseki","あなたのせい"],
+  // 関暁夫
+  ["信じるか信じないかは、あなた次第です。","seki","あなた次第"],
+  ["ラーメンにコショウをかけるかどうかは、あなた次第です。","seki","コショウ"],
+  ["目玉焼きにソースをかけるか醤油をかけるかは、あなた次第です。","seki","ソース"],
+  ["この話をどう受け取るかは、あなた次第です。","seki","どう受け取るか"],
+  ["フクロウは森の番人だという説がある。信じるか信じないかは、あなた次第です。","seki","信じるか信じないか"],
+  ["どの道を選ぶかは、あなた次第です。","seki","どの道を選ぶか"],
+  ["今夜この話を思い出すかどうかは、あなた次第です。","seki","思い出すかどうか"],
+  ["ネクタイの柄に意味があるかどうか。信じるか信じないかは、あなた次第です。","seki","信じるか信じないか"],
+  ["週末を家で過ごすか出かけるかは、あなた次第です。","seki","家で過ごすか出かけるか"],
+  ["私がこの話をするのは今日で最後かもしれない。信じるか信じないかは、あなた次第です。","seki","信じるか信じないか"]
+];
+const N=10, LIMIT=10;
+const $=id=>document.getElementById(id);
+let deck=[],i=0,score=0,combo=0,misses=[],locked=false,t0=0,raf=0;
+
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function shuffle(a){a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a}
+function makeDeck(){
+  // 各タイプが最低3問入るように選ぶ
+  const by=k=>shuffle(POOL.filter(p=>p[1]===k));
+  const base=[...by("jiseki").slice(0,3),...by("seki").slice(0,3),...by("taseki").slice(0,3)];
+  const rest=shuffle(POOL.filter(p=>!base.includes(p))).slice(0,N-base.length);
+  return shuffle([...base,...rest]);
+}
+function show(id){for(const s of ["start","play","result"])$(s).hidden=s!==id;$("hud").hidden=id!=="play"}
+
+function start(){deck=makeDeck();i=0;score=0;combo=0;misses=[];show("play");ask()}
+function ask(){
+  locked=false;
+  const [txt]=deck[i];
+  $("qno").textContent="QUESTION "+(i+1);
+  $("say").textContent="「"+txt+"」";
+  $("hq").textContent=i+1;$("hs").textContent=score;
+  $("verdict").hidden=true;
+  document.querySelectorAll("#picks .pick").forEach(b=>{b.disabled=false;b.className="pick";b.querySelector(".stamp").innerHTML=""});
+  t0=performance.now();cancelAnimationFrame(raf);tick();
+}
+function tick(){
+  const left=Math.max(0,LIMIT-(performance.now()-t0)/1000);
+  const bar=$("bar");bar.style.transform="scaleX("+(left/LIMIT)+")";bar.classList.toggle("low",left<3);
+  if(left<=0){answer(null);return}
+  raf=requestAnimationFrame(tick);
+}
+function answer(k){
+  if(locked)return;locked=true;cancelAnimationFrame(raf);
+  const [txt,ok,key]=deck[i];
+  const hit=k===ok;
+  if(hit){score++;combo++}else{combo=0;misses.push({txt,ok,k})}
+  $("hs").textContent=score;
+  document.querySelectorAll("#picks .pick").forEach(b=>{
+    const bk=b.dataset.k;b.disabled=true;
+    if(bk===ok){b.classList.add("right");b.querySelector(".stamp").innerHTML="<span>○</span>"}
+    else if(bk===k){b.classList.add("wrong");b.querySelector(".stamp").innerHTML="<span>×</span>"}
+    else b.classList.add("dim");
+  });
+  const t=esc(txt), kk=esc(key);
+  $("say").innerHTML="「"+(t.includes(kk)?t.replace(kk,"<mark>"+kk+"</mark>"):t)+"」";
+  const v=$("verdict");v.className="verdict"+(hit?"":" ng");
+  $("vh").innerHTML=hit?"正解！"+(combo>=3?' <span class="combo">'+combo+'連続</span>':""):(k===null?"時間切れ…":"ざんねん！")+" 正解は "+NAME[ok];
+  $("vp").textContent=WHY[ok];
+  $("next").textContent=i+1<N?"次へ":"結果を見る";
+  v.hidden=false;$("next").focus({preventScroll:true});
+}
+function next(){i++;if(i<N)ask();else finish()}
+function finish(){
+  show("result");
+  $("rbig").innerHTML=score+"<small> / "+N+"</small>";
+  let rank,msg,img;
+  if(score===N){rank="真の責任マスター";msg="自責も他責も完全に見抜きました。信じるか信じないかは、あなた次第です。";img="seki"}
+  else if(score>=8){rank="自責暁夫級";msg="ほぼ完ぺき。まちがえた分も自分で振り返れるタイプです。";img="jiseki"}
+  else if(score>=5){rank="見習い暁夫";msg="あと一歩。「あなた次第」が責任の話かどうかに注目してみよう。";img="seki"}
+  else{rank="他責暁夫になりかけ";msg="点数が低いのはこのゲームのせい…ではなく、もう一回やればきっと伸びます。";img="taseki"}
+  $("rank").textContent=rank;$("rmsg").textContent=msg;$("rimg").src=IMG[img];
+  const ul=$("review");ul.innerHTML="";
+  $("revh").textContent=misses.length?"まちがえた問題":"まちがえた問題はありません";
+  for(const m of misses){
+    const li=document.createElement("li");
+    li.innerHTML="<div>「"+esc(m.txt)+"」</div><div class=\"ans\">正解："+NAME[m.ok]+"　あなたの答え："+(m.k?NAME[m.k]:"時間切れ")+"</div>";
+    ul.appendChild(li);
+  }
+  const txt="自責他責関暁夫ゲームで "+score+"/"+N+" 問正解！\n称号：「"+rank+"」\n\n#自責他責関暁夫\n"+GAME_URL;
+  $("share").href="https://x.com/intent/post?text="+encodeURIComponent(txt);
+  $("again").focus({preventScroll:true});
+}
+
+paintImgs();
+document.querySelectorAll(".swaprow input[type=file]").forEach(inp=>inp.onchange=()=>loadFile(inp));
+$("reset").onclick=()=>{for(const k in DEFAULT){IMG[k]=DEFAULT[k];try{localStorage.removeItem("jtsk-img-"+k)}catch(e){}}
+  document.querySelectorAll(".swaprow input[type=file]").forEach(inp=>inp.value="");paintImgs()};
+$("go").onclick=start;$("again").onclick=start;$("next").onclick=next;
+document.querySelectorAll("#picks .pick").forEach(b=>b.onclick=()=>answer(b.dataset.k));
+document.addEventListener("keydown",e=>{
+  if($("play").hidden)return;
+  const m={"1":"jiseki","2":"seki","3":"taseki"}[e.key];
+  if(m&&!locked){e.preventDefault();answer(m)}
+  else if(locked&&(e.key==="Enter"||e.key===" ")&&document.activeElement!==$("next")){e.preventDefault();next()}
+});
+</script>
+
+</body></html>

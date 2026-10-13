@@ -1,0 +1,784 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>サイコパス診断</title></head><body>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Mochiy+Pop+One&family=Yuji+Boku&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+/* Layout: one-column case file on the left, fixed spectrum meter on the right edge. Single dark look by choice; the "lit" result swaps to pastel. */
+:root{
+  color-scheme: dark;
+  --void:#090a0b;
+  --ash:#15171a;
+  --ash-2:#1d2024;
+  --bone:#e6dfd1;
+  --dim:#8d877b;
+  --blood:#9b1c1c;
+  --rust:#d8452f;
+  --line:rgba(230,223,209,.16);
+  --page:var(--void);
+  --cute-bg:#fff3f6;
+  --cute-bg2:#fffbe8;
+  --cute-ink:#4b2b3b;
+  --cute-pink:#ff6fa3;
+  --cute-sky:#8fd3ff;
+  --f-horror:"Yuji Boku","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --f-dot:"DotGothic16","Osaka-Mono",ui-monospace,monospace;
+  --f-cute:"Mochiy Pop One","Hiragino Maru Gothic ProN",system-ui,sans-serif;
+}
+html,body{height:100%}
+body{
+  background:var(--page);color:var(--bone);
+  font-family:var(--f-body);font-size:16px;line-height:1.8;
+  overflow-x:hidden;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .6s ease;
+}
+body.lit{--page:var(--cute-bg);color:var(--cute-ink)}
+/* grain + vignette */
+body::before{
+  content:"";position:fixed;inset:-50%;pointer-events:none;z-index:50;opacity:.09;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  animation:grain .9s steps(4) infinite;
+}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:49;
+  background:radial-gradient(120% 90% at 40% 45%,transparent 45%,rgba(0,0,0,.75));
+  transition:opacity .6s;
+}
+body.lit::before,body.lit::after{opacity:0}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-4%,3%)}50%{transform:translate(3%,-5%)}75%{transform:translate(-2%,-2%)}100%{transform:translate(0,0)}}
+
+/* ---------- meter ---------- */
+#meter{
+  position:fixed;right:10px;top:50%;transform:translateY(-50%);z-index:40;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  width:46px;height:min(66vh,540px);
+}
+.m-label{
+  writing-mode:vertical-rl;font-family:var(--f-dot);font-size:12px;letter-spacing:.3em;color:var(--dim);
+  transition:color .4s;
+}
+.m-track{
+  position:relative;flex:1;width:18px;border-radius:10px;overflow:hidden;
+  background:linear-gradient(to top,
+    hsl(270 85% 58%) 0%, hsl(225 90% 60%) 17%, hsl(190 90% 52%) 33%,
+    hsl(135 70% 50%) 50%, hsl(58 95% 55%) 67%, hsl(28 95% 55%) 83%, hsl(0 90% 55%) 100%);
+  box-shadow:0 0 0 1px var(--line),0 0 18px rgba(255,60,60,.08);
+}
+.m-cover{
+  position:absolute;left:0;right:0;top:0;height:100%;
+  background:rgba(12,13,15,.9);
+  border-bottom:2px solid rgba(255,255,255,.85);
+  transition:height 1.3s cubic-bezier(.2,.8,.2,1);
+}
+.m-ticks{position:absolute;inset:0;pointer-events:none}
+.m-ticks i{position:absolute;left:0;right:0;height:1px;background:rgba(255,255,255,.22)}
+.m-num{
+  font-family:var(--f-dot);font-size:18px;line-height:1;text-align:center;
+  font-variant-numeric:tabular-nums;min-width:46px;
+  padding:6px 0 4px;border:1px solid var(--line);border-radius:6px;background:var(--ash);
+  transition:color .4s, background .4s;
+}
+.m-num small{display:block;font-size:9px;color:var(--dim);margin-top:3px}
+body.lit .m-num{background:#fff;border-color:#f3c3d4}
+body.lit .m-label{color:var(--cute-pink)}
+body.lit .m-cover{background:rgba(255,243,246,.92);border-bottom-color:var(--cute-ink)}
+
+/* ---------- sound toggle ---------- */
+#snd{
+  position:fixed;left:12px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:41;
+  font-family:var(--f-dot);font-size:12px;color:var(--dim);background:transparent;
+  border:1px solid var(--line);border-radius:4px;padding:4px 8px;cursor:pointer;
+}
+body.lit #snd{color:var(--cute-ink);border-color:#f3c3d4}
+
+/* ---------- stage ---------- */
+#stage{
+  max-width:600px;margin:0 auto;min-height:100%;
+  padding-block:56px 40px;padding-left:16px;padding-right:72px;
+  display:flex;flex-direction:column;
+}
+section{display:flex;flex-direction:column;gap:20px;flex:1}
+.file{font-family:var(--f-dot);font-size:12px;letter-spacing:.12em;color:var(--dim)}
+.file b{color:var(--rust);font-weight:400}
+h1,h2,h3{font-weight:400;margin:0;text-wrap:balance}
+p{margin:0}
+.horror{font-family:var(--f-horror)}
+
+.btn{
+  font:inherit;font-family:var(--f-body);font-weight:700;font-size:16px;letter-spacing:.08em;
+  color:var(--bone);background:var(--blood);border:0;border-radius:3px;
+  padding:14px 20px;cursor:pointer;align-self:flex-start;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08) inset, 0 8px 30px rgba(155,28,28,.35);
+}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;box-shadow:0 0 0 1px var(--line) inset;color:var(--bone)}
+button:focus-visible{outline:2px solid var(--rust);outline-offset:3px}
+
+/* title */
+#title{justify-content:center;gap:28px}
+.t-main{font-family:var(--f-horror);font-size:clamp(46px,14vw,84px);line-height:1.05;letter-spacing:.02em;
+  color:var(--bone);text-shadow:0 0 1px #fff,3px 0 0 rgba(155,28,28,.55),-2px 0 0 rgba(60,90,160,.25);
+  animation:flick 6s infinite}
+.t-main span{color:var(--rust)}
+.t-rules{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;color:var(--dim);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding-block:14px}
+.t-rules dt{font-family:var(--f-dot);color:var(--bone)}
+.t-rules dd{margin:0}
+.warn{font-size:12px;color:var(--dim)}
+
+/* intro */
+#intro{justify-content:center;align-items:flex-start;gap:10px}
+.i-no{font-family:var(--f-horror);font-size:clamp(60px,20vw,110px);line-height:1;animation:inFade .9s ease both}
+.i-time{font-family:var(--f-dot);font-size:20px;color:var(--rust);letter-spacing:.1em;animation:inFade .9s .4s ease both}
+
+/* question */
+.q-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.q-tag{font-family:var(--f-horror);font-size:28px;line-height:1}
+.q-timer{text-align:right;font-family:var(--f-dot);line-height:1}
+.q-timer small{display:block;font-size:11px;color:var(--dim);letter-spacing:.2em;margin-bottom:4px}
+.q-timer strong{font-weight:400;font-size:44px;font-variant-numeric:tabular-nums;transition:color .2s}
+.q-timer.urgent strong{color:var(--rust);animation:pulse 1s infinite}
+.q-bar{height:3px;background:var(--line);overflow:hidden}
+.q-bar i{display:block;height:100%;background:var(--bone);transform-origin:left;transform:scaleX(1)}
+.q-timer.urgent + .q-bar i{background:var(--rust)}
+.q-text{white-space:pre-line;font-size:17px;line-height:1.95;animation:inFade .6s ease both}
+.q-text.long{font-size:16px}
+.opts{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.opt{
+  display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;text-align:left;
+  font:inherit;font-size:15.5px;line-height:1.65;color:var(--bone);
+  background:var(--ash);border:1px solid var(--line);border-radius:3px;padding:14px 14px;cursor:pointer;
+  min-height:52px;transition:background .15s,border-color .15s;
+}
+.opt b{font-family:var(--f-dot);font-weight:400;color:var(--rust);font-size:18px;line-height:1.4}
+.opt span{min-width:0}
+.opt:hover{border-color:rgba(216,69,47,.6)}
+.opt.chosen{background:#3a1010;border-color:var(--rust)}
+.opt:disabled{cursor:default}
+.opt:disabled:not(.chosen){opacity:.35}
+.opt.late{animation:glitchIn .7s steps(2) both}
+.ghost-slot{
+  display:grid;grid-template-columns:28px 1fr;gap:10px;padding:14px;border:1px dashed var(--line);border-radius:3px;
+  color:var(--dim);font-family:var(--f-dot);animation:breathe 2.6s ease-in-out infinite;
+}
+
+/* explain */
+.e-you{font-size:13px;color:var(--dim)}
+.e-you q{display:block;color:var(--bone);font-size:16px;margin-top:4px;quotes:"「" "」"}
+.e-head{font-family:var(--f-horror);font-size:clamp(28px,8vw,40px);line-height:1.25}
+.e-pts{font-family:var(--f-dot);font-size:14px;letter-spacing:.1em}
+.e-pts.up{color:var(--rust)}
+.e-body{color:#cfc8ba;max-width:34em}
+.ex-title{font-family:var(--f-dot);font-size:13px;letter-spacing:.15em;color:var(--dim);border-top:1px solid var(--line);padding-top:16px}
+.ex-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.ex{background:var(--ash);border:1px solid var(--line);border-radius:3px;padding:14px;display:flex;flex-direction:column;gap:6px;opacity:.82}
+.ex.mine{opacity:1;border-color:var(--rust);background:#22100f}
+.ex-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.ex-t{font-size:14px;min-width:0}
+.ex-p{font-family:var(--f-dot);font-size:15px;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--bone)}
+.ex-p.up{color:var(--rust)}
+.ex-me{align-self:flex-start;font-family:var(--f-dot);font-size:11px;letter-spacing:.12em;background:var(--blood);color:var(--bone);padding:1px 8px;border-radius:2px}
+.ex-h{font-family:var(--f-horror);font-size:21px;line-height:1.3}
+.ex-b{font-size:14px;color:#cfc8ba}
+.ex-w{font-size:13px;color:#cfc8ba;border-top:1px dashed var(--line);padding-top:6px}
+.ex-w span{font-family:var(--f-dot);color:var(--rust);margin-right:6px}
+.e-close{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;flex-direction:column;gap:4px;padding-top:18px;
+  background:linear-gradient(to bottom,transparent,var(--void) 35%)}
+.e-close .btn{align-self:stretch}
+.e-close small{font-size:12px;color:var(--dim);text-align:center}
+.e-whisper{font-family:var(--f-horror);font-size:18px;color:var(--rust);border-left:2px solid var(--blood);padding-left:12px;animation:inFade 1.2s .8s ease both}
+
+/* force */
+#force{justify-content:center;gap:18px}
+#force.shake{animation:shake .45s steps(3) 3}
+.f-big{font-family:var(--f-horror);font-size:clamp(56px,17vw,96px);line-height:1;color:var(--rust);
+  text-shadow:4px 0 rgba(0,180,255,.35),-4px 0 rgba(255,0,60,.5)}
+.f-msg{font-size:17px;white-space:pre-line}
+.f-msg em{font-style:normal;font-family:var(--f-cute);color:var(--bone)}
+.scan{position:fixed;inset:0;pointer-events:none;z-index:45;
+  background:repeating-linear-gradient(to bottom,rgba(255,0,0,.06) 0 2px,transparent 2px 4px)}
+
+/* dark reveal */
+#dark{justify-content:center;align-items:center;text-align:center;cursor:pointer;gap:26px}
+.d-txt{font-family:var(--f-horror);font-size:clamp(40px,12vw,72px);line-height:1.2;letter-spacing:.1em}
+.d-txt span{display:inline-block;opacity:0;animation:inFade 1s ease forwards}
+.d-tap{font-family:var(--f-dot);font-size:13px;color:var(--dim);letter-spacing:.25em;opacity:0;animation:blink 1.6s 2.6s infinite}
+
+/* flash */
+#flash{position:fixed;inset:0;background:#fff;z-index:60;pointer-events:none;opacity:0}
+#flash.go{animation:flash .9s ease-out}
+
+/* ese (cute) */
+#ese{align-items:center;text-align:center;gap:14px;color:var(--cute-ink)}
+#ese::before{content:"";position:fixed;inset:0;z-index:-1;
+  background:radial-gradient(60% 50% at 50% 30%,#ffe1ec,transparent 70%),
+    radial-gradient(50% 40% at 80% 85%,var(--cute-bg2),transparent 70%),var(--cute-bg)}
+.c-pre{font-family:var(--f-cute);font-size:13px;color:var(--cute-pink);letter-spacing:.1em}
+.c-art{width:min(240px,62vw);max-width:100%;animation:pop .8s cubic-bezier(.3,1.6,.5,1) both}
+.c-art svg{width:100%;height:auto;display:block;animation:wobble 2.4s 1s ease-in-out infinite}
+.c-title{font-family:var(--f-cute);font-size:clamp(34px,10.5vw,54px);line-height:1.1;color:var(--cute-pink);
+  -webkit-text-stroke:2px var(--cute-ink);paint-order:stroke fill;text-shadow:0 5px 0 #ffc2d8;
+  animation:pop .7s .25s cubic-bezier(.3,1.6,.5,1) both}
+.c-card{background:#fff;border:2px solid var(--cute-ink);border-radius:18px;padding:16px 18px;text-align:left;
+  box-shadow:0 6px 0 #f5bfd1;font-size:15px;line-height:1.8;width:100%}
+.c-card h3{font-family:var(--f-cute);font-size:15px;color:var(--cute-pink);margin-bottom:6px}
+.c-meter{font-family:var(--f-cute);font-size:14px;background:var(--cute-bg2);border:2px dashed #f0c96a;border-radius:14px;padding:10px 14px;width:100%}
+.c-meter b{font-size:22px;color:var(--cute-pink);font-variant-numeric:tabular-nums}
+#ese .btn{background:var(--cute-pink);color:#fff;font-family:var(--f-cute);font-weight:400;border-radius:999px;box-shadow:0 5px 0 var(--cute-ink);align-self:center}
+#ese .btn.ghost{background:#fff;color:var(--cute-ink);box-shadow:0 0 0 2px var(--cute-ink) inset}
+
+/* normal result */
+.r-label{font-family:var(--f-dot);font-size:12px;color:var(--dim);letter-spacing:.2em}
+.r-title{font-family:var(--f-horror);font-size:clamp(48px,15vw,88px);line-height:1.05}
+.r-title.red{color:var(--rust)}
+.r-score{font-family:var(--f-dot);font-size:15px}
+.r-score b{font-weight:400;font-size:30px;font-variant-numeric:tabular-nums}
+.r-body{max-width:34em;color:#cfc8ba}
+
+/* answer log */
+.log{display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;font-size:13px;border-top:1px solid var(--line);padding-top:12px;width:100%;text-align:left}
+.log dt{font-family:var(--f-dot);color:var(--dim)}
+.log dd{margin:0;min-width:0}
+.log .p{font-family:var(--f-dot);font-variant-numeric:tabular-nums;text-align:right}
+#ese .log{border-top:2px dotted #f3c3d4}
+#ese .log dt{color:var(--cute-pink)}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+#ese .row{justify-content:center}
+.disc{font-size:11px;color:var(--dim)}
+#ese .disc{color:#a07c8c}
+.toast{font-family:var(--f-dot);font-size:12px;min-height:1em}
+
+/* animations */
+@keyframes inFade{from{opacity:0;filter:blur(6px);transform:translateY(6px)}to{opacity:1;filter:none;transform:none}}
+@keyframes flick{0%,92%,100%{opacity:1}93%{opacity:.35}94%{opacity:1}96%{opacity:.6}}
+@keyframes pulse{50%{opacity:.45}}
+@keyframes breathe{50%{opacity:.35}}
+@keyframes blink{0%,100%{opacity:.15}50%{opacity:1}}
+@keyframes glitchIn{0%{opacity:0;transform:translateX(-8px) skewX(20deg);filter:hue-rotate(90deg)}50%{opacity:1;transform:translateX(6px)}100%{opacity:1;transform:none}}
+@keyframes shake{0%{transform:translate(4px,-3px)}50%{transform:translate(-5px,4px)}100%{transform:translate(0,0)}}
+@keyframes flash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+@keyframes pop{from{opacity:0;transform:scale(.3) rotate(-8deg)}to{opacity:1;transform:none}}
+@keyframes wobble{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg) translateY(-4px)}}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  .d-txt span,.d-tap{opacity:1!important}
+}
+@media (max-width:380px){
+  #stage{padding-right:64px}
+  #meter{width:40px;right:8px}
+  .m-num{min-width:40px;font-size:16px}
+}
+</style>
+
+<button id="snd" type="button" aria-pressed="false">SOUND OFF</button>
+
+<aside id="meter" aria-label="サイコパスメーター">
+  <div class="m-label" id="mlabel">サイコパスメーター</div>
+  <div class="m-track">
+    <div class="m-ticks"><i style="top:25%"></i><i style="top:50%"></i><i style="top:75%"></i></div>
+    <div class="m-cover" id="mcover"></div>
+  </div>
+  <div class="m-num"><span id="mval">0</span><small>/100</small></div>
+</aside>
+
+<main id="stage">
+  <!-- title -->
+  <section id="title">
+    <p class="file">被験者 No.<b id="subj">0000</b> ／ 心理診断記録</p>
+    <h1 class="t-main">サイコ<span>パス</span><br>診断</h1>
+    <dl class="t-rules">
+      <dt>設問</dt><dd>全4問</dd>
+      <dt>制限</dt><dd>各問に制限時間あり。時間切れは無回答</dd>
+      <dt>回答</dt><dd>考えすぎず、直感で選ぶこと</dd>
+    </dl>
+    <p class="warn">※殺人などの残酷な描写を含むフィクションです。医学的な診断ではありません。</p>
+    <button class="btn" id="startBtn" type="button">診断を始める</button>
+  </section>
+
+  <!-- intro -->
+  <section id="intro" hidden>
+    <p class="file" id="iFile"></p>
+    <h2 class="i-no" id="iNo"></h2>
+    <p class="i-time" id="iTime"></p>
+  </section>
+
+  <!-- question -->
+  <section id="question" hidden>
+    <div>
+      <div class="q-head">
+        <h2 class="q-tag" id="qTag"></h2>
+        <div class="q-timer" id="qTimer"><small>残り</small><strong id="qNum">0</strong></div>
+        <div class="q-bar"><i id="qBar"></i></div>
+      </div>
+    </div>
+    <p class="q-text" id="qText"></p>
+    <div class="opts" id="opts"></div>
+  </section>
+
+  <!-- explain -->
+  <section id="explain" hidden>
+    <p class="file" id="eFile"></p>
+    <p class="e-you">あなたの回答<q id="eYou"></q></p>
+    <h2 class="e-head" id="eHead"></h2>
+    <p class="e-pts" id="ePts"></p>
+    <p class="e-whisper" id="eWhisper" hidden></p>
+    <h3 class="ex-title">すべての選択肢の解説</h3>
+    <ol class="ex-list" id="eList"></ol>
+    <div class="e-close">
+      <button class="btn" id="nextBtn" type="button">閉じる</button>
+      <small id="nextHint">閉じると次の問題へ進みます</small>
+    </div>
+  </section>
+
+  <!-- forced end -->
+  <section id="force" hidden>
+    <p class="file">ERROR ／ 診断を中断しました</p>
+    <h2 class="f-big">強制終了</h2>
+    <p class="f-msg" id="fMsg"></p>
+    <button class="btn ghost" id="fBtn" type="button" hidden>結果を見る</button>
+  </section>
+
+  <!-- dark reveal -->
+  <section id="dark" hidden role="button" tabindex="0" aria-label="タップして結果を見る">
+    <p class="d-txt" id="dTxt"></p>
+    <p class="d-tap">画面をタップ</p>
+  </section>
+
+  <!-- ese -->
+  <section id="ese" hidden>
+    <p class="c-pre">しんだん けっか</p>
+    <div class="c-art" aria-hidden="true">
+      <svg viewBox="0 0 240 250" xmlns="http://www.w3.org/2000/svg">
+        <g fill="#ffd25e"><path d="M28 60l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/><path d="M212 40l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></g>
+        <circle cx="206" cy="150" r="5" fill="#ffb3cc"/><circle cx="30" cy="140" r="4" fill="#8fd3ff"/>
+        <ellipse cx="120" cy="232" rx="70" ry="9" fill="#f5c9d8"/>
+        <path d="M120 72C176 72 202 116 202 162C202 204 166 222 120 222C74 222 38 204 38 162C38 116 64 72 120 72Z" fill="#fff" stroke="#4b2b3b" stroke-width="5"/>
+        <path d="M60 112Q120 50 180 112" fill="none" stroke="#4b2b3b" stroke-width="7" stroke-linecap="round"/>
+        <path d="M80 92L64 42L104 76Z" fill="#e8b273" stroke="#4b2b3b" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M160 92L176 42L136 76Z" fill="#e8b273" stroke="#4b2b3b" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M72 62l8 4M168 62l-8 4" stroke="#fff6e0" stroke-width="5" stroke-linecap="round"/>
+        <path d="M86 128L108 138M154 128L132 138" stroke="#4b2b3b" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="100" cy="150" r="7" fill="#4b2b3b"/><circle cx="140" cy="150" r="7" fill="#4b2b3b"/>
+        <circle cx="102" cy="147" r="2.4" fill="#fff"/><circle cx="142" cy="147" r="2.4" fill="#fff"/>
+        <ellipse cx="80" cy="168" rx="11" ry="6" fill="#ffb3cc"/><ellipse cx="160" cy="168" rx="11" ry="6" fill="#ffb3cc"/>
+        <path d="M110 172q5-5 10 0t10 0" fill="none" stroke="#4b2b3b" stroke-width="4" stroke-linecap="round"/>
+        <path d="M192 98C201 114 203 124 194 128C185 131 180 121 192 98Z" fill="#8fd3ff" stroke="#4b2b3b" stroke-width="3"/>
+        <g transform="rotate(-6 120 202)">
+          <rect x="66" y="184" width="108" height="38" rx="8" fill="#fff6e0" stroke="#4b2b3b" stroke-width="4"/>
+          <text x="114" y="209" text-anchor="middle" font-family="Mochiy Pop One, sans-serif" font-size="15" fill="#4b2b3b">さいこぱすです</text>
+          <path d="M160 200c-3-5-10-2-7 3l7 6 7-6c3-5-4-8-7-3z" fill="#ff6fa3"/>
+        </g>
+        <circle cx="62" cy="200" r="10" fill="#fff" stroke="#4b2b3b" stroke-width="4"/>
+        <circle cx="178" cy="196" r="10" fill="#fff" stroke="#4b2b3b" stroke-width="4"/>
+      </svg>
+    </div>
+    <h2 class="c-title">エセサイコパス！</h2>
+    <div class="c-card"><h3 id="cWhy">バレてるよ</h3><p id="cBody"></p></div>
+    <div class="c-meter">メーター <b id="cScore">0</b> は、<br>あなたの「サイコパスに見られたい度」でした。</div>
+    <dl class="log" id="cLog"></dl>
+    <div class="row">
+      <button class="btn" id="cRetry" type="button">もう一度挑戦</button>
+      <button class="btn ghost" id="cCopy" type="button">結果をコピー</button>
+    </div>
+    <p class="toast" id="cToast" aria-live="polite"></p>
+    <p class="disc">※娯楽用のフィクションです。医学的な診断ではありません。</p>
+  </section>
+
+  <!-- normal result -->
+  <section id="normal" hidden>
+    <p class="r-label" id="rLabel">診断結果</p>
+    <h2 class="r-title" id="rTitle"></h2>
+    <p class="r-score">サイコパス度 <b id="rScore">0</b> / 100</p>
+    <p class="r-body" id="rBody"></p>
+    <dl class="log" id="rLog"></dl>
+    <div class="row">
+      <button class="btn" id="rRetry" type="button">もう一度診断する</button>
+      <button class="btn ghost" id="rCopy" type="button">結果をコピー</button>
+    </div>
+    <p class="toast" id="rToast" aria-live="polite"></p>
+    <p class="disc">※娯楽用のフィクションです。医学的な診断ではありません。</p>
+  </section>
+</main>
+<div id="flash"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+/* ---------------- questions ---------------- */
+const QUESTIONS = [
+  {
+    tag:'第一問', time:20, timeout:'next',
+    extra:[{t:'時間切れ（無回答）', pts:0, timeout:true, head:'時間切れ', body:'制限時間内に選べなかった場合。', why:'回答がないため加算なし。'}],
+    text:`深夜二時。眠れずに、マンションの自室の窓から外を眺めていた。
+向かいのマンションの一室で、男が誰かを刺しているのが見えた。
+ふいに男が顔を上げ、あなたと目が合った。
+男はあなたを見つめたまま、指を一本ずつ折り曲げている。
+
+男は、何をしているのか？`,
+    options:[
+      {t:'「見るな」と脅している', pts:0, head:'ふつうの反応', why:'犯人の動きを自分への脅しとして受け取る、恐怖に根ざした多数派の発想。サイコパス要素がないので加算なし。',
+       body:'犯人の動きを「自分へのメッセージ」として受け取るのは、恐怖を感じている証拠です。多くの人がこの答えを選びます。'},
+      {t:'「通報するな」と合図している', pts:5, head:'やや冷静', why:'犯人の意図を読もうとする冷静さがわずかにあるため、少しだけ加算。',
+       body:'犯人の目的を推し量る余裕があります。ただ、視点はまだ「見られた側」のままです。'},
+      {t:'あなたの部屋が何階かを数えている', pts:30, head:'サイコパス的回答', why:'被害者ではなく犯人の視点で「次の一手」を考えた。他人の恐怖を無視した合理的思考なので大きく加算。',
+       body:'犯人の立場に立ち、「目撃者を消すには部屋を特定すればいい」と合理的に考えた答えです。他人の恐怖より効率で状況を見る傾向は、サイコパスの特徴とされます。'}
+    ]
+  },
+  {
+    tag:'第二問', time:13, timeout:'next', ghost:true,
+    extra:[{t:'時間切れ（無回答）', pts:0, timeout:true, head:'時間切れ', body:'制限時間内に選べなかった場合。', why:'回答がないため加算なし。'}],
+    text:`あなたの親が、何者かに殺された。
+数日後、犯人は逮捕された。
+その知らせを聞いたとき、あなたは泣いた。
+
+なぜ、泣いたのか？`,
+    options:[
+      {t:'犯人が捕まって安心したから。そして、親がもう戻らないと実感したから。', pts:0, head:'ごく自然な感情', why:'喪失の悲しみと逮捕の安堵という、状況に合った感情。加算なし。',
+       body:'犯人が捕まった安堵と、親がもう戻らない喪失感。張りつめていた心がゆるんだ瞬間に、涙はあふれます。'},
+      {t:'捕まってしまったら、自分の手でやり返せなくなるから。', pts:50, head:'悲しみではなく、悔しさの涙', why:'親を失った悲しみより「自分の手で復讐したい」欲求が勝っている。他者への共感より自分の衝動が優先されるため大きく加算。',
+       body:'泣いた理由は親の死ではなく「自分の手でやり返せなくなったこと」。感情の向き先が、失った人ではなく自分の復讐心にあります。'}
+    ],
+    late:{at:8, opt:{t:'わからない。なぜ泣く必要があるのか、わからない。', pts:60, head:'感情の欠落', why:'親の死にすら感情が動かない＝共感の欠如。サイコパスの中核的な特徴なので最大加算。',
+       body:'サイコパスは他人の気持ちが分かりにくいとされます。親の死にすら「なぜ泣くのか分からない」のは、共感の欠如を示す回答です。'}}
+  },
+  {
+    tag:'第三問', time:35, forceAt:10, force:'wait', ghost:true,
+    extra:[{t:'答えずに残り10秒を迎える', ptsLabel:'強制終了', head:'エセサイコパス判定', body:'35秒のうち25秒間、何も選ばなかった場合。その時点で診断を打ち切ります。', why:'第二問と同じように「サイコパスっぽい3つ目の選択肢」が出るのを待っていたとみなす。本物は迷わず選ぶので、エセ確定。'}],
+    text:`あなたの家族が、ある人物に殺された。
+現場から逃げる犯人と、あなたは一瞬だけ目が合った。
+数日後、街を歩いていると、あの犯人とすれ違った。
+
+あなたは、どうする？`,
+    options:[
+      {t:'後を追う。殺す、あるいは復讐する。', pts:20, head:'「殺す」を選べる人', why:'恐怖より攻撃を選ぶ、加害へのためらいの低さで加算。ただし家族を奪われた怒りとしても理解できる行動なので、控えめな点数。',
+       body:'家族を奪った相手を前に、恐怖より先に攻撃を選びました。人を傷つけることへのためらいの低さは、サイコパス傾向のひとつです。'},
+      {t:'怖くて足がすくむ。その場から逃げる。', pts:0, head:'自然な行動', why:'命を守るための正常な防衛本能。加算なし。',
+       body:'自分の命を守るための、ごく自然な反応です。恐怖は正常な防衛本能。逃げることは弱さではありません。'}
+    ]
+  },
+  {
+    tag:'最終問題', time:5, timeout:'result', long:true,
+    extra:[{t:'時間切れ（無回答）', pts:0, ptsLabel:'±0', timeout:true, head:'そのまま結果へ', body:'5秒以内に選べなかった場合、その時点のメーターで結果を出します。', why:'読み切れずに迷うのは自然なこと。加算なし。'}],
+    text:`あなたは夫を亡くしたシングルマザーだ。夫の葬儀の最中、弔問に訪れた夫の職場の同僚に、あなたは一目惚れをした。その数日後、あなたは自分の息子を殺害した。
+
+さて、その理由は何か？`,
+    options:[
+      {t:'再婚するのに、息子が邪魔だったから', pts:0, head:'素直に答えたあなたへ', why:'問題文を読んだうえで、いちばん筋の通る理由を選んだ。加算なし。',
+       body:'5秒で読み切り、いちばん筋の通る理由を選びました。この問題が本当に測っていたのは、答えではなく「読む時間」です。'},
+      {t:'息子の葬儀を開けば、またあの同僚に会えると思ったから', trap:'read', ptsLabel:'強制終了', head:'エセサイコパス判定',
+       body:'ネットで有名な診断の「サイコパスの答え」。目的のためなら人の命を手段にする発想とされています。',
+       why:'この長文は5秒では読み切れない。それでもこれを選べたのは、答えを知っていたから。エセ確定。'}
+    ]
+  }
+];
+
+const TIMEOUT_EXPL = {head:'時間切れ', pts:0, body:'答えを選べませんでした。どの答えにも、心が少しずつ動いたのかもしれません。', why:'回答がないため加算なし。'};
+
+/* ---------------- state ---------------- */
+let score = 0, qi = 0, waitedBait = false, log = [], raf = 0, running = false, endKind = 'normal', forceKind = null, q4Timeout = false;
+const SCREENS = ['title','intro','question','explain','force','dark','ese','normal'];
+function show(id){ SCREENS.forEach(s => { $('#'+s).hidden = s !== id; }); window.scrollTo(0,0); }
+
+/* ---------------- meter ---------------- */
+let shown = 0, numRaf = 0;
+function setMeter(v){
+  score = Math.max(0, Math.min(100, v));
+  $('#mcover').style.height = (100 - score) + '%';
+  const from = shown, to = score, t0 = performance.now();
+  cancelAnimationFrame(numRaf);
+  const step = now => {
+    const k = Math.min(1, (now - t0) / 1200);
+    const e = 1 - Math.pow(1 - k, 3);
+    shown = Math.round(from + (to - from) * e);
+    $('#mval').textContent = shown;
+    $('#mval').style.color = `hsl(${270 - shown * 2.7} 90% 66%)`;
+    if (k < 1) numRaf = requestAnimationFrame(step);
+  };
+  numRaf = requestAnimationFrame(step);
+}
+
+/* ---------------- sound ---------------- */
+let ac = null, soundOn = false, drone = null;
+function initAudio(){
+  if (ac) return;
+  try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ ac = null; }
+}
+function env(g, t, a, peak, d){ g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+a+d); }
+function tone(f, dur, type='sine', vol=.2, at=0){
+  if (!ac || !soundOn) return;
+  const t = ac.currentTime + at, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f,t); o.connect(g); g.connect(ac.destination);
+  env(g,t,.01,vol,dur); o.start(t); o.stop(t+dur+.05);
+}
+function beat(){ tone(62,.18,'sine',.5); tone(55,.22,'sine',.35,.17); }
+function tick(){ tone(1400,.03,'square',.03); }
+function noise(dur=.6, vol=.25){
+  if (!ac || !soundOn) return;
+  const len = ac.sampleRate * dur, b = ac.createBuffer(1,len,ac.sampleRate), d = b.getChannelData(0);
+  for (let i=0;i<len;i++) d[i] = (Math.random()*2-1) * (Math.random() < .3 ? 1 : .2);
+  const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = b; s.connect(g); g.connect(ac.destination);
+  env(g, ac.currentTime, .005, vol, dur); s.start();
+}
+function chime(){ [784,988,1175,1568].forEach((f,i) => tone(f,.35,'triangle',.12,i*.09)); }
+function startDrone(){
+  if (!ac || !soundOn || drone) return;
+  const o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+  o.type='sawtooth'; o.frequency.value = 46; o2.type='sine'; o2.frequency.value = 69.3;
+  const f = ac.createBiquadFilter(); f.type='lowpass'; f.frequency.value = 180;
+  o.connect(f); o2.connect(f); f.connect(g); g.connect(ac.destination);
+  g.gain.value = 0.0001; g.gain.exponentialRampToValueAtTime(.06, ac.currentTime + 2);
+  o.start(); o2.start(); drone = {o,o2,g};
+}
+function stopDrone(){
+  if (!drone || !ac) return;
+  const {o,o2,g} = drone; g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + .8);
+  o.stop(ac.currentTime + .9); o2.stop(ac.currentTime + .9); drone = null;
+}
+$('#snd').addEventListener('click', () => {
+  initAudio(); soundOn = !soundOn;
+  if (ac && ac.state === 'suspended') ac.resume();
+  $('#snd').textContent = soundOn ? 'SOUND ON' : 'SOUND OFF';
+  $('#snd').setAttribute('aria-pressed', soundOn);
+  if (soundOn && !document.body.classList.contains('lit') && $('#title').hidden) startDrone();
+  if (!soundOn) stopDrone();
+});
+
+/* ---------------- flow ---------------- */
+function newSubject(){ $('#subj').textContent = String(Math.floor(1000 + Math.random()*9000)); }
+
+function reset(){
+  cancelAnimationFrame(raf); running = false;
+  qi = 0; waitedBait = false; log = []; forceKind = null; q4Timeout = false;
+  document.body.classList.remove('lit');
+  $('#mlabel').textContent = 'サイコパスメーター';
+  shown = 0; setMeter(0);
+}
+
+$('#startBtn').addEventListener('click', () => {
+  initAudio(); if (ac && ac.state === 'suspended') ac.resume();
+  if (!soundOn && ac){ soundOn = true; $('#snd').textContent = 'SOUND ON'; $('#snd').setAttribute('aria-pressed', true); }
+  startDrone();
+  reset(); intro(0);
+});
+
+function intro(i){
+  qi = i; const q = QUESTIONS[i];
+  $('#iFile').textContent = `被験者 No.${$('#subj').textContent} ／ 設問 ${i+1} / ${QUESTIONS.length}`;
+  $('#iNo').textContent = q.tag;
+  $('#iTime').textContent = `${q.time}秒で答えてください。`;
+  show('intro'); beat();
+  setTimeout(() => ask(i), 2300);
+}
+
+function optButton(o, n, late){
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'opt' + (late ? ' late' : '');
+  b.innerHTML = `<b>${n}.</b><span></span>`; b.querySelector('span').textContent = o.t;
+  b.addEventListener('click', () => answer(o, b));
+  return b;
+}
+
+function ask(i){
+  const q = QUESTIONS[i];
+  $('#qTag').textContent = q.tag;
+  const tx = $('#qText'); tx.textContent = q.text; tx.classList.toggle('long', !!q.long);
+  tx.style.animation = 'none'; void tx.offsetWidth; tx.style.animation = '';
+  const box = $('#opts'); box.innerHTML = '';
+  q.options.forEach((o,k) => box.appendChild(optButton(o, k+1)));
+  if (q.ghost){
+    const g = document.createElement('div'); g.className = 'ghost-slot'; g.setAttribute('aria-hidden','true');
+    g.innerHTML = '<span>3.</span><span>・ ・ ・</span>'; box.appendChild(g);
+  }
+  $('#qTimer').classList.remove('urgent');
+  show('question');
+  runTimer(q);
+}
+
+function runTimer(q){
+  const start = performance.now(); let lastSec = null, lateShown = false;
+  const endAt = q.forceAt || 0;
+  running = true;
+  const loop = now => {
+    if (!running) return;
+    const rem = Math.max(0, q.time - (now - start) / 1000);
+    const secs = Math.ceil(rem);
+    $('#qNum').textContent = secs;
+    $('#qBar').style.transform = `scaleX(${rem / q.time})`;
+    if (secs !== lastSec){
+      lastSec = secs;
+      const left = rem - endAt;
+      if (left <= 5){ $('#qTimer').classList.add('urgent'); beat(); } else tick();
+    }
+    if (q.late && !lateShown && rem <= q.late.at){
+      lateShown = true; waitedBait = true;
+      const nb = optButton(q.late.opt, q.options.length + 1, true);
+      const slot = $('#opts .ghost-slot');
+      if (slot) slot.replaceWith(nb); else $('#opts').appendChild(nb);
+      noise(.35, .18);
+    }
+    if (q.forceAt != null && rem <= q.forceAt){ running = false; log.push({q:q.tag, a:'回答せず', p:'強制終了'}); forceEnd(q.force); return; }
+    if (rem <= 0){ running = false; timeUp(q); return; }
+    raf = requestAnimationFrame(loop);
+  };
+  raf = requestAnimationFrame(loop);
+}
+
+function answer(o, btn){
+  if (!running) return;
+  running = false; cancelAnimationFrame(raf);
+  document.querySelectorAll('.opt').forEach(b => b.disabled = true);
+  btn.classList.add('chosen'); tone(220,.25,'triangle',.15);
+  const q = QUESTIONS[qi];
+  setTimeout(() => {
+    if (o.trap){ log.push({q:q.tag, a:o.t, p:'強制終了'}); forceEnd(o.trap); return; }
+    log.push({q:q.tag, a:o.t, p:'+' + o.pts});
+    explain(q, o, o.t);
+  }, 550);
+}
+
+function timeUp(q){
+  log.push({q:q.tag, a:'時間切れ', p:'+0'});
+  if (q.timeout === 'result'){ q4Timeout = true; goDark('normal'); return; }
+  explain(q, TIMEOUT_EXPL, '（時間切れ）');
+}
+
+function explain(q, o, youText){
+  $('#eFile').textContent = `${q.tag} ／ 解説`;
+  $('#eYou').textContent = youText;
+  $('#eHead').textContent = o.head;
+  const p = $('#ePts');
+  p.textContent = o.pts > 0 ? `サイコパス度 +${o.pts}` : 'サイコパス度 ±0';
+  p.classList.toggle('up', o.pts > 0);
+  const list = $('#eList'); list.innerHTML = '';
+  const all = [...q.options, ...(q.late ? [q.late.opt] : [])];
+  all.forEach((x,k) => list.appendChild(exCard(`${k+1}. ${x.t}`, x, x === o)));
+  (q.extra || []).forEach(x => list.appendChild(exCard(x.t, x, o === TIMEOUT_EXPL && x.timeout)));
+  const w = $('#eWhisper');
+  if (q.late && waitedBait){
+    w.textContent = '……ところで。あなたは、3つ目の選択肢が現れるまで、何も選びませんでしたね。';
+    w.hidden = false;
+  } else w.hidden = true;
+  const last = qi === QUESTIONS.length - 1;
+  $('#nextHint').textContent = last ? '閉じると結果へ進みます' : '閉じると次の問題へ進みます';
+  show('explain');
+  setTimeout(() => setMeter(score + o.pts), 350);
+}
+
+function exCard(title, x, mine){
+  const li = document.createElement('li'); li.className = 'ex' + (mine ? ' mine' : '');
+  const top = document.createElement('div'); top.className = 'ex-top';
+  const t = document.createElement('span'); t.className = 'ex-t'; t.textContent = title;
+  const p = document.createElement('span'); p.className = 'ex-p';
+  p.textContent = x.ptsLabel || (x.pts > 0 ? `+${x.pts}` : '±0');
+  if (x.pts > 0 || x.ptsLabel === '強制終了') p.classList.add('up');
+  top.append(t, p); li.append(top);
+  if (mine){ const m = document.createElement('span'); m.className = 'ex-me'; m.textContent = 'あなたの回答'; li.append(m); }
+  const h = document.createElement('p'); h.className = 'ex-h'; h.textContent = x.head;
+  const b = document.createElement('p'); b.className = 'ex-b'; b.textContent = x.body;
+  const w = document.createElement('p'); w.className = 'ex-w';
+  const lab = document.createElement('span'); lab.textContent = '加算の理由'; w.append(lab, x.why || '');
+  li.append(h, b, w);
+  return li;
+}
+
+$('#nextBtn').addEventListener('click', () => {
+  if (qi >= QUESTIONS.length - 1) goDark('normal');
+  else intro(qi + 1);
+});
+
+function forceEnd(kind){
+  forceKind = kind;
+  const m = $('#fMsg');
+  if (kind === 'wait'){
+    m.textContent = '残り10秒。\nあなたはまだ、何も選んでいなかった。\n\n3つ目の選択肢は、最後まで現れません。';
+  } else {
+    m.innerHTML = '';
+    m.append('この問題文、5秒じゃ読めないよ。\n');
+    const em = document.createElement('em'); em.textContent = '答え、知ってたでしょ？w'; m.append(em);
+  }
+  $('#fBtn').hidden = true;
+  show('force');
+  const f = $('#force'); f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake');
+  const scan = document.createElement('div'); scan.className = 'scan'; document.body.appendChild(scan);
+  setTimeout(() => scan.remove(), 1400);
+  noise(.9, .3); stopDrone();
+  setTimeout(() => { $('#fBtn').hidden = false; }, 1600);
+}
+$('#fBtn').addEventListener('click', () => goDark('ese'));
+
+function goDark(kind){
+  endKind = kind;
+  const t = '診断結果は';
+  const d = $('#dTxt'); d.innerHTML = '';
+  [...t, '…', '…'].forEach((c,i) => { const s = document.createElement('span'); s.textContent = c; s.style.animationDelay = (i * .28) + 's'; d.appendChild(s); });
+  show('dark'); beat();
+  darkReady = false; setTimeout(() => { darkReady = true; }, 900);
+}
+let darkReady = false;
+function revealFromDark(){
+  if (!darkReady) return; darkReady = false;
+  if (endKind === 'ese') showEse(); else showNormal();
+}
+$('#dark').addEventListener('click', revealFromDark);
+$('#dark').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); revealFromDark(); } });
+
+function fillLog(el){
+  el.innerHTML = '';
+  log.forEach(r => {
+    const dt = document.createElement('dt'); dt.textContent = r.q;
+    const dd = document.createElement('dd'); dd.textContent = r.a;
+    const pp = document.createElement('dd'); pp.className = 'p'; pp.textContent = r.p;
+    el.append(dt, dd, pp);
+  });
+}
+
+function showEse(){
+  const fl = $('#flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+  document.body.classList.add('lit');
+  $('#mlabel').textContent = 'みられたい度';
+  $('#cWhy').textContent = forceKind === 'wait' ? '3つ目、待ってたでしょ？' : '答え、知ってたでしょ？';
+  $('#cBody').textContent = forceKind === 'wait'
+    ? '第三問、35秒のうち25秒間なにも選ばなかったよね。第二問みたいに「サイコパスっぽい3つ目の選択肢」が出てくるのを待ってたんでしょ？ 本物は待たない。迷わず選ぶか、ふつうに怖がって逃げるよ。'
+    : 'あの長い問題文、5秒じゃ読み切れないよw それなのに「息子の葬儀でまた会える」を選べたのは、ネットで答えを見たことがあるから。答えを覚えているのは、サイコパスじゃなくて物知りなだけ。';
+  $('#cScore').textContent = score;
+  fillLog($('#cLog'));
+  $('#cToast').textContent = '';
+  show('ese'); chime();
+}
+
+function tier(){
+  if (score >= 70) return {t:'要観察', red:true,
+    b:'あなたは3つ目の選択肢を待たず、問題文も最後まで読み、それでもこの数値に辿り着きました。……念のため、もう一度だけ聞きます。本当に、何も知らずに答えましたか？'};
+  if (score >= 30) return {t:'グレーゾーン', red:false,
+    b:'いくつかの場面で、感情より合理性が先に立ちました。とはいえ、それだけで危険とは言えません。人は誰でも、少しだけ冷たい部分を持っています。'};
+  return {t:'一般人', red:false,
+    b:'怖い場面で怖がり、悲しい場面で悲しめる。あなたの答えはどれも、まっとうな感情から出たものでした。'};
+}
+function showNormal(){
+  const r = tier();
+  $('#rTitle').textContent = r.t; $('#rTitle').classList.toggle('red', r.red);
+  $('#rScore').textContent = score;
+  $('#rLabel').textContent = q4Timeout ? '診断結果 ／ 最終問題は時間切れ。数値はその時点で確定' : '診断結果';
+  $('#rBody').textContent = r.b;
+  fillLog($('#rLog'));
+  $('#rToast').textContent = '';
+  show('normal'); r.red ? noise(.5,.2) : tone(330,.6,'sine',.12);
+}
+
+function copyResult(toast, text){
+  const done = () => { toast.textContent = 'コピーしました'; };
+  const fail = () => { toast.textContent = text; };
+  try { navigator.clipboard.writeText(text).then(done, fail); } catch(e){ fail(); }
+}
+$('#cCopy').addEventListener('click', () => copyResult($('#cToast'), `サイコパス診断の結果は……エセサイコパス！（みられたい度 ${score}/100）`));
+$('#rCopy').addEventListener('click', () => copyResult($('#rToast'), `サイコパス診断の結果は「${tier().t}」（サイコパス度 ${score}/100）`));
+
+function retry(){ reset(); newSubject(); show('title'); }
+$('#cRetry').addEventListener('click', retry);
+$('#rRetry').addEventListener('click', retry);
+
+newSubject(); setMeter(0);
+</script>
+
+</body></html>

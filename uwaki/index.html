@@ -1,0 +1,1411 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>スマホ見せて</title></head><body>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* Layout: one stage — a small game HUD on top, the phone fills the rest. One dark look on purpose (late night, lipstick accent). */
+:root{
+  --night:#16121b; --night2:#231c2b; --line:#3a2f44; --paper:#f4eef3; --muted:#a99db3;
+  --lip:#ff4d78; --amber:#ffb84d; --ok:#4fd1a1; --bad:#ff5d5d;
+  --display:"Dela Gothic One","Zen Kaku Gothic New","Hiragino Sans",sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  --sys:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:radial-gradient(120% 70% at 50% 0%,#2e2238 0%,var(--night) 62%);background-color:var(--night);color:var(--paper);font-family:var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit}
+.stage{height:100%;display:flex;flex-direction:column;align-items:center;gap:10px;padding-inline:16px;padding-block:10px;box-sizing:border-box}
+.hud{width:100%;max-width:440px;display:flex;align-items:center;gap:8px;flex:none}
+.hud h1{font-family:var(--display);font-weight:400;font-size:20px;margin:0;flex:1;white-space:nowrap;letter-spacing:.02em}
+.hud h1 span{color:var(--lip)}
+.timer{font:700 15px var(--sys);font-variant-numeric:tabular-nums;padding:6px 11px;border-radius:999px;background:var(--night2);border:1px solid var(--line)}
+.timer.hot{color:var(--night);background:var(--amber);border-color:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.06)}}
+.hand{font:700 13px var(--body);padding:8px 13px;border-radius:999px;border:0;background:var(--lip);color:#fff;cursor:pointer;white-space:nowrap}
+.hand:hover{filter:brightness(1.08)}
+.hand:focus-visible,.btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.phone-wrap{flex:1;min-height:0;width:100%;display:flex;justify-content:center;align-items:center}
+.phone{height:100%;max-height:840px;aspect-ratio:390/844;max-width:100%;background:#0b0a0d;border-radius:56px;padding:11px;box-sizing:border-box;box-shadow:0 0 0 2px #3b3442,0 0 0 5px #121015,0 30px 80px rgba(0,0,0,.6);position:relative}
+.screen{position:relative;width:100%;height:100%;border-radius:46px;overflow:hidden;font-family:var(--sys);font-size:15px;container-type:size;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+  --app-bg:#fff;--app-bg2:#f2f2f7;--app-fg:#111;--app-sub:#8a8a8e;--app-line:#dcdce1;--app-card:#fff;--app-tint:#0a84ff;--app-red:#ff3b30;--app-green:#34c759;--sheet:rgba(249,249,251,.97);--sheet-line:rgba(0,0,0,.13)}
+.screen.dark{--app-bg:#000;--app-bg2:#000;--app-fg:#f2f2f2;--app-sub:#8e8e93;--app-line:#38383a;--app-card:#1c1c1e;--sheet:rgba(40,40,42,.97);--sheet-line:rgba(255,255,255,.12)}
+@media (max-width:520px){.phone{border-radius:40px;padding:7px}.screen{border-radius:34px}}
+.wp0{background:linear-gradient(165deg,#2b2350 0%,#a8487a 52%,#f2a06a 100%)}
+.wp1{background:linear-gradient(170deg,#0d3550 0%,#1f8a8a 55%,#9fe3c8 100%)}
+.wp2{background:linear-gradient(170deg,#18181b 0%,#3c3c45 60%,#5d5a6a 100%)}
+.wp3{background:linear-gradient(165deg,#f6b8cb 0%,#c9b8f2 55%,#9fc4ff 100%)}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:31%;max-width:120px;height:32px;background:#000;border-radius:20px;z-index:300;pointer-events:none}
+.sbar{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:4px 26px 0 34px;box-sizing:border-box;font-weight:600;font-size:15px;color:#fff;z-index:290;pointer-events:none;font-variant-numeric:tabular-nums}
+.screen.in-app .sbar{color:var(--app-fg)}
+.screen.in-app.sb-light .sbar{color:#fff}
+.sb-r{display:flex;gap:5px;align-items:center}
+.sb-r svg{height:12px;width:auto;fill:currentColor}
+/* home */
+.home{position:absolute;inset:0;padding:58px 16px 0;box-sizing:border-box;display:flex;flex-direction:column;gap:16px}
+.wrow{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.wdg{aspect-ratio:1.05;border-radius:22px;background:rgba(255,255,255,.2);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:#fff;padding:12px 14px;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.wdg .k{font-size:11px;font-weight:700;opacity:.85;letter-spacing:.04em}
+.wdg .n{font-size:38px;font-weight:300;line-height:1}
+.wdg .s{font-size:11px;opacity:.9;margin-top:auto;line-height:1.35}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);row-gap:16px;column-gap:4px}
+.ic{all:unset;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;position:relative;min-width:0}
+.tile{width:min(58px,16cqw);aspect-ratio:1;border-radius:24%;display:grid;place-items:center;position:relative;box-shadow:0 2px 6px rgba(0,0,0,.18);transition:transform .45s}
+.tile>svg{width:100%;height:100%;border-radius:24%;display:block}
+.ic.pressing .tile{transform:scale(.88)}
+.ic:active .tile{filter:brightness(.82)}
+.ic:focus-visible .tile{outline:2px solid #fff;outline-offset:2px}
+.lb{font-size:11px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.badge{position:absolute;top:-6px;right:-7px;min-width:21px;height:21px;padding:0 5px;border-radius:11px;background:#ff3b30;color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center;box-sizing:border-box}
+.dots{margin-top:auto;display:flex;justify-content:center;gap:8px}
+.dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.4)}
+.dots i.on{background:#fff}
+.dock{margin:0 -6px 22px;padding:14px 10px;border-radius:32px;background:rgba(255,255,255,.2);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:grid;grid-template-columns:repeat(4,1fr)}
+.ic.gone{animation:gone .35s forwards}
+@keyframes gone{to{transform:scale(0);opacity:0}}
+/* app shell */
+#apps{position:absolute;inset:0;pointer-events:none;z-index:100}
+.app{position:absolute;inset:0;background:var(--app-bg);color:var(--app-fg);display:flex;flex-direction:column;pointer-events:auto;animation:aopen .32s cubic-bezier(.2,.8,.2,1);overflow:hidden}
+.app.closing{animation:aclose .22s forwards;pointer-events:none}
+@keyframes aopen{from{transform:scale(.55);opacity:0;border-radius:40px}}
+@keyframes aclose{to{transform:scale(.55);opacity:0}}
+.nav{padding:50px 10px 8px;display:flex;align-items:center;gap:6px;min-height:40px;flex:none;background:var(--app-bg2);position:relative}
+.nav h2{margin:0;font-size:17px;font-weight:600;position:absolute;left:80px;right:80px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nb{all:unset;color:var(--app-tint);font-size:17px;cursor:pointer;padding:4px;white-space:nowrap}
+.nb.r{margin-left:auto}
+.big{font-size:32px;font-weight:700;margin:2px 16px 12px;letter-spacing:-.01em}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:34px;background:var(--app-bg2)}
+.grp{margin:0 16px 22px;background:var(--app-card);border-radius:12px;overflow:hidden}
+.grp-h{margin:0 32px 6px;font-size:13px;color:var(--app-sub)}
+.grp-f{margin:-14px 32px 22px;font-size:12px;color:var(--app-sub);line-height:1.5}
+.row{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:46px;position:relative;cursor:pointer}
+.row+.row::before{content:"";position:absolute;top:0;left:56px;right:0;border-top:.5px solid var(--app-line)}
+.grp.plain .row+.row::before{left:14px}
+.row:active{background:var(--app-line)}
+.row .t{flex:1;min-width:0;line-height:1.3}
+.row .t small{display:block;color:var(--app-sub);font-size:12px}
+.row .v{color:var(--app-sub)}
+.chev{color:var(--app-sub);opacity:.6;font-size:20px;line-height:1}
+.row.red{color:var(--app-red)}
+.row.ctr{justify-content:center;color:var(--app-tint)}
+.si{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;flex:none}
+.si svg{width:19px;height:19px;fill:#fff}
+.tg{width:51px;height:31px;border-radius:16px;background:var(--app-line);position:relative;flex:none;transition:background .2s}
+.tg::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.25);transition:left .2s}
+.tg.on{background:var(--app-green)}
+.tg.on::after{left:22px}
+.rng{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;outline:none;margin:0;background:var(--app-line)}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.35);cursor:pointer}
+.rng::-moz-range-thumb{width:28px;height:28px;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.35)}
+.slrow{display:flex;align-items:center;gap:12px;padding:14px}
+.slrow svg{width:16px;height:16px;fill:var(--app-sub);flex:none}
+.slrow svg.l{width:24px;height:24px}
+.appear{display:flex;justify-content:space-around;padding:16px 10px 12px}
+.ap{all:unset;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;font-size:14px}
+.ap i{width:62px;height:118px;border-radius:12px;border:1px solid var(--app-line);display:block}
+.ap .rd{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--app-sub);box-sizing:border-box;display:grid;place-items:center}
+.ap.on .rd{background:var(--app-tint);border-color:var(--app-tint)}
+.ap.on .rd::after{content:"";width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.wps{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;padding:14px}
+.wps button{all:unset;aspect-ratio:.55;border-radius:16px;cursor:pointer;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.wps button.on{box-shadow:0 0 0 3px var(--app-tint)}
+</style>
+<style>
+/* overlays inside the phone */
+#layer{position:absolute;inset:0;z-index:250;pointer-events:none}
+#layer>*{pointer-events:auto}
+.bkd{position:absolute;inset:0;background:rgba(0,0,0,.38);animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(110%)}}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(1.15);opacity:0}}
+@keyframes drop{from{transform:translateY(-130%)}}
+.sheet{position:absolute;left:8px;right:8px;bottom:24px;display:flex;flex-direction:column;gap:8px;animation:up .28s cubic-bezier(.2,.8,.2,1)}
+.sg{background:var(--sheet);border-radius:14px;overflow:hidden;backdrop-filter:blur(20px)}
+.sh-h{padding:14px 18px;text-align:center;font-size:13px;color:var(--app-sub);display:flex;flex-direction:column;gap:4px;line-height:1.4}
+.sh-h b{color:var(--app-fg);font-size:14px}
+.sb{all:unset;box-sizing:border-box;width:100%;text-align:center;padding:16px;font-size:19px;color:#0a84ff;cursor:pointer;border-top:.5px solid var(--sheet-line)}
+.sb:active{background:var(--sheet-line)}
+.sb.red{color:#ff3b30}
+.sb.cancel{background:var(--sheet);border-radius:14px;font-weight:600;border:0}
+.alert{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:270px;max-width:86%;background:var(--sheet);color:var(--app-fg);border-radius:14px;overflow:hidden;text-align:center;animation:pop .2s}
+.al-b{padding:19px 16px 16px;display:flex;flex-direction:column;gap:5px}
+.al-b b{font-size:17px}
+.al-b span{font-size:13px;line-height:1.45}
+.al-btns{display:flex}
+.al-btns .sb{font-size:17px;padding:11px}
+.al-btns .sb+.sb{border-left:.5px solid var(--sheet-line)}
+.al-btns.v{flex-direction:column}
+.al-btns.v .sb+.sb{border-left:0}
+.al-btns .sb.bold{font-weight:600}
+#banner{position:absolute;top:8px;left:8px;right:8px;z-index:285;display:flex;flex-direction:column;gap:6px}
+.bnr{display:flex;gap:10px;align-items:center;padding:11px 12px;border-radius:20px;background:rgba(245,245,247,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:#111;box-shadow:0 8px 24px rgba(0,0,0,.25);animation:drop .4s cubic-bezier(.2,.8,.2,1);cursor:pointer}
+.bnr .tile{width:38px;border-radius:9px;flex:none;box-shadow:none}
+.bnr .bt{flex:1;min-width:0;font-size:14px;line-height:1.3}
+.bnr .bt b{display:flex;justify-content:space-between}
+.bnr .bt b small{font-weight:400;color:#888;font-size:12px}
+.bnr .bt span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bnr.out{transition:transform .3s,opacity .3s;transform:translateY(-130%);opacity:0}
+.dim{position:absolute;inset:0;background:#000;pointer-events:none;z-index:400;transition:opacity .12s}
+.flash{position:absolute;inset:0;background:#fff;z-index:420;pointer-events:none;animation:fl .35s forwards}
+@keyframes fl{to{opacity:0}}
+.hbar{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:46%;height:28px;z-index:300;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;box-sizing:border-box;--hb:var(--app-fg)}
+.hbar::after{content:"";width:100%;height:5px;border-radius:3px;background:var(--hb)}
+.screen.sb-light .hbar{--hb:#fff}
+.screen:not(.in-app) .hbar{display:none}
+.av{border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;flex:none;overflow:hidden}
+.av svg{width:100%;height:100%}
+.empty{padding:60px 30px;text-align:center;color:var(--app-sub);font-size:14px;line-height:1.6}
+/* chat app */
+.ln{--ln:#06c755;--room:#8eaad6}
+.screen.dark .ln{--room:#1d2738}
+.ln-top{padding:52px 16px 8px;display:flex;align-items:center;gap:10px;background:var(--app-bg);flex:none}
+.ln-top h2{margin:0;font-size:21px;font-weight:800;flex:1}
+.ln-top svg{width:24px;height:24px;fill:none;stroke:var(--app-fg);stroke-width:1.8}
+.ln-body{flex:1;overflow-y:auto;background:var(--app-bg)}
+.ln-tabs{display:grid;grid-template-columns:repeat(4,1fr);border-top:.5px solid var(--app-line);background:var(--app-bg);padding:7px 0 26px;flex:none}
+.ln-tab{all:unset;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--app-sub);cursor:pointer;position:relative}
+.ln-tab svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8}
+.ln-tab.on{color:var(--app-fg)}
+.ln-tab.on svg{fill:currentColor}
+.ln-tab .badge{top:-4px;right:22%;background:var(--ln);min-width:18px;height:18px;font-size:11px}
+.ln-search{margin:4px 16px 8px;padding:8px 12px;border-radius:10px;background:var(--app-bg2);color:var(--app-sub);font-size:14px;display:flex;gap:6px;align-items:center}
+.ln-me{display:flex;gap:14px;align-items:center;padding:10px 16px 14px;cursor:pointer}
+.ln-me b{font-size:19px;display:block}
+.ln-me small{color:var(--app-sub);font-size:12px}
+.ln-sec{font-size:13px;color:var(--app-sub);padding:12px 16px 6px;border-top:.5px solid var(--app-line)}
+.ln-row{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:12px;padding:8px 16px;cursor:pointer;transition:background .15s}
+.ln-row:active,.ln-row.pressing{background:var(--app-bg2)}
+.ln-row .mid{flex:1;min-width:0}
+.ln-row .nm{font-size:15px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ln-row .lm{font-size:13px;color:var(--app-sub);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.ln-row .rt{display:flex;flex-direction:column;align-items:flex-end;gap:5px;font-size:11px;color:var(--app-sub)}
+.un{background:var(--ln);color:#fff;border-radius:10px;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;font-size:11px;font-weight:700;display:grid;place-items:center}
+.ln-tip{margin:10px 16px;font-size:11px;color:var(--app-sub);text-align:center}
+.ln-head{padding:50px 8px 8px;display:flex;align-items:center;gap:4px;background:var(--app-bg);flex:none}
+.ln-head b{flex:1;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ln-head svg{width:22px;height:22px;fill:none;stroke:var(--app-fg);stroke-width:1.8}
+.ln-msgs{flex:1;overflow-y:auto;padding:10px 10px 14px;display:flex;flex-direction:column;gap:9px;background:var(--room)}
+.day{align-self:center;font-size:11px;color:#fff;background:rgba(0,0,0,.2);padding:3px 11px;border-radius:10px}
+.m{display:flex;gap:6px;align-items:flex-end}
+.m.me{flex-direction:row-reverse}
+.m .col{display:flex;flex-direction:column;max-width:70%;min-width:0}
+.bub{padding:8px 12px;border-radius:18px;font-size:15px;line-height:1.42;background:#fff;color:#111;word-break:break-word;white-space:pre-wrap}
+.m.me .bub{background:#8de055}
+.meta{font-size:10px;color:rgba(255,255,255,.95);display:flex;flex-direction:column;gap:1px;flex:none;line-height:1.2}
+.m.me .meta{align-items:flex-end}
+.who{font-size:11px;color:#fff;margin:0 0 3px 3px}
+.pic{width:150px;height:186px;border-radius:14px;background:linear-gradient(160deg,#ffd3e2,#b9a4ff);display:grid;place-items:end start;padding:10px;box-sizing:border-box;color:#fff;font-size:12px;font-weight:700}
+.sysm{align-self:center;font-size:11px;color:#fff;background:rgba(0,0,0,.2);padding:4px 12px;border-radius:10px}
+.typing .bub{display:flex;gap:4px;padding:12px 14px}
+.typing i{width:7px;height:7px;border-radius:50%;background:#999;animation:tp 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tp{50%{transform:translateY(-4px);opacity:.5}}
+.ln-in{display:flex;gap:8px;align-items:center;padding:8px 10px 10px;background:var(--app-bg);flex:none}
+.ln-in input{flex:1;min-width:0;border:0;border-radius:18px;background:var(--app-bg2);padding:9px 14px;font:inherit;font-size:15px;color:var(--app-fg);outline:none;user-select:text;-webkit-user-select:text}
+.ln-in .ib{all:unset;cursor:pointer;display:grid;place-items:center;width:30px;height:30px}
+.ln-in .ib svg{width:24px;height:24px;fill:none;stroke:var(--app-sub);stroke-width:1.8}
+.ln-in .ib.go svg{stroke:var(--ln);fill:var(--ln)}
+.ln-in.pad{padding-bottom:30px}
+.kb{background:#d2d5db;padding:0 4px 28px;flex:none}
+.screen.dark .kb{background:#2c2c2f}
+.cand{display:flex;gap:2px;overflow-x:auto;padding:4px 2px;height:38px;align-items:center;scrollbar-width:none;box-sizing:border-box}
+.cand::-webkit-scrollbar{display:none}
+.cand button{all:unset;padding:6px 10px;font-size:16px;white-space:nowrap;cursor:pointer;border-radius:6px;color:#111}
+.screen.dark .cand button{color:#eee}
+.cand button:active{background:rgba(255,255,255,.5)}
+.cand .hint{font-size:12px;color:#7a7d85;padding-left:8px}
+.keys{display:grid;grid-template-columns:1fr 1fr 1fr .85fr;gap:6px}
+.key{all:unset;height:44px;border-radius:7px;background:#fff;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px;box-shadow:0 1px 0 rgba(0,0,0,.28);cursor:pointer;line-height:1.05}
+.key small{font-size:8.5px;color:#888;letter-spacing:.05em}
+.key.fn{background:#acb1bb;font-size:13px}
+.key.send{background:#0a84ff;color:#fff;font-size:14px;font-weight:600}
+.screen.dark .key{background:#6b6b70;color:#fff}
+.screen.dark .key.fn{background:#47474b}
+.key:active{filter:brightness(.85)}
+.pf{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px 70px;color:#fff;background:linear-gradient(170deg,#5a6b85,#2c3445);animation:up .3s cubic-bezier(.2,.8,.2,1)}
+.pf .x{all:unset;position:absolute;top:52px;left:16px;font-size:26px;cursor:pointer}
+.pf h3{margin:14px 0 4px;font-size:22px}
+.pf p{margin:0 0 30px;font-size:13px;opacity:.8}
+.pf-acts{display:flex;gap:34px}
+.pf-acts button{all:unset;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;cursor:pointer}
+.pf-acts svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:1.8}
+/* pay */
+.pp{--pp:#ef2a40}
+.pp-top{background:var(--pp);color:#fff;padding:50px 16px 54px;flex:none}
+.pp-top .bar{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:19px}
+.pp-top .bar span{font-size:12px;font-weight:600;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:12px}
+.pp-bal{margin-top:16px;font-size:12px;opacity:.9}
+.pp-bal b{display:block;font-size:34px;font-weight:800;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.pp-acts{margin:-40px 14px 14px;background:var(--app-card);border-radius:16px;box-shadow:0 4px 14px rgba(0,0,0,.1);display:grid;grid-template-columns:repeat(4,1fr);padding:14px 4px;position:relative}
+.pp-acts button{all:unset;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;cursor:pointer;text-align:center}
+.pp-acts i{width:40px;height:40px;border-radius:12px;background:#fff0f2;display:grid;place-items:center}
+.screen.dark .pp-acts i{background:#3a1e23}
+.pp-acts svg{width:22px;height:22px;fill:none;stroke:var(--pp);stroke-width:2}
+.pp-ban{margin:0 14px 14px;border-radius:14px;padding:14px 16px;background:linear-gradient(110deg,#ffd75e,#ff9d4d);color:#5b2b00;font-weight:800;font-size:15px;line-height:1.35}
+.pp-ban small{display:block;font-weight:600;font-size:11px;opacity:.8}
+.pp-thread{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--app-bg2)}
+.tx{align-self:flex-start;background:var(--app-card);border-radius:16px;padding:12px 14px;width:72%;box-shadow:0 1px 4px rgba(0,0,0,.08);box-sizing:border-box}
+.tx.out{align-self:flex-end}
+.tx .lbl{font-size:11px;color:var(--app-sub)}
+.tx .amt{font-size:24px;font-weight:800;margin:2px 0;font-variant-numeric:tabular-nums}
+.tx.out .amt{color:var(--pp)}
+.tx .memo{font-size:13px;padding-top:8px;margin-top:6px;border-top:.5px solid var(--app-line);line-height:1.4}
+.tx .d{font-size:10px;color:var(--app-sub);margin-top:6px}
+/* spark */
+.sp{--sp1:#ff8a3d;--sp2:#ff2d78}
+.sp-top{padding:50px 16px 4px;display:flex;align-items:center;justify-content:space-between;flex:none}
+.sp-logo{font-weight:900;font-size:25px;background:linear-gradient(90deg,var(--sp1),var(--sp2));-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-.02em}
+.sp-top .gold{font-size:11px;font-weight:800;color:#b58500;border:1.5px solid #e6b800;padding:3px 8px;border-radius:10px}
+.sp-deck{flex:1;position:relative;margin:6px 12px 0;min-height:0}
+.card{position:absolute;inset:0;border-radius:16px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.18);touch-action:none;cursor:grab;will-change:transform}
+.card .art{position:absolute;inset:0}
+.card .art svg{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:78%;opacity:.55}
+.card .info{position:absolute;left:0;right:0;bottom:0;padding:70px 16px 16px;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff}
+.card .info b{font-size:26px}
+.card .info b span{font-weight:400;font-size:22px;margin-left:6px}
+.card .info p{margin:4px 0 8px;font-size:13px;opacity:.92}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips i{font-style:normal;font-size:11px;padding:3px 9px;border-radius:12px;background:rgba(255,255,255,.22)}
+.stamp{position:absolute;top:34px;padding:2px 10px;border:4px solid;border-radius:8px;font-weight:900;font-size:32px;opacity:0;letter-spacing:.04em}
+.stamp.like{left:18px;color:#3fd37a;transform:rotate(-14deg)}
+.stamp.nope{right:18px;color:#ff3b5c;transform:rotate(14deg)}
+.sp-btns{display:flex;justify-content:center;align-items:center;gap:20px;padding:12px 0 8px;flex:none}
+.cb{all:unset;width:58px;height:58px;border-radius:50%;background:var(--app-card);box-shadow:0 3px 12px rgba(0,0,0,.16);display:grid;place-items:center;cursor:pointer}
+.cb.s{width:44px;height:44px}
+.cb svg{width:28px;height:28px}
+.cb:active{transform:scale(.9)}
+.sp-tabs{display:grid;grid-template-columns:repeat(3,1fr);padding:6px 0 26px;border-top:.5px solid var(--app-line);flex:none}
+.sp-tabs button{all:unset;display:grid;place-items:center;cursor:pointer;color:var(--app-sub)}
+.sp-tabs button.on{color:var(--sp2)}
+.sp-tabs svg{width:26px;height:26px;fill:currentColor}
+.match{position:absolute;inset:0;z-index:20;background:rgba(20,10,25,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#fff;animation:fade .3s;text-align:center;padding:24px}
+.match h3{margin:0;font-size:38px;font-style:italic;font-weight:900;background:linear-gradient(90deg,#7dffb0,#3fd3ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.match button{all:unset;padding:12px 28px;border-radius:24px;background:linear-gradient(90deg,var(--sp1),var(--sp2));font-weight:700;cursor:pointer}
+</style>
+<style>
+/* store */
+.st-top{padding:50px 16px 6px;display:flex;align-items:flex-end;justify-content:space-between;flex:none;background:var(--app-bg)}
+.st-top small{display:block;font-size:12px;color:var(--app-sub);font-weight:600;text-transform:uppercase}
+.st-top h2{margin:0;font-size:32px;font-weight:800}
+.me-btn{all:unset;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#4aa3ff,#0a6cff);color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 0 0 2px var(--app-bg),0 0 0 3.5px #0a84ff}
+.st-feat{margin:8px 16px 18px;height:190px;border-radius:18px;background:linear-gradient(140deg,#16243f,#3a5f9e 60%,#7fb2ff);color:#fff;padding:18px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end}
+.st-feat small{font-size:11px;font-weight:700;opacity:.8}
+.st-feat b{font-size:24px;line-height:1.2}
+.st-app{display:flex;align-items:center;gap:12px;padding:10px 16px}
+.st-app .tile{width:58px;flex:none}
+.st-app .mid{flex:1;min-width:0;border-bottom:.5px solid var(--app-line);padding-bottom:10px;display:flex;align-items:center;gap:8px}
+.st-app .mid div{flex:1;min-width:0}
+.st-app b{font-size:15px;display:block}
+.st-app small{font-size:12px;color:var(--app-sub)}
+.get{all:unset;padding:5px 16px;border-radius:14px;background:var(--app-bg2);color:var(--app-tint);font-weight:700;font-size:14px;cursor:pointer;min-width:42px;text-align:center}
+.screen.dark .get{background:#2c2c2e}
+.acct{display:flex;align-items:center;gap:12px}
+.acct .me-btn{width:52px;height:52px;font-size:22px;box-shadow:none}
+/* calc */
+.calc{background:#000;color:#fff;justify-content:flex-end;padding:0 14px 36px}
+.calc-d{text-align:right;font-size:min(76px,20cqw);font-weight:300;padding:0 10px 10px;white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
+.calc-k{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.ck{all:unset;aspect-ratio:1;border-radius:50%;background:#333;display:grid;place-items:center;font-size:30px;cursor:pointer}
+.ck.l{background:#a5a5a5;color:#000;font-size:26px}
+.ck.o{background:#ff9f0a}
+.ck.o.on{background:#fff;color:#ff9f0a}
+.ck.z{aspect-ratio:auto;border-radius:40px;grid-column:span 2;justify-items:start;padding-left:28px}
+.ck:active{filter:brightness(1.3)}
+/* camera */
+.cam{background:#000;color:#fff}
+.cam-v{flex:1;margin:84px 0 0;position:relative;overflow:hidden;background:radial-gradient(80% 60% at 40% 40%,#4a4436,#16130f);}
+.cam-v::before{content:"";position:absolute;inset:-20%;background:radial-gradient(30% 20% at 70% 30%,rgba(255,220,160,.35),transparent),radial-gradient(40% 30% at 20% 80%,rgba(120,140,170,.3),transparent);animation:drift 7s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(4%,-3%) scale(1.05)}}
+.cam-v .gridl{position:absolute;inset:0;background:linear-gradient(90deg,transparent 33%,rgba(255,255,255,.25) 33.3%,transparent 33.6%,transparent 66.3%,rgba(255,255,255,.25) 66.6%,transparent 67%),linear-gradient(transparent 33%,rgba(255,255,255,.25) 33.3%,transparent 33.6%,transparent 66.3%,rgba(255,255,255,.25) 66.6%,transparent 67%)}
+.cam-m{display:flex;justify-content:center;gap:20px;font-size:12px;padding:12px 0;color:#ccc;flex:none}
+.cam-m .on{color:#ffd60a}
+.cam-b{display:flex;justify-content:space-around;align-items:center;padding:6px 20px 44px;flex:none}
+.shut{all:unset;width:66px;height:66px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px #000,0 0 0 7px #fff;cursor:pointer}
+.shut:active{transform:scale(.92)}
+.thumb{all:unset;width:44px;height:44px;border-radius:8px;cursor:pointer;background:#333}
+/* photos */
+.ph-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.ph-grid button{all:unset;aspect-ratio:1;cursor:pointer;position:relative}
+.ph-grid button span,.ph-big span{position:absolute;left:6px;bottom:5px;font-size:10px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.ph-big{flex:1;margin:0;position:relative;background:#000;display:grid;place-items:center}
+.ph-big div{width:100%;aspect-ratio:3/4;position:relative}
+.ph-big span{font-size:14px;left:14px;bottom:12px}
+/* misc apps */
+.clk{background:#000;color:#fff}
+.clk-big{font-size:min(80px,22cqw);font-weight:200;text-align:center;padding:24px 0 6px;font-variant-numeric:tabular-nums}
+.clk-row{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-top:.5px solid #333}
+.clk-row b{font-size:36px;font-weight:300;font-variant-numeric:tabular-nums}
+.clk-row small{color:#8e8e93;font-size:12px;display:block}
+.wx{background:linear-gradient(180deg,#26476e,#4f7fb3 60%,#7aa8d6);color:#fff;text-align:center}
+.wx-h{padding:80px 0 20px}
+.wx-h b{font-size:84px;font-weight:200;display:block;line-height:1}
+.wx-card{margin:0 16px 12px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.14);text-align:left;font-size:13px}
+.wx-hours{display:flex;justify-content:space-between;margin-top:10px;font-size:13px}
+.wx-hours div{display:flex;flex-direction:column;align-items:center;gap:6px}
+.note{padding:6px 18px 30px;line-height:1.7;white-space:pre-wrap;font-size:16px;flex:1;overflow:auto;background:var(--app-bg)}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:6px 0;padding:6px 10px;font-size:16px}
+.cal-g .w{font-size:11px;color:var(--app-sub)}
+.cal-g .td{color:#fff;background:#ff3b30;border-radius:50%;width:32px;height:32px;display:grid;place-items:center;margin:auto;font-weight:600}
+.cal-g .dt::after{content:"";display:block;width:5px;height:5px;border-radius:50%;background:var(--app-sub);margin:2px auto 0}
+.cal-ev{margin:14px 16px;padding:10px 12px;border-left:4px solid #ff9500;background:var(--app-card);border-radius:8px;font-size:14px}
+.mus{background:linear-gradient(180deg,#5b2a3c,#1b1018);color:#fff;align-items:center}
+.mus-art{width:72%;aspect-ratio:1;border-radius:14px;margin-top:90px;background:conic-gradient(from 40deg,#ff6b8a,#ffb86b,#7a5cff,#ff6b8a);box-shadow:0 20px 50px rgba(0,0,0,.5);transition:transform .4s}
+.mus-art.paused{transform:scale(.86)}
+.mus h3{margin:26px 0 2px;font-size:20px}
+.mus p{margin:0;opacity:.7;font-size:15px}
+.mus-bar{width:78%;height:4px;border-radius:2px;background:rgba(255,255,255,.25);margin-top:22px;overflow:hidden}
+.mus-bar i{display:block;height:100%;background:#fff;width:0}
+.mus-c{display:flex;gap:40px;align-items:center;margin-top:24px}
+.mus-c button{all:unset;cursor:pointer}
+.mus-c svg{width:36px;height:36px;fill:#fff}
+.mus-c .pl svg{width:52px;height:52px}
+.br-s{margin:8px 16px 18px;padding:10px 14px;border-radius:12px;background:var(--app-bg2);color:var(--app-sub)}
+.favs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:0 16px}
+.favs div{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px}
+.favs i{width:60px;height:60px;border-radius:14px;display:grid;place-items:center;color:#fff;font-weight:800;font-style:normal;font-size:22px}
+/* gestures + control center */
+.tz{position:absolute;top:0;left:0;right:0;height:40px;z-index:296;touch-action:none;cursor:ns-resize}
+.hbar{touch-action:none;cursor:ns-resize;width:62%}
+.m.pressing .bub,.m.pressing .pic{filter:brightness(.88);transform:scale(.98);transition:transform .3s}
+#cc{position:absolute;inset:0;z-index:350;display:none;color:#fff}
+#cc.on{display:block}
+.cc-bk{position:absolute;inset:0;background:rgba(18,16,26,.5);backdrop-filter:blur(26px) saturate(1.3);-webkit-backdrop-filter:blur(26px) saturate(1.3);animation:fade .25s}
+.cc-g{position:absolute;left:0;right:0;top:0;padding:64px 22px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:14px;transition:transform .25s,opacity .25s}
+#cc.on .cc-g{animation:ccin .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes ccin{from{transform:translateY(-40px) scale(.96);opacity:0}}
+.cc-b{all:unset;box-sizing:border-box;background:rgba(255,255,255,.17);border-radius:22px;aspect-ratio:1;display:grid;place-items:center;cursor:pointer;font-size:10px;text-align:center;position:relative;overflow:hidden}
+.cc-b svg{width:24px;height:24px;fill:#fff}
+.cc-b.w2{grid-column:span 2;aspect-ratio:auto}
+.cc-b.h2{grid-row:span 2;aspect-ratio:auto}
+.cc-b.on{background:#fff}
+.cc-b.on svg{fill:#111}
+.cc-conn{grid-template-columns:1fr 1fr;padding:12px;gap:8px;cursor:default}
+.cc-r{all:unset;width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center;cursor:pointer;margin:auto}
+.cc-r svg{width:22px;height:22px}
+.cc-r.on.o{background:#ff9500}.cc-r.on.g{background:#34c759}.cc-r.on.b{background:#0a84ff}
+.cc-mu{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:14px;text-align:left;font-size:12px;cursor:default}
+.cc-mu b{font-size:13px}
+.cc-mu button{all:unset;cursor:pointer;align-self:center}
+.cc-mu button svg{width:30px;height:30px}
+.cc-bri{touch-action:none;cursor:ns-resize}
+.cc-bri i{position:absolute;left:0;right:0;bottom:0;background:#fff;pointer-events:none}
+.cc-bri svg{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);fill:#8e8e93;pointer-events:none}
+.cc-hint{grid-column:1/-1;text-align:center;font-size:11px;opacity:.6;margin-top:4px}
+/* game overlays (outside phone) */
+.ov{position:fixed;inset:0;z-index:1000;background:rgba(14,10,18,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:grid;place-items:center;padding-inline:16px;padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));overflow:auto}
+.card2{width:100%;max-width:420px;background:var(--night2);border:1px solid var(--line);border-radius:24px;padding:26px 22px;box-sizing:border-box;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.card2 .eye{font-size:12px;letter-spacing:.14em;color:var(--lip);font-weight:700}
+.card2 h2{font-family:var(--display);font-weight:400;font-size:30px;margin:6px 0 14px;line-height:1.2;text-wrap:balance}
+.card2 p{margin:0 0 12px;line-height:1.75;font-size:14px;color:#ddd3e3}
+.card2 .rules{margin:14px 0 18px;padding:12px 14px;border-radius:14px;background:#1a1520;font-size:13px;line-height:1.7;color:var(--muted)}
+.card2 .rules b{color:var(--paper)}
+.btn{display:block;width:100%;padding:14px;border-radius:14px;border:0;background:var(--lip);color:#fff;font:700 16px var(--body);cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--paper);margin-top:10px}
+.gf{display:flex;gap:12px;align-items:center;margin:4px 0 16px;padding:12px;border-radius:16px;background:#1a1520}
+.gf .av{width:46px;height:46px;font-size:20px}
+.gf q{quotes:none;font-size:14px;line-height:1.5}
+.res{list-style:none;margin:0 0 18px;padding:0;display:flex;flex-direction:column;gap:8px}
+.res li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:#1a1520;font-size:13px;line-height:1.5;opacity:0;transform:translateY(6px);animation:rin .35s forwards}
+@keyframes rin{to{opacity:1;transform:none}}
+.res li i{font-style:normal;font-weight:900;flex:none;width:20px;text-align:center}
+.res li.ok i{color:var(--ok)}
+.res li.ng i{color:var(--bad)}
+.res li .pt{margin-left:auto;font:700 13px var(--sys);font-variant-numeric:tabular-nums;flex:none}
+.res li.ng .pt{color:var(--bad)}
+.res li.ok .pt{color:var(--ok)}
+.res li div{flex:1;min-width:0}
+.res li small{display:block;color:var(--muted);font-size:12px}
+.score{display:flex;align-items:baseline;gap:8px;margin:0 0 6px}
+.score b{font-family:var(--display);font-weight:400;font-size:64px;line-height:1;font-variant-numeric:tabular-nums}
+.score span{color:var(--muted)}
+.rank{display:inline-block;font-weight:900;font-size:15px;padding:4px 12px;border-radius:999px;background:var(--lip);color:#fff;margin-bottom:14px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+<div class="stage">
+  <header class="hud">
+    <h1>スマホ<span>見せて</span></h1>
+    <div class="timer" id="timer" aria-live="polite">4:00</div>
+    <button class="hand" id="handBtn" type="button">スマホを渡す</button>
+  </header>
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="screen wp0" id="screen">
+        <div class="island"></div>
+        <div class="sbar" id="sbar"></div>
+        <div class="home" id="home"></div>
+        <div id="apps"></div>
+        <div id="banner"></div>
+        <div id="layer"></div>
+        <div class="tz" id="tz" title="下へスワイプでコントロールセンター"></div>
+        <div id="cc"></div>
+        <div class="hbar" id="hbar" title="上へスワイプでホームへ"></div>
+        <div class="dim" id="dim"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="ov" id="ov"></div>
+<script>
+/* ===== core ===== */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ACT={}, LP={}, APPS={};
+const GAME_LEN=240, START_SEC=23*3600+41*60;
+let S=null, tickT=null;
+
+const PEOPLE={
+  misaki:{name:'みさき',c1:'#f7a8bc',c2:'#e2668a',status:'ねむい'},
+  ayaka:{name:'あやか',c1:'#ffd29a',c2:'#ff8a66',status:'カフェ巡り☕️'},
+  rina:{name:'りな',c1:'#cdb9ff',c2:'#8c68ff',status:'まいにち眠い'},
+  yui:{name:'ゆい',c1:'#a8e2ff',c2:'#5aa6ff',status:'10/20 🎂'},
+  takeru:{name:'たける',c1:'#b6e3a2',c2:'#4aa866',status:'筋トレ中'},
+  kenta:{name:'けんた先輩',c1:'#dccaa9',c2:'#9a774a',status:'ラーメン食べたい'},
+  mom:{name:'母',c1:'#ffd7e0',c2:'#d58aa0',status:''},
+  baito:{name:'カフェ バイト(8)',c1:'#ffe39a',c2:'#dba52a',status:'',group:true},
+  pon:{name:'PonPay',c1:'#ff7080',c2:'#e3122d',status:'',official:true},
+};
+const GIRLS=['ayaka','rina','yui'];
+const FRIENDS=['misaki','ayaka','rina','yui','takeru','kenta','mom'];
+const ME_SVG='<svg viewBox="0 0 40 40"><rect width="40" height="40" fill="#c5cad3"/><circle cx="20" cy="16" r="7" fill="#fff"/><path d="M6 40c1-9 7-13 14-13s13 4 14 13z" fill="#fff"/></svg>';
+function avatar(id,size=40){
+  if(id==='me')return `<span class="av" style="width:${size}px;height:${size}px">${ME_SVG}</span>`;
+  const p=PEOPLE[id];
+  if(p.group)return `<span class="av" style="width:${size}px;height:${size}px;background:linear-gradient(135deg,${p.c1},${p.c2})"><svg viewBox="0 0 40 40"><circle cx="15" cy="16" r="5" fill="#fff"/><circle cx="26" cy="16" r="5" fill="#fff" opacity=".8"/><path d="M5 32c1-6 5-9 10-9s9 3 10 9zM18 32c1-6 4-9 8-9s8 3 9 9z" fill="#fff"/></svg></span>`;
+  return `<span class="av" style="width:${size}px;height:${size}px;background:linear-gradient(135deg,${p.c1},${p.c2});font-size:${Math.round(size*.42)}px">${esc(p.name[0])}</span>`;
+}
+
+/* ----- initial data ----- */
+function initChats(){
+  const M=(from,t,text,x)=>Object.assign({from,t,text},x||{});
+  return {
+    misaki:[M('them','08:12','起きた？今日バイト何時から'),M('me','08:30','10時'),M('them','08:31','りょ'),M('them','12:45','昼なに食べた'),M('me','13:02','ラーメン'),M('them','13:02','また？笑'),M('them','18:20','夜ごはんどうする'),M('me','18:40','友達と飲み行くかも'),M('them','18:41','ふーん。誰と'),M('me','18:55','たけると'),M('them','18:56','おけ。飲みすぎないでね'),M('them','23:30','お風呂入ってくる'),M('them','23:30','あがったらスマホ見せてね'),M('them','23:31','冗談じゃないよ')],
+    ayaka:[M('them','07:02','おはよ〜☀️ 今日も一日がんばろうね'),M('me','07:15','おはよう！がんばる'),M('them','12:10','昨日たのしかったね…また会いたいな'),M('me','12:30','俺も。また週末ね'),M('them','12:31','彼女さんには内緒ね🤫'),M('them','23:05','おやすみ♡ 夢で会おうね'),M('me','23:06','おやすみ、好きだよ')],
+    rina:[M('them','06:50','おはよう！朝弱いでしょ笑 起きた？'),M('me','07:20','起きた笑 おはよ'),M('them','20:15','今日の服かわいかった？'),M('them','20:16','',{img:'りな 20:16'}),M('me','20:40','めっちゃかわいい'),M('them','22:58','そろそろ寝るね、おやすみ〜'),M('me','22:59','おやすみ 愛してる')],
+    yui:[M('them','08:00','おはよう！彼女さんにはバレてない？笑'),M('me','08:45','大丈夫笑 おはよ'),M('them','15:30','誕生日プレゼントの送金届いた！ありがと♡'),M('me','15:31','いいよいいよ'),M('them','23:20','おやすみ💤 また明日ね'),M('me','23:21','おやすみ')],
+    takeru:[M('them','17:50','今日19時渋谷な'),M('me','17:52','了解'),M('them','22:40','今日おごってもらって悪いな、ペイで送っといた'),M('me','22:41','さんきゅー')],
+    kenta:[M('them','10:05','明日のシフト代わってくれない？'),M('me','10:30','いいっすよ'),M('them','10:31','神。今度ラーメンおごる')],
+    mom:[M('them','09:00','今月は帰ってくるの？'),M('me','21:00','年末かな'),M('them','21:02','了解。風邪ひかないようにね')],
+    baito:[M('店長','11:00','明日の朝礼は9:45集合です'),M('さき','11:05','了解です！'),M('me','11:20','了解です'),M('店長','21:30','新メニューの試食あるので楽しみに'),M('はると','21:41','やった')],
+    pon:[M('them','10:00','【ポイント付与】120ポイントが付与されました。')],
+  };
+}
+function initPay(){return[
+  {id:'takeru',tx:[{dir:'in',amt:3500,memo:'今日の飲み代！',d:'10/13 22:42'}]},
+  {id:'yui',sus:true,tx:[{dir:'out',amt:10000,memo:'誕生日おめでとう🎂 だいすき',d:'10/13 15:28'}]},
+  {id:'ayaka',sus:true,tx:[{dir:'out',amt:6000,memo:'ホテル代 半分ね♡',d:'10/12 01:12'},{dir:'in',amt:1500,memo:'パンケーキありがと〜また行こ♡',d:'10/12 14:03'}]},
+  {id:'kenta',tx:[{dir:'out',amt:880,memo:'ラーメン',d:'10/09 13:10'}]},
+  {id:'mom',tx:[{dir:'in',amt:20000,memo:'仕送り。ちゃんと食べてね',d:'10/01 09:00'}]},
+];}
+function newState(){
+  const raw=initChats(), chats={};
+  for(const k in raw)chats[k]={msgs:raw[k],hidden:false,unread:({baito:2,pon:1})[k]||0};
+  return{
+    started:false,over:false,left:GAME_LEN,elapsed:0,app:null,
+    home:['cal','photos','camera','clock','weather','calc','memo','settings','store','pay','spark'],
+    dock:['tel','browser','talk','music'],
+    set:{airplane:false,wifi:true,bt:true,dark:false,bright:.85,trueTone:true,predictive:true,learned:true,autoCap:true,wall:0,notif:{talk:true,pay:true,spark:true}},
+    installed:{spark:true},chats,queue:[],
+    pay:initPay(),blocked:{},
+    hist:[
+      {name:'Spark Gold（1か月）',sub:'Spark - 出会い・マッチング',price:'¥3,400',date:'2026/10/02',spark:true},
+      {name:'Spark - 出会い・マッチング',sub:'App',price:'無料',date:'2026/10/02',spark:true},
+      {name:'家計簿ノート',sub:'App',price:'無料',date:'2026/09/21'},
+      {name:'ルート乗換',sub:'App',price:'無料',date:'2026/09/03'},
+      {name:'ピクセル農園',sub:'App内課金 たね×50',price:'¥160',date:'2026/08/15'},
+      {name:'ピクセル農園',sub:'App',price:'無料',date:'2026/08/15'},
+    ],
+    subs:[{name:'Spark Gold',plan:'1か月 ¥3,400',next:'2026/11/02',active:true,c:'linear-gradient(135deg,#ff9a3d,#ff2d78)'},{name:'ミュージック+',plan:'個人 ¥1,080/月',next:'2026/10/25',active:true,c:'linear-gradient(135deg,#ff5f7e,#fa2d48)'}],
+    photos:[
+      {c:'linear-gradient(135deg,#f6c27a,#d9822b)',t:'ラーメン 13:02'},{c:'linear-gradient(135deg,#7ec8ff,#3b6fd6)',t:'渋谷 19:04'},{c:'linear-gradient(135deg,#ffd1dc,#f78fb3)',t:'みさきと 10/10'},
+      {c:'linear-gradient(135deg,#b8f2c5,#4aa866)',t:'公園 10/08'},{c:'linear-gradient(135deg,#d6c7ff,#7b61ff)',t:'夜景 10/06'},{c:'linear-gradient(135deg,#ffe9a3,#ffb703)',t:'シフト表 10/05'},
+      {c:'linear-gradient(135deg,#9ad0ec,#1f6f8b)',t:'海 10/01'},{c:'linear-gradient(135deg,#f5b0a6,#c44536)',t:'焼肉 09/28'},{c:'linear-gradient(135deg,#e2e2e2,#8d99ae)',t:'スクショ 09/25'},
+    ],
+  };
+}
+
+/* ----- icons ----- */
+const PET=['#ff9f0a','#ffd60a','#34c759','#30b0c7','#0a84ff','#5e5ce6','#bf5af2','#ff375f'];
+const ICONS={
+  tel:['linear-gradient(#5ff57d,#1ec83f)','<path fill="#fff" d="M21 15c2-1 4 0 5 2l3 6c1 2 0 3-1 4l-2 2c2 4 5 7 9 9l2-2c1-1 3-2 4-1l6 3c2 1 3 3 2 5l-2 3c-2 2-5 3-8 2-11-4-18-11-22-22-1-3 0-6 2-8z"/>'],
+  browser:['linear-gradient(#fff,#e6edf7)','<circle cx="30" cy="30" r="19" fill="none" stroke="#1a8cff" stroke-width="3"/><path d="M38 22 33 33 22 38 27 27z" fill="#ff3b30"/><path d="M27 27 33 33 22 38z" fill="#c8d2df"/>'],
+  talk:['linear-gradient(#3ddc84,#10b558)','<path fill="#fff" d="M30 15c-10 0-18 6.3-18 14 0 4.9 3.2 9.2 8.1 11.7L19 47l7.3-4.6c1.2.2 2.4.3 3.7.3 10 0 18-6.3 18-14S40 15 30 15z"/><circle cx="23" cy="29" r="2.4" fill="#14b75b"/><circle cx="30" cy="29" r="2.4" fill="#14b75b"/><circle cx="37" cy="29" r="2.4" fill="#14b75b"/>'],
+  music:['linear-gradient(#ff6584,#f92c4a)','<path fill="#fff" d="M39 14v22.5a5.5 5.5 0 1 1-3-4.9V20.2l-12 3v16.3a5.5 5.5 0 1 1-3-4.9V18z"/>'],
+  cal:['#fff','<text x="30" y="21" text-anchor="middle" font-size="9" fill="#ff3b30" font-weight="600">火曜日</text><text x="30" y="47" text-anchor="middle" font-size="27" fill="#111" font-weight="300">13</text>'],
+  photos:['#fff',PET.map((c,i)=>`<ellipse cx="30" cy="19.5" rx="5.6" ry="10" fill="${c}" opacity=".82" transform="rotate(${i*45} 30 30)"/>`).join('')],
+  camera:['linear-gradient(#dadade,#a2a2a9)','<rect x="12" y="21" width="36" height="24" rx="4" fill="#3a3a3c"/><rect x="24" y="17" width="12" height="6" rx="2" fill="#3a3a3c"/><circle cx="30" cy="33" r="8" fill="#8e8e94" stroke="#e5e5ea" stroke-width="2"/>'],
+  clock:['#0b0b0c','<circle cx="30" cy="30" r="21" fill="#fff"/><path d="M30 30V15M30 30l9 5" stroke="#111" stroke-width="2.4" stroke-linecap="round"/><circle cx="30" cy="30" r="2" fill="#ff9500"/>'],
+  weather:['linear-gradient(#4aa8ff,#1c6fd8)','<circle cx="24" cy="24" r="8" fill="#ffd60a"/><path fill="#fff" d="M22 44h20a7 7 0 0 0 0-14 9 9 0 0 0-17 2 6 6 0 0 0-3 12z"/>'],
+  calc:['#1c1c1e','<rect x="14" y="14" width="13" height="13" rx="6.5" fill="#a5a5a5"/><rect x="33" y="14" width="13" height="13" rx="6.5" fill="#ff9f0a"/><rect x="14" y="33" width="13" height="13" rx="6.5" fill="#505050"/><rect x="33" y="33" width="13" height="13" rx="6.5" fill="#ff9f0a"/>'],
+  memo:['#fff','<rect width="60" height="17" fill="#ffd60a"/><path d="M12 27h36M12 35h36M12 43h24" stroke="#d6d6da" stroke-width="2"/>'],
+  settings:['linear-gradient(#9c9ca4,#68686f)','<circle cx="30" cy="30" r="15" fill="none" stroke="#ececf0" stroke-width="7" stroke-dasharray="4.4 3.4"/><circle cx="30" cy="30" r="11" fill="#5d5d64" stroke="#ececf0" stroke-width="3"/><circle cx="30" cy="30" r="4" fill="#ececf0"/>'],
+  store:['linear-gradient(#38b8ff,#0a6cff)','<path d="M18 24h24l-2 20H20z" fill="#fff"/><path d="M24 25v-4a6 6 0 0 1 12 0v4" fill="none" stroke="#fff" stroke-width="3"/>'],
+  pay:['linear-gradient(#ff5a6a,#e3122d)','<circle cx="30" cy="30" r="16" fill="#fff"/><text x="30" y="37.5" text-anchor="middle" font-size="20" font-weight="900" fill="#e3122d">¥</text>'],
+  spark:['linear-gradient(135deg,#ff9a3d,#ff2d78)','<path fill="#fff" d="M30 11c1.7 9.6 5.8 14.6 18.5 19-12.7 4.4-16.8 9.4-18.5 19-1.7-9.6-5.8-14.6-18.5-19C24.2 25.6 28.3 20.6 30 11z"/>'],
+};
+const NAMES={tel:'電話',browser:'ブラウザ',talk:'トーク',music:'ミュージック',cal:'カレンダー',photos:'写真',camera:'カメラ',clock:'時計',weather:'天気',calc:'電卓',memo:'メモ',settings:'設定',store:'ストア',pay:'PonPay',spark:'Spark'};
+const tileHTML=(id,extra='')=>`<span class="tile" style="background:${ICONS[id][0]}"><svg viewBox="0 0 60 60">${ICONS[id][1]}</svg>${extra}</span>`;
+
+/* ----- clock / status bar ----- */
+function gsec(){return START_SEC+(S?S.elapsed:0)}
+function hhmm(sec=gsec()){sec%=86400;return String(Math.floor(sec/3600)).padStart(2,'0')+':'+String(Math.floor(sec/60)%60).padStart(2,'0')}
+const SB={
+  sig:'<svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>',
+  wifi:'<svg viewBox="0 0 16 12"><path d="M8 12 5.6 9.2a3.4 3.4 0 0 1 4.8 0zM3.4 7a6.6 6.6 0 0 1 9.2 0l-1.4 1.6a4.5 4.5 0 0 0-6.4 0zM1 4.4a10 10 0 0 1 14 0l-1.4 1.6a7.9 7.9 0 0 0-11.2 0z"/></svg>',
+  air:'<svg viewBox="0 0 16 16"><path d="M15 9.5V8L9.5 5V1.6a1.5 1.5 0 0 0-3 0V5L1 8v1.5l5.5-1.6v3.6L5 12.6V14l3-.8 3 .8v-1.4l-1.5-1.1V7.9z"/></svg>',
+  bat:'<svg viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="8" height="9" rx="2"/><path d="M25 4.5v4a2 2 0 0 0 0-4z" opacity=".45"/></svg>',
+};
+function sbUpdate(){
+  const st=S.set;
+  $('#sbar').innerHTML=`<span>${hhmm()}</span><span class="sb-r">${st.airplane?SB.air:SB.sig}${st.wifi?SB.wifi:''}${SB.bat}</span>`;
+  const sc=$('#screen');
+  sc.classList.toggle('in-app',!!S.app);
+  sc.classList.toggle('sb-light',!!(S.app&&APPS[S.app].light));
+}
+function applyDisplay(){
+  const sc=$('#screen');
+  sc.classList.toggle('dark',S.set.dark);
+  sc.className=sc.className.replace(/\bwp\d\b/,'wp'+S.set.wall);
+  $('#dim').style.opacity=((1-S.set.bright)*.86).toFixed(3);
+}
+
+/* ----- home ----- */
+function talkUnread(){let n=0;for(const k in S.chats)if(!S.chats[k].hidden)n+=S.chats[k].unread;return n}
+function iconHTML(id,dock){
+  const n=id==='talk'?talkUnread():id==='settings'?1:0;
+  return `<button class="ic" type="button" data-a="open" data-v="${id}" data-lp="icon" aria-label="${NAMES[id]}">${tileHTML(id,n?`<span class="badge">${n}</span>`:'')}${dock?'':`<span class="lb">${NAMES[id]}</span>`}</button>`;
+}
+function renderHome(){
+  $('#home').innerHTML=`<div class="wrow">
+    <div class="wdg"><span class="k" style="color:#ff6b6b">火曜日</span><span class="n">13</span><span class="s">明日<br>10:00 バイト（カフェ）</span></div>
+    <div class="wdg"><span class="k">東京</span><span class="n">17°</span><span class="s">晴れ時々くもり<br>最高:22° 最低:15°</span></div></div>
+    <div class="grid">${S.home.map(id=>iconHTML(id)).join('')}</div>
+    <div class="dots"><i class="on"></i><i></i></div>
+    <div class="dock">${S.dock.map(id=>iconHTML(id,true)).join('')}</div>`;
+}
+ACT.open=id=>openApp(id);
+function openApp(id){
+  if(S.app){$('#apps').innerHTML='';}
+  closeLayer();
+  const el=document.createElement('div');
+  el.className='app '+(APPS[id].cls||'');el.id='app';
+  $('#apps').appendChild(el);
+  S.app=id;
+  APPS[id].open&&APPS[id].open();
+  APPS[id].render(el);
+  sbUpdate();
+}
+function rerender(){const el=$('#app');if(el&&S.app)APPS[S.app].render(el)}
+function goHome(){
+  if(!S.app)return;
+  const el=$('#app');closeLayer();
+  APPS[S.app].close&&APPS[S.app].close();
+  S.app=null;
+  if(el){el.id='';el.style.animation='';el.classList.add('closing');setTimeout(()=>el.remove(),230)}
+  renderHome();sbUpdate();
+}
+ACT.home=goHome;
+LP.icon=id=>{
+  const name=NAMES[id];
+  if(['talk','pay','settings','store','tel'].includes(id)){
+    alertBox({title:`“${name}”は削除できません`,msg:'このAppを消したら、それこそ怪しまれます。',btns:[{t:'OK',bold:true}]});return;
+  }
+  sheet({title:name,btns:[{t:'Appを削除',red:true,fn:()=>{
+    alertBox({title:`“${name}”を削除しますか？`,msg:'このAppを削除すると、そのデータもすべて削除されます。',btns:[{t:'キャンセル'},{t:'削除',red:true,fn:()=>removeApp(id)}]});
+  }}]});
+};
+function removeApp(id){
+  const b=$(`#home .ic[data-v="${id}"]`);
+  if(id==='spark')S.installed.spark=false;
+  const done=()=>{S.home=S.home.filter(x=>x!==id);S.dock=S.dock.filter(x=>x!==id);renderHome()};
+  if(b){b.classList.add('gone');setTimeout(done,340)}else done();
+}
+
+/* ----- sheets, alerts, banners ----- */
+let SH=[];
+function closeLayer(){$('#layer').innerHTML='';SH=[]}
+function sheet({title,msg,btns}){
+  SH=btns.map(b=>b.fn);
+  $('#layer').innerHTML=`<div class="bkd" data-a="shX"></div><div class="sheet"><div class="sg">${title||msg?`<div class="sh-h">${title?`<b>${esc(title)}</b>`:''}${msg?`<span>${esc(msg)}</span>`:''}</div>`:''}${btns.map((b,i)=>`<button class="sb ${b.red?'red':''}" type="button" data-a="shB" data-v="${i}" ${!title&&!msg&&i===0?'style="border-top:0"':''}>${esc(b.t)}</button>`).join('')}</div><button class="sb cancel" type="button" data-a="shX">キャンセル</button></div>`;
+}
+function alertBox({title,msg,btns}){
+  SH=btns.map(b=>b.fn);
+  $('#layer').innerHTML=`<div class="bkd"></div><div class="alert" role="alertdialog"><div class="al-b"><b>${esc(title)}</b>${msg?`<span>${esc(msg)}</span>`:''}</div><div class="al-btns ${btns.length>2?'v':''}">${btns.map((b,i)=>`<button class="sb ${b.red?'red':''} ${b.bold?'bold':''}" type="button" data-a="shB" data-v="${i}">${esc(b.t)}</button>`).join('')}</div></div>`;
+}
+ACT.shB=v=>{const f=SH[+v];closeLayer();f&&f()};
+ACT.shX=()=>closeLayer();
+let BN=[];
+function banner(app,title,body,onTap){
+  const box=$('#banner');const i=BN.length;BN.push(onTap);
+  const d=document.createElement('div');
+  d.className='bnr';d.dataset.a='bnr';d.dataset.v=i;
+  d.innerHTML=`${tileHTML(app)}<div class="bt"><b>${esc(title)}<small>今</small></b><span>${esc(body)}</span></div>`;
+  box.appendChild(d);
+  setTimeout(()=>{d.classList.add('out');setTimeout(()=>d.remove(),320)},4200);
+}
+ACT.bnr=(v,t)=>{t.remove();BN[+v]&&BN[+v]()};
+
+/* ----- clicks & long press ----- */
+let lpT=null,lpEl=null,lpXY=null,lpFired=false;
+document.addEventListener('click',e=>{
+  if(lpFired){lpFired=false;e.preventDefault();e.stopPropagation();return}
+  const t=e.target.closest('[data-a]');if(!t)return;
+  const f=ACT[t.dataset.a];if(f)f(t.dataset.v,t,e);
+},true);
+function lpCancel(){if(lpT){clearTimeout(lpT);lpT=null}if(lpEl){lpEl.classList.remove('pressing');lpEl=null}}
+function lpRun(t){lpCancel();lpFired=true;setTimeout(()=>lpFired=false,700);try{navigator.vibrate&&navigator.vibrate(12)}catch(_){}LP[t.dataset.lp]&&LP[t.dataset.lp](t.dataset.v,t)}
+document.addEventListener('pointerdown',e=>{
+  const t=e.target.closest('[data-lp]');if(!t||e.button>0)return;
+  lpEl=t;lpXY=[e.clientX,e.clientY];t.classList.add('pressing');
+  lpT=setTimeout(()=>lpRun(t),500);
+});
+document.addEventListener('pointermove',e=>{if(lpT&&lpXY&&Math.hypot(e.clientX-lpXY[0],e.clientY-lpXY[1])>10)lpCancel()});
+document.addEventListener('pointerup',lpCancel);
+document.addEventListener('pointercancel',lpCancel);
+document.addEventListener('contextmenu',e=>{
+  const t=e.target.closest('[data-lp]');
+  if(e.target.closest('#screen'))e.preventDefault();
+  if(t&&!lpFired){lpRun(t);setTimeout(()=>lpFired=false,50)}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S&&S.started&&!S.over){if($('#layer').innerHTML)closeLayer();else goHome()}});
+/* ===== トーク (chat app) ===== */
+const L={tab:'home',room:null,prof:null,kb:false,draft:'',typing:null};
+const IC={
+  home:'<svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/></svg>',
+  talk:'<svg viewBox="0 0 24 24"><path d="M12 4C7 4 3 7.1 3 11c0 2.4 1.5 4.5 3.9 5.8L6 20l4-2.2c.6.1 1.3.2 2 .2 5 0 9-3.1 9-7s-4-7-9-7z"/></svg>',
+  news:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>',
+  wallet:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M15 12.5h3"/></svg>',
+  search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>',
+  phone:'<svg viewBox="0 0 24 24"><path d="M7 4h3l1.5 4-2 1.5a10 10 0 0 0 5 5l1.5-2 4 1.5v3a2 2 0 0 1-2 2A15 15 0 0 1 5 6a2 2 0 0 1 2-2z"/></svg>',
+  menu:'<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+  addf:'<svg viewBox="0 0 24 24"><circle cx="10" cy="9" r="4"/><path d="M3 20c0-4 3-6 7-6s7 2 7 6M19 8v6M16 11h6"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  cam:'<svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.5"/><path d="M9 7l1.5-2.5h3L15 7"/></svg>',
+  send:'<svg viewBox="0 0 24 24"><path d="M4 12 20 4l-5 16-3-7z"/></svg>',
+  mic:'<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  video:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg>',
+};
+const lastOf=c=>c.msgs[c.msgs.length-1];
+const lastText=m=>m?(m.img?'写真を送信しました':m.text):'';
+
+APPS.talk={cls:'ln',
+  open(){L.room=null;L.prof=null;L.kb=false;L.tab=L.tab||'home'},
+  render(el){
+    if(L.room){renderRoom(el);return}
+    const tab=L.tab;let body='',title='',right=IC.search;
+    if(tab==='home'){
+      title='ホーム';right=IC.addf;
+      body=`<div class="ln-search">${IC.search.replace('<svg','<svg width="15" height="15" style="fill:none;stroke:currentColor;stroke-width:2"')}検索</div>
+      <div class="ln-me" data-a="lnProf" data-v="me">${avatar('me',56)}<div><b>見せて</b><small>ステータスメッセージを入力</small></div></div>
+      <div class="ln-sec">友だち ${FRIENDS.length}</div>
+      ${FRIENDS.map(id=>`<button class="ln-row" type="button" data-a="lnProf" data-v="${id}">${avatar(id,42)}<span class="mid"><span class="nm">${esc(PEOPLE[id].name)}</span>${PEOPLE[id].status?`<span class="lm">${esc(PEOPLE[id].status)}</span>`:''}</span></button>`).join('')}
+      <div class="ln-sec">グループ 1</div>
+      <button class="ln-row" type="button" data-a="lnRoom" data-v="baito">${avatar('baito',42)}<span class="mid"><span class="nm">${esc(PEOPLE.baito.name)}</span></span></button>`;
+    }else if(tab==='talk'){
+      title='トーク';
+      const ids=Object.keys(S.chats).filter(k=>S.chats[k].msgs.length&&!S.chats[k].hidden)
+        .sort((a,b)=>(S.chats[b].pin?1:0)-(S.chats[a].pin?1:0)||lastOf(S.chats[b]).t.localeCompare(lastOf(S.chats[a]).t));
+      body=`<div class="ln-search">${IC.search.replace('<svg','<svg width="15" height="15" style="fill:none;stroke:currentColor;stroke-width:2"')}検索</div>`+
+      (ids.length?ids.map(id=>{const c=S.chats[id],m=lastOf(c);return `<button class="ln-row" type="button" data-a="lnRoom" data-v="${id}" data-lp="lnChat">${avatar(id,48)}<span class="mid"><span class="nm">${esc(PEOPLE[id].name)}${c.pin?' 📌':''}</span><span class="lm">${esc(lastText(m))}</span></span><span class="rt">${m.t}${c.unread?`<span class="un">${c.unread}</span>`:''}</span></button>`}).join(''):'<div class="empty">トークはありません</div>')+
+      '<div class="ln-tip">トークを長押しするとメニューが開きます</div>';
+    }else{
+      title=tab==='news'?'ニュース':'ウォレット';
+      body=tab==='news'?`<div class="grp plain" style="margin-top:8px">${['秋の新作スイーツ、コンビニ各社で発売','週末は全国的に晴れ 行楽日和に','“既読スルー”の心理とは？専門家に聞いた','終電後のタクシー料金、来月から改定'].map(t=>`<div class="row"><span class="t">${t}<small>エンタメ・くらし</small></span></div>`).join('')}</div>`
+        :`<div class="empty">ウォレットは PonPay と連携できます<br><br>残高 ¥12,840</div>`;
+    }
+    const n=talkUnread();
+    el.innerHTML=`<div class="ln-top"><h2>${title}</h2>${right}</div><div class="ln-body">${body}</div>
+      <nav class="ln-tabs">${[['home','ホーム'],['talk','トーク'],['news','ニュース'],['wallet','ウォレット']].map(([k,t])=>`<button class="ln-tab ${tab===k?'on':''}" type="button" data-a="lnTab" data-v="${k}">${IC[k]}${t}${k==='talk'&&n?`<span class="badge">${n}</span>`:''}</button>`).join('')}</nav>
+      ${L.prof?profHTML(L.prof):''}`;
+  }
+};
+ACT.lnTab=v=>{L.tab=v;rerender()};
+function profHTML(id){
+  const me=id==='me',p=me?{name:'見せて',status:'ステータスメッセージを入力'}:PEOPLE[id];
+  return `<div class="pf"><button class="x" type="button" data-a="lnProfX" aria-label="閉じる">×</button>${avatar(id,96)}<h3>${esc(p.name)}</h3><p>${esc(p.status||' ')}</p>
+  ${me?'':`<div class="pf-acts"><button type="button" data-a="lnRoom" data-v="${id}">${IC.talk}トーク</button><button type="button" data-a="lnCall">${IC.phone}音声通話</button><button type="button" data-a="lnCall">${IC.video}ビデオ通話</button></div>`}</div>`;
+}
+ACT.lnProf=v=>{L.prof=v;rerender()};
+ACT.lnProfX=()=>{L.prof=null;rerender()};
+ACT.lnCall=()=>alertBox({title:'今は通話できません',msg:'彼女がすぐそこにいます。',btns:[{t:'OK',bold:true}]});
+ACT.lnRoom=v=>{L.prof=null;L.room=v;L.kb=false;S.chats[v].unread=0;rerender();renderHomeBadgeLater()};
+function renderHomeBadgeLater(){renderHome()}
+ACT.lnBack=()=>{L.room=null;L.kb=false;rerender()};
+LP.lnChat=id=>{
+  const c=S.chats[id];
+  sheet({title:PEOPLE[id].name,btns:[
+    {t:c.pin?'ピン留めを解除':'ピン留め',fn:()=>{c.pin=!c.pin;rerender()}},
+    {t:'非表示',fn:()=>{c.hidden=true;rerender();renderHome()}},
+    {t:'削除',red:true,fn:()=>alertBox({title:'トーク履歴を削除',msg:'削除したトーク履歴は復元できません。削除しますか？',btns:[{t:'キャンセル'},{t:'削除',red:true,fn:()=>{c.msgs=[];c.unread=0;c.hidden=false;c.pin=false;rerender();renderHome()}}]})},
+  ]});
+};
+
+LP.lnMsg=v=>{
+  const id=L.room,c=S.chats[id],i=+v,m=c.msgs[i];if(!m)return;
+  const del=()=>{const box=$('#msgs'),top=box?box.scrollTop:0;c.msgs.splice(i,1);rerender();const b=$('#msgs');if(b)b.scrollTop=Math.min(top,b.scrollHeight)};
+  const btns=[{t:'コピー',fn:()=>{try{navigator.clipboard.writeText(m.text||'')}catch(_){}}}];
+  if(m.from==='me')btns.push({t:'送信取消',fn:del});
+  btns.push({t:'削除',red:true,fn:()=>alertBox({title:'メッセージを削除',msg:'削除したメッセージは、あなたのトーク画面から消えます。',btns:[{t:'キャンセル'},{t:'削除',red:true,fn:del}]})});
+  sheet({msg:m.img?'写真':(m.text.length>40?m.text.slice(0,40)+'…':m.text),btns});
+};
+/* ----- room ----- */
+const GROUP_COL={'店長':['#9ad0ec','#1f6f8b'],'さき':['#ffd1dc','#e07a9a'],'はると':['#c5e8b7','#5aa36b']};
+function msgHTML(id,m,i){
+  const lp=`data-lp="lnMsg" data-v="${i}"`;
+  if(m.from==='me')return `<div class="m me" ${lp}><div class="col">${m.img?`<div class="pic">${esc(m.img)}</div>`:`<div class="bub">${esc(m.text)}</div>`}</div><span class="meta"><span>既読</span><span>${m.t}</span></span></div>`;
+  let av=avatar(id,34),who='';
+  if(m.from!=='them'){const g=GROUP_COL[m.from]||['#ccc','#888'];av=`<span class="av" style="width:34px;height:34px;font-size:14px;background:linear-gradient(135deg,${g[0]},${g[1]})">${esc(m.from[0])}</span>`;who=`<span class="who">${esc(m.from)}</span>`}
+  return `<div class="m" ${lp}>${av}<div class="col">${who}${m.img?`<div class="pic">${esc(m.img)}</div>`:`<div class="bub">${esc(m.text)}</div>`}</div><span class="meta"><span>${m.t}</span></span></div>`;
+}
+const KEYS=[['あ','か','さ','del'],['た','な','は','sp'],['ま','や','ら','send'],['dk','わ','句','記']];
+const KCY={あ:'あいうえお',か:'かきくけこ',さ:'さしすせそ',た:'たちつてと',な:'なにぬねの',は:'はひふへほ',ま:'まみむめも',や:'やゆよ',ら:'らりるれろ',わ:'わをんー',句:'、。？！',記:'笑♡〜！'};
+function keyHTML(k){
+  if(k==='del')return '<button class="key fn" type="button" data-a="kDel" aria-label="削除">⌫</button>';
+  if(k==='sp')return '<button class="key fn" type="button" data-a="kSp">空白</button>';
+  if(k==='send')return '<button class="key send" type="button" data-a="lnSend">送信</button>';
+  if(k==='dk')return '<button class="key" type="button" data-a="kDk" style="font-size:15px">゛゜小</button>';
+  return `<button class="key" type="button" data-a="k" data-v="${k}">${k==='句'?'、。?!':k==='記'?'笑♡':k}<small>${KCY[k].slice(1,5)}</small></button>`;
+}
+function renderRoom(el){
+  const id=L.room,c=S.chats[id];
+  const msgs=c.msgs.map((m,i)=>msgHTML(id,m,i)).join('');
+  el.innerHTML=`<div class="ln-head"><button class="nb" type="button" data-a="lnBack" aria-label="戻る" style="color:var(--app-fg);font-size:28px;padding:0 8px">‹</button><b>${esc(PEOPLE[id].name)}</b>${IC.search}${IC.phone}${IC.menu}</div>
+  <div class="ln-msgs" id="msgs" data-a="lnKbX">${c.msgs.length?'<span class="day">今日</span>':'<span class="sysm">トーク履歴はありません</span>'}${msgs}${L.typing===id?`<div class="m typing">${avatar(id,34)}<div class="bub"><i></i><i></i><i></i></div></div>`:''}</div>
+  <div class="ln-in ${L.kb?'':'pad'}"><button class="ib" type="button" aria-label="追加">${IC.plus}</button><button class="ib" type="button" aria-label="カメラ">${IC.cam}</button>
+  <input id="msgIn" inputmode="none" autocomplete="off" placeholder="メッセージを入力" value="${esc(L.draft)}" data-a="lnKb" aria-label="メッセージ">
+  <button class="ib ${L.draft?'go':''}" type="button" data-a="lnSend" aria-label="送信">${L.draft?IC.send:IC.mic}</button></div>
+  ${L.kb?`<div class="kb" id="kb"><div class="cand" id="cand"></div><div class="keys">${KEYS.flat().map(keyHTML).join('')}</div></div>`:''}`;
+  const box=$('#msgs');box.scrollTop=box.scrollHeight;
+  const inp=$('#msgIn');
+  inp.addEventListener('input',()=>{L.draft=inp.value;updCand();sendIcon()});
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();ACT.lnSend()}});
+  if(L.kb){
+    $('#kb').addEventListener('pointerdown',e=>e.preventDefault());
+    updCand();
+    try{inp.focus({preventScroll:true});inp.setSelectionRange(inp.value.length,inp.value.length)}catch(_){}
+  }
+}
+function sendIcon(){const b=$('#msgIn')?.nextElementSibling;if(!b)return;b.classList.toggle('go',!!L.draft);b.innerHTML=L.draft?IC.send:IC.mic}
+ACT.lnKb=()=>{if(!L.kb){L.kb=true;rerender()}};
+ACT.lnKbX=()=>{if(L.kb){L.kb=false;rerender()}};
+function setDraft(v){L.draft=v;const i=$('#msgIn');if(i){i.value=v;i.scrollLeft=i.scrollWidth}updCand();sendIcon()}
+let kLast=null,kTime=0;
+ACT.k=k=>{
+  let v=L.draft;const cy=KCY[k],now=Date.now();
+  const last=v.slice(-1),i=cy.indexOf(last);
+  if(kLast===k&&now-kTime<1100&&i>=0)v=v.slice(0,-1)+cy[(i+1)%cy.length];else v+=cy[0];
+  kLast=k;kTime=now;setDraft(v);
+};
+const DK=['かが','きぎ','くぐ','けげ','こご','さざ','しじ','すず','せぜ','そぞ','ただ','ちぢ','つっづ','てで','とど','はばぱ','ひびぴ','ふぶぷ','へべぺ','ほぼぽ','やゃ','ゆゅ','よょ','あぁ','いぃ','うぅゔ','えぇ','おぉ','わゎ'];
+ACT.kDk=()=>{kLast=null;const v=L.draft,c=v.slice(-1);for(const g of DK){const i=g.indexOf(c);if(i>=0){setDraft(v.slice(0,-1)+g[(i+1)%g.length]);return}}};
+ACT.kDel=()=>{kLast=null;setDraft(L.draft.slice(0,-1))};
+ACT.kSp=()=>{kLast=null;setDraft(L.draft+' ')};
+
+/* ----- predictive conversion ----- */
+const DICT_BASE=[['すごい','すごい'],['すみません','すみません'],['すこし','少し'],['すぐ','すぐ'],['ありがとう','ありがとう'],['あした','明日'],['あとで','あとで'],['おけ','おけ'],['おはよう','おはよう'],['おつかれ','お疲れ'],['おやすみ','おやすみ'],['うん','うん'],['うそ','うそ'],['わら','笑'],['わかった','わかった'],['なに','なに'],['なんで','なんで'],['いいよ','いいよ'],['いま','今'],['ごめん','ごめん'],['ねむい','眠い'],['ねる','寝る'],['りょ','りょ'],['りょうかい','了解'],['たける','たける'],['のみ','飲み'],['かえる','帰る'],['だいじょうぶ','大丈夫'],['ちがう','違う'],['ばいと','バイト'],['みさき','みさき'],['ふろ','風呂'],['はやく','早く'],['ほんと','ほんと'],['まじ','まじ'],['やばい','やばい'],['これから','これから'],['きょう','今日'],['きのう','昨日']];
+const DICT_LEARN=[['すきだよ','好きだよ'],['すき','好き'],['すきすぎる','好きすぎる'],['すぐあいたい','すぐ会いたい'],['あいしてる','愛してる'],['あいたい','会いたい'],['あいしてるよ','愛してるよ♡'],['おやすみ','おやすみ♡ 大好き'],['おはよう','おはよう♡'],['だいすき','大好き'],['だいすき','だいすき♡'],['かわいい','かわいいね♡'],['ちゅー','チューしたい'],['ぎゅー','ぎゅーってしたい'],['あやか','あやか♡'],['ゆい','ゆい♡'],['りな','りな♡'],['ほてる','ホテル'],['ないしょ','内緒ね'],['かのじょ','彼女にはバレてない']];
+let CAND=[],CSEG='';
+function updCand(){
+  const box=$('#cand');if(!box)return;
+  const m=L.draft.match(/[ぁ-ゖー]+$/);CSEG=m?m[0]:'';
+  if(!S.set.predictive){CAND=[];box.innerHTML='<span class="hint">予測変換はオフです</span>';return}
+  if(!CSEG){CAND=[];box.innerHTML='';return}
+  const pick=d=>d.filter(([r])=>r.startsWith(CSEG)).map(([,w])=>w);
+  const list=[...(S.set.learned?pick(DICT_LEARN):[]),...pick(DICT_BASE)];
+  const kata=CSEG.replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+96));
+  CAND=[...new Set([...list,CSEG,kata])].slice(0,10);
+  box.innerHTML=CAND.map((w,i)=>`<button type="button" data-a="cand" data-v="${i}">${esc(w)}</button>`).join('');
+}
+ACT.cand=v=>{const w=CAND[+v];if(w==null)return;kLast=null;setDraft(L.draft.slice(0,L.draft.length-CSEG.length)+w)};
+
+/* ----- sending & replies ----- */
+const REPLY={
+  misaki:['浮気じゃないよね笑','てか今だれとLINEしてた？','既読はや笑 なにしてたの','ふーん。あとでスマホ見せてね','浮気じゃないよね？笑'],
+  girl:['え、まだ起きてたの？','彼女さん大丈夫？笑','うれしい〜♡','いま電話できる？'],
+  takeru:['おう','それな','明日ジムな'],kenta:['助かる！','了解！'],mom:['はいはい','早く寝なさいね'],
+};
+ACT.lnSend=()=>{
+  const text=L.draft.trim();const id=L.room;if(!text||!id)return;
+  if(S.set.airplane){alertBox({title:'送信できませんでした',msg:'機内モードがオンになっています。',btns:[{t:'OK',bold:true}]});return}
+  S.chats[id].msgs.push({from:'me',t:hhmm(),text});S.chats[id].hidden=false;
+  L.draft='';kLast=null;rerender();
+  let pool=null,txt;
+  if(id==='misaki')txt=/好き|すき|愛|大好き|♡|会いたい|ちゅー|チュー|ぎゅー/.test(text)?'急になに？笑 浮気じゃないよね笑':REPLY.misaki[Math.floor(Math.random()*REPLY.misaki.length)];
+  else if(GIRLS.includes(id))pool=REPLY.girl;else pool=REPLY[id];
+  if(pool)txt=pool[Math.floor(Math.random()*pool.length)];
+  if(!txt)return;
+  const g=GID;
+  setTimeout(()=>{if(S.over||g!==GID)return;L.typing=id;if(S.app==='talk'&&L.room===id)rerender()},700);
+  setTimeout(()=>{if(S.over||g!==GID)return;L.typing=null;deliverMsg(id,txt)},2100);
+};
+function deliverMsg(id,text){
+  const c=S.chats[id];c.msgs.push({from:'them',t:hhmm(),text});c.hidden=false;
+  const viewing=S.app==='talk'&&L.room===id;
+  if(!viewing){c.unread++;if(S.set.notif.talk)banner('talk',PEOPLE[id].name,text,()=>{openApp('talk');ACT.lnRoom(id)})}
+  if(S.app==='talk')rerender();else renderHome();
+}
+function incoming(id,text){if(S.set.airplane){S.queue.push([id,text]);return}deliverMsg(id,text)}
+function flushQueue(){const q=S.queue;S.queue=[];q.forEach(([id,t],i)=>setTimeout(()=>deliverMsg(id,t),600+i*900))}
+/* ===== 設定 ===== */
+const SI=(bg,svg)=>`<span class="si" style="background:${bg}"><svg viewBox="0 0 24 24">${svg}</svg></span>`;
+const SIC={
+  air:SI('#ff9500','<path transform="scale(1.5)" d="M15 9.5V8L9.5 5V1.6a1.5 1.5 0 0 0-3 0V5L1 8v1.5l5.5-1.6v3.6L5 12.6V14l3-.8 3 .8v-1.4l-1.5-1.1V7.9z"/>'),
+  wifi:SI('#0a84ff','<path transform="translate(2 4) scale(1.25)" d="M8 12 5.6 9.2a3.4 3.4 0 0 1 4.8 0zM3.4 7a6.6 6.6 0 0 1 9.2 0l-1.4 1.6a4.5 4.5 0 0 0-6.4 0zM1 4.4a10 10 0 0 1 14 0l-1.4 1.6a7.9 7.9 0 0 0-11.2 0z"/>'),
+  bt:SI('#0a84ff','<path d="M11 2v8.2L6.7 6 5.3 7.4 10.6 12l-5.3 4.6 1.4 1.4L11 13.8V22l6.4-5.4L13 12l4.4-4.6zM13 6.6l1.6 1.4-1.6 1.6zm0 8.8 1.6 1.6L13 18.4z"/>'),
+  cell:SI('#34c759','<path transform="translate(3 5) scale(1)" d="M0 10h3v4H0zM5 7h3v7H5zM10 4h3v10h-3zM15 0h3v14h-3z"/>'),
+  notif:SI('#ff3b30','<path d="M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6zM10 19a2 2 0 0 0 4 0z"/>'),
+  sound:SI('#ff2d55','<path d="M4 9h4l5-4v14l-5-4H4zM16 8a5 5 0 0 1 0 8l-1-1a3.6 3.6 0 0 0 0-6z"/>'),
+  focus:SI('#5e5ce6','<path d="M14 3a8 8 0 1 0 7 11A7 7 0 0 1 14 3z"/>'),
+  st:SI('#5e5ce6','<path d="M6 3h12v4l-4 5 4 5v4H6v-4l4-5-4-5z"/>'),
+  gen:SI('#8e8e93','<path d="M12 2l2 3 3.5-1 .5 3.5L21 9l-2 3 2 3-3 1.5-.5 3.5L14 19l-2 3-2-3-3.5 1L6 16.5 3 15l2-3-2-3 3-1.5L6.5 4 10 5z"/><circle cx="12" cy="12" r="3.5" fill="#8e8e93"/>'),
+  cc:SI('#8e8e93','<rect x="4" y="5" width="16" height="6" rx="3"/><rect x="4" y="13" width="16" height="6" rx="3"/>'),
+  disp:SI('#0a84ff','<text x="12" y="16.5" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">AA</text>'),
+  hs:SI('#5e5ce6','<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>'),
+  acc:SI('#0a84ff','<circle cx="12" cy="5" r="2.5"/><path d="M5 8h14v2l-5 1v4l2 6h-2.5L12 16l-1.5 5H8l2-6v-4L5 10z"/>'),
+  wall:SI('#32ade6','<path d="M12 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 0 3 3 0 0 1-2-5 3 3 0 0 1 2-5 3 3 0 0 1 3-3z"/>'),
+  priv:SI('#0a84ff','<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>'),
+  pass:SI('#8e8e93','<circle cx="8" cy="12" r="4"/><path d="M12 11h9v2h-2v3h-2v-3h-5z"/>'),
+  kb:SI('#8e8e93','<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M5 9h2v2H5zm4 0h2v2H9zm4 0h2v2h-2zm4 0h2v2h-2zM7 13h10v2H7z" fill="#8e8e93"/>'),
+};
+const STP={page:'root',back:[]};
+const getP=p=>p.split('.').reduce((o,k)=>o[k],S.set);
+function setP(p,v){const ks=p.split('.');const last=ks.pop();ks.reduce((o,k)=>o[k],S.set)[last]=v}
+const tgl=p=>`<span class="tg ${getP(p)?'on':''}"></span>`;
+const R=(icon,t,{v='',a='',val='',chev=true,tg='',cls=''}={})=>`<button class="row ${cls}" type="button" ${tg?`data-a="setTg" data-v="${tg}"`:a?`data-a="${a}" data-v="${val}"`:''}>${icon||''}<span class="t">${t}</span>${tg?tgl(tg):`${v?`<span class="v">${v}</span>`:''}${chev?'<span class="chev">›</span>':''}`}</button>`;
+const go=(p)=>`stGo`;
+APPS.settings={
+  open(){STP.page='root';STP.back=[];STP.stack=[]},
+  render(el){
+    const P=STP.page,st=S.set;let title='',body='';
+    const nav=(t,b)=>`<div class="nav">${b?`<button class="nb" type="button" data-a="stBack">‹ ${b}</button>`:''}<h2>${t}</h2></div>`;
+    if(P==='root'){
+      el.innerHTML=`<div class="scroll" style="padding-top:50px"><div class="big">設定</div>
+      <div class="grp"><button class="row" type="button" data-a="stGo" data-v="about">${avatar('me',58)}<span class="t" style="font-size:19px">見せて<small>アカウント、クラウド、メディアと購入</small></span><span class="chev">›</span></button></div>
+      <div class="grp">${R('','ソフトウェア・アップデートがあります',{v:'<span class="badge" style="position:static">1</span>',a:'stGo',val:'stub'})}</div>
+      <div class="grp">${R(SIC.air,'機内モード',{tg:'airplane'})}${R(SIC.wifi,'Wi-Fi',{v:st.wifi?'Home_5G':'オフ',a:'stGo',val:'wifi'})}${R(SIC.bt,'Bluetooth',{v:st.bt?'オン':'オフ',a:'stGo',val:'bt'})}${R(SIC.cell,'モバイル通信',{a:'stGo',val:'stub'})}</div>
+      <div class="grp">${R(SIC.notif,'通知',{a:'stGo',val:'notif'})}${R(SIC.sound,'サウンドと触覚',{a:'stGo',val:'stub'})}${R(SIC.focus,'集中モード',{a:'stGo',val:'stub'})}${R(SIC.st,'スクリーンタイム',{a:'stGo',val:'stub'})}</div>
+      <div class="grp">${R(SIC.gen,'一般',{a:'stGo',val:'general'})}${R(SIC.cc,'コントロールセンター',{a:'stGo',val:'stub'})}${R(SIC.disp,'画面表示と明るさ',{a:'stGo',val:'display'})}${R(SIC.hs,'ホーム画面とAppライブラリ',{a:'stGo',val:'stub'})}${R(SIC.acc,'アクセシビリティ',{a:'stGo',val:'stub'})}${R(SIC.wall,'壁紙',{a:'stGo',val:'wall'})}</div>
+      <div class="grp">${R(SIC.priv,'プライバシーとセキュリティ',{a:'stGo',val:'stub'})}${R(SIC.pass,'パスワード',{a:'stGo',val:'stub'})}</div></div>`;
+      return;
+    }
+    const back=STP.back[STP.back.length-1]||'設定';
+    if(P==='display'){
+      title='画面表示と明るさ';
+      body=`<div class="grp-h" style="margin-top:12px">外観</div><div class="grp"><div class="appear">
+        <button class="ap ${st.dark?'':'on'}" type="button" data-a="stDark" data-v="0"><i style="background:linear-gradient(#f2f2f7 0 30%,#fff 30%)"></i>ライト<span class="rd"></span></button>
+        <button class="ap ${st.dark?'on':''}" type="button" data-a="stDark" data-v="1"><i style="background:linear-gradient(#1c1c1e 0 30%,#000 30%)"></i>ダーク<span class="rd"></span></button></div>
+        ${R('','自動',{tg:'autoDark'})}</div>
+      <div class="grp-h">明るさ</div><div class="grp"><div class="slrow"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/></svg><input class="rng" id="bri" type="range" min="5" max="100" value="${Math.round(st.bright*100)}" aria-label="明るさ"><svg class="l" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4M4 4l3 3M17 17l3 3M4 20l3-3M17 7l3-3" stroke="currentColor" stroke-width="2" style="stroke:var(--app-sub)"/></svg></div>${R('','True Tone',{tg:'trueTone'})}</div>
+      <div class="grp-f">周囲の照明に合わせてディスプレイを自動調整し、さまざまな環境で色の見え方を一定に保ちます。</div>
+      <div class="grp">${R('','Night Shift',{v:'オフ',a:'stGo',val:'stub'})}${R('','自動ロック',{v:'30秒',a:'stGo',val:'stub'})}</div>
+      <div class="grp">${R('','テキストサイズ',{a:'stGo',val:'stub'})}${R('','文字を太くする',{tg:'bold'})}</div>`;
+    }else if(P==='wall'){
+      title='壁紙';
+      body=`<div class="grp" style="margin-top:12px"><div class="wps">${[0,1,2,3].map(i=>`<button type="button" class="wp${i} ${st.wall===i?'on':''}" data-a="stWall" data-v="${i}" aria-label="壁紙${i+1}"></button>`).join('')}</div></div><div class="grp-f" style="margin-top:-12px">タップしてホーム画面の壁紙に設定します。</div>`;
+    }else if(P==='general'){
+      title='一般';
+      body=`<div class="grp" style="margin-top:12px">${R('','情報',{a:'stGo',val:'about'})}${R('','ソフトウェア・アップデート',{a:'stGo',val:'stub'})}</div>
+      <div class="grp">${R('','日付と時刻',{a:'stGo',val:'stub'})}${R('','キーボード',{a:'stGo',val:'kb'})}${R('','言語と地域',{a:'stGo',val:'stub'})}${R('','辞書',{a:'stGo',val:'stub'})}</div>
+      <div class="grp">${R('','転送またはリセット',{a:'stGo',val:'reset'})}${R('','システム終了',{a:'stOff',chev:false,cls:'ctr'})}</div>`;
+    }else if(P==='kb'){
+      title='キーボード';
+      body=`<div class="grp" style="margin-top:12px">${R('','キーボード',{v:'2',a:'stGo',val:'stub'})}${R('','ユーザ辞書',{a:'stGo',val:'stub'})}</div>
+      <div class="grp-h">すべてのキーボード</div><div class="grp">${R('','自動大文字入力',{tg:'autoCap'})}${R('','予測',{tg:'predictive'})}${R('','スマート句読点',{tg:'trueTone'})}</div>
+      <div class="grp-f">予測をオンにすると、入力した内容から学習した言葉が候補に表示されます。</div>
+      <div class="grp-h">変換学習</div><div class="grp">${st.learned?R('','キーボードの変換学習をリセット',{a:'stLearn',chev:false,cls:'red'}):`<div class="row" style="cursor:default"><span class="t">変換学習はリセット済みです</span><span style="color:var(--app-green)">✓</span></div>`}</div>
+      <div class="grp-f">${st.learned?'これまでに入力した言葉の学習データがキーボードに残っています。':'学習データは工場出荷時の状態に戻りました。'}</div>`;
+    }else if(P==='reset'){
+      title='転送またはリセット';
+      body=`<div class="grp" style="margin-top:12px">${R('','リセット',{a:'stResetMenu',chev:false,cls:'ctr'})}${R('','すべてのコンテンツと設定を消去',{a:'stWipe',chev:false,cls:'ctr'})}</div>`;
+    }else if(P==='about'){
+      title='情報';
+      const kv=[['名前','見せてのスマホ'],['ソフトウェアバージョン','19.0'],['モデル名','Phone 16'],['シリアル番号','F2LX8Q1MN7'],['容量','128 GB'],['使用可能','23.4 GB'],['ネットワーク','ドコモ']];
+      body=`<div class="grp plain" style="margin-top:12px">${kv.map(([k,v])=>`<div class="row" style="cursor:default"><span class="t">${k}</span><span class="v">${v}</span></div>`).join('')}</div>`;
+    }else if(P==='wifi'){
+      title='Wi-Fi';
+      body=`<div class="grp plain" style="margin-top:12px">${R('','Wi-Fi',{tg:'wifi'})}${st.wifi?`<div class="row" style="cursor:default"><span style="color:var(--app-tint)">✓</span><span class="t">Home_5G</span><span class="v">🔒 ⓘ</span></div>`:''}</div>
+      ${st.wifi?`<div class="grp-h">ネットワーク</div><div class="grp plain">${['aterm-3f2a-g','0000docomo','Cafe_Free_WiFi','Buffalo-G-8E20'].map(n=>`<div class="row" style="cursor:default"><span class="t">${n}</span><span class="v">🔒 ⓘ</span></div>`).join('')}</div>`:''}`;
+    }else if(P==='bt'){
+      title='Bluetooth';
+      body=`<div class="grp plain" style="margin-top:12px">${R('','Bluetooth',{tg:'bt'})}</div>${st.bt?`<div class="grp-h">自分のデバイス</div><div class="grp plain"><div class="row" style="cursor:default"><span class="t">ワイヤレスイヤホン</span><span class="v">未接続 ⓘ</span></div><div class="row" style="cursor:default"><span class="t">スマートウォッチ</span><span class="v">接続済み ⓘ</span></div></div>`:''}`;
+    }else if(P==='notif'){
+      title='通知';
+      body=`<div class="grp" style="margin-top:12px">${R('','プレビューを表示',{v:'常に',a:'stGo',val:'stub'})}</div><div class="grp-h">通知スタイル</div><div class="grp">${
+        [['talk','トーク'],['pay','PonPay'],...(S.installed.spark?[['spark','Spark']]:[])].map(([k,n])=>`<button class="row" type="button" data-a="setTg" data-v="notif.${k}">${tileHTML(k).replace('class="tile"','class="tile" style="width:30px;border-radius:7px;box-shadow:none;background:'+ICONS[k][0]+'"')}<span class="t">${n}<small>${S.set.notif[k]?'バナー、サウンド、バッジ':'オフ'}</small></span>${tgl('notif.'+k)}</button>`).join('')}</div>`;
+    }else{
+      title=STP.title||'';
+      body=`<div class="empty">この項目は今回のゲームでは使いません。<br>ほかの設定を見てみよう。</div>`;
+    }
+    el.innerHTML=nav(title,back)+`<div class="scroll"><div style="height:4px"></div>${body}</div>`;
+    const b=$('#bri');
+    if(b){const paint=()=>b.style.background=`linear-gradient(to right,var(--app-tint) ${(b.value-5)/95*100}%,var(--app-line) ${(b.value-5)/95*100}%)`;paint();
+      b.addEventListener('input',()=>{S.set.bright=b.value/100;applyDisplay();paint()})}
+  }
+};
+const PAGE_T={display:'画面表示と明るさ',wall:'壁紙',general:'一般',kb:'キーボード',reset:'転送またはリセット',about:'情報',wifi:'Wi-Fi',bt:'Bluetooth',notif:'通知',root:'設定'};
+ACT.stGo=(v,t)=>{STP.back.push(PAGE_T[STP.page]||'戻る');STP.stack=(STP.stack||[]);STP.stack.push(STP.page);if(v==='stub')STP.title=t.querySelector('.t')?.childNodes[0]?.textContent||'';STP.page=v;rerender()};
+ACT.stBack=()=>{STP.page=(STP.stack||[]).pop()||'root';STP.back.pop();rerender()};
+ACT.setTg=v=>{
+  setP(v,!getP(v));
+  if(v==='airplane'){if(S.set.airplane){S.set.wifi=false;S.set.bt=false}else{S.set.wifi=true;flushQueue()}}
+  if(v==='autoDark'&&S.set.autoDark){S.set.dark=true;applyDisplay()}
+  if(v==='bold')$('#screen').style.fontWeight=S.set.bold?'600':'';
+  sbUpdate();rerender();
+};
+ACT.stDark=v=>{S.set.dark=v==='1';S.set.autoDark=false;applyDisplay();rerender()};
+ACT.stWall=v=>{S.set.wall=+v;applyDisplay();rerender()};
+ACT.stOff=()=>alertBox({title:'システム終了',msg:'電源を切っても、彼女はパスコードを知っています。',btns:[{t:'OK',bold:true}]});
+ACT.stWipe=()=>alertBox({title:'すべて消去しますか？',msg:'スマホが初期化されていたら、それが一番怪しまれます。',btns:[{t:'やめておく',bold:true}]});
+function resetLearn(){
+  alertBox({title:'キーボードの変換学習をリセット',msg:'キーボードの変換学習データを削除し、工場出荷時の設定に戻します。',btns:[{t:'キャンセル'},{t:'リセット',red:true,fn:()=>{S.set.learned=false;rerender();setTimeout(()=>alertBox({title:'リセットしました',msg:'変換学習データを削除しました。',btns:[{t:'OK',bold:true}]}),150)}}]});
+}
+ACT.stLearn=resetLearn;
+ACT.stResetMenu=()=>sheet({msg:'リセットする項目を選んでください',btns:[
+  {t:'すべての設定をリセット',fn:()=>alertBox({title:'今はやめておこう',msg:'時間がかかりすぎます。',btns:[{t:'OK',bold:true}]})},
+  {t:'ネットワーク設定をリセット',fn:()=>alertBox({title:'今はやめておこう',msg:'Wi-Fiのパスワードを聞かれたら困ります。',btns:[{t:'OK',bold:true}]})},
+  {t:'キーボードの変換学習をリセット',fn:resetLearn},
+  {t:'ホーム画面のレイアウトをリセット',fn:()=>alertBox({title:'今はやめておこう',msg:'アイコンが並び変わると逆に目立ちます。',btns:[{t:'OK',bold:true}]})},
+]});
+
+/* ===== ストア ===== */
+const STO={page:'today',got:{},sub:null,stack:[]};
+const STORE_APPS=[
+  ['家計簿ノート','ファイナンス','linear-gradient(135deg,#7bd389,#2a9d8f)','家',1],['ピクセル農園','ゲーム','linear-gradient(135deg,#ffd166,#ef8354)','農',1],
+  ['ルート乗換','ナビゲーション','linear-gradient(135deg,#4cc9f0,#4361ee)','乗',1],['ことば検定','教育','linear-gradient(135deg,#cdb4db,#7b2cbf)','言',0],
+  ['ナイトラン','ヘルスケア／フィットネス','linear-gradient(135deg,#1d3557,#457b9d)','走',0],['ポケット翻訳','仕事効率化','linear-gradient(135deg,#90e0ef,#0077b6)','訳',0],
+  ['ふわふわ睡眠','ヘルスケア／フィットネス','linear-gradient(135deg,#b8c0ff,#5e60ce)','眠',0],['レシピ帳','フード／ドリンク','linear-gradient(135deg,#ffb4a2,#e5989b)','食',0],
+];
+const gtile=(bg,ch,w=58)=>`<span class="tile" style="width:${w}px;background:${bg};color:#fff;font-weight:800;font-size:${w*.42}px;box-shadow:none">${ch}</span>`;
+APPS.store={
+  open(){STO.page='today';STO.stack=[]},
+  render(el){
+    const P=STO.page;
+    if(P==='today'){
+      el.innerHTML=`<div class="st-top"><div><small>10月13日 火曜日</small><h2>Today</h2></div><button class="me-btn" type="button" data-a="stoGo" data-v="acct" aria-label="アカウント">見</button></div>
+      <div class="scroll" style="background:var(--app-bg)"><div class="st-feat"><small>今日のApp</small><b>夜ふかしさんの<br>ための睡眠アプリ</b></div>
+      ${STORE_APPS.map(([n,c,bg,ch,inst],i)=>{const s=inst?'開く':STO.got[i]||'入手';return `<div class="st-app">${gtile(bg,ch)}<div class="mid"><div><b>${n}</b><small>${c}</small></div><button class="get" type="button" data-a="stoGet" data-v="${i}">${s}</button></div></div>`}).join('')}</div>
+      <nav class="ln-tabs">${[['Today',1],['ゲーム'],['App'],['検索']].map(([t,on])=>`<button class="ln-tab ${on?'on':''}" type="button" style="font-size:11px;padding-top:6px">${t}</button>`).join('')}</nav>`;
+      return;
+    }
+    let title='',body='',back=STO.stack.length?STO.stack[STO.stack.length-1][1]:'';
+    if(P==='acct'){
+      title='アカウント';
+      body=`<div class="grp" style="margin-top:12px"><div class="row" style="cursor:default"><span class="acct"><span class="me-btn">見</span><span><b style="font-size:18px">見せて</b><br><small style="color:var(--app-sub)">misete.0814@example.jp</small></span></span></div></div>
+      <div class="grp">${R('','購入済み・インストール履歴',{a:'stoGo',val:'hist'})}${R('','サブスクリプション',{a:'stoGo',val:'subs'})}${R('','通知',{a:'',chev:true})}</div>
+      <div class="grp">${R('','ギフトカードまたはコードを使う',{chev:false,cls:'ctr'})}${R('','アカウントに入金',{chev:false,cls:'ctr'})}</div>
+      <div class="grp">${R('','サインアウト',{chev:false,cls:'red ctr'})}</div>`;
+    }else if(P==='hist'){
+      title='購入履歴';
+      const groups={};S.hist.forEach((h,i)=>(groups[h.date]=groups[h.date]||[]).push([h,i]));
+      body=Object.keys(groups).length?Object.entries(groups).map(([d,arr])=>`<div class="grp-h" style="margin-top:12px">${d}</div><div class="grp">${arr.map(([h,i])=>`<button class="row" type="button" data-a="stoHist" data-v="${i}">${h.spark?tileHTML('spark').replace('class="tile"','class="tile" style="width:36px;border-radius:9px;box-shadow:none;background:'+ICONS.spark[0]+'"'):gtile('linear-gradient(135deg,#ccd,#99a)',h.name[0],36)}<span class="t">${esc(h.name)}<small>${esc(h.sub)}</small></span><span class="v">${h.price}</span></button>`).join('')}</div>`).join('')+'<div class="grp-f" style="margin-top:0">項目をタップすると、この履歴から非表示にできます。</div>'
+        :'<div class="empty">購入履歴はありません</div>';
+    }else if(P==='subs'){
+      title='サブスクリプション';
+      const act=S.subs.map((s,i)=>[s,i]).filter(([s])=>s.active),old=S.subs.map((s,i)=>[s,i]).filter(([s])=>!s.active);
+      const row=([s,i])=>`<button class="row" type="button" data-a="stoSub" data-v="${i}">${gtile(s.c,s.name[0],40)}<span class="t">${esc(s.name)}<small>${s.active?`${s.plan}・${s.next}に更新`:`${s.next}に期限切れ`}</small></span><span class="chev">›</span></button>`;
+      body=`<div class="grp-h" style="margin-top:12px">アクティブ</div>${act.length?`<div class="grp">${act.map(row).join('')}</div>`:'<div class="grp-f" style="margin-top:0">なし</div>'}${old.length?`<div class="grp-h">期限切れ</div><div class="grp">${old.map(row).join('')}</div>`:''}`;
+    }else if(P==='subd'){
+      const s=S.subs[STO.sub];title=s.name;
+      body=`<div class="grp" style="margin-top:12px"><div class="row" style="cursor:default">${gtile(s.c,s.name[0],52)}<span class="t" style="font-size:17px">${esc(s.name)}<small>${s.active?`次回更新日：${s.next}`:'期限切れ'}</small></span></div></div>
+      <div class="grp-h">オプション</div><div class="grp plain"><div class="row" style="cursor:default"><span class="t">${s.plan}</span>${s.active?'<span style="color:var(--app-tint)">✓</span>':''}</div></div>
+      ${s.active?`<div class="grp">${R('','サブスクリプションをキャンセルする',{a:'stoCancel',val:STO.sub,chev:false,cls:'red ctr'})}</div>`:''}`;
+    }
+    el.innerHTML=`<div class="nav"><button class="nb" type="button" data-a="stoBack">‹ ${back}</button><h2>${title}</h2>${P==='acct'?'<button class="nb r" type="button" data-a="stoBack" style="font-weight:600">完了</button>':''}</div><div class="scroll">${body}</div>`;
+  }
+};
+const STO_T={today:'Today',acct:'アカウント',hist:'購入履歴',subs:'サブスクリプション'};
+ACT.stoGo=v=>{STO.stack.push([STO.page,STO_T[STO.page]]);STO.page=v;rerender()};
+ACT.stoBack=()=>{const p=STO.stack.pop();STO.page=p?p[0]:'today';rerender()};
+ACT.stoGet=v=>{if(STORE_APPS[v][4]||STO.got[v])return;STO.got[v]='…';rerender();setTimeout(()=>{STO.got[v]='開く';if(S.app==='store')rerender()},1300)};
+ACT.stoHist=v=>{const h=S.hist[+v];sheet({title:h.name,msg:`${h.date}・${h.price}`,btns:[{t:'この項目を非表示',red:true,fn:()=>{S.hist.splice(+v,1);rerender()}}]})};
+ACT.stoSub=v=>{STO.stack.push([STO.page,STO_T[STO.page]]);STO.sub=+v;STO.page='subd';rerender()};
+ACT.stoCancel=v=>{const s=S.subs[+v];alertBox({title:'キャンセルの確認',msg:`${s.name}をキャンセルすると、${s.next}で終了します。`,btns:[{t:'キャンセルしない'},{t:'確認',red:true,fn:()=>{s.active=false;rerender()}}]})};
+/* ===== PonPay ===== */
+const PP={tab:'home',thread:null,page:null};
+const yen=n=>'¥'+n.toLocaleString('ja-JP');
+const PPI={
+  scan:'<svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/></svg>',
+  pay:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1"/><rect x="14" y="4" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM18 18h3v3h-3z"/></svg>',
+  send:'<svg viewBox="0 0 24 24"><path d="M5 8h13l-3-3M19 16H6l3 3"/></svg>',
+  hist:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>',
+  user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.5 3.5-7 8-7s8 2.5 8 7"/></svg>',
+  more:'<svg viewBox="0 0 24 24" style="fill:var(--app-fg);stroke:none"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg>',
+};
+const visPay=()=>S.pay.filter(p=>!S.blocked[p.id]);
+const txLine=t=>t.dir==='out'?`${yen(t.amt)}を送りました`:`${yen(t.amt)}を受け取りました`;
+function ppRow(id,top,sub,right,a,v){return `<button class="ln-row" type="button" ${a?`data-a="${a}" data-v="${v}"`:''}>${avatar(id,42)}<span class="mid"><span class="nm">${top}</span><span class="lm">${sub}</span></span><span class="rt" style="font-size:14px;font-weight:700;color:var(--app-fg)">${right}</span></button>`}
+APPS.pay={cls:'pp',
+  open(){PP.tab='home';PP.thread=null;PP.page=null},
+  render(el){
+    if(PP.thread){renderPayThread(el);return}
+    const tabs=`<nav class="ln-tabs">${[['home','ホーム',IC.home],['msg','メッセージ',IC.talk],['pay','支払う',PPI.pay],['acct','アカウント',PPI.user]].map(([k,t,i])=>`<button class="ln-tab ${PP.tab===k?'on':''}" type="button" data-a="ppTab" data-v="${k}" style="${PP.tab===k?'color:var(--pp)':''}">${i}${t}</button>`).join('')}</nav>`;
+    let body='';
+    if(PP.page==='hist'||PP.page==='blocked'){
+      const isH=PP.page==='hist';
+      let list='';
+      if(isH){const all=[];visPay().forEach(p=>p.tx.forEach(t=>all.push([p.id,t])));all.sort((a,b)=>b[1].d.localeCompare(a[1].d));
+        list=all.map(([id,t])=>ppRow(id,esc(PEOPLE[id].name),`${t.dir==='out'?'送った':'受け取った'}・${t.d}`,`<span style="color:${t.dir==='out'?'var(--pp)':'var(--app-fg)'}">${t.dir==='out'?'-':'+'}${yen(t.amt)}</span>`)).join('')||'<div class="empty">取引履歴はありません</div>';
+      }else{const ids=Object.keys(S.blocked).filter(k=>S.blocked[k]);
+        list=ids.length?ids.map(id=>`<div class="ln-row">${avatar(id,42)}<span class="mid"><span class="nm">${esc(PEOPLE[id].name)}</span></span><button class="get" type="button" data-a="ppUnblock" data-v="${id}">解除</button></div>`).join(''):'<div class="empty">ブロック中のユーザーはいません</div>';}
+      el.innerHTML=`<div class="nav" style="background:var(--app-bg)"><button class="nb" type="button" data-a="ppPage" data-v="" style="color:var(--app-fg)">‹</button><h2>${isH?'取引履歴':'ブロックリスト'}</h2></div><div class="ln-body">${list}</div>`;
+      return;
+    }
+    if(PP.tab==='home'){
+      const all=[];visPay().forEach(p=>p.tx.forEach(t=>all.push([p.id,t])));all.sort((a,b)=>b[1].d.localeCompare(a[1].d));
+      body=`<div class="pp-top"><div class="bar">PonPay<span>ポイント 1,240</span></div><div class="pp-bal">残高<b>${yen(12840)}</b></div></div>
+      <div class="pp-acts">${[['scan','スキャン','ppSoon'],['pay','支払う','ppTab','pay'],['send','送る・受け取る','ppTab','msg'],['hist','取引履歴','ppPage','hist']].map(([i,t,a,v])=>`<button type="button" data-a="${a}" data-v="${v||''}"><i>${PPI[i]}</i>${t}</button>`).join('')}</div>
+      <div class="pp-ban"><small>10月のキャンペーン</small>まちのお店で最大20%戻ってくる！</div>
+      <div class="ln-sec" style="border:0">最近の取引</div>${all.slice(0,4).map(([id,t])=>ppRow(id,esc(PEOPLE[id].name),t.d,`<span style="color:${t.dir==='out'?'var(--pp)':'var(--app-fg)'}">${t.dir==='out'?'-':'+'}${yen(t.amt)}</span>`,'ppThread',id)).join('')}`;
+      el.innerHTML=`<div class="ln-body" style="background:var(--app-bg2)">${body}</div>${tabs}`;
+      return;
+    }
+    if(PP.tab==='msg'){
+      const list=visPay();
+      body=`<div class="ln-top"><h2>メッセージ</h2></div><div class="ln-body">${list.length?list.map(p=>{const t=p.tx[p.tx.length-1];return ppRow(p.id,esc(PEOPLE[p.id].name),txLine(t),`<span style="font-weight:400;font-size:11px;color:var(--app-sub)">${t.d.split(' ')[0]}</span>`,'ppThread',p.id)}).join(''):'<div class="empty">メッセージはありません</div>'}</div>`;
+    }else if(PP.tab==='pay'){
+      const bars=Array.from({length:46},(_,i)=>`<i style="display:inline-block;height:56px;width:${(i*7%3)+1}px;margin-right:${(i*5%3)+1}px;background:#111"></i>`).join('');
+      body=`<div class="ln-top"><h2>支払う</h2></div><div class="ln-body" style="background:var(--app-bg2);padding:16px"><div style="background:#fff;color:#111;border-radius:18px;padding:22px 16px;text-align:center"><div style="font-size:12px;color:#888">お店の人に見せてください</div><div style="margin:16px 0;white-space:nowrap;overflow:hidden">${bars}</div><div style="font-size:13px;letter-spacing:.2em;font-variant-numeric:tabular-nums">2841 0937 5512 0086</div><div style="margin-top:16px;font-size:13px">残高 <b>${yen(12840)}</b></div></div></div>`;
+    }else{
+      body=`<div class="ln-top"><h2>アカウント</h2></div><div class="scroll"><div class="ln-me" style="background:var(--app-bg)">${avatar('me',56)}<div><b>見せて</b><small>PonPay ID: misete_0814</small></div></div><div style="height:14px"></div>
+      <div class="grp">${R('','本人確認',{v:'済み',a:'ppSoon'})}${R('','支払い方法',{a:'ppSoon'})}${R('','ブロックリスト',{a:'ppPage',val:'blocked'})}${R('','通知設定',{a:'ppSoon'})}</div><div class="grp">${R('','ヘルプ',{a:'ppSoon'})}</div></div>`;
+    }
+    el.innerHTML=body+tabs;
+  }
+};
+function renderPayThread(el){
+  const p=S.pay.find(x=>x.id===PP.thread);
+  el.innerHTML=`<div class="ln-head"><button class="nb" type="button" data-a="ppBack" aria-label="戻る" style="color:var(--app-fg);font-size:28px;padding:0 8px">‹</button>${avatar(p.id,30)}<b style="margin-left:6px">${esc(PEOPLE[p.id].name)}</b><button class="nb" type="button" data-a="ppMore" data-v="${p.id}" aria-label="その他" style="width:30px;height:30px">${PPI.more}</button></div>
+  <div class="pp-thread"><span class="day" style="background:rgba(0,0,0,.15)">送る・受け取る</span>${p.tx.map(t=>`<div class="tx ${t.dir}"><div class="lbl">${t.dir==='out'?'送った金額':'受け取った金額'}</div><div class="amt">${yen(t.amt)}</div>${t.memo?`<div class="memo">${esc(t.memo)}</div>`:''}<div class="d">${t.d}</div></div>`).join('')}</div>
+  <div class="ln-in pad" style="justify-content:center;gap:12px"><button class="get" type="button" data-a="ppSoon" style="flex:1;padding:10px">請求する</button><button class="get" type="button" data-a="ppSoon" style="flex:1;padding:10px;background:var(--pp);color:#fff">送る</button></div>`;
+  const b=$('.pp-thread',el);b.scrollTop=b.scrollHeight;
+}
+ACT.ppTab=v=>{PP.tab=v;PP.page=null;rerender()};
+ACT.ppPage=v=>{PP.page=v||null;rerender()};
+ACT.ppThread=v=>{PP.thread=v;rerender()};
+ACT.ppBack=()=>{PP.thread=null;rerender()};
+ACT.ppSoon=()=>alertBox({title:'今はやめておこう',msg:'彼女がお風呂からあがる前に、やることがあるはず。',btns:[{t:'OK',bold:true}]});
+ACT.ppMore=id=>sheet({title:PEOPLE[id].name,btns:[
+  {t:'ブロックする',red:true,fn:()=>alertBox({title:`${PEOPLE[id].name}さんをブロックしますか？`,msg:'ブロックすると、このユーザーとのメッセージと送受信の履歴が表示されなくなります。',btns:[{t:'キャンセル'},{t:'ブロック',red:true,fn:()=>{S.blocked[id]=true;PP.thread=null;rerender()}}]})},
+  {t:'通報する',fn:ACT.ppSoon},
+]});
+ACT.ppUnblock=id=>{S.blocked[id]=false;rerender()};
+
+/* ===== Spark (matching) ===== */
+const PROF=[
+  {n:'さき',a:22,d:2,bio:'カフェ巡りと古着屋めぐりが好き☕️',tags:['カフェ','古着','映画'],g:'linear-gradient(160deg,#ffc3a0,#ff7aa2)'},
+  {n:'まい',a:24,d:5,bio:'週末はだいたいサウナにいます',tags:['サウナ','お酒','旅行'],g:'linear-gradient(160deg,#a0c4ff,#6a7dff)'},
+  {n:'ひなた',a:21,d:1,bio:'大学生です！一緒にご飯行ける人〜',tags:['焼肉','カラオケ'],g:'linear-gradient(160deg,#ffd6a5,#ff9f68)'},
+  {n:'かな',a:25,d:8,bio:'看護師してます。お休みは不定期です',tags:['ドライブ','ネイル'],g:'linear-gradient(160deg,#caffbf,#55c595)'},
+  {n:'れいな',a:23,d:3,bio:'猫2匹と暮らしてます🐈',tags:['猫','読書','パン'],g:'linear-gradient(160deg,#e0c3fc,#8e7dff)'},
+  {n:'あおい',a:22,d:4,bio:'ライブとフェスが生きがい',tags:['音楽','フェス'],g:'linear-gradient(160deg,#9bf6ff,#3a86ff)'},
+  {n:'ゆな',a:26,d:6,bio:'お酒好きな人と飲みに行きたい🍶',tags:['日本酒','居酒屋'],g:'linear-gradient(160deg,#ffadad,#e5383b)'},
+  {n:'みお',a:20,d:2,bio:'まずはメッセージから仲良くなりたいです',tags:['カフェ','アニメ'],g:'linear-gradient(160deg,#fdffb6,#f4a261)'},
+];
+const SPK={idx:0,tab:'swipe',match:null,matches:[]};
+const SIL='<svg viewBox="0 0 100 120"><circle cx="50" cy="40" r="22" fill="#fff"/><path d="M8 120c3-30 20-46 42-46s39 16 42 46z" fill="#fff"/></svg>';
+const SPB={
+  rew:'<svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2-5M4 3v5h5" fill="none" stroke="#f7b500" stroke-width="2.6" stroke-linecap="round"/></svg>',
+  nope:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="#ff3b5c" stroke-width="3" stroke-linecap="round"/></svg>',
+  star:'<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" fill="#2fa8ff"/></svg>',
+  like:'<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z" fill="#3fd37a"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24"><path d="M13 2 5 13h6l-1 9 8-11h-6z" fill="#a259ff"/></svg>',
+};
+const spCard=(p,top)=>`<div class="card" ${top?'id="topCard"':'style="transform:scale(.95) translateY(10px)"'}><div class="art" style="background:${p.g}">${SIL}</div><div class="stamp like">LIKE</div><div class="stamp nope">NOPE</div><div class="info"><b>${esc(p.n)}<span>${p.a}</span></b><p>◎ ${p.d}km先・${esc(p.bio)}</p><div class="chips">${p.tags.map(t=>`<i>${esc(t)}</i>`).join('')}</div></div></div>`;
+APPS.spark={cls:'sp',
+  open(){SPK.tab='swipe';SPK.match=null;if(!SPK.matches.length)SPK.matches=[{n:'えり',a:21,g:'linear-gradient(160deg,#ffd1dc,#f78fb3)',last:'昨日はありがと！また飲もう🍻'},{n:'ももか',a:23,g:'linear-gradient(160deg,#b8f2e6,#5e8bff)',last:'週末あいてる？'}]},
+  render(el){
+    const tabs=`<nav class="sp-tabs">${[['swipe','<svg viewBox="0 0 60 60"><path d="M30 8c1.9 10.7 6.5 16.3 20.6 21.2-14.1 4.9-18.7 10.5-20.6 21.2-1.9-10.7-6.5-16.3-20.6-21.2C23.5 24.3 28.1 18.7 30 8z"/></svg>'],['msgs','<svg viewBox="0 0 24 24"><path d="M12 4C7 4 3 7.1 3 11c0 2.4 1.5 4.5 3.9 5.8L6 20l4-2.2c.6.1 1.3.2 2 .2 5 0 9-3.1 9-7s-4-7-9-7z"/></svg>'],['me','<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.5"/><path d="M3.5 21c0-5 3.8-7.5 8.5-7.5s8.5 2.5 8.5 7.5z"/></svg>']].map(([k,s])=>`<button type="button" class="${SPK.tab===k?'on':''}" data-a="spTab" data-v="${k}" aria-label="${k}">${s}</button>`).join('')}</nav>`;
+    const top=`<div class="sp-top"><span class="sp-logo">spark</span><span class="gold">GOLD</span></div>`;
+    if(SPK.tab==='swipe'){
+      const p=PROF[SPK.idx%PROF.length],q=PROF[(SPK.idx+1)%PROF.length];
+      el.innerHTML=top+`<div class="sp-deck">${spCard(q,false)}${spCard(p,true)}</div>
+      <div class="sp-btns"><button class="cb s" type="button" data-a="spRew" aria-label="戻す">${SPB.rew}</button><button class="cb" type="button" data-a="spSwipe" data-v="-1" aria-label="NOPE">${SPB.nope}</button><button class="cb s" type="button" data-a="spSwipe" data-v="1" aria-label="スーパーライク">${SPB.star}</button><button class="cb" type="button" data-a="spSwipe" data-v="1" aria-label="LIKE">${SPB.like}</button><button class="cb s" type="button" data-a="spRew" aria-label="ブースト">${SPB.bolt}</button></div>${tabs}
+      ${SPK.match?`<div class="match"><h3>It's a Match!</h3><div style="display:flex;gap:-10px">${avatar('me',84)}<span class="av" style="width:84px;height:84px;background:${SPK.match.g};margin-left:-14px;border:3px solid #fff;font-size:34px">${esc(SPK.match.n[0])}</span></div><p style="margin:0">${esc(SPK.match.n)}さんとマッチしました</p><button type="button" data-a="spTab" data-v="msgs">メッセージを送る</button><button type="button" data-a="spMatchX" style="background:none;border:1.5px solid #fff">スワイプを続ける</button></div>`:''}`;
+      bindCard();
+    }else if(SPK.tab==='msgs'){
+      el.innerHTML=top+`<div class="ln-body"><div class="ln-sec" style="border:0;color:var(--sp2);font-weight:700">新しいマッチ</div><div style="display:flex;gap:12px;padding:4px 16px 12px;overflow-x:auto">${SPK.matches.map(m=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px"><span class="av" style="width:62px;height:62px;border-radius:12px;background:${m.g};font-size:24px">${esc(m.n[0])}</span>${esc(m.n)}</div>`).join('')}</div>
+      <div class="ln-sec" style="color:var(--sp2);font-weight:700">メッセージ</div>${SPK.matches.map(m=>`<div class="ln-row"><span class="av" style="width:52px;height:52px;background:${m.g};font-size:21px">${esc(m.n[0])}</span><span class="mid"><span class="nm">${esc(m.n)}</span><span class="lm">${esc(m.last)}</span></span></div>`).join('')}</div>${tabs}`;
+    }else{
+      el.innerHTML=top+`<div class="ln-body" style="text-align:center;padding-top:20px">${avatar('me',110)}<h3 style="margin:12px 0 2px;font-size:22px">見せて, 22</h3><p style="margin:0;color:var(--app-sub);font-size:13px">大学生・東京</p>
+      <div class="grp" style="margin-top:22px;text-align:left;background:var(--app-bg2)"><div class="row"><span class="t">Spark Gold 会員<small>次回更新 2026/11/02</small></span></div><div class="row"><span class="t">プロフィールを編集</span><span class="chev">›</span></div><div class="row"><span class="t">設定</span><span class="chev">›</span></div></div></div>${tabs}`;
+    }
+  }
+};
+function bindCard(){
+  const c=$('#topCard');if(!c)return;
+  let sx=0,sy=0,dx=0,dy=0,drag=false;
+  const lk=$('.like',c),np=$('.nope',c);
+  c.addEventListener('pointerdown',e=>{drag=true;sx=e.clientX;sy=e.clientY;dx=dy=0;try{c.setPointerCapture(e.pointerId)}catch(_){}c.style.transition='none'});
+  c.addEventListener('pointermove',e=>{if(!drag)return;dx=e.clientX-sx;dy=e.clientY-sy;c.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/18}deg)`;lk.style.opacity=Math.max(0,dx/90);np.style.opacity=Math.max(0,-dx/90)});
+  const end=()=>{if(!drag)return;drag=false;if(Math.abs(dx)>90)spFly(dx>0?1:-1);else{c.style.transition='transform .25s';c.style.transform='';lk.style.opacity=0;np.style.opacity=0}};
+  c.addEventListener('pointerup',end);c.addEventListener('pointercancel',end);
+}
+function spFly(dir){
+  const c=$('#topCard');if(!c||c.dataset.gone)return;c.dataset.gone='1';
+  $(dir>0?'.like':'.nope',c).style.opacity=1;
+  c.style.transition='transform .35s ease-in';c.style.transform=`translate(${dir*460}px,-40px) rotate(${dir*28}deg)`;
+  setTimeout(()=>{const p=PROF[SPK.idx%PROF.length];SPK.idx++;
+    if(dir>0&&Math.random()<.4){SPK.match=p;SPK.matches.unshift({...p,last:'マッチしました！メッセージを送ってみよう'})}
+    if(S.app==='spark')rerender()},340);
+}
+ACT.spSwipe=v=>spFly(+v);
+ACT.spRew=()=>alertBox({title:'Spark Gold 限定機能',msg:'それより今は、このアプリをどうにかした方がいいかも。',btns:[{t:'OK',bold:true}]});
+ACT.spTab=v=>{SPK.tab=v;SPK.match=null;rerender()};
+ACT.spMatchX=()=>{SPK.match=null;rerender()};
+/* ===== small apps ===== */
+const navBar=(title,right='')=>`<div class="nav"><button class="nb" type="button" data-a="home">‹ ホーム</button><h2>${title}</h2>${right}</div>`;
+/* 電卓 */
+const CAL={cur:'0',prev:null,op:null,fresh:false};
+function calFmt(s){if(s==='エラー')return s;if(/e/.test(s))return s;const[a,b]=s.split('.');const neg=a.startsWith('-');const n=(neg?a.slice(1):a).replace(/\B(?=(\d{3})+(?!\d))/g,',');return(neg?'-':'')+n+(b!==undefined?'.'+b:'')}
+function calNum(r){if(!isFinite(r))return'エラー';let s=String(parseFloat(r.toPrecision(9)));if(s.replace(/[-.]/g,'').length>9)s=r.toExponential(4);return s}
+const calDo=(a,b,o)=>o==='+'?a+b:o==='−'?a-b:o==='×'?a*b:b===0?NaN:a/b;
+APPS.calc={cls:'calc',light:true,
+  render(el){
+    const ac=CAL.cur==='0'&&!CAL.op?'AC':'C';
+    const K=[[ac,'l'],['±','l'],['%','l'],['÷','o'],['7'],['8'],['9'],['×','o'],['4'],['5'],['6'],['−','o'],['1'],['2'],['3'],['+','o'],['0','z'],['.'],['=','o']];
+    el.innerHTML=`<div class="calc-d" aria-live="polite">${calFmt(CAL.cur)}</div><div class="calc-k">${K.map(([k,c])=>`<button class="ck ${c||''} ${CAL.op===k&&CAL.fresh?'on':''}" type="button" data-a="calK" data-v="${k}">${k}</button>`).join('')}</div>`;
+  }
+};
+ACT.calK=k=>{
+  const c=CAL;
+  if(/^[0-9]$/.test(k)){if(c.fresh||c.cur==='0'||c.cur==='エラー'){c.cur=k;c.fresh=false}else if(c.cur.replace(/[-.]/g,'').length<9)c.cur+=k}
+  else if(k==='.'){if(c.fresh){c.cur='0.';c.fresh=false}else if(!c.cur.includes('.'))c.cur+='.'}
+  else if(k==='AC'){Object.assign(c,{cur:'0',prev:null,op:null,fresh:false})}
+  else if(k==='C'){c.cur='0'}
+  else if(k==='±'){if(c.cur!=='0')c.cur=c.cur.startsWith('-')?c.cur.slice(1):'-'+c.cur}
+  else if(k==='%'){c.cur=calNum(parseFloat(c.cur)/100)}
+  else if(k==='='){if(c.op!=null&&c.prev!=null){c.cur=calNum(calDo(c.prev,parseFloat(c.cur),c.op));c.op=null;c.prev=null;c.fresh=true}}
+  else{if(c.op&&!c.fresh&&c.prev!=null)c.cur=calNum(calDo(c.prev,parseFloat(c.cur),c.op));c.prev=parseFloat(c.cur);c.op=k;c.fresh=true}
+  rerender();
+};
+/* カメラ・写真 */
+const PH={view:null};
+APPS.camera={cls:'cam',light:true,
+  render(el){
+    const last=S.photos[0];
+    el.innerHTML=`<div class="cam-v"><div class="gridl"></div></div><div class="cam-m"><span>タイムラプス</span><span>ビデオ</span><span class="on">写真</span><span>ポートレート</span><span>パノラマ</span></div>
+    <div class="cam-b"><button class="thumb" type="button" data-a="camRoll" aria-label="写真" style="background:${last?last.c:'#333'}"></button><button class="shut" type="button" data-a="shoot" aria-label="シャッター"></button><span style="width:44px;height:44px;border-radius:50%;background:#222;display:grid;place-items:center;font-size:18px">⟲</span></div>`;
+  }
+};
+const GR=['linear-gradient(135deg,#4b4636,#9c8f6b)','linear-gradient(135deg,#2d3a4a,#7d8fa3)','linear-gradient(135deg,#3b2f2f,#a57c5b)'];
+ACT.shoot=()=>{const f=document.createElement('div');f.className='flash';$('#screen').appendChild(f);setTimeout(()=>f.remove(),400);
+  S.photos.unshift({c:GR[S.photos.length%3],t:'カメラ '+hhmm()});rerender()};
+ACT.camRoll=()=>{openApp('photos')};
+APPS.photos={
+  open(){PH.view=null},
+  render(el){
+    if(PH.view!=null){const p=S.photos[PH.view];
+      el.innerHTML=`<div class="nav"><button class="nb" type="button" data-a="phBack">‹ ライブラリ</button><h2>${esc(p.t)}</h2><button class="nb r" type="button" data-a="phDel" style="color:var(--app-red)">削除</button></div><div class="ph-big"><div style="background:${p.c}"><span>${esc(p.t)}</span></div></div>`;return}
+    el.innerHTML=navBar('ライブラリ',`<span class="nb r" style="color:var(--app-sub);font-size:13px">${S.photos.length}枚</span>`)+`<div class="scroll" style="background:var(--app-bg)"><div class="ph-grid">${S.photos.map((p,i)=>`<button type="button" data-a="phOpen" data-v="${i}" style="background:${p.c}" aria-label="${esc(p.t)}"><span>${esc(p.t)}</span></button>`).join('')}</div></div>`;
+  }
+};
+ACT.phOpen=v=>{PH.view=+v;rerender()};
+ACT.phBack=()=>{PH.view=null;rerender()};
+ACT.phDel=()=>sheet({btns:[{t:'写真を削除',red:true,fn:()=>{S.photos.splice(PH.view,1);PH.view=null;rerender()}}]});
+/* 時計 */
+APPS.clock={cls:'clk',light:true,
+  render(el){
+    const s=gsec(),ss=String(s%60).padStart(2,'0');
+    const w=[['ニューヨーク','昨日、-13時間',-13],['ロンドン','今日、-8時間',-8],['ホノルル','昨日、-19時間',-19]];
+    el.innerHTML=`<div class="nav" style="background:#000"><h2 style="color:#fff">世界時計</h2></div><div class="clk-big">${hhmm(s)}<span style="font-size:.45em;opacity:.6">:${ss}</span></div><div style="text-align:center;color:#8e8e93;font-size:13px;margin-bottom:18px">東京　10月13日 火曜日</div>
+    <div style="flex:1;overflow:auto">${w.map(([n,d,o])=>`<div class="clk-row"><span><small>${d}</small>${n}</span><b>${hhmm(s+o*3600+86400)}</b></div>`).join('')}</div>
+    <nav class="ln-tabs" style="background:#000;border-color:#222">${['世界時計','アラーム','ストップウォッチ','タイマー'].map((t,i)=>`<button class="ln-tab ${i?'':'on'}" type="button" style="font-size:11px;${i?'':'color:#ff9f0a'}">${t}</button>`).join('')}</nav>`;
+  }
+};
+/* 天気 */
+APPS.weather={cls:'wx',light:true,
+  render(el){
+    const hrs=[['今','17°','☾'],['0時','16°','☾'],['1時','16°','☁︎'],['2時','15°','☁︎'],['3時','15°','☁︎'],['4時','15°','☾']];
+    el.innerHTML=`<div class="wx-h"><div style="font-size:30px">東京</div><b>17°</b><div>晴れ時々くもり</div><div style="font-size:15px;margin-top:2px">最高:22°　最低:15°</div></div>
+    <div class="wx-card">明日の朝は少し冷え込みます。最低気温は15°の予想です。<div class="wx-hours">${hrs.map(([a,b,c])=>`<div><span>${a}</span><span style="font-size:18px">${c}</span><b>${b}</b></div>`).join('')}</div></div>
+    <div class="wx-card">10日間の天気予報<br><br>今日　☀︎　15° ━━━━ 22°<br>水　　☁︎　14° ━━━ 20°<br>木　　☂︎　13° ━━ 18°</div>`;
+  }
+};
+/* メモ */
+const MEMO={open:null};
+const NOTES=[['買い物リスト','買い物リスト\n・牛乳\n・洗剤\n・みさきの好きなプリン\n・電池（単3）','昨日'],['バイトシフト 10月','バイトシフト 10月\n14(水) 10-17\n17(土) 9-15\n21(水) 10-17\n25(日) 12-20','10/03'],['誕生日','誕生日\nみさき 12/3\n母 2/14\nたける 6/1','9/12'],['レポート構成','レポート構成\n1. はじめに\n2. 先行研究\n3. 調査方法\n※ 締切 10/30','9/02']];
+APPS.memo={
+  open(){MEMO.open=null},
+  render(el){
+    if(MEMO.open!=null){const n=NOTES[MEMO.open];el.innerHTML=`<div class="nav" style="background:var(--app-bg)"><button class="nb" type="button" data-a="memoX" style="color:#d4a400">‹ メモ</button></div><div class="note"><b style="font-size:22px">${esc(n[1].split('\n')[0])}</b>\n${esc(n[1].split('\n').slice(1).join('\n'))}</div>`;return}
+    el.innerHTML=navBar('メモ')+`<div class="scroll"><div class="grp plain" style="margin-top:10px">${NOTES.map((n,i)=>`<button class="row" type="button" data-a="memoO" data-v="${i}"><span class="t"><b>${esc(n[0])}</b><small>${n[2]}　${esc(n[1].split('\n')[1])}</small></span></button>`).join('')}</div></div>`;
+  }
+};
+ACT.memoO=v=>{MEMO.open=+v;rerender()};
+ACT.memoX=()=>{MEMO.open=null;rerender()};
+/* カレンダー */
+APPS.cal={
+  render(el){
+    const off=4,days=31,ev=[13,14,17,20,21,25];
+    let cells=['日','月','火','水','木','金','土'].map(w=>`<span class="w">${w}</span>`).join('')+'<span></span>'.repeat(off);
+    for(let d=1;d<=days;d++)cells+=d===13?`<span><span class="td">${d}</span></span>`:`<span class="${ev.includes(d)?'dt':''}">${d}</span>`;
+    el.innerHTML=navBar('2026年10月')+`<div class="scroll" style="background:var(--app-bg)"><div class="cal-g">${cells}</div>
+    <div class="cal-ev"><b>19:00</b>　渋谷で飲み（たける）</div><div class="cal-ev" style="border-color:#34c759"><b>明日 10:00</b>　バイト（カフェ）</div><div class="cal-ev" style="border-color:#ff2d55"><b>10/20</b>　ゆい 誕生日</div></div>`;
+  }
+};
+/* 電話・ブラウザ・ミュージック */
+APPS.tel={
+  render(el){
+    const r=[['misaki','発信','18:58'],['takeru','着信','17:40'],['mom','不在着信','09:01'],['kenta','着信','昨日'],['misaki','着信','昨日']];
+    el.innerHTML=navBar('履歴')+`<div class="scroll" style="background:var(--app-bg)">${r.map(([id,k,t])=>`<div class="ln-row">${avatar(id,40)}<span class="mid"><span class="nm" style="${k==='不在着信'?'color:var(--app-red)':''}">${esc(PEOPLE[id].name)}</span><span class="lm">${k}</span></span><span class="rt">${t} ⓘ</span></div>`).join('')}</div>
+    <nav class="ln-tabs">${['よく使う項目','履歴','連絡先','キーパッド'].map((t,i)=>`<button class="ln-tab ${i===1?'on':''}" type="button" style="font-size:11px;${i===1?'color:var(--app-tint)':''}">${t}</button>`).join('')}</nav>`;
+  }
+};
+APPS.browser={
+  render(el){
+    const f=[['ニュース','#ff3b30','N'],['天気','#0a84ff','天'],['地図','#34c759','地'],['乗換','#5e5ce6','乗'],['動画','#ff2d55','▶'],['辞書','#8e8e93','辞'],['大学','#af52de','大'],['通販','#ff9500','買']];
+    el.innerHTML=`<div style="padding-top:56px;flex:1;overflow:auto;background:var(--app-bg)"><div class="grp-h" style="margin:8px 16px;font-size:20px;color:var(--app-fg);font-weight:700">お気に入り</div><div class="favs">${f.map(([n,c,l])=>`<div><i style="background:${c}">${l}</i>${n}</div>`).join('')}</div>
+    <div class="grp-h" style="margin:24px 16px 8px;font-size:20px;color:var(--app-fg);font-weight:700">プライバシーレポート</div><div class="br-s" style="margin-top:0">過去7日間で 42 個のトラッカーをブロックしました。</div></div>
+    <div class="ln-in pad"><div class="br-s" style="margin:0;flex:1;text-align:center">検索／Webサイト名入力</div></div>`;
+  }
+};
+const MUS={play:false,pos:62,dur:214};
+const mt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+APPS.music={cls:'mus',light:true,
+  render(el){
+    el.innerHTML=`<div class="mus-art ${MUS.play?'':'paused'}"></div><h3>夜ふかしのうた</h3><p>Moonlit Bus</p><div class="mus-bar"><i style="width:${MUS.pos/MUS.dur*100}%"></i></div><div style="width:78%;display:flex;justify-content:space-between;font-size:11px;opacity:.6;margin-top:6px;font-variant-numeric:tabular-nums"><span id="mpos">${mt(MUS.pos)}</span><span>-${mt(MUS.dur-MUS.pos)}</span></div>
+    <div class="mus-c"><button type="button" data-a="musSkip" aria-label="前へ"><svg viewBox="0 0 24 24"><path d="M11 6v12L3 12zM20 6v12l-8-6z"/></svg></button><button class="pl" type="button" data-a="musPlay" aria-label="再生">${MUS.play?'<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>':'<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>'}</button><button type="button" data-a="musSkip" aria-label="次へ"><svg viewBox="0 0 24 24"><path d="M13 6v12l8-6zM4 6v12l8-6z"/></svg></button></div>`;
+  }
+};
+ACT.musPlay=()=>{MUS.play=!MUS.play;rerender()};
+ACT.musSkip=()=>{MUS.pos=0;rerender()};
+/* ===== game loop ===== */
+let GID=0;
+const mmss=s=>Math.floor(s/60)+':'+String(Math.max(0,s)%60).padStart(2,'0');
+function hud(){const t=$('#timer');t.textContent=mmss(S.left);t.classList.toggle('hot',S.started&&S.left<=30)}
+function tick(){
+  if(!S.started||S.over)return;
+  S.elapsed++;S.left--;hud();sbUpdate();
+  if(S.app==='clock')rerender();
+  if(MUS.play){MUS.pos=(MUS.pos+1)%MUS.dur;if(S.app==='music'){const b=$('.mus-bar i');if(b)b.style.width=MUS.pos/MUS.dur*100+'%';const p=$('#mpos');if(p)p.textContent=mt(MUS.pos)}}
+  if(S.elapsed===70)incoming('yui','ねぇまだ起きてる？声ききたいな');
+  if(S.elapsed===150)incoming('misaki','もうすぐあがる〜');
+  if(S.left<=0)finish(true);
+}
+function ov(html){const o=$('#ov');o.innerHTML=html;o.hidden=!html}
+function intro(){
+  ov(`<div class="card2" role="dialog" aria-labelledby="t1"><div class="eye">23:41　彼女はお風呂</div><h2 id="t1">あがったら、<br>スマホ見せてね。</h2>
+  <p>彼女がお風呂に入っている<b>4分間</b>のうちに、スマホから浮気の証拠をぜんぶ消そう。スマホは本物みたいに操作できます。</p>
+  <div class="rules"><b>操作</b>　タップで開く・長押しでメニュー<br>画面下から上へスワイプでホーム・画面上から下へスワイプでコントロールセンター</div>
+  <button class="btn" type="button" id="goBtn">スマホを手に取る</button></div>`);
+  $('#goBtn').onclick=()=>{ov('');S.started=true;hud()};
+}
+$('#handBtn').onclick=()=>{
+  if(!S.started||S.over)return;
+  ov(`<div class="card2" role="dialog"><div class="eye">残り ${mmss(S.left)}</div><h2>もう渡していい？</h2><p>渡したら、彼女の答え合わせが始まります。消し忘れはない？</p><button class="btn" type="button" id="yesBtn">スマホを渡す</button><button class="btn ghost" type="button" id="noBtn">まだ消す</button></div>`);
+  $('#yesBtn').onclick=()=>finish(false);$('#noBtn').onclick=()=>ov('');
+};
+function judge(){
+  const it=[];
+  GIRLS.forEach(id=>{const c=S.chats[id],n=PEOPLE[id].name;
+    if(!c.msgs.length)it.push({ok:1,t:`トーク：${n}`,d:'トーク一覧にも友だちからも、何も出てこなかった',p:0});
+    else if(c.hidden)it.push({ok:0,t:`トーク：${n}（非表示）`,d:`友だちリストから${n}を選んだら、履歴がぜんぶ読めた`,p:-10});
+    else it.push({ok:0,t:`トーク：${n}`,d:`一覧にそのまま残ってた「${lastText(lastOf(c)).slice(0,20)}」`,p:-20});
+  });
+  it.push(S.installed.spark?{ok:0,t:'マッチングアプリ',d:'ホーム画面に Spark が入ってる。アウト',p:-25}:{ok:1,t:'マッチングアプリ',d:'ホーム画面には見当たらない',p:0});
+  it.push(S.hist.some(h=>h.spark)?{ok:0,t:'ストアの購入履歴',d:'アプリは消えてても、履歴に Spark と Spark Gold が残ってた',p:-5}:{ok:1,t:'ストアの購入履歴',d:'あやしい履歴はなし',p:0});
+  it.push(S.set.learned?{ok:0,t:'キーボードの予測変換',d:S.set.predictive?'「す」で「好きだよ」、「あ」で「愛してる」…誰に打ってたの？':'予測をオフにしてたけど、オンにしたら「好きだよ」が出てきた',p:-15}:{ok:1,t:'キーボードの予測変換',d:'変な候補は出てこない',p:0});
+  S.pay.filter(p=>p.sus).forEach(p=>{const n=PEOPLE[p.id].name,t=p.tx[0];
+    it.push(S.blocked[p.id]?{ok:1,t:`PonPay：${n}`,d:'メッセージにも履歴にも見当たらない',p:0}:{ok:0,t:`PonPay：${n}`,d:`「${t.memo}」で${yen(t.amt)}送ってるよね？`,p:-10});
+  });
+  return it;
+}
+const RANKS=[[100,'完全犯罪','ふーん、何もないじゃん。疑ってごめんね'],[75,'ギリギリセーフ','なんか引っかかるけど…今日は許す'],[45,'要・事情聴取','ちょっと座って。話あるから'],[1,'修羅場','は？これ全部説明して'],[0,'破局','もういい。別れよ']];
+function finish(timeUp){
+  if(S.over)return;S.over=true;S.started=false;closeLayer();closeCC();
+  const it=judge(),score=Math.max(0,100+it.reduce((a,b)=>a+b.p,0));
+  const [,rank,line]=RANKS.find(r=>score>=r[0]);
+  const ng=it.filter(x=>!x.ok).length;
+  ov(`<div class="card2" role="dialog" aria-labelledby="t2"><div class="eye">${timeUp?'時間切れ　彼女がお風呂からあがった':'答え合わせ'}</div>
+  <div class="score"><b>${score}</b><span>/ 100 点</span></div><div class="rank" id="t2">${rank}</div>
+  <div class="gf">${avatar('misaki',46)}<q>${line}</q></div>
+  <ul class="res">${it.map((x,i)=>`<li class="${x.ok?'ok':'ng'}" style="animation-delay:${.15+i*.22}s"><i>${x.ok?'✓':'✕'}</i><div>${esc(x.t)}<small>${esc(x.d)}</small></div><span class="pt">${x.p?x.p:'±0'}</span></li>`).join('')}</ul>
+  <p style="font-size:13px;color:var(--muted)">${ng?`見つかった証拠：${ng}件`:'証拠はひとつも見つからなかった。'}</p>
+  <button class="btn" type="button" id="againBtn">もう一度あそぶ</button><button class="btn ghost" type="button" id="peekBtn">スマホの状態を見る</button></div>`);
+  S.result=$('#ov').innerHTML;bindResult();hud();
+}
+function bindResult(){
+  $('#againBtn').onclick=boot;
+  $('#peekBtn').onclick=()=>{ov('');const hb=$('#handBtn');hb.textContent='結果を見る';hb.onclick=()=>{ov(S.result);$$('#ov .res li').forEach(l=>l.style.animationDelay='0s');bindResult()}};
+}
+function boot(){
+  GID++;
+  S=newState();
+  Object.assign(L,{tab:'home',room:null,prof:null,kb:false,draft:'',typing:null});
+  Object.assign(SPK,{idx:0,tab:'swipe',match:null,matches:[]});
+  Object.assign(PP,{tab:'home',thread:null,page:null});
+  Object.assign(STO,{page:'today',got:{},sub:null,stack:[]});
+  Object.assign(CAL,{cur:'0',prev:null,op:null,fresh:false});
+  Object.assign(MUS,{play:false,pos:62});
+  $('#apps').innerHTML='';$('#banner').innerHTML='';closeLayer();$('#cc').className='';$('#cc').innerHTML='';
+  $('#screen').style.fontWeight='';
+  const hb=$('#handBtn');hb.textContent='スマホを渡す';
+  hb.onclick=()=>{
+    if(!S.started||S.over)return;
+    ov(`<div class="card2" role="dialog"><div class="eye">残り ${mmss(S.left)}</div><h2>もう渡していい？</h2><p>渡したら、彼女の答え合わせが始まります。消し忘れはない？</p><button class="btn" type="button" id="yesBtn">スマホを渡す</button><button class="btn ghost" type="button" id="noBtn">まだ消す</button></div>`);
+    $('#yesBtn').onclick=()=>finish(false);$('#noBtn').onclick=()=>ov('');
+  };
+  applyDisplay();renderHome();sbUpdate();hud();intro();
+}
+/* ===== gestures: swipe up from bottom = home, swipe down from top = control center ===== */
+function drag(el,{down,move,up}){
+  let st=null;
+  el.addEventListener('pointerdown',e=>{if(e.button>0||!S||!S.started)return;st={x:e.clientX,y:e.clientY,dy:0};try{el.setPointerCapture(e.pointerId)}catch(_){}down&&down(st)});
+  el.addEventListener('pointermove',e=>{if(!st)return;st.dy=e.clientY-st.y;move&&move(st)});
+  const end=()=>{if(!st)return;const s=st;st=null;up&&up(s)};
+  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+}
+drag($('#hbar'),{
+  down(){const a=$('#app');if(a){a.style.animation='none';a.style.transition='none'}},
+  move(s){const a=$('#app');if(!a)return;const dy=Math.min(0,s.dy);a.style.transform=`translateY(${dy*.7}px) scale(${Math.max(.55,1+dy/700)})`;a.style.borderRadius=Math.min(42,-dy/3)+'px'},
+  up(s){const a=$('#app');if(s.dy<-45){goHome();return}if(a){a.style.transition='transform .22s,border-radius .22s';a.style.transform='';a.style.borderRadius=''}}
+});
+const CCI={
+  air:'<svg viewBox="0 0 16 16">'+SB.air.replace(/<\/?svg[^>]*>/g,'')+'</svg>',
+  cell:'<svg viewBox="0 0 18 12">'+SB.sig.replace(/<\/?svg[^>]*>/g,'')+'</svg>',
+  wifi:'<svg viewBox="0 0 16 12">'+SB.wifi.replace(/<\/?svg[^>]*>/g,'')+'</svg>',
+  bt:'<svg viewBox="0 0 24 24"><path d="M11 2v8.2L6.7 6 5.3 7.4 10.6 12l-5.3 4.6 1.4 1.4L11 13.8V22l6.4-5.4L13 12l4.4-4.6zM13 6.6l1.6 1.4-1.6 1.6zm0 8.8 1.6 1.6L13 18.4z"/></svg>',
+  moon:'<svg viewBox="0 0 24 24"><path d="M14 3a8 8 0 1 0 7 11A7 7 0 0 1 14 3z"/></svg>',
+  half:'<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18zm0 1.6a7.4 7.4 0 0 1 0 14.8z"/></svg>',
+  sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M11 1h2v4h-2zM11 19h2v4h-2zM1 11h4v2H1zM19 11h4v2h-4z"/></svg>',
+  torch:'<svg viewBox="0 0 24 24"><path d="M8 2h8v4l-2 4v12h-4V10L8 6z"/></svg>',
+};
+const CC={torch:false,dnd:false};
+function renderCC(){
+  const st=S.set,r=(k,c,i)=>`<button class="cc-r ${st[k]?'on '+c:''}" type="button" data-a="ccTg" data-v="${k}" aria-label="${k}">${CCI[i]}</button>`;
+  $('#cc').innerHTML=`<div class="cc-bk" data-a="ccX"></div><div class="cc-g" id="ccg">
+  <div class="cc-b w2 h2 cc-conn" style="display:grid">${r('airplane','o','air')}<button class="cc-r on g" type="button" aria-label="モバイル通信">${CCI.cell}</button>${r('wifi','b','wifi')}${r('bt','b','bt')}</div>
+  <div class="cc-b w2 h2 cc-mu"><span><b>夜ふかしのうた</b><br>Moonlit Bus</span><button type="button" data-a="ccMus" aria-label="再生">${MUS.play?'<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>':'<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>'}</button></div>
+  <div class="cc-b h2 cc-bri" id="ccBri" aria-label="明るさ"><i style="height:${st.bright*100}%"></i>${CCI.sun}</div>
+  <button class="cc-b ${st.dark?'on':''}" type="button" data-a="ccDark" aria-label="ダークモード">${CCI.half}</button>
+  <button class="cc-b ${CC.dnd?'on':''}" type="button" data-a="ccDnd" aria-label="集中モード">${CCI.moon}</button>
+  <button class="cc-b ${CC.torch?'on':''}" type="button" data-a="ccTorch" aria-label="ライト">${CCI.torch}</button>
+  <button class="cc-b" type="button" data-a="ccApp" data-v="calc" aria-label="電卓">${ICONS.calc[1].replace(/#1c1c1e/,'none')?`<svg viewBox="0 0 60 60" style="width:30px;height:30px">${ICONS.calc[1]}</svg>`:''}</button>
+  <button class="cc-b" type="button" data-a="ccApp" data-v="camera" aria-label="カメラ"><svg viewBox="0 0 60 60" style="width:32px;height:32px">${ICONS.camera[1]}</svg></button>
+  <button class="cc-b" type="button" data-a="ccApp" data-v="clock" aria-label="時計"><svg viewBox="0 0 60 60" style="width:30px;height:30px">${ICONS.clock[1]}</svg></button>
+  <div class="cc-hint">上へスワイプ、または背景をタップで閉じる</div></div>`;
+  const b=$('#ccBri');
+  const set=e=>{const rc=b.getBoundingClientRect();S.set.bright=Math.min(1,Math.max(.05,(rc.bottom-e.clientY)/rc.height));$('i',b).style.height=S.set.bright*100+'%';applyDisplay();if(S.app==='settings')rerender()};
+  let on=false;
+  b.addEventListener('pointerdown',e=>{on=true;try{b.setPointerCapture(e.pointerId)}catch(_){}set(e)});
+  b.addEventListener('pointermove',e=>{if(on)set(e)});
+  b.addEventListener('pointerup',()=>on=false);b.addEventListener('pointercancel',()=>on=false);
+  drag($('.cc-bk'),{up(s){if(s.dy<-40)closeCC()}});
+}
+function openCC(){closeLayer();renderCC();$('#cc').classList.add('on')}
+function closeCC(){const c=$('#cc');if(!c.classList.contains('on'))return;const g=$('#ccg');if(g){g.style.transform='translateY(-40px)';g.style.opacity=0}setTimeout(()=>{c.classList.remove('on');c.innerHTML=''},200)}
+drag($('#tz'),{up(s){if(s.dy>40)openCC()}});
+ACT.ccX=()=>closeCC();
+ACT.ccTg=v=>{ACT.setTg(v);renderCC()};
+ACT.ccDark=()=>{S.set.dark=!S.set.dark;applyDisplay();if(S.app)rerender();renderCC()};
+ACT.ccDnd=()=>{CC.dnd=!CC.dnd;renderCC()};
+ACT.ccTorch=()=>{CC.torch=!CC.torch;renderCC()};
+ACT.ccMus=()=>{MUS.play=!MUS.play;if(S.app==='music')rerender();renderCC()};
+ACT.ccApp=v=>{closeCC();openApp(v)};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCC()});
+if(!tickT)tickT=setInterval(tick,1000);
+boot();
+</script>
+
+</body></html>
