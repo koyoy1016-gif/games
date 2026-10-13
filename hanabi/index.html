@@ -36,6 +36,8 @@ body{background:var(--night);color:var(--ink);font-family:var(--f-body);-webkit-
 .shells i.lost{animation:lost .45s ease-out}
 @keyframes lost{0%{transform:scale(1.6)}100%{transform:scale(1)}}
 .shl{font-size:10px;color:var(--mute);font-weight:700;letter-spacing:.08em}
+.goal{font-family:var(--f-display);font-size:16px;color:var(--gold);font-variant-numeric:tabular-nums}
+.goal.pop{animation:lost .45s ease-out}
 #mute{pointer-events:auto;font:700 11px var(--f-body);color:var(--mute);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:3px 10px;cursor:pointer}
 #mute:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
@@ -105,7 +107,7 @@ h2{font-size:34px}
     </div>
     <div class="right">
       <div class="row"><span class="chip" id="level">かんたん</span><button id="mute" type="button">音 ON</button></div>
-      <div class="row"><span class="shl">花火玉</span><div class="shells" id="shells"><i></i><i></i><i></i></div></div>
+      <div class="row"><span class="shl">クリアまで</span><span class="goal" id="goal">あと15回</span></div>
     </div>
   </div>
 
@@ -122,7 +124,7 @@ h2{font-size:34px}
     <ul class="rules">
       <li>彼が「俺と……」と言いかけたら要注意。</li>
       <li>赤い<span class="mini">つ</span>が左の丸に重なった瞬間に<b>夜景をタップ</b>。花火の音で「付き合ってください」をかき消します。</li>
-      <li>見逃すと告白成立。タイミング外のタップは不発になり、<b>花火玉</b>が1つ減ります（6コンボで1つ回復）。</li>
+      <li><b>15回</b>阻止できたらクリア。でも<b>1回でも失敗</b>（見逃し・タイミング外のタップ）すると告白が届いて……。</li>
       <li>間の長さ、速さ、フェイント、消える「つ」。だんだん手強くなります。</li>
     </ul>
     <button class="btn" id="startBtn" type="button">はじめる</button>
@@ -130,8 +132,8 @@ h2{font-size:34px}
   </section>
 
   <section class="panel" id="resultP" hidden>
-    <p class="eyebrow">結果</p>
-    <h2>告白、成立。</h2>
+    <p class="eyebrow" id="rEyebrow">結果</p>
+    <h2 id="rTitle">ごめんなさい。</h2>
     <div class="big"><span id="rSec">0.0</span><small>秒 阻止</small></div>
     <p class="rank">称号：<em id="rRank"></em></p>
     <dl class="stats">
@@ -319,11 +321,11 @@ function skyPoint(x,y){
 function burst(r){
   const x=r.cx,y=r.cy,k=S*r.size,c1=r.pal[0],c2=r.pal[1];
   const add=(vx,vy,c,life,o)=>parts.push({x,y,vx,vy,c,life,max:life,w:o.w||2,g:o.g!=null?o.g:55,drag:o.drag!=null?o.drag:1.6,tr:o.tr||.04,fl:o.fl});
-  if(r.kind==='ring'){for(let i=0;i<64;i++){const a=i/64*6.283;add(Math.cos(a)*190*k,Math.sin(a)*190*k,c1,1.4,{w:2.2});}for(let i=0;i<30;i++){const a=rand(0,6.283),sp=rand(20,80)*k;add(Math.cos(a)*sp,Math.sin(a)*sp,c2,1,{w:1.5,fl:1});}}
-  else if(r.kind==='willow'){for(let i=0;i<90;i++){const a=rand(0,6.283),sp=rand(70,170)*k;add(Math.cos(a)*sp,Math.sin(a)*sp,i%3?'#ffcf6e':'#fff1c2',2.4,{w:1.6,g:45,drag:1.2,tr:.11,fl:1});}}
-  else if(r.kind==='heart'){for(let i=0;i<84;i++){const t=i/84*6.283,hx=16*Math.pow(Math.sin(t),3),hv=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));add(hx*11*k,hv*11*k,i%2?c1:c2,1.9,{w:2.4,g:22,drag:1.4});}}
-  else if(r.kind==='chrys'){for(let i=0;i<120;i++){const a=rand(0,6.283),sp=rand(90,220)*k;add(Math.cos(a)*sp,Math.sin(a)*sp,Math.random()<.75?c1:c2,1.6,{w:1.7,tr:.08});}}
-  else{for(let i=0;i<110;i++){const a=rand(0,6.283),sp=150*k*Math.sqrt(rand(.5,1));add(Math.cos(a)*sp,Math.sin(a)*sp,Math.random()<.7?c1:c2,1.5,{w:2.2,fl:Math.random()<.3});}}
+  if(r.kind==='ring'){for(let i=0;i<96;i++){const a=i/96*6.283;add(Math.cos(a)*190*k,Math.sin(a)*190*k,c1,1.4,{w:2.2});}for(let i=0;i<60;i++){const a=i/60*6.283;add(Math.cos(a)*110*k,Math.sin(a)*110*k,c2,1.2,{w:1.8});}for(let i=0;i<40;i++){const a=rand(0,6.283),sp=rand(20,80)*k;add(Math.cos(a)*sp,Math.sin(a)*sp,c2,1,{w:1.5,fl:1});}}
+  else if(r.kind==='willow'){for(let i=0;i<150;i++){const a=rand(0,6.283),sp=rand(70,170)*k;add(Math.cos(a)*sp,Math.sin(a)*sp,i%3?'#ffcf6e':'#fff1c2',2.4,{w:1.6,g:45,drag:1.2,tr:.11,fl:1});}}
+  else if(r.kind==='heart'){for(let i=0;i<120;i++){const t=i/120*6.283,hx=16*Math.pow(Math.sin(t),3),hv=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));add(hx*11*k,hv*11*k,i%2?c1:c2,1.9,{w:2.4,g:22,drag:1.4});}}
+  else if(r.kind==='chrys'){for(let i=0;i<200;i++){const a=rand(0,6.283),sp=rand(90,220)*k;add(Math.cos(a)*sp,Math.sin(a)*sp,Math.random()<.75?c1:c2,1.6,{w:1.7,tr:.08});}}
+  else{for(let i=0;i<180;i++){const a=rand(0,6.283),sp=150*k*Math.sqrt(rand(.5,1));add(Math.cos(a)*sp,Math.sin(a)*sp,Math.random()<.7?c1:c2,1.5,{w:2.2,fl:Math.random()<.3});}for(let i=0;i<50;i++){const a=rand(0,6.283),sp=rand(30,80)*k;add(Math.cos(a)*sp,Math.sin(a)*sp,'#fff6dc',.9,{w:1.4,fl:1});}}
   flashes.push({x,y,c:c1,t0:now(),r:280*k,a:.32*Math.min(1.3,r.size)});
   if(r.sound)sfx.boom(.55*r.size);
   if(r.cb)r.cb(x,y);
@@ -331,7 +333,7 @@ function burst(r){
 function updateFx(t,dt){
   for(let i=rockets.length-1;i>=0;i--){const r=rockets[i],p=clamp((t-r.t0)/r.dur,0,1),e=1-Math.pow(1-p,2.4);
     r.cx=lerp(r.x0,r.x,e);r.cy=lerp(r.y0,r.y,e);
-    if(parts.length<2400)parts.push({x:r.cx,y:r.cy,vx:rand(-12,12),vy:rand(20,50),c:'#ffcf8a',life:.45,max:.45,w:1.6,g:30,drag:2,tr:.02});
+    if(parts.length<6000)parts.push({x:r.cx,y:r.cy,vx:rand(-12,12),vy:rand(20,50),c:'#ffcf8a',life:.45,max:.45,w:1.6,g:30,drag:2,tr:.02});
     if(p>=1){rockets.splice(i,1);burst(r);}}
   let j=0;
   for(let i=0;i<parts.length;i++){const p=parts[i];p.life-=dt;if(p.life<=0)continue;const e=Math.exp(-p.drag*dt);p.vx*=e;p.vy=p.vy*e+p.g*S*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;parts[j++]=p;}
@@ -453,13 +455,14 @@ function toast(msg){const el=$('toast');el.textContent=msg;el.classList.remove('
 
 /* ---------- game ---------- */
 const LV=[{name:'かんたん',col:'#5fd4c0',msg:''},{name:'ふつう',col:'#a6e35d',msg:'ふつう：間と速さがバラバラに'},{name:'むずかしい',col:'#ffb547',msg:'むずかしい：フェイントに注意'},{name:'おに',col:'#ff5a7a',msg:'おに：途中で消える「つ」あり'}];
-const levelOf=n=>n<5?0:n<12?1:n<20?2:3;
+const GOAL=15;
+const levelOf=n=>n<4?0:n<9?1:n<13?2:3;
 const W_LINES=['わぁ…！','きれい…！','え、なに？','見て、花火！','ん？今なんか言った？','すごーい！','また上がった！','音おっきいね！'];
 const M_THOUGHTS=['（くっ…）','（なんで今…）','（タイミング…）','（もう一回…）','（花火め…）','（落ち着け俺…）'];
 function diff(n){return{approach:n<4?1.75:Math.max(.8,1.75-(n-3)*.035),ok:Math.max(.075,.13-n*.0018),pmin:Math.max(.15,.75-n*.025),pmax:Math.min(3,1.7+n*.045),gap:Math.max(.55,1.7-n*.035)};}
 
 let state='title',startT=0,final=0,n=0,combo=0,maxCombo=0,goods=0,shells=3,cur=null,lastKind='',curLv=0,timers=[],lastHitT=-9,judg=[],nextAttract=0;
-let owner=null,shownCount=-1;
+let owner=null,shownCount=-1,nextAmb=0,cleared=false;
 const later=(t,fn)=>timers.push({t,fn});
 
 function makeAttempt(t,gap){
@@ -499,7 +502,7 @@ function renderSpeech(t){
   }
 }
 
-function renderShells(lostIdx){const is=$('shells').children;for(let i=0;i<3;i++){is[i].classList.toggle('off',i>=shells);is[i].classList.remove('lost');}if(lostIdx!=null&&is[lostIdx]){void is[lostIdx].offsetWidth;is[lostIdx].classList.add('lost');}}
+function renderShells(){const g=$('goal');g.textContent=n>=GOAL?'クリア！':'あと'+(GOAL-n)+'回';g.classList.remove('pop');void g.offsetWidth;g.classList.add('pop');}
 function renderLevel(){const l=LV[curLv];$('level').textContent=l.name;$('level').style.setProperty('--lv',l.col);}
 function updateHud(){$('blocks').textContent=n;$('combo').textContent=combo;hint.hidden=!(state==='play'&&n<3);}
 
@@ -508,7 +511,7 @@ function startGame(){
   $('titleP').hidden=true;$('resultP').hidden=true;manB.hidden=true;womanB.hidden=true;
   const t=now();
   state='play';startT=t;n=0;combo=0;maxCombo=0;goods=0;shells=3;curLv=0;timers=[];judg=[];hearts=[];heartsUntil=0;
-  man.win=false;man.flUntil=0;woman.blush=0;woman.lookUntil=0;owner=null;lastKind='';
+  man.win=false;man.flUntil=0;woman.blush=0;woman.lookUntil=0;owner=null;lastKind='';cleared=false;nextAmb=t+1.5;
   cur=makeAttempt(t,1.3);
   renderShells();renderLevel();updateHud();
 }
@@ -534,8 +537,10 @@ function block(x,y,t,d){
   man.flUntil=t+1.3;man.talkUntil=0;
   const p=skyPoint(x,y);
   launch(p[0],p[1],{dur:.12,size:good?1.25:1,kind:pick(['peony','chrys','ring','willow','peony']),cb:(bx,by)=>{boomText(bx,by,good?'ドーン!!':'ドン!',good?'':'small');sfx.boom(good?1:.8);woman.lookUntil=now()+1.5;}});
-  if(good&&Math.random()<.5){const q=skyPoint();launch(q[0],q[1],{dur:.35,size:.8});}
-  if(combo%6===0&&shells<3){shells++;renderShells();toast('花火玉 +1');}
+  const extra=good?5:3;
+  for(let i=0;i<extra;i++)later(t+.12+i*.13,()=>{const q=skyPoint();launch(q[0],q[1],{dur:rand(.3,.55),size:rand(.7,1.05)});});
+  renderShells();
+  if(n>=GOAL){updateHud();winGame(t);return;}
   const lv=levelOf(n);if(lv!==curLv){curLv=lv;renderLevel();toast(LV[lv].msg);}
   const quick=n>=16&&Math.random()<.25;
   const nx=makeAttempt(t,quick?.3:diff(n).gap);cur=nx;
@@ -545,35 +550,49 @@ function block(x,y,t,d){
 }
 
 function dud(x,y,t){
-  shells--;combo=0;renderShells(shells);
+  combo=0;
   judg.push({txt:'不可',col:'#8fa0d8',t0:t});
   sfx.dud();
   const p=skyPoint(x,y);
   for(let i=0;i<14;i++){const a=rand(0,6.283),sp=rand(20,70)*S;parts.push({x:p[0],y:p[1],vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,c:'#9a8fb8',life:.5,max:.5,w:1.4,g:60,drag:2,tr:.04});}
   boomText(p[0],p[1],'ぷすっ','dud');
   updateHud();
-  if(shells<=0)endGame('empty',t);
+  endGame('dud',t);
 }
 
 function endGame(reason,t){
-  state='ending';final=t-startT;hint.hidden=true;
+  state='ending';final=t-startT;hint.hidden=true;cleared=false;
   man.win=true;man.flUntil=0;woman.lookUntil=0;
   const toks=[];let speakStart=t;
   if(reason==='miss'&&cur&&cur.tokens){for(const k of cur.tokens)if(k.t<=t)toks.push({t:k.t,s:k.s,dot:k.dot});[...'付き合ってください！'].forEach((ch,i)=>toks.push({t:t+.05+i*.075,s:ch}));}
-  else{setBubble(manB,'（花火玉が…切れた）','man thought');owner=null;speakStart=t+.9;[...'俺と付き合ってください！'].forEach((ch,i)=>toks.push({t:t+.9+i*.075,s:ch}));}
+  else{setBubble(manB,'（今だ…！）','man thought');owner=null;speakStart=t+.9;[...'俺と付き合ってください！'].forEach((ch,i)=>toks.push({t:t+.9+i*.075,s:ch}));}
   cur={type:'end',tokens:toks,speakStart};
   const done=toks[toks.length-1].t;
-  later(done+.5,()=>{woman.blush=1;womanSay('……はい。よろしくね',3.4);sfx.chime();heartsUntil=now()+2.4;});
-  later(done+.9,()=>launch(W/2,skyTop()+(hy-skyTop())*.3,{kind:'heart',size:1.35,pal:['#ff7aa8','#ffd1e0'],dur:.9,sound:true}));
-  later(done+1.4,()=>{const p=skyPoint();launch(p[0],p[1],{sound:true});});
-  later(done+1.8,()=>{const p=skyPoint();launch(p[0],p[1],{sound:true});});
-  later(done+3,showResult);
+  later(done+.7,()=>{woman.lookUntil=now()+3.2;womanSay('……ごめんなさい。',3);sfx.dud();});
+  later(done+1.1,()=>{man.win=false;man.flUntil=now()+30;});
+  later(done+2.4,()=>{setBubble(manB,'（………）','man thought');owner=null;});
+  later(done+4.6,()=>showResult(false));
 }
 
-function rankOf(s){return s<10?'秒で落ちた':s<25?'見習い花火師':s<50?'一人前の花火師':s<90?'邪魔のプロ':s<150?'鉄壁の夜空':'伝説の花火師';}
-function showResult(){
+function winGame(t){
+  state='ending';final=t-startT;hint.hidden=true;cleared=true;
+  cur={type:'end',tokens:[],speakStart:t+99};
+  later(t+.9,()=>{setBubble(manB,'（……今日は、もう無理か）','man thought');owner=null;man.flUntil=now()+2;});
+  later(t+2.4,()=>{woman.blush=1;woman.lookUntil=now()+6;womanSay('……ねえ。私と、付き合って？',3.2);sfx.chime();heartsUntil=now()+4;});
+  later(t+5.8,()=>{man.win=true;setBubble(manB,'え、俺でいいの！？','man');owner=null;sfx.blip(false);});
+  later(t+3.2,()=>launch(W/2,skyTop()+(hy-skyTop())*.3,{kind:'heart',size:1.5,pal:['#ff7aa8','#ffd1e0'],dur:.9,sound:true}));
+  for(let i=0;i<32;i++)later(t+3.6+i*.14+Math.random()*.1,()=>{const p=skyPoint();launch(p[0],p[1],{sound:i%3===0,size:rand(.8,1.3),dur:rand(.6,1)});});
+  later(t+6.2,()=>launch(W*.3,skyTop()+(hy-skyTop())*.4,{kind:'heart',size:1,pal:['#ff9ec4','#fff0f6'],dur:.8,sound:true}));
+  later(t+6.5,()=>launch(W*.7,skyTop()+(hy-skyTop())*.4,{kind:'heart',size:1,pal:['#ff9ec4','#fff0f6'],dur:.8,sound:true}));
+  later(t+9.6,()=>showResult(true));
+}
+
+function rankOf(){return cleared?'恋のキューピッド花火師':n<3?'秒で落ちた':n<7?'見習い花火師':n<11?'一人前の花火師':n<14?'邪魔のプロ':'あと一歩の花火師';}
+function showResult(win){
   state='result';
-  $('rSec').textContent=final.toFixed(1);$('rRank').textContent=rankOf(final);
+  $('rTitle').textContent=cleared?'付き合って。':'ごめんなさい。';
+  $('rEyebrow').textContent=cleared?'クリア！ '+GOAL+'回阻止':'失敗… あと'+(GOAL-n)+'回だった';
+  $('rSec').textContent=final.toFixed(1);$('rRank').textContent=rankOf();
   $('rBlocks').textContent=n;$('rCombo').textContent=maxCombo;$('rGood').textContent=goods;
   const best=parseFloat(store.get('kk-best')||'0');
   if(final>best){store.set('kk-best',final.toFixed(1));$('rBest').innerHTML='自己ベスト更新<span class="new">NEW!</span>';}
@@ -622,7 +641,8 @@ function update(t,dt){
     if(cur.type==='real'&&!cur.resolved&&t>cur.hitT+cur.ok)endGame('miss',t);
     else if(cur.type==='feint'&&t>=cur.endT)cur=makeAttempt(t,.25);
   }else if(state==='ending')renderSpeech(t);
-  if((state==='title'||state==='result')&&t>nextAttract){const p=skyPoint();launch(p[0],p[1],{sound:!!AC&&state==='result',size:rand(.8,1.15)});nextAttract=t+rand(.9,1.9);}
+  if((state==='title'||state==='result')&&t>nextAttract){const k=Math.random()<.4?2:1;for(let i=0;i<k;i++){const p=skyPoint();launch(p[0],p[1],{sound:!!AC&&state==='result'&&i===0,size:rand(.8,1.2)});}nextAttract=t+rand(.35,.85);}
+  if(state==='play'&&t>nextAmb){const p=skyPoint();launch(p[0],p[1],{size:rand(.5,.8),dur:rand(.8,1.2)});nextAmb=t+rand(.6,1.3);}
   if(!womanB.hidden&&t>womanHideAt)womanB.hidden=true;
   if(t<heartsUntil&&Math.random()<dt*7)hearts.push({x:womanX+rand(-24,24)*S,y:gy-205*S,vx:rand(-10,10),vy:rand(-45,-30)*S,life:1.8,max:1.8,s:rand(9,15)*S});
   for(const hh of hearts){hh.life-=dt;hh.x+=hh.vx*dt;hh.y+=hh.vy*dt;}
