@@ -104,6 +104,34 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
 .stat b{font-family:var(--font-display);font-weight:400;font-size:22px;font-variant-numeric:tabular-nums}
 #rank{font-family:var(--font-display);font-size:64px;line-height:1;color:var(--flesh);text-shadow:0 4px 0 var(--ink)}
 .fact{font-size:13px;line-height:1.6;background:var(--chip-large);border-radius:12px;padding:8px 12px;font-weight:700}
+:root{--gold:#ffc928;--gold-deep:#b07800}
+#ringCount{background:var(--gold);font-variant-numeric:tabular-nums;font-size:13px;padding:2px 10px}
+#ringCount i{display:inline-block;width:11px;height:11px;border-radius:50%;border:3px solid var(--ink);margin-right:5px;vertical-align:-1px}
+#hudR .btnRow{display:flex;gap:6px}
+#muteBtn{pointer-events:auto;width:38px;height:38px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+#muteBtn svg{width:20px;height:20px}
+#muteBtn:focus-visible{outline:3px solid var(--chip-sto);outline-offset:3px}
+#combo{bottom:calc(env(safe-area-inset-bottom,0px) + 205px);right:calc(env(safe-area-inset-right,0px) + 14px);text-align:right;font-family:var(--font-display);color:var(--gold);text-shadow:0 3px 0 var(--ink),0 0 10px rgba(0,0,0,.7);opacity:0;transition:opacity .25s;line-height:1.05}
+#combo.show{opacity:1}
+#combo b{display:block;font-weight:400;font-size:30px;font-variant-numeric:tabular-nums}
+#combo small{display:block;font-size:13px}
+#comboBar{width:86px;height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin:4px 0 0 auto;overflow:hidden}
+#comboBar i{display:block;height:100%;background:var(--gold)}
+#trickPop{top:49%;left:50%;transform:translate(-50%,-50%) scale(.8);font-family:var(--font-display);font-size:clamp(20px,6vw,30px);color:var(--gold);text-align:center;width:calc(100vw - 32px);text-shadow:0 3px 0 var(--ink),0 0 14px rgba(0,0,0,.7);opacity:0;transition:opacity .2s,transform .2s}
+#trickPop.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#trickPop small{display:block;font-size:.6em;color:var(--paper)}
+#trickPop.fail{color:var(--danger)}
+.stat.wide{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:10px;background:#fff3c4}
+.stat.wide b{font-size:30px}
+#newRec{font-family:var(--font-display);font-size:14px;color:#fff;background:var(--flesh);border:2px solid var(--ink);border-radius:999px;padding:2px 10px;transform:rotate(-4deg)}
+#bestLine{margin:-4px 0 0;font-size:13px;font-weight:900;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#bestLine .chip{font-size:12px;padding:1px 9px;background:var(--gold)}
+#exitHud{top:calc(env(safe-area-inset-top,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);font-size:12px;font-weight:900;color:var(--ink);background:rgba(255,250,246,.85);border:2px solid var(--ink);border-radius:999px;padding:4px 12px}
+#bigText{top:24%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-display);font-size:clamp(40px,13vw,72px);color:#fff;-webkit-text-stroke:2px var(--ink);text-shadow:0 5px 0 var(--ink);white-space:nowrap;opacity:0;transition:opacity .2s}
+#bigText.show{opacity:1;animation:pop .35s ease-out}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(1.6)}to{transform:translate(-50%,-50%) scale(1)}}
+.steps li span.new{background:var(--gold);color:var(--ink)}
+@media (prefers-reduced-motion:reduce){#bigText.show{animation:none}}
 </style>
 
 <div id="app">
@@ -125,9 +153,14 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
   <div class="hud" id="hudR" hidden>
     <div id="hearts"></div>
     <div id="score">0</div>
+    <span class="chip" id="ringCount"><i></i>0 / 0</span>
     <canvas id="mini" width="168" height="268"></canvas>
-    <button id="pauseBtn" aria-label="一時停止">II</button>
+    <div class="btnRow"><button id="muteBtn" aria-label="音を消す"></button><button id="pauseBtn" aria-label="一時停止">II</button></div>
   </div>
+  <div class="hud" id="combo"><b id="comboNum">×2</b><small>COMBO</small><div id="comboBar"><i></i></div></div>
+  <div class="hud" id="trickPop"></div>
+  <div class="hud" id="bigText"></div>
+  <div class="hud" id="exitHud" hidden>タップでスキップ</div>
   <div class="hud" id="banner"><span class="chip" id="bannerChip">口</span><div id="bannerName">口腔エリア</div><div id="bannerInfo"></div><div id="bannerTip"></div></div>
   <div class="hud" id="toast"></div>
   <div class="hud" id="rumble"><span>ゴロゴロ</span><span>…</span></div>
@@ -137,7 +170,7 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
     <div class="pad"><button class="cbtn" id="leftBtn" aria-label="左へ">◀</button><button class="cbtn" id="rightBtn" aria-label="右へ">▶</button></div>
     <button class="cbtn" id="jumpBtn" aria-label="ジャンプ">ジャンプ</button>
   </div>
-  <div class="hud" id="keys" hidden>← → / A D：360°移動　スペース：ジャンプ　P：一時停止</div>
+  <div class="hud" id="keys" hidden>← →：移動　スペース：ジャンプ（ジャンプ台の後は空中フリップ／← →でスピン）　P：停止　M：音</div>
   <div class="hud" id="fade"></div>
 
   <div class="overlay" id="titleOv">
@@ -158,6 +191,7 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
       <ul class="steps">
         <li><span>STEP 1</span>画面を下に引っぱって、はなすとスノーボーダーが飛ぶ。口がひらいた瞬間に口の中へ！</li>
         <li><span>STEP 2</span>管の中は360°どこでも滑れる。◀ ▶（A・D）で回りこみ、ジャンプでよけろ。うしろから食べ物がゴロゴロ転がってくる！口が閉じると一瞬まっくらに。</li>
+        <li><span class="new">ジャンプ台</span><div>オレンジのジャンプ台で大ジャンプ！<b>金色の輪</b>をくぐるとポイント、続けてくぐるとコンボ。空中でジャンプ＝フリップ、◀▶＝スピン。着地失敗に注意！</div></li>
         <li><span>最終関門</span>直腸では水が流れこんで激流に。肛門が開いた瞬間に飛びこめばゴール。</li>
       </ul>
       <p class="sec-label">難易度</p>
@@ -168,6 +202,7 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
         <button class="dbtn" role="radio" data-d="oni" aria-checked="false">鬼</button>
       </div>
       <p id="diffDesc"></p>
+      <p id="bestLine"></p>
       <div class="btns"><button class="btn" id="startBtn">スタート</button></div>
     </div>
   </div>
@@ -189,15 +224,18 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
     <div class="card">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><div id="rank">S</div><div style="min-width:0;flex:1"><h2>排出成功！</h2><p class="lead" id="resultLead">口から肛門まで滑りきった！</p></div></div>
       <div class="stats">
+        <div class="stat wide"><div><small>スコア</small><b id="rScore">0</b></div><span id="newRec" hidden>NEW RECORD!</span></div>
         <div class="stat"><small>難易度</small><b id="rDiff">ふつう</b></div>
         <div class="stat"><small>タイム</small><b id="rTime">0.0秒</b></div>
-        <div class="stat"><small>スコア</small><b id="rScore">0</b></div>
+        <div class="stat"><small>くぐった金の輪</small><b id="rRing">0/0</b></div>
+        <div class="stat"><small>最大コンボ</small><b id="rCombo">0</b></div>
+        <div class="stat"><small>決めたトリック</small><b id="rTrick">0回</b></div>
         <div class="stat"><small>集めた栄養素・水分</small><b id="rNut">0こ</b></div>
         <div class="stat"><small>ダメージ</small><b id="rHit">0回</b></div>
         <div class="stat"><small>トライ（発射）</small><b id="rTry">1回</b></div>
       </div>
       <p class="fact">本物の食べ物は、口から出るまでに約24〜72時間かかる。胃で3〜4時間、小腸で約8時間、残りの多くは大腸でゆっくり水分を吸収されている。</p>
-      <div class="btns"><button class="btn" id="againBtn">もう一度</button></div>
+      <div class="btns"><button class="btn" id="againBtn">もう一度</button><button class="btn alt" id="titleBtn">タイトルへ</button></div>
     </div>
   </div>
 </div>
@@ -228,18 +266,58 @@ const pick=arr=>arr[Math.floor(rnd()*arr.length)];
 
 // Difficulty tunes two things the player asked for: how often/long the mouth shuts (blackouts) and the rolling food from behind.
 const DIFFS={
- easy:{label:'かんたん',period:3.6,openMin:5,openMax:7,closeDur:0.35,dark:0.7,overlay:0.12,warn:true,rollMin:3.2,rollMax:4.6,rollN:[1,1],rollExtra:11,sizeMin:0.75,sizeMax:0.95,spread:0.5,markers:true,chase:0.94,hp:5,mult:0.8,
-   desc:'口が閉じる：6秒ごとに0.35秒（少し暗い・予告あり）／ゴロゴロ食べ物：約4秒ごとに1個・小さめ・落下地点表示あり／ハート5'},
- normal:{label:'ふつう',period:3.0,openMin:3.4,openMax:5,closeDur:0.6,dark:0.9,overlay:0.3,warn:true,rollMin:1.8,rollMax:2.8,rollN:[1,2],rollExtra:15,sizeMin:0.85,sizeMax:1.25,spread:0.8,markers:true,chase:0.98,hp:5,mult:1,
-   desc:'口が閉じる：4秒ごとに0.6秒（かなり暗い・予告あり）／ゴロゴロ食べ物：2〜3秒ごとに1〜2個・落下地点表示あり／ハート5'},
- hard:{label:'むずかしい',period:2.4,openMin:2.4,openMax:3.8,closeDur:0.9,dark:0.97,overlay:0.45,warn:false,rollMin:1.1,rollMax:1.9,rollN:[2,2],rollExtra:19,sizeMin:1,sizeMax:1.45,spread:1.0,markers:false,chase:1.0,hp:4,mult:1.3,
-   desc:'口が閉じる：3秒ごとに0.9秒（ほぼ真っ暗・予告なし）／ゴロゴロ食べ物：1〜2秒ごとに2個・大きめ・表示なし（音の「ゴロゴロ」だけが頼り）／ハート4'},
- oni:{label:'鬼',period:1.9,openMin:1.6,openMax:2.8,closeDur:1.2,dark:1,overlay:0.62,warn:false,rollMin:0.7,rollMax:1.3,rollN:[2,3],rollExtra:23,sizeMin:1.05,sizeMax:1.8,spread:1.3,markers:false,chase:1.02,hp:3,mult:1.6,
-   desc:'口が閉じる：2秒ごとに1.2秒（真っ暗）／ゴロゴロ食べ物：1秒ごとに2〜3個・ジャンプで越えられない巨大サイズも／ハート3'}};
+ easy:{label:'かんたん',period:3.6,openMin:5,openMax:7,closeDur:0.35,dark:0.7,overlay:0.12,warn:true,rollMin:3.2,rollMax:4.6,rollN:[1,1],rollExtra:11,sizeMin:0.75,sizeMax:0.95,spread:0.5,markers:true,chase:0.94,hp:5,mult:0.8,ringR:2.4,ringHeal:6,comboT:4.5,
+   desc:'口が閉じる：6秒ごとに0.35秒（少し暗い・予告あり）／ゴロゴロ食べ物：約4秒ごとに1個・小さめ・落下地点表示あり／金の輪：特大・6個でハート回復／ハート5'},
+ normal:{label:'ふつう',period:3.0,openMin:3.4,openMax:5,closeDur:0.6,dark:0.9,overlay:0.3,warn:true,rollMin:1.8,rollMax:2.8,rollN:[1,2],rollExtra:15,sizeMin:0.85,sizeMax:1.25,spread:0.8,markers:true,chase:0.98,hp:5,mult:1,ringR:2.0,ringHeal:10,comboT:3.8,
+   desc:'口が閉じる：4秒ごとに0.6秒（かなり暗い・予告あり）／ゴロゴロ食べ物：2〜3秒ごとに1〜2個・落下地点表示あり／金の輪：10個でハート回復／ハート5'},
+ hard:{label:'むずかしい',period:2.4,openMin:2.4,openMax:3.8,closeDur:0.9,dark:0.97,overlay:0.45,warn:false,rollMin:1.1,rollMax:1.9,rollN:[2,2],rollExtra:19,sizeMin:1,sizeMax:1.45,spread:1.0,markers:false,chase:1.0,hp:4,mult:1.3,ringR:1.65,ringHeal:15,comboT:3.2,
+   desc:'口が閉じる：3秒ごとに0.9秒（ほぼ真っ暗・予告なし）／ゴロゴロ食べ物：1〜2秒ごとに2個・大きめ・表示なし（音の「ゴロゴロ」だけが頼り）／金の輪：小さめ・15個でハート回復／ハート4'},
+ oni:{label:'鬼',period:1.9,openMin:1.6,openMax:2.8,closeDur:1.2,dark:1,overlay:0.62,warn:false,rollMin:0.7,rollMax:1.3,rollN:[2,3],rollExtra:23,sizeMin:1.05,sizeMax:1.8,spread:1.3,markers:false,chase:1.02,hp:3,mult:1.6,ringR:1.35,ringHeal:0,comboT:2.6,
+   desc:'口が閉じる：2秒ごとに1.2秒（真っ暗）／ゴロゴロ食べ物：1秒ごとに2〜3個・ジャンプで越えられない巨大サイズも／金の輪：極小・回復なし／ハート3'}};
 let DIFF='normal';try{const v=localStorage.getItem('taisnow-diff');if(v&&DIFFS[v])DIFF=v;}catch(e){}
 let D=DIFFS[DIFF];
 // Launch: the giant's jaw opens and closes smoothly; faster on higher difficulty.
 function launchMouth(t){return clamp(0.5+0.95*Math.sin(t*TAU/D.period),0,1);}
+
+/* ================= Sound (synthesized with WebAudio, no files) ================= */
+const SFX=(function(){
+  let ac=null,master=null,noiseBuf=null,rumbleG=null,flowG=null,muted=false;
+  try{muted=localStorage.getItem('taisnow-mute')==='1';}catch(e){}
+  function init(){
+    if(ac){if(ac.state==='suspended')ac.resume();return;}
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    try{ac=new AC();}catch(e){ac=null;return;}
+    master=ac.createGain();master.gain.value=muted?0:0.6;master.connect(ac.destination);
+    noiseBuf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    // looping beds: low rumble for rolling food, filtered hiss for rushing water
+    const bed=(type,f,q)=>{const src=ac.createBufferSource();src.buffer=noiseBuf;src.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=0;src.connect(fl);fl.connect(g);g.connect(master);src.start();return g;};
+    rumbleG=bed('lowpass',110,1.2);flowG=bed('bandpass',900,0.6);
+  }
+  function env(g,t0,a,peak,dec){g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(peak,t0+a);g.gain.exponentialRampToValueAtTime(0.0001,t0+a+dec);}
+  function tone(f,dur,type,vol,f2,delay){if(!ac||muted)return;const t0=ac.currentTime+(delay||0);const o=ac.createOscillator(),g=ac.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t0+dur);o.connect(g);g.connect(master);env(g,t0,0.008,vol||0.3,dur);o.start(t0);o.stop(t0+dur+0.05);}
+  function noise(dur,f,q,vol,type,f2,delay){if(!ac||muted)return;const t0=ac.currentTime+(delay||0);const s=ac.createBufferSource();s.buffer=noiseBuf;const fl=ac.createBiquadFilter();fl.type=type||'bandpass';fl.frequency.setValueAtTime(f,t0);if(f2)fl.frequency.exponentialRampToValueAtTime(f2,t0+dur);fl.Q.value=q||1;const g=ac.createGain();s.connect(fl);fl.connect(g);g.connect(master);env(g,t0,0.01,vol||0.3,dur);s.start(t0);s.stop(t0+dur+0.05);}
+  const bed=(g,v)=>{if(g&&ac)g.gain.setTargetAtTime(muted?0:v,ac.currentTime,0.08);};
+  return{init,
+    get muted(){return muted;},
+    setMuted(m){muted=m;try{localStorage.setItem('taisnow-mute',m?'1':'0');}catch(e){}if(master&&ac)master.gain.setTargetAtTime(m?0:0.6,ac.currentTime,0.05);},
+    ring(c){const f=740*Math.pow(2,Math.min(c,12)/12);tone(f,0.16,'triangle',0.22);tone(f*1.5,0.28,'sine',0.18,null,0.06);},
+    jump(){tone(260,0.16,'square',0.06,520);},
+    launch(){noise(0.5,400,0.8,0.28,'bandpass',2400);tone(180,0.4,'sawtooth',0.05,420);},
+    land(){noise(0.18,500,0.7,0.25,'lowpass',120);},
+    hit(){tone(110,0.22,'square',0.14,55);noise(0.2,300,0.8,0.3,'lowpass',80);},
+    flip(){noise(0.3,800,2,0.12,'bandpass',2600);},
+    trick(){[0,4,7,12].forEach((n,i)=>tone(523*Math.pow(2,n/12),0.14,'triangle',0.16,null,i*0.07));},
+    fail(){tone(300,0.35,'sawtooth',0.1,90);},
+    gate(){tone(392,0.12,'sine',0.2);tone(587,0.2,'sine',0.2,null,0.09);},
+    heal(){[0,7,12,16].forEach((n,i)=>tone(660*Math.pow(2,n/12),0.18,'sine',0.16,null,i*0.08));},
+    heart(fast){tone(62,0.13,'sine',fast?0.5:0.36,40);tone(55,0.16,'sine',fast?0.38:0.26,38,0.19);},
+    shut(){noise(0.12,200,1,0.25,'lowpass');},
+    boing(){tone(160,0.35,'sine',0.25,620);},
+    splash(){noise(0.9,1600,0.5,0.55,'bandpass',300);tone(90,0.4,'sine',0.35,45);},
+    flush(){noise(2.6,300,0.7,0.4,'bandpass',1400);noise(2.2,120,0.8,0.3,'lowpass',60,0.4);},
+    fanfare(){[0,4,7,12,16,19,24].forEach((n,i)=>tone(523*Math.pow(2,n/12),0.22,'triangle',0.16,null,i*0.08));},
+    setRumble(v){bed(rumbleG,v*0.9);},setFlow(v){bed(flowG,v*0.25);}};
+})();
 
 /* ================= Renderer ================= */
 const canvas=$('c');
@@ -248,6 +326,29 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 const DOT_TEX=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.fillStyle='#fff';x.beginPath();x.arc(32,32,28,0,Math.PI*2);x.fill();return new THREE.CanvasTexture(c);})();
 function camBack(){const a=innerWidth/innerHeight;return a<1?(1/a-1)*16:0;}
 function stdMat(color,opt){return new THREE.MeshStandardMaterial(Object.assign({color,roughness:0.55,metalness:0.02},opt||{}));}
+// Small pooled particle system (sparkles, board spray, toilet splash). Dead particles are parked far away.
+function makeParticles(scene,N,size,additive){
+  const pos=new Float32Array(N*3).fill(-9999),col=new Float32Array(N*3);const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const m=new THREE.PointsMaterial({size,vertexColors:true,map:DOT_TEX,transparent:true,depthWrite:false,alphaTest:additive?0:0.35,blending:additive?THREE.AdditiveBlending:THREE.NormalBlending});
+  const pts=new THREE.Points(g,m);pts.frustumCulled=false;scene.add(pts);
+  const L=[];for(let i=0;i<N;i++)L.push({life:0,max:1,p:new THREE.Vector3(),v:new THREE.Vector3(),g:new THREE.Vector3(),c:new THREE.Color(),drag:0});
+  let head=0,alive=0;
+  return{pts,
+    spawn(p,v,color,life,grav,drag){const q=L[head];head=(head+1)%N;q.p.copy(p);q.v.copy(v);q.c.set(color);q.life=q.max=life;if(grav)q.g.copy(grav);else q.g.set(0,0,0);q.drag=drag||0;alive=N;},
+    clear(){for(const q of L)q.life=0;pos.fill(-9999);g.attributes.position.needsUpdate=true;},
+    update(dt){if(!alive)return;let n=0;
+      for(let i=0;i<N;i++){const q=L[i],k=i*3;if(q.life<=0){pos[k+1]=-9999;continue;}n++;q.life-=dt;
+        q.v.addScaledVector(q.g,dt);if(q.drag)q.v.multiplyScalar(Math.exp(-q.drag*dt));q.p.addScaledVector(q.v,dt);
+        pos[k]=q.p.x;pos[k+1]=q.p.y;pos[k+2]=q.p.z;const f=additive?Math.max(0,q.life/q.max):1;col[k]=q.c.r*f;col[k+1]=q.c.g*f;col[k+2]=q.c.b*f;
+        if(q.life<=0)pos[k+1]=-9999;}
+      alive=n;g.attributes.position.needsUpdate=true;g.attributes.color.needsUpdate=true;}};
+}
+// Golden ring (unit radius; the torus faces local +z, i.e. along the direction of travel)
+const GOLD_GEO=new THREE.TorusGeometry(1,0.1,12,56),GLOW_GEO=new THREE.TorusGeometry(1,0.24,8,40);
+const GOLD_MAT=new THREE.MeshStandardMaterial({color:0xffc928,metalness:0.85,roughness:0.2,emissive:0x8a5a00,emissiveIntensity:1});
+const GOLD_GLOW=new THREE.MeshBasicMaterial({color:0xffa800,transparent:true,opacity:0.22,blending:THREE.AdditiveBlending,depthWrite:false});
+function makeGoldRing(){const g=new THREE.Group(),sway=new THREE.Group();g.add(sway);sway.add(new THREE.Mesh(GOLD_GEO,GOLD_MAT));sway.add(new THREE.Mesh(GLOW_GEO,GOLD_GLOW));g.userData.sway=sway;return g;}
 
 /* ================= Anatomy course ================= */
 const AREAS=[
@@ -498,7 +599,8 @@ function updateFace(t){
 
 /* ================= Rider ================= */
 function makeRider(){
-  const g=new THREE.Group(),inner=new THREE.Group();g.add(inner);
+  // pivot sits at the rider's waist so flips and spins rotate around the body, not the board
+  const g=new THREE.Group(),pivot=new THREE.Group(),inner=new THREE.Group();pivot.position.y=1.0;inner.position.y=-1.0;g.add(pivot);pivot.add(inner);g.userData.pivot=pivot;
   const boardM=stdMat(0xffb21e,{roughness:0.35}),dark=stdMat(0x23202a);
   const board=new THREE.Mesh(new THREE.BoxGeometry(0.78,0.12,2.4),boardM);board.position.y=0.07;inner.add(board);
   const tipG=new THREE.CylinderGeometry(0.39,0.39,0.12,18);
@@ -520,7 +622,19 @@ LS.scene.add(launch.rider);
 const LAUNCH_BASE=new V(0,1.2,0);
 const G_LAUNCH=20,PITCH=0.65;
 function launchVel(p,yaw,out){const sp=22+34*p;return out.set(Math.sin(yaw)*Math.cos(PITCH)*sp,Math.sin(PITCH)*sp,-Math.cos(yaw)*Math.cos(PITCH)*sp);}
-function resetLaunch(){launch.state='aim';launch.pull=0;launch.yaw=0;launch.pos.copy(LAUNCH_BASE);launch.vel.set(0,0,0);launch.rider.rotation.set(0,Math.PI/2,0);launch.rider.position.copy(LAUNCH_BASE);
+// Golden rings on the way to the mouth: a big one on the straight shot, a small one off to the side worth more.
+const lsSpark=makeParticles(LS.scene,140,0.9,true);
+const LRINGS=(function(){
+  const targetY=HEAD.pos.y+face.PU.y*HEAD.S-1.4-0.8,mz=MOUTH.z,v=new V();
+  function sim(p,yaw){const pos=new V(LAUNCH_BASE.x-Math.sin(yaw)*p*4,LAUNCH_BASE.y-p*0.6+0.3,LAUNCH_BASE.z+p*4.5);launchVel(p,yaw,v);const out=[];
+    for(let i=0;i<600;i++){out.push(pos.clone());const st=0.01;pos.x+=v.x*st;pos.y+=v.y*st;pos.z+=v.z*st;v.y-=G_LAUNCH*st;if(pos.z<mz)break;}return out;}
+  function path(yaw){let best=null,bd=1e9;for(let p=0.15;p<=1;p+=0.004){const pts=sim(p,yaw),e=pts[pts.length-1];const d=Math.abs(e.y-targetY);if(e.z<=mz+0.5&&d<bd){bd=d;best=pts;}}return best;}
+  const out=[];
+  for(const [yaw,frac,R,pts] of [[0,0.42,2.7,300],[0.05,0.72,1.75,700]]){const pa=path(yaw);if(!pa)continue;const z0=pa[0].z,zt=z0+(mz-z0)*frac;const q=pa.find(p=>p.z<=zt)||pa[pa.length-1];
+    const m=makeGoldRing();m.scale.setScalar(R);m.position.set(q.x,q.y+1,q.z);LS.scene.add(m);out.push({mesh:m,R,pts,taken:false,pop:0});}
+  return out;})();
+function resetLaunch(){launch.bonus=0;LRINGS.forEach(r=>{r.taken=false;r.pop=0;r.mesh.visible=true;r.mesh.scale.setScalar(r.R);});
+  launch.state='aim';launch.pull=0;launch.yaw=0;launch.pos.copy(LAUNCH_BASE);launch.vel.set(0,0,0);launch.rider.rotation.set(0,Math.PI/2,0);launch.rider.position.copy(LAUNCH_BASE);
   LS.cam.position.set(0,11,20+camBack());LS.cam.lookAt(0,22,-60);face.dots.visible=false;$('tries').textContent='トライ '+launch.tries;}
 const _lv=new V();
 function updateLaunch(dt,t){
@@ -541,12 +655,16 @@ function updateLaunch(dt,t){
     const prevZ=launch.pos.z;
     launch.vel.y-=G_LAUNCH*dt;launch.pos.addScaledVector(launch.vel,dt);
     r.position.copy(launch.pos);r.rotation.z+=dt*(launch.state==='bounce'?8:0.6);
+    if(launch.state==='fly')for(const g of LRINGS){const z=g.mesh.position.z;
+      if(!g.taken&&prevZ>=z&&launch.pos.z<z){const dx=launch.pos.x-g.mesh.position.x,dy=launch.pos.y+1-g.mesh.position.y;
+        if(dx*dx+dy*dy<sq(g.R*0.95)){g.taken=true;g.pop=0.01;launch.bonus+=g.pts;SFX.ring(g.pts>400?6:1);toast('金の輪！ +'+g.pts,1.2);
+          for(let k=0;k<40;k++){const a=k/40*TAU;lsSpark.spawn(g.mesh.position,_lv.set(Math.cos(a)*g.R*3,Math.sin(a)*g.R*3,RR(-2,2)),k%2?0xffd84a:0xfff3b0,0.8,null,2);}}}}
     if(launch.state==='fly'&&prevZ>=MOUTH.z&&launch.pos.z<MOUTH.z){
       const o=launchMouth(t),hh=MOUTH.hh+0.7;const ex=(launch.pos.x-MOUTH.x)/(MOUTH.a+0.6),ey=(launch.pos.y+0.8-MOUTH.y)/hh;
       const inMouth=ex*ex+ey*ey<1;
-      if(inMouth&&o>0.3){launch.state='enter';launch.t=0;toast('ナイス！口の中へ！');}
+      if(inMouth&&o>0.3){launch.state='enter';launch.t=0;toast(launch.bonus?'ナイス！口の中へ！（ボーナス +'+launch.bonus+'）':'ナイス！口の中へ！');SFX.trick();}
       else{const onFace=(launch.pos.x*launch.pos.x)/(23*23)+((launch.pos.y-HEAD.pos.y)**2)/(30*30)<1;
-        if(onFace){launch.state='bounce';launch.vel.set(launch.vel.x*0.3,7,14);toast(Math.abs(ex)<1.3&&Math.abs(launch.pos.y-MOUTH.y)<6?(o<=0.3?'ペッ！口が閉じてた':'おしい！くちびるに当たった'):'ゴツン！顔にぶつかった');}
+        if(onFace){SFX.hit();launch.state='bounce';launch.vel.set(launch.vel.x*0.3,7,14);toast(Math.abs(ex)<1.3&&Math.abs(launch.pos.y-MOUTH.y)<6?(o<=0.3?'ペッ！口が閉じてた':'おしい！くちびるに当たった'):'ゴツン！顔にぶつかった');}
         launch.msgT=1.6;}
     }
     if(launch.state==='fly'&&(launch.pos.y<0||launch.pos.z<MOUTH.z-30)){launch.state='bounce';launch.msgT=1.2;toast('はずれ！もう一回');}
@@ -560,6 +678,8 @@ function updateLaunch(dt,t){
     $('fade').style.opacity=clamp((launch.t-0.5)/0.6,0,1);
     if(launch.t>1.25)startRide();
   }
+  for(const g of LRINGS){g.mesh.userData.sway.rotation.y=Math.sin(t*1.6+g.R)*0.35;if(g.pop>0){g.pop+=dt;g.mesh.scale.setScalar(g.R*(1+g.pop*4));if(g.pop>0.25)g.mesh.visible=false;}}
+  lsSpark.update(dt);
   // rubber band
   const a=face.band.geometry.attributes.position.array;const rp=launch.state==='aim'?launch.pos:LAUNCH_BASE;
   a[0]=-3.85;a[1]=4.9;a[2]=0.6;a[3]=rp.x;a[4]=rp.y+0.9;a[5]=rp.z+0.3;a[6]=3.85;a[7]=4.9;a[8]=0.6;face.band.geometry.attributes.position.needsUpdate=true;
@@ -625,6 +745,26 @@ function lump(s,th,area,rad){rad=rad||RR(0.75,1.15);const col=pick(FOOD_COLORS[a
   const g=new THREE.Group();m.scale.set(rad,rad*0.85,rad);m.position.y=rad*0.6;m.rotation.set(RR(0,3),RR(0,3),0);g.add(m);
   return addObs({type:'lump',s,th,w:rad*0.95,hgt:rad*1.45,mesh:g,lift:0});}
 
+// ---- jump ramps (kickers) ----
+const CHEV_TEX=(()=>{const c=document.createElement('canvas');c.width=128;c.height=256;const x=c.getContext('2d');x.fillStyle='#ff6a1a';x.fillRect(0,0,128,256);
+  x.strokeStyle='#ffe14a';x.lineWidth=15;x.lineJoin='miter';for(let i=0;i<4;i++){const y=22+i*60;x.beginPath();x.moveTo(16,y);x.lineTo(64,y+38);x.lineTo(112,y);x.stroke();}
+  x.fillStyle='#fff6d8';x.fillRect(0,0,9,256);x.fillRect(119,0,9,256);const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t;})();
+const RAMP_BODY=stdMat(0xd9561a,{roughness:0.45,emissive:0x3a1000,side:THREE.DoubleSide});
+const RAMP_TOP=new THREE.MeshStandardMaterial({map:CHEV_TEX,emissiveMap:CHEV_TEX,emissive:0xffffff,emissiveIntensity:0.45,roughness:0.35,side:THREE.DoubleSide});
+const RAMP_LIP=stdMat(0xffe14a,{emissive:0x806000,roughness:0.3});
+function rampMesh(W,L,H){const g=new THREE.Group();
+  const sh=new THREE.Shape();sh.moveTo(L,0);sh.lineTo(0,0);sh.lineTo(0,H);sh.closePath();
+  const eg=new THREE.ExtrudeGeometry(sh,{depth:W,bevelEnabled:false});eg.rotateY(Math.PI/2);eg.translate(-W/2,0,0);g.add(new THREE.Mesh(eg,RAMP_BODY));
+  const a=Math.atan2(H,L),sl=Math.hypot(H,L);const top=new THREE.Mesh(new THREE.PlaneGeometry(W*0.9,sl*0.96),RAMP_TOP);top.rotation.x=-Math.PI/2-a;top.position.set(0,H/2+0.03*Math.cos(a),-L/2-0.03*Math.sin(a));g.add(top);
+  const lip=new THREE.Mesh(new THREE.BoxGeometry(W+0.1,0.14,0.22),RAMP_LIP);lip.position.set(0,H,-0.08);g.add(lip);
+  for(const sx of[-1,1]){const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,1.5,6),RAMP_LIP);pole.position.set(sx*(W/2+0.15),H+0.75,0);g.add(pole);
+    const flag=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.42,0.6),mat('flag',0xff3050,{emissive:0x5a0010}));flag.position.set(sx*(W/2+0.15),H+1.3,-0.32);g.add(flag);}
+  return g;}
+function addRamp(s,th,W,L,H,kick){return addObs({type:'ramp',s,th,w:W,len:L,H,kick,slope:Math.atan2(H,L),mesh:rampMesh(W,L,H),lift:-0.06});}
+function addRing(s,th,h,ground){const m=makeGoldRing();RS.scene.add(m);const o={type:'ring',s,th,h,ground,mesh:m,taken:false,pop:0};obs.push(o);return o;}
+let TOTAL_RINGS=0;
+// ring size depends on difficulty, so rings are (re)placed whenever a ride starts
+function sizeRings(){const R=D.ringR;for(const o of obs)if(o.type==='ring'){o.R=R;o.hc=o.ground?Math.max(1.15,R*0.75):o.h;o.mesh.scale.setScalar(R);placeOnWall(o.mesh,o.s,o.th,o.hc);}}
 function genCourse(){
   rnd=mulberry(20261013);
   const A=k=>AREAS.find(a=>a.key===k);
@@ -675,6 +815,27 @@ function genCourse(){
   {const a=A('rectum');for(let i=0;i<12;i++)lump(span(a,0.12+i*0.055),RR(0,TAU),'rectum',RR(0.85,1.15));
     for(let i=0;i<4;i++){const w=2,l=3;const col=0xff8fc8;const g=new THREE.Group();const b=new THREE.Mesh(GEO.blob,mat('gum'+col,col,{roughness:0.25}));b.scale.set(w,0.28,l);g.add(b);addObs({type:'gum',s:span(a,0.2+i*0.15),th:RR(0,TAU),w:w*0.9,len:l*0.9,mesh:g});}
     gate(LEN-16,'肛門',2.2,0x8e2f3d,true);}
+  // ---- jump ramps with golden ring arcs, and ground ring lines that make you carve around the tube ----
+  {const clearZone=(s0,s1,th,latW)=>{for(let i=obs.length-1;i>=0;i--){const o=obs[i];if(o.s<s0||o.s>s1)continue;if(!['lump','acid','gum','gas','nut','jet'].includes(o.type))continue;
+      const lat=Math.abs(wrapA(o.th-th))*baseR(o.s);if(lat<latW+(o.w||1)){if(o.mesh)RS.scene.remove(o.mesh);obs.splice(i,1);}}};
+    const blocked=(s0,s1)=>obs.some(o=>(o.type==='hole'||o.type==='gate'||o.type==='ramp')&&o.s>s0-12&&o.s<s1+12);
+    const RAMPS={mouth:[3.6,7,1.3,15],stomach:[5,10,1.9,17.5],small:[3.4,7,1.3,14.5],colon:[3.8,7.5,1.4,16],rectum:[3.6,8,1.5,16.5]};
+    const rampAt=(key,f,th)=>{const a=A(key),[W,L,H,kick]=RAMPS[key];const v=a.speed*(key==='rectum'?1.6:1)*(key==='mouth'?0.92:1);const T=(kick+Math.sqrt(kick*kick+64*H))/32;const dist=v*T;
+      let s=span(a,f),tries=0;while(blocked(s-L,s+dist)&&tries++<8)s+=14;if(s+dist>a.s1-6||blocked(s-L,s+dist))return;
+      if(th===undefined)th=RR(0,TAU);
+      clearZone(s-L-4,s+4,th,W/2+0.8);clearZone(s+dist*0.55,s+dist*1.4,th,1.8);
+      addRamp(s,th,W,L,H,kick);
+      for(const q of[0.24,0.5,0.76]){const t=q*T;addRing(s+v*t,th,H+kick*t-16*t*t+1.1,false);}};
+    const ringLine=(key,f,n)=>{const a=A(key);const s=span(a,f);if(blocked(s,s+n*6))return;let th=RR(0,TAU);const dir=rnd()<0.5?-1:1;
+      for(let i=0;i<n;i++){addRing(s+i*6,th,0,true);th=wrapA(th+dir*0.3);}};
+    rampAt('mouth',0.3,-Math.PI/2);
+    for(const f of[0.2,0.6])ringLine('eso',f,6);
+    for(const f of[0.3,0.62])rampAt('stomach',f);ringLine('stomach',0.47,5);
+    ringLine('duo',0.42,5);
+    for(const f of[0.08,0.26,0.44,0.62,0.8])rampAt('small',f);for(const f of[0.17,0.35,0.53,0.71,0.89])ringLine('small',f,6);
+    for(const f of[0.12,0.38,0.62,0.84])rampAt('colon',f);for(const f of[0.25,0.5,0.73])ringLine('colon',f,6);
+    ringLine('rectum',0.2,5);rampAt('rectum',0.45);}
+  TOTAL_RINGS=obs.filter(o=>o.type==='ring').length;
   obs.sort((p,q)=>p.s-q.s);
 }
 function nutrient(s,th,name,color){const g=new THREE.Group();const m=new THREE.Mesh(GEO.nut,new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:0.75,roughness:0.3}));m.position.y=1.2;g.add(m);
@@ -726,7 +887,10 @@ const streakData=[];for(let i=0;i<NSTREAK;i++)streakData.push({ds:Math.random()*
 genCourse();
 
 /* ================= Ride state ================= */
-const P={s:10,th:-Math.PI/2,h:0,vh:0,speed:0,hp:5,inv:0,stuck:0,boost:0,steer:0,score:0,nuts:0,hits:0,time:0,area:-1,sub:'',checkpoint:10,lastMouth:1};
+const P={s:10,th:-Math.PI/2,h:0,vh:0,speed:0,hp:5,inv:0,stuck:0,boost:0,steer:0,score:0,nuts:0,hits:0,time:0,area:-1,sub:'',checkpoint:10,lastMouth:1,
+  rings:0,combo:0,maxCombo:0,lastRingT:-99,healCnt:0,tricks:0,onRamp:null,airRamp:false,flipping:false,flipT:0,flips:0,spin:0,ollieT:0,tilt:0,heartT:0,sprayT:0};
+const FLIP_DUR=0.5;
+const rsSpark=makeParticles(RS.scene,260,0.1,true),rsSpray=makeParticles(RS.scene,320,0.15,false);
 const chase={active:false,kind:'food',s:0,done:false};
 let camShake=0,dark=0;const chew={open:true,t:4,warned:false};
 let rollTimer=1.5,waveTimer=0.5,waterOn=false,finishing=0;
@@ -734,23 +898,45 @@ function hpSvg(full){return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d
 function renderHearts(){let h='';for(let i=0;i<D.hp;i++)h+=hpSvg(i<P.hp);$('hearts').innerHTML=h;}
 function resetRide(fromS){
   P.s=fromS;P.th=fromS<20?-Math.PI/2:P.th;P.h=0;P.vh=0;P.speed=0;P.hp=D.hp;P.inv=1.5;P.stuck=0;P.boost=0;P.area=-1;P.sub='';P.time=fromS<20?0:P.time;
-  if(fromS<20){P.score=0;P.nuts=0;P.hits=0;}
-  obs.forEach(o=>{if(o.type==='nut'&&o.taken&&o.s>fromS){o.taken=false;o.mesh.visible=true;}});
+  if(fromS<20){P.score=0;P.nuts=0;P.hits=0;P.rings=0;P.maxCombo=0;P.tricks=0;}
+  P.combo=0;P.lastRingT=-99;P.healCnt=0;P.onRamp=null;P.airRamp=false;P.flipping=false;P.flipT=0;P.flips=0;P.spin=0;P.ollieT=0;P.tilt=0;
+  obs.forEach(o=>{if(o.type==='nut'&&o.taken&&o.s>fromS){o.taken=false;o.mesh.visible=true;}
+    if(o.type==='ring'&&o.taken&&o.s>fromS){o.taken=false;o.pop=0;o.mesh.visible=true;P.rings=Math.max(0,P.rings-1);}});
+  sizeRings();rsSpark.clear();rsSpray.clear();$('combo').classList.remove('show');updateRingHud();
   const ai=areaIndexAt(fromS);chase.done=false;chase.active=false;
   if(ai<=2){chase.active=true;chase.kind='food';chase.s=fromS-32;}
   waterOn=false;finishing=0;rolls.forEach(p=>RS.scene.remove(p.mesh));rolls.length=0;rollTimer=1.5;chew.open=true;chew.t=D.openMax;dark=0;waves.forEach(w=>RS.scene.remove(w.mesh));waves.length=0;
   camInit=true;renderHearts();
 }
 function startRide(){mode='ride';$('fade').style.opacity=0;show('launchHud',false);show('hudL',true);show('hudR',true);show('ctrl',true);show('keys',true);
-  resetRide(10);P.checkpoint=10;toast('STEP 2 肛門まで滑りおりろ！',2.2);}
+  resetRide(10);P.checkpoint=10;P.score+=launch.bonus||0;toast('STEP 2 肛門まで滑りおりろ！',2.2);}
 
 /* ================= HUD helpers ================= */
 function show(id,v){$(id).hidden=!v;}
 let toastT=0;function toast(t,dur){const el=$('toast');el.textContent=t;el.classList.add('show');toastT=dur||1.4;}
 let bannerT=0;function banner(a){$('bannerChip').textContent=a.label;$('bannerChip').style.background=a.chip;$('bannerName').textContent=a.name+'エリア';$('bannerInfo').textContent=a.info;$('bannerTip').textContent=a.tip;$('banner').classList.add('show');bannerT=5;}
 let flashT=0;
-function hurt(msg){if(P.inv>0)return false;P.hp--;P.hits++;P.inv=1.3;flashT=0.35;$('flash').style.opacity=1;renderHearts();toast(msg);if(navigator.vibrate)try{navigator.vibrate(60);}catch(e){}
+function hurt(msg){if(P.inv>0)return false;P.hp--;P.hits++;P.inv=1.3;SFX.hit();if(P.combo>1)trickPop('コンボ終了','×'+P.combo,true);P.combo=0;$('combo').classList.remove('show');flashT=0.35;$('flash').style.opacity=1;renderHearts();toast(msg);if(navigator.vibrate)try{navigator.vibrate(60);}catch(e){}
   if(P.hp<=0){gameOver();}return true;}
+function updateRingHud(){$('ringCount').innerHTML='<i></i>'+P.rings+' / '+TOTAL_RINGS;}
+let popT=0;function trickPop(main,sub,fail){const el=$('trickPop');el.innerHTML='';el.append(main);if(sub){const sm=document.createElement('small');sm.textContent=sub;el.append(sm);}el.classList.toggle('fail',!!fail);el.classList.add('show');popT=1.3;}
+function collectRing(o){o.taken=true;o.pop=0.01;P.rings++;
+  P.combo=(P.time-P.lastRingT<D.comboT)?P.combo+1:1;P.lastRingT=P.time;P.maxCombo=Math.max(P.maxCombo,P.combo);
+  const pts=100+100*Math.min(P.combo,10);P.score+=pts;SFX.ring(P.combo);updateRingHud();
+  if(P.combo>=2){$('comboNum').textContent='×'+P.combo;$('combo').classList.add('show');}
+  toast('金の輪 +'+pts,0.7);
+  for(let k=0;k<20;k++){const a=k/20*TAU;_t1.set(Math.cos(a),Math.sin(a),0).applyQuaternion(o.mesh.quaternion).multiplyScalar(o.R*4);rsSpark.spawn(o.mesh.position,_t1.multiplyScalar(0.3),k%2?0xffd84a:0xfff0a0,0.45,null,4);}
+  if(D.ringHeal){P.healCnt++;if(P.healCnt>=D.ringHeal){P.healCnt=0;if(P.hp<D.hp){P.hp++;renderHearts();SFX.heal();trickPop('ハート回復！','金の輪'+D.ringHeal+'個');}}}}
+// landing after a ramp jump: score the flips and spins, or crash if a flip wasn't finished
+function landTricks(){const half=Math.round(Math.abs(P.spin)/Math.PI),resid=Math.abs(Math.abs(P.spin)-half*Math.PI);
+  let flips=P.flips;const midFlip=P.flipping&&P.flipT<FLIP_DUR*0.8;if(P.flipping&&!midFlip)flips++;
+  P.flipping=false;P.flipT=0;P.airRamp=false;
+  if(midFlip){SFX.fail();P.speed*=0.4;trickPop('着地失敗！','フリップが回りきってない',true);if(P.inv<=0)hurt('ズザーッ！');P.flips=0;P.spin=0;return;}
+  if(half>0&&resid>0.75){SFX.fail();P.speed*=0.6;trickPop('グラッ…','スピンの向きがずれた',true);P.flips=0;P.spin=wrapA(P.spin);return;}
+  const parts=[];let pts=0;if(flips){parts.push(flips>1?'フリップ×'+flips:'フリップ');pts+=flips*300;}if(half){parts.push(half*180+'°');pts+=half*150;}
+  if(pts){const mult=1+Math.min(P.combo,10)*0.1;pts=Math.round(pts*mult);P.score+=pts;P.tricks++;P.lastRingT=P.time;SFX.trick();trickPop(parts.join(' + ')+'！','+'+pts+(P.combo>1?'（コンボ×'+P.combo+'）':''));}
+  else{SFX.land();}
+  P.flips=0;P.spin=wrapA(P.spin);}
 // minimap: front view of the digestive tract, like the textbook diagram
 const MAP={mouth:[[50,22],[50,25]],pharynx:[[50,25],[50,33]],eso:[[50,33],[50,48],[51,60]],stomach:[[51,60],[58,56],[66,60],[67,70],[61,77],[54,78]],duo:[[54,78],[47,79],[44,85],[48,90],[54,89]],
  small:[[54,89],[62,93],[56,98],[42,96],[38,102],[50,105],[63,103],[64,110],[50,113],[39,111],[40,118],[52,120],[44,124],[36,126]],cecum:[[36,126],[31,127],[29,122]],
@@ -769,50 +955,77 @@ function drawMini(ai,f,t){const c=mctx,W=mini.width,H=mini.height;c.setTransform
 
 /* ================= Input ================= */
 const keys={};let jumpQ=false;const btn={l:false,r:false};let dragSteer=0;
-addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','KeyW'].includes(e.code)){jumpQ=true;e.preventDefault();}if(['ArrowLeft','ArrowRight','ArrowDown'].includes(e.code))e.preventDefault();if(e.code==='KeyP'||e.code==='Escape')togglePause();});
+addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','KeyW'].includes(e.code)){jumpQ=true;e.preventDefault();}if(['ArrowLeft','ArrowRight','ArrowDown'].includes(e.code))e.preventDefault();if(e.code==='KeyP'||e.code==='Escape')togglePause();if(e.code==='KeyM')toggleMute();if(mode==='exit'&&EX.t>0.4&&['Space','Enter'].includes(e.code))EX.skip=true;});
 addEventListener('keyup',e=>{keys[e.code]=false;});
 function holdBtn(id,k){const el=$(id);const on=e=>{e.preventDefault();btn[k]=true;el.classList.add('on');};const off=e=>{btn[k]=false;el.classList.remove('on');};
   el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);el.addEventListener('pointerleave',off);}
 holdBtn('leftBtn','l');holdBtn('rightBtn','r');
 $('jumpBtn').addEventListener('pointerdown',e=>{e.preventDefault();jumpQ=true;$('jumpBtn').classList.add('on');setTimeout(()=>$('jumpBtn').classList.remove('on'),120);});
 let ptr=null;
-canvas.addEventListener('pointerdown',e=>{ptr={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now()};try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+canvas.addEventListener('pointerdown',e=>{SFX.init();if(mode==='exit'&&EX.t>0.4)EX.skip=true;ptr={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now()};try{canvas.setPointerCapture(e.pointerId);}catch(_){}
   if(mode==='launch'&&launch.state==='aim')launch.drag={x:e.clientX,y:e.clientY};});
 canvas.addEventListener('pointermove',e=>{if(!ptr||ptr.id!==e.pointerId)return;
   if(mode==='launch'&&launch.drag&&launch.state==='aim'){const m=Math.min(innerWidth,innerHeight);const dy=e.clientY-launch.drag.y,dx=e.clientX-launch.drag.x;
     launch.pull=clamp(dy/(m*0.42),0,1);launch.yaw=clamp(-dx/(innerWidth*0.5),-1,1)*0.32;}
   if(mode==='ride'){dragSteer=clamp((e.clientX-ptr.x)/55,-1,1);}});
 function endPtr(e){if(!ptr||ptr.id!==e.pointerId)return;
-  if(mode==='launch'&&launch.state==='aim'&&launch.drag){if(launch.pull>0.06){launch.state='fly';launchVel(launch.pull,launch.yaw,launch.vel);launch.pos.y+=0.3;face.dots.visible=false;}else launch.pull=0;launch.drag=null;}
+  if(mode==='launch'&&launch.state==='aim'&&launch.drag){if(launch.pull>0.06){launch.state='fly';SFX.boing();launchVel(launch.pull,launch.yaw,launch.vel);launch.pos.y+=0.3;face.dots.visible=false;}else launch.pull=0;launch.drag=null;}
   if(mode==='ride'){const moved=Math.hypot(e.clientX-ptr.x,e.clientY-ptr.y);if(moved<14&&performance.now()-ptr.t<260)jumpQ=true;dragSteer=0;}
   ptr=null;}
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
 
 /* ================= Game flow ================= */
 let mode='title',paused=false;
-function togglePause(){if(mode!=='ride')return;paused=!paused;show('pauseOv',paused);}
-$('pauseBtn').onclick=togglePause;$('resumeBtn').onclick=togglePause;
+function togglePause(){if(mode!=='ride')return;paused=!paused;show('pauseOv',paused);if(paused){SFX.setRumble(0);SFX.setFlow(0);}}
+$('pauseBtn').onclick=togglePause;
+const ICON_ON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
+const ICON_OFF='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+function renderMute(){$('muteBtn').innerHTML=SFX.muted?ICON_OFF:ICON_ON;$('muteBtn').setAttribute('aria-label',SFX.muted?'音を出す':'音を消す');}
+function toggleMute(){SFX.init();SFX.setMuted(!SFX.muted);renderMute();}
+$('muteBtn').onclick=toggleMute;renderMute();
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='ride'&&!paused)togglePause();});$('resumeBtn').onclick=togglePause;
 $('quitBtn').onclick=()=>{paused=false;show('pauseOv',false);toTitle();};
-function toTitle(){mode='title';$('dark').style.opacity=0;['hudL','hudR','ctrl','keys','chase','launchHud','overOv','resultOv'].forEach(i=>show(i,false));show('titleOv',true);launch.tries=1;resetLaunch();}
-function toLaunch(){mode='launch';$('dark').style.opacity=0;['titleOv','overOv','resultOv','hudL','hudR','ctrl','keys','chase'].forEach(i=>show(i,false));show('launchHud',true);$('fade').style.opacity=0;resetLaunch();}
+function toTitle(){mode='title';SFX.setRumble(0);SFX.setFlow(0);EX.active=false;show('exitHud',false);$('bigText').classList.remove('show');$('dark').style.opacity=0;['hudL','hudR','ctrl','keys','chase','launchHud','overOv','resultOv'].forEach(i=>show(i,false));show('titleOv',true);launch.tries=1;resetLaunch();}
+function toLaunch(){mode='launch';EX.active=false;show('exitHud',false);$('bigText').classList.remove('show');$('dark').style.opacity=0;['titleOv','overOv','resultOv','hudL','hudR','ctrl','keys','chase'].forEach(i=>show(i,false));show('launchHud',true);$('fade').style.opacity=0;resetLaunch();}
 function setDiff(k){DIFF=k;D=DIFFS[k];try{localStorage.setItem('taisnow-diff',k);}catch(e){}
-  document.querySelectorAll('.dbtn').forEach(b=>b.setAttribute('aria-checked',b.dataset.d===k?'true':'false'));$('diffDesc').textContent=D.desc;}
+  document.querySelectorAll('.dbtn').forEach(b=>b.setAttribute('aria-checked',b.dataset.d===k?'true':'false'));$('diffDesc').textContent=D.desc;
+  const b=loadBest();const bl=$('bestLine');bl.innerHTML='';const lab=document.createElement('span');lab.textContent='自己ベスト（'+D.label+'）';const c=document.createElement('span');c.className='chip';c.textContent=b?b.rank+'ランク '+b.score.toLocaleString()+' pt':'まだ記録なし';bl.append(lab,c);}
 document.querySelectorAll('.dbtn').forEach(b=>b.addEventListener('click',()=>setDiff(b.dataset.d)));setDiff(DIFF);
-$('startBtn').onclick=()=>{launch.tries=1;toLaunch();};
-$('againBtn').onclick=()=>{launch.tries=1;toLaunch();};
+$('startBtn').onclick=()=>{SFX.init();launch.tries=1;toLaunch();};
+$('againBtn').onclick=()=>{SFX.init();launch.tries=1;toLaunch();};
+$('titleBtn').onclick=()=>toTitle();
 $('restartBtn').onclick=()=>{launch.tries=1;toLaunch();};
 $('retryBtn').onclick=()=>{show('overOv',false);mode='ride';resetRide(P.checkpoint);toast('リトライ！',1.2);};
-function gameOver(){mode='over';$('overText').textContent=AREAS[areaIndexAt(P.s)].name+'エリアで力つきた…（難易度：'+D.label+'）';$('dark').style.opacity=0;show('overOv',true);show('chase',false);}
-function finish(){mode='result';$('dark').style.opacity=0;$('rumble').style.opacity=0;show('chase',false);
+function gameOver(){mode='over';SFX.setRumble(0);SFX.setFlow(0);SFX.fail();$('overText').textContent=AREAS[areaIndexAt(P.s)].name+'エリアで力つきた…（難易度：'+D.label+'）';$('dark').style.opacity=0;show('overOv',true);show('chase',false);}
+const PAR=AREAS.reduce((a,A)=>a+(A.s1-A.s0)/(A.speed*(A.key==='rectum'?1.6:1)),0);
+let resultScene='ride',countRaf=0;
+function bestKey(){return 'taisnow-best-'+DIFF;}
+function loadBest(){try{return JSON.parse(localStorage.getItem(bestKey())||'null');}catch(e){return null;}}
+function finish(){mode='result';resultScene=EX.active?'exit':'ride';EX.active=false;$('dark').style.opacity=0;$('rumble').style.opacity=0;show('chase',false);show('exitHud',false);SFX.setRumble(0);SFX.setFlow(0);
   const timeBonus=Math.max(0,Math.round((160-P.time)*40));const score=Math.round((P.score+P.hp*500+timeBonus)*D.mult);$('rDiff').textContent=D.label;$('rTry').textContent=launch.tries+'回';
-  $('rTime').textContent=P.time.toFixed(1)+'秒';$('rScore').textContent=score.toLocaleString();$('rNut').textContent=P.nuts+'こ';$('rHit').textContent=P.hits+'回';
-  $('rank').textContent=score>=9000?'S':score>=7000?'A':score>=5000?'B':'C';
-  $('resultLead').textContent='全長約'+(REAL_TOTAL/100).toFixed(1)+'mの消化管を'+P.time.toFixed(1)+'秒で滑りきった！';
-  show('resultOv',true);}
+  $('rTime').textContent=P.time.toFixed(1)+'秒';$('rNut').textContent=P.nuts+'こ';$('rHit').textContent=P.hits+'回';
+  $('rRing').textContent=P.rings+'/'+TOTAL_RINGS;$('rCombo').textContent=P.maxCombo>1?'×'+P.maxCombo:'—';$('rTrick').textContent=P.tricks+'回';
+  // rank: golden rings collected, hearts left, and pace against par time (fair on every difficulty)
+  const ringRate=TOTAL_RINGS?P.rings/TOTAL_RINGS:0,tf=clamp((PAR*1.6-P.time)/(PAR*0.6),0,1);
+  const rp=45*ringRate+30*(P.hp/D.hp)+25*tf+Math.min(8,P.tricks*1.2);
+  const rank=rp>=85?'S':rp>=68?'A':rp>=50?'B':'C';$('rank').textContent=rank;
+  const best=loadBest(),isNew=!best||score>best.score;$('newRec').hidden=!isNew;
+  if(isNew)try{localStorage.setItem(bestKey(),JSON.stringify({score,rank}));}catch(e){}
+  $('resultLead').textContent='全長約'+(REAL_TOTAL/100).toFixed(1)+'mの消化管を'+P.time.toFixed(1)+'秒で滑りきった！'+(isNew&&best?'（自己ベスト更新）':'');
+  // score counts up
+  cancelAnimationFrame(countRaf);const t0=performance.now();const el=$('rScore');
+  (function step(now){const q=clamp((now-t0)/1300,0,1);el.textContent=Math.round(score*(1-Math.pow(1-q,3))).toLocaleString();if(q<1)countRaf=requestAnimationFrame(step);})(t0);
+  SFX.fanfare();show('resultOv',true);setDiff(DIFF);}
 
 /* ================= Ride update ================= */
 const cam=RS.cam;const camPos=new V(),camUp=new V(0,1,0),_t1=new V(),_t2=new V(),fogCol=new THREE.Color(),tmpCol=new THREE.Color(),blackCol=new THREE.Color(0x000000);let camInit=true;
 const fr2={c:new V(),t:new V(),n:new V(),b:new V()};
+// droplet spray from the board: side = sideways speed, up = speed away from the wall
+const _sp=new V(),_sv=new V(),_sg=new V();
+function sprayAt(side,up){frameAt(P.s);_u.copy(fr.n).multiplyScalar(Math.cos(P.th)).addScaledVector(fr.b,Math.sin(P.th));_x.crossVectors(_u,fr.t).normalize();
+  _sp.copy(rider.position).addScaledVector(fr.t,RR(-1.2,0.4)).addScaledVector(_u,-0.1);
+  _sv.copy(fr.t).multiplyScalar(P.speed*RR(0.2,0.5)).addScaledVector(_x,side*4).addScaledVector(_u,-up);_sg.copy(_u).multiplyScalar(30);
+  const A=AREAS[areaIndexAt(P.s)].color;tmpCol.setRGB(Math.min(1,A[0]*1.25+0.15),Math.min(1,A[1]*1.25+0.15),Math.min(1,A[2]*1.25+0.15));rsSpray.spawn(_sp,_sv,tmpCol.getHex(),RR(0.25,0.5),_sg,1.5);}
 function updateRide(dt,t){
   P.time+=dt;
   const ai=areaIndexAt(P.s),A=AREAS[ai],af=(P.s-A.s0)/(A.s1-A.s0);
@@ -828,7 +1041,14 @@ function updateRide(dt,t){
   // input
   let steer=(keys.ArrowRight||keys.KeyD||btn.r?1:0)-(keys.ArrowLeft||keys.KeyA||btn.l?1:0)+dragSteer;steer=clamp(steer,-1,1);
   P.steer=lerp(P.steer,steer,1-Math.exp(-10*dt));
-  if(jumpQ){if(P.h<=0.05){P.vh=13.5;P.h=0.06;if(P.stuck>0){P.stuck=0;toast('脱出！',0.8);}}jumpQ=false;}
+  if(jumpQ){
+    if(P.onRamp){P.ollieT=0.4;}
+    else if(P.h<=0.05){P.vh=13.5;P.h=0.06;SFX.jump();if(P.stuck>0){P.stuck=0;toast('脱出！',0.8);}}
+    else if(P.airRamp&&!P.flipping&&P.h>0.6){P.flipping=true;P.flipT=0;SFX.flip();}
+    jumpQ=false;}
+  P.ollieT=Math.max(0,P.ollieT-dt);
+  if(P.flipping){P.flipT+=dt;if(P.flipT>=FLIP_DUR){P.flipping=false;P.flipT=0;P.flips++;}}
+  if(P.airRamp)P.spin+=P.steer*7.8*dt;else P.spin*=Math.exp(-9*dt);
   // speed
   let target=A.speed*(waterOn?1.6:1)+(P.boost>0?14:0);if(P.stuck>0)target=4;
   if(finishing)target=40;
@@ -839,18 +1059,29 @@ function updateRide(dt,t){
   P.th-=P.steer*16/Math.max(3,rHere)*dt;
   if(waterOn)P.th+=Math.sin(t*1.7)*Math.cos(t*0.6)*5.5/rHere*dt;
   P.th=wrapA(P.th);
-  if(P.h>0||P.vh>0){P.h+=P.vh*dt;P.vh-=32*dt;if(P.h<=0){P.h=0;P.vh=0;}}
+  if(P.h>0||P.vh>0){const fall=P.vh;P.h+=P.vh*dt;P.vh-=32*dt;
+    const cap=2*rHere-3.2;if(P.h>cap){P.h=cap;if(P.vh>0)P.vh=-2;}
+    if(P.h<=0){P.h=0;P.vh=0;if(P.airRamp)landTricks();if(fall<-9)for(let k=0;k<14;k++)sprayAt(RR(-1,1),RR(2,5));}}
 
   // obstacles
-  const ps=P.s;
+  const ps=P.s;let rampGround=0,rampObj=null,rampLaunched=false;
   for(const o of obs){
     if(o.s<ps-30){if(o.mesh&&o.mesh.visible&&o.type!=='gate')o.mesh.visible=false;continue;}
     if(o.s>ps+170){if(o.mesh)o.mesh.visible=false;continue;}
-    if(o.mesh&&!(o.type==='nut'&&o.taken))o.mesh.visible=true;
+    if(o.mesh&&!((o.type==='nut'||o.type==='ring')&&o.taken))o.mesh.visible=true;
     const ds=o.s-ps;
+    if(o.type==='ramp'){const lat=Math.abs(wrapA(o.th-P.th))*wallR(o.s,o.th);
+      if(prevS<o.s&&P.s>=o.s&&P.onRamp===o){// launch off the lip
+        const ollie=P.ollieT>0;P.vh=o.kick*(ollie?1.12:1);P.h=Math.max(P.h,o.H);P.airRamp=true;P.flips=0;P.spin=0;P.flipping=false;rampLaunched=true;SFX.launch();camShake=Math.max(camShake,0.15);
+        if(ollie){P.score+=100;trickPop('ナイスオーリー！','+100　空中でジャンプ＝フリップ');}else toast('エア！ 空中でジャンプ＝フリップ',1);
+        for(let k=0;k<18;k++)sprayAt(RR(-1.5,1.5),RR(3,7));}
+      else if(ds>=0&&ds<=o.len&&lat<o.w*0.5+0.35){const gh=o.H*(1-ds/o.len);if(P.h<=gh+0.4&&P.vh<=0.5&&gh>=rampGround){rampGround=gh;rampObj=o;}}
+      continue;}
+    if(o.type==='ring'){if(!o.taken&&prevS<o.s&&P.s>=o.s){const lat=Math.abs(wrapA(o.th-P.th))*Math.max(1,wallR(o.s,o.th)-o.hc),vert=Math.abs(P.h+1.1-o.hc);
+        if(lat<o.R*0.85&&vert<o.R*0.85)collectRing(o);}continue;}
     if(o.type==='gate'){const op=clamp(0.5+0.9*Math.sin((t+o.phase)*TAU/o.period),0,1);o.open=op;const r=o.r;o.ring.scale.set(r*(0.42+0.6*op),r*(0.42+0.6*op),r*(0.42+0.6*op));o.mem.scale.setScalar(r*0.6);o.mem.material.opacity=(1-op)*0.85;o.mem.visible=op<0.98;
       if(prevS<o.s&&P.s>=o.s){if(op<0.45){P.s=o.s-7;P.speed=3;toast(o.name+'が閉じてる！開く瞬間をねらえ',1.4);if(o.final)hurt(o.name+'に跳ね返された！');}
-        else{toast(o.name+'を通過！',1);P.score+=200;if(o.final){finishing=1;}}}
+        else{toast(o.name+'を通過！',1);P.score+=200;SFX.gate();if(o.final){finishing=1;}}}
       continue;}
     if(Math.abs(ds)>8)continue;
     const r=wallR(o.s,o.th),lat=Math.abs(wrapA(o.th-P.th))*r;
@@ -860,13 +1091,16 @@ function updateRide(dt,t){
       case 'hole':if(Math.abs(ds)<o.len&&lat<o.w&&P.h<0.3){if(P.inv<=0){P.s=o.s-o.len-14;P.speed=4;}hurt(o.msg);}break;
       case 'gum':if(Math.abs(ds)<o.len&&lat<o.w&&P.h<0.25&&P.stuck<=0&&!o.cool){P.stuck=1.4;P.speed=Math.min(P.speed,5);o.cool=true;toast('ガムにくっついた！ジャンプで脱出',1.3);}break;
       case 'gas':{const gh=2.4+Math.sin(t*2+o.bob)*0.5;if(Math.abs(ds)<1.7&&lat<1.9&&Math.abs(P.h+1-gh)<1.9&&!o.popped){o.popped=true;o.mesh.visible=false;P.speed*=0.55;P.th+=0.6*(rnd()<0.5?-1:1);toast('ガスの泡がはじけた！プゥ〜',1.1);}break;}
-      case 'nut':if(!o.taken&&Math.abs(ds)<1.6&&lat<1.6&&P.h<2.4){o.taken=true;o.mesh.visible=false;P.score+=100;P.nuts++;toast('+'+o.name,0.6);}break;
+      case 'nut':if(!o.taken&&Math.abs(ds)<1.6&&lat<1.6&&P.h<2.4){o.taken=true;o.mesh.visible=false;P.score+=100;P.nuts++;toast('+'+o.name,0.6);SFX.ring(-6);}break;
       case 'jet':{const ph=((t+o.phase)%2.6)/2.6;const on=ph<0.42;if(on&&Math.abs(ds)<1.1&&lat<o.w+0.5)hurt('胆汁ジェット直撃！');break;}
     }
   }
+  // riding up a ramp: the ramp surface becomes the ground
+  if(rampObj&&!rampLaunched){if(P.h<0.05&&!P.onRamp)SFX.land();P.h=rampGround;P.vh=0;P.onRamp=rampObj;P.tilt=rampObj.slope;if(P.stuck>0)P.stuck=0;}else{P.onRamp=null;P.tilt*=Math.exp(-10*dt);}
   // animate visible obstacles
   for(const o of obs){if(!o.mesh||!o.mesh.visible)continue;
     if(o.type==='nut'){o.inner.rotation.y+=dt*3;o.inner.position.y=1.2+Math.sin(t*4+o.s)*0.2;}
+    else if(o.type==='ring'){o.mesh.userData.sway.rotation.y=Math.sin(t*1.8+o.s*0.3)*0.3;if(o.pop>0){o.pop+=dt;o.mesh.scale.setScalar(o.R*(1+o.pop*3));if(o.pop>0.22)o.mesh.visible=false;}}
     else if(o.type==='gas'){placeOnWall(o.mesh,o.s,o.th,2.4+Math.sin(t*2+o.bob)*0.5);}
     else if(o.type==='jet'){const ph=((t+o.phase)%2.6)/2.6;const on=ph<0.42;const warn=ph>0.85;o.jet.visible=on||warn;o.jet.scale.set(warn?0.4:1,on?wallR(o.s,o.th)*0.95:0.6,warn?0.4:1);}
   }
@@ -904,18 +1138,27 @@ function updateRide(dt,t){
     if(p.s>P.s+80||p.s>LEN-20){RS.scene.remove(p.mesh);rolls.splice(i,1);continue;}
     const bounce=Math.abs(Math.sin(p.roll*1.3+p.wob))*0.25*p.size;
     placeOnWall(p.mesh,p.s,p.th,p.size*0.96+bounce);p.ball.rotation.set(p.roll,p.wob,0);}
+  SFX.setRumble(nearest<34&&!finishing?clamp((34-nearest)/24,0,1):0);SFX.setFlow(waterOn&&!finishing?1:0);
+  P.heartT-=dt;P.beat=(P.beat||0)*Math.exp(-7*dt);if(P.heartT<=0){P.heartT=P.hp<=1?0.55:0.95;SFX.heart(P.hp<=1);P.beat=1;}
   const rum=$('rumble');if(nearest<34){rum.style.opacity=clamp((34-nearest)/20,0.25,1);if(nearest<16&&!finishing){camShake=Math.max(camShake,0.12*(16-nearest)/16);}}else rum.style.opacity=0;
   // landing markers (easy/normal only)
   let mi=0;if(D.markers)for(const p of rolls){if(mi>=markers.length)break;if(p.s<P.s&&p.s>P.s-30){const m=markers[mi++];m.visible=true;placeOnWall(m,P.s+3.5,p.th,0.12);const sc=(p.size+0.6);m.children[0].scale.set(sc,sc,0.25);m.children[0].material.opacity=0.45+0.4*Math.sin(t*20);}}
   for(;mi<markers.length;mi++)markers[mi].visible=false;
   // rider transform
   const r=placeOnWall(rider,P.s,P.th,P.h);
-  rider.rotateZ(P.steer*0.42);const air=clamp(P.h/2.5,0,1);rider.userData.inner.rotation.set(clamp(-P.vh*0.025,-0.35,0.35),Math.PI/2*0.12+air*Math.sin(clamp(P.h,0,3)*1.2)*0.5,0);rider.userData.inner.position.y=air*0.15;
+  rider.rotateZ(P.steer*0.42*(P.airRamp?0.3:1));const air=clamp(P.h/2.5,0,1);
+  rider.userData.inner.rotation.set(clamp(-P.vh*0.025,-0.35,0.35)-P.tilt,Math.PI/2*0.12+(P.airRamp?0:air*Math.sin(clamp(P.h,0,3)*1.2)*0.5),0);rider.userData.inner.position.y=-1+air*0.15;
+  rider.userData.pivot.rotation.set(P.flipping?-TAU*smooth(P.flipT/FLIP_DUR):0,P.spin,0);
+  // board spray when carving hard on the wall, like snow off an edge
+  if(P.h<0.05&&!P.onRamp&&P.speed>12&&Math.abs(P.steer)>0.35){P.sprayT-=dt;if(P.sprayT<=0){P.sprayT=0.016;for(let k=0;k<2;k++)sprayAt(-Math.sign(P.steer)*RR(0.4,1),RR(1.5,3.5));}}
+  rsSpark.update(dt);rsSpray.update(dt);
+  if(popT>0){popT-=dt;if(popT<=0)$('trickPop').classList.remove('show');}
+  if(P.combo>1){const left=1-(P.time-P.lastRingT)/D.comboT;$('comboBar').firstChild.style.width=clamp(left,0,1)*100+'%';if(left<=0){P.combo=0;$('combo').classList.remove('show');}}
   if(P.inv>0)rider.visible=Math.floor(t*16)%2===0;else rider.visible=true;
   // camera: behind and toward the axis, rolling with the rider so "down" is always the wall under the board
   const sc=Math.max(0.6,P.s-7.5);frameAt(sc,fr2);const rc=baseR(sc);
   _u.copy(fr2.n).multiplyScalar(Math.cos(P.th)).addScaledVector(fr2.b,Math.sin(P.th));
-  _t1.copy(fr2.c).addScaledVector(_u,rc-Math.min(3.7,rc*0.64));
+  _t1.copy(fr2.c).addScaledVector(_u,rc-Math.min(3.7,rc*0.64)-Math.min(P.h*0.45,rc*0.3));
   frameAt(P.s);_t2.copy(fr.n).multiplyScalar(Math.cos(P.th)).addScaledVector(fr.b,Math.sin(P.th)).negate();
   if(camInit){camPos.copy(_t1);camUp.copy(_t2);camInit=false;}
   camPos.lerp(_t1,1-Math.exp(-9*dt));camUp.lerp(_t2,1-Math.exp(-7*dt)).normalize();
@@ -928,7 +1171,7 @@ function updateRide(dt,t){
   // lighting: the mouth opening and closing makes the oral cavity go bright and dark
   // the giant's mouth keeps chewing: while it is shut, the whole body goes dark for a moment
   chew.t-=dt;
-  if(chew.t<=0){chew.open=!chew.open;chew.t=chew.open?RR(D.openMin,D.openMax):D.closeDur;chew.warned=false;if(!chew.open)toast('口が閉じた！',0.5);}
+  if(chew.t<=0){chew.open=!chew.open;chew.t=chew.open?RR(D.openMin,D.openMax):D.closeDur;chew.warned=false;if(!chew.open){toast('口が閉じた！',0.5);SFX.shut();}}
   const warn=chew.open&&D.warn&&chew.t<0.6;
   dark=lerp(dark,chew.open?0:D.dark,1-Math.exp(-(chew.open?18:30)*dt));
   const bright=1-dark;
@@ -939,7 +1182,7 @@ function updateRide(dt,t){
   fogCol.lerp(blackCol,dark);
   RS.scene.fog.color.copy(fogCol);RS.scene.background.copy(fogCol);
   RS.scene.fog.far=lerp(135,18,dark);
-  hemi.intensity=0.8*(1-dark*0.94);tubeMat.emissive.setRGB(0.13*bright,0.02*bright,0.03*bright);lamp.intensity=0.95*(1-dark*0.9);
+  hemi.intensity=0.8*(1-dark*0.94);tubeMat.emissive.setRGB(0.13*bright,0.02*bright,0.03*bright);lamp.intensity=0.95*(1-dark*0.9)*(1+0.1*P.beat);
   $('dark').style.opacity=(dark*D.overlay).toFixed(3);
   const ms=$('mouthState');ms.className=chew.open?(warn?'warn':''):'closed';
   $('mouthText').textContent=chew.open?(warn?'口：もうすぐ閉じる！':'口：ひらいてる（明るい）'):'口：とじてる（まっくら）';
@@ -953,25 +1196,108 @@ function updateRide(dt,t){
   const real=A.realStart+A.real*clamp(af,0,1);$('dist').textContent='体内 '+(real/100).toFixed(2)+'m / '+(REAL_TOTAL/100).toFixed(2)+'m';
   $('distBar').firstChild.style.width=(P.s/LEN*100).toFixed(1)+'%';$('score').textContent=P.score.toLocaleString()+' pt';
   drawMini(ai,clamp(af,0,1),t);
-  if(finishing){finishing+=dt;$('fade').style.background='#fffbea';$('fade').style.opacity=clamp((finishing-0.6)/0.8,0,1);if(finishing>1.6){$('fade').style.opacity=0;$('fade').style.background='#000';finish();}}
+  if(finishing){finishing+=dt;$('fade').style.background='#fffbea';$('fade').style.opacity=clamp((finishing-0.6)/0.8,0,1);if(finishing>1.6){startExit();}}
 }
 
+/* ================= Finale: out of the body and into the toilet ================= */
+const ES={scene:new THREE.Scene(),cam:new THREE.PerspectiveCamera(48,1,0.1,300)};
+ES.scene.background=new THREE.Color(0xb9d0d8);ES.scene.fog=new THREE.Fog(0xb9d0d8,45,95);
+ES.scene.add(new THREE.HemisphereLight(0xffffff,0x6f808a,0.5));
+{const d=new THREE.DirectionalLight(0xfff3e4,0.62);d.position.set(10,20,12);ES.scene.add(d);const f=new THREE.DirectionalLight(0xd8ecff,0.22);f.position.set(-12,8,6);ES.scene.add(f);}
+const WY=1.25;
+const TL={};
+(function(){const sc=ES.scene;
+  const tileTex=(rep,grout,a,b)=>{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');g.fillStyle=grout;g.fillRect(0,0,128,128);
+    for(let i=0;i<2;i++)for(let j=0;j<2;j++){g.fillStyle=(i+j)%2?b:a;g.fillRect(i*64+3,j*64+3,58,58);}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep[0],rep[1]);return t;};
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(70,70),new THREE.MeshStandardMaterial({map:tileTex([14,14],'#55707c','#8fb0bd','#c9dde3'),roughness:0.3}));floor.rotation.x=-Math.PI/2;floor.position.y=-4.3;sc.add(floor);
+  const wall=new THREE.Mesh(new THREE.PlaneGeometry(70,36),new THREE.MeshStandardMaterial({map:tileTex([14,7],'#8fb3bf','#d6eaee','#d6eaee'),roughness:0.5}));wall.position.set(0,13.7,-8.6);sc.add(wall);
+  const por=new THREE.MeshStandardMaterial({color:0xeef3f5,roughness:0.12,metalness:0.05,side:THREE.DoubleSide});
+  // porcelain bowl lathed from a profile: inner wall up to the rim, then the outside down to the pedestal
+  const prof=[[0.85,-0.25],[1.25,0.35],[1.95,1.2],[2.6,2.2],[3.1,3.1],[3.45,3.8],[3.62,4.15],[3.8,4.32],[4.0,4.18],[3.95,3.4],[3.35,1.8],[2.5,0.3],[1.9,-1.8],[2.15,-3.7],[2.7,-4.3]].map(p=>new THREE.Vector2(p[0],p[1]));
+  const bowl=new THREE.Mesh(new THREE.LatheGeometry(prof,72),por);bowl.scale.z=1.22;sc.add(bowl);
+  const drain=new THREE.Mesh(new THREE.CircleGeometry(0.85,32),new THREE.MeshBasicMaterial({color:0x26323a}));drain.rotation.x=-Math.PI/2;drain.position.y=-0.2;drain.scale.y=1.22;sc.add(drain);
+  const swirl=(()=>{const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');const gr=g.createRadialGradient(128,128,8,128,128,128);gr.addColorStop(0,'#4f9fc8');gr.addColorStop(0.55,'#86c8e6');gr.addColorStop(1,'#cdeefa');g.fillStyle=gr;g.fillRect(0,0,256,256);
+    g.strokeStyle='rgba(255,255,255,0.55)';g.lineCap='round';for(let a=0;a<6;a++){g.lineWidth=5;g.beginPath();for(let k=0;k<=40;k++){const q=k/40,ang=a/6*TAU+q*3.2,r=18+q*104;const x=128+Math.cos(ang)*r,y=128+Math.sin(ang)*r;k?g.lineTo(x,y):g.moveTo(x,y);}g.stroke();}
+    return new THREE.CanvasTexture(c);})();
+  const water=new THREE.Mesh(new THREE.CircleGeometry(2.02,56),new THREE.MeshStandardMaterial({map:swirl,transparent:true,opacity:0.9,roughness:0.04,metalness:0.2}));
+  water.rotation.x=-Math.PI/2;water.scale.y=1.22;water.position.y=WY;sc.add(water);TL.water=water;
+  const seatG=new THREE.Group();seatG.position.y=4.55;seatG.scale.set(1,0.5,1.22);const seat=new THREE.Mesh(new THREE.TorusGeometry(3.5,0.32,16,72),new THREE.MeshStandardMaterial({color:0xf6f1ea,roughness:0.3}));seat.rotation.x=Math.PI/2;seatG.add(seat);sc.add(seatG);
+  const hinge=new THREE.Group();hinge.position.set(0,4.75,-4.3);hinge.rotation.x=1.22;sc.add(hinge);
+  const lid=new THREE.Mesh(new THREE.CylinderGeometry(3.5,3.5,0.28,56),new THREE.MeshStandardMaterial({color:0xf6f1ea,roughness:0.3}));lid.scale.z=1.22;lid.position.z=-4.27;hinge.add(lid);
+  const tank=new THREE.Mesh(new THREE.BoxGeometry(7.4,5.2,2.6),por);tank.position.set(0,7.2,-7.2);sc.add(tank);
+  const tankTop=new THREE.Mesh(new THREE.BoxGeometry(7.8,0.4,3),por);tankTop.position.set(0,9.95,-7.2);sc.add(tankTop);
+  const chrome=new THREE.MeshStandardMaterial({color:0xd5dde0,metalness:1,roughness:0.18});
+  const lever=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,1.2,10),chrome);lever.rotation.z=Math.PI/2;lever.position.set(-3.1,8.9,-5.8);sc.add(lever);TL.lever=lever;
+  const rollM=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1.7,28),new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.9}));rollM.rotation.z=Math.PI/2;rollM.position.set(8.4,3.4,-7.4);sc.add(rollM);
+  const sheet=new THREE.Mesh(new THREE.PlaneGeometry(1.7,2.4),new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.9,side:THREE.DoubleSide}));sheet.position.set(8.4,2.0,-6.42);sc.add(sheet);
+  // the shaft of light the rider drops out of
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(1.2,2.4,17,32,1,true),new THREE.MeshBasicMaterial({color:0xfff1c4,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}));
+  beam.position.y=13;sc.add(beam);TL.beam=beam;
+  TL.rider=makeRider();sc.add(TL.rider);TL.rider.visible=false;
+  TL.splash=makeParticles(sc,300,0.34,false);
+  TL.ripples=[];const rmat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.8});
+  for(let i=0;i<4;i++){const m=new THREE.Mesh(new THREE.TorusGeometry(1,0.045,6,56),rmat.clone());m.rotation.x=Math.PI/2;m.position.y=WY+0.03;m.visible=false;sc.add(m);TL.ripples.push({m,t:-1});}
+})();
+const EX={active:false,t:0,phase:0,q:0,pos:new V(),vel:new V(),ang:0,rad:0,shake:0,spin:0.4,skip:false};
+let bigT=0;
+function bigText(t){const el=$('bigText');el.textContent=t;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');bigT=1.0;}
+function startExit(){mode='exit';EX.active=true;['hudL','hudR','ctrl','keys','chase'].forEach(i=>show(i,false));show('exitHud',true);$('combo').classList.remove('show');$('trickPop').classList.remove('show');
+  $('dark').style.opacity=0;$('rumble').style.opacity=0;SFX.setRumble(0);SFX.setFlow(0);
+  EX.t=0;EX.phase=0;EX.q=0;EX.skip=false;EX.shake=0;EX.spin=0.4;EX.pos.set(0.5,18,-0.5);EX.vel.set(-0.2,-3,0.2);
+  const r=TL.rider;r.visible=true;r.position.copy(EX.pos);r.scale.setScalar(1);r.rotation.set(0,0.7,0);r.userData.pivot.rotation.set(0,0,0);
+  TL.water.position.y=WY;TL.splash.clear();TL.ripples.forEach(x=>{x.t=-1;x.m.visible=false;});TL.lever.rotation.x=0;
+  ES.cam.position.set(0,9,15);ES.cam.lookAt(0,9,0);
+  $('fade').style.background='#fffbea';$('fade').style.opacity=1;$('toast').classList.remove('show');toastT=0;$('banner').classList.remove('show');SFX.launch();bigText('スポーン！');}
+function exitWater(dt){TL.water.rotation.z-=EX.spin*dt;
+  for(const x of TL.ripples){if(x.t<0)continue;x.t+=dt;const tt=x.t-(x.delay||0);if(tt<0){x.m.visible=false;continue;}const rr=0.2+tt*1.6;if(rr>1.95){x.m.visible=false;x.t=-1;continue;}x.m.visible=true;x.m.scale.set(rr,rr*1.22,rr);x.m.material.opacity=0.8*(1-rr/1.95);}
+  TL.splash.update(dt);}
+const _ev=new V(),_ep=new V();
+function updateExit(dt){EX.t+=dt;const r=TL.rider;
+  if(EX.t>0.05&&$('fade').style.opacity!=='0')$('fade').style.opacity=0;
+  if(EX.t>0.9)$('fade').style.background='#000';
+  if(bigT>0){bigT-=dt;if(bigT<=0)$('bigText').classList.remove('show');}
+  if(EX.skip){r.visible=false;$('bigText').classList.remove('show');finish();return;}
+  TL.beam.material.opacity=EX.phase===0?0.16*smooth(EX.t/0.25):Math.max(0,TL.beam.material.opacity-dt*0.6);
+  if(EX.phase===0){// slow-motion fall out of the light with a front flip
+    const d=dt*(EX.t<0.8?0.42:1);EX.vel.y-=26*d;EX.pos.addScaledVector(EX.vel,d);r.position.copy(EX.pos);r.userData.pivot.rotation.x-=d*7.2;r.rotation.y+=d*1.2;
+    ES.cam.position.lerp(_ev.set(0,8.6,13.2),1-Math.exp(-2*dt));ES.cam.lookAt(0,Math.max(WY+2,EX.pos.y*0.55+1.5),0);
+    if(EX.pos.y<=WY+0.25){EX.phase=1;EX.q=0;SFX.splash();bigText('ドボン！');EX.shake=0.5;if(navigator.vibrate)try{navigator.vibrate(80);}catch(e){}
+      for(let k=0;k<220;k++){const a=RR(0,TAU),sp=RR(1,5.5);_ep.set(EX.pos.x+Math.cos(a)*0.4,WY+0.1,EX.pos.z+Math.sin(a)*0.4);_ev.set(Math.cos(a)*sp,RR(5,14),Math.sin(a)*sp*1.22);
+        TL.splash.spawn(_ep,_ev,pick([0xffffff,0xd8f2ff,0xa6dcf2]),RR(0.8,1.5),_t2.set(0,-26,0),0.3);}
+      TL.ripples.forEach((x,i)=>{x.t=0;x.delay=i*0.28;});}
+  }else if(EX.phase===1){// bobbing in the water
+    EX.q+=dt;r.position.y=WY-0.75+Math.sin(EX.q*6)*0.18*Math.exp(-EX.q*2);r.userData.pivot.rotation.x=lerp(r.userData.pivot.rotation.x,-TAU*Math.round(r.userData.pivot.rotation.x/-TAU)-0.25,1-Math.exp(-6*dt));
+    ES.cam.position.lerp(_ev.set(0,11.5,9.8),1-Math.exp(-1.8*dt));ES.cam.lookAt(0,WY+0.3,0);
+    if(EX.q>1.05){EX.phase=2;EX.q=0;SFX.flush();bigText('ジャーーッ！');TL.lever.rotation.x=-0.6;EX.ang=Math.atan2(r.position.z/1.22,r.position.x);EX.rad=Math.min(1.5,Math.hypot(r.position.x,r.position.z/1.22)+0.7);}
+  }else{// flush: swirl down the drain
+    EX.q+=dt;const q=EX.q;EX.spin=lerp(EX.spin,9,1-Math.exp(-2*dt));EX.rad=Math.max(0,EX.rad-dt*0.75);EX.ang+=dt*(2.5+q*4);
+    r.position.set(Math.cos(EX.ang)*EX.rad,WY-0.75-q*q*0.5,Math.sin(EX.ang)*EX.rad*1.22);r.rotation.y+=dt*(6+q*6);r.scale.setScalar(Math.max(0.05,1-q*0.42));
+    TL.water.position.y=WY-0.55*smooth(q/1.4);TL.lever.rotation.x=lerp(TL.lever.rotation.x,0,1-Math.exp(-3*dt));
+    if(Math.random()<0.6){const a=RR(0,TAU),rr=RR(0.4,1.9);_ep.set(Math.cos(a)*rr,TL.water.position.y+0.05,Math.sin(a)*rr*1.22);_ev.set(-Math.sin(a)*3,RR(0.5,1.5),Math.cos(a)*3*1.22);TL.splash.spawn(_ep,_ev,0xffffff,0.5,_t2.set(0,-6,0),1);}
+    ES.cam.position.lerp(_ev.set(0,11.5,9.5),1-Math.exp(-1.2*dt));ES.cam.lookAt(0,WY,0);
+    if(q>2.3){r.visible=false;finish();return;}}
+  exitWater(dt);
+  if(EX.shake>0){EX.shake=Math.max(0,EX.shake-dt*1.2);ES.cam.position.x+=(Math.random()-0.5)*EX.shake;ES.cam.position.y+=(Math.random()-0.5)*EX.shake;}}
+function idleExit(dt){EX.spin=lerp(EX.spin,0.3,1-Math.exp(-1.5*dt));TL.water.position.y=lerp(TL.water.position.y,WY,1-Math.exp(-2*dt));exitWater(dt);if(bigT>0){bigT-=dt;if(bigT<=0)$('bigText').classList.remove('show');}}
+
 /* ================= Main loop ================= */
-function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);LS.cam.aspect=w/h;LS.cam.updateProjectionMatrix();RS.cam.aspect=w/h;RS.cam.updateProjectionMatrix();}
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);for(const c of[LS.cam,RS.cam,ES.cam]){c.aspect=w/h;c.updateProjectionMatrix();}ES.cam.fov=w/h<0.8?62:48;ES.cam.updateProjectionMatrix();}
 addEventListener('resize',resize);resize();
 let last=performance.now(),T=0;
 resetLaunch();
 function frame(now){requestAnimationFrame(frame);let dt=Math.min(0.05,(now-last)/1000);last=now;
-  if(paused||mode==='over'||mode==='result')dt=0;T+=dt;
+  const rawDt=dt;if(paused||mode==='over'||mode==='result')dt=0;T+=dt;
   if(toastT>0){toastT-=dt||0.016;if(toastT<=0)$('toast').classList.remove('show');}
   if(bannerT>0){bannerT-=dt||0.016;if(bannerT<=0)$('banner').classList.remove('show');}
   if(flashT>0){flashT-=dt;if(flashT<=0)$('flash').style.opacity=0;}
   if(mode==='ride'&&!paused){updateRide(dt,T);renderer.render(RS.scene,RS.cam);}
+  else if(mode==='exit'){updateExit(dt);renderer.render(ES.scene,ES.cam);}
+  else if(mode==='result'&&resultScene==='exit'){idleExit(rawDt);renderer.render(ES.scene,ES.cam);}
   else if(mode==='over'||mode==='result'||paused){renderer.render(RS.scene,RS.cam);}
   else{if(mode==='launch')updateLaunch(dt,T);else{updateFace(T);LS.cam.position.set(Math.sin(T*0.2)*12,13,24+camBack());LS.cam.lookAt(0,26,-60);}renderer.render(LS.scene,LS.cam);}
 }
 requestAnimationFrame(frame);
-window.__game={launch,MOUTH,P,get chew(){return chew;},AREAS,LEN,startRide,toLaunch,get mode(){return mode;},setS:s=>{P.s=s;}};
+window.__game={step(n,dt){for(let i=0;i<n;i++){T+=dt;if(mode==='ride')updateRide(dt,T);else if(mode==='exit')updateExit(dt);}},hold(v){paused=v;},get mode2(){return mode;},keys,obs,LRINGS,get TOTAL_RINGS(){return TOTAL_RINGS;},startExit,EX,launch,MOUTH,P,get chew(){return chew;},AREAS,LEN,startRide,toLaunch,get mode(){return mode;},setS:s=>{P.s=s;}};
 })();
 </script>
 
