@@ -1,0 +1,187 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>窓際社員ギリギリゲーム</title></head><body>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+/* Layout: one-screen game. Navy office control panel around a 3D cutaway of the 12F floor. Deliberately single theme. */
+:root{
+  --navy:#1c283d;
+  --navy-2:#2b3a55;
+  --paper:#fbfaf4;
+  --ink:#1b1f27;
+  --safety:#f2c230;
+  --hanko:#c4322a;
+  --muted:#93a0b4;
+  --glass:#a9dbff;
+  --f-display:"Dela Gothic One","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  --f-digit:"DotGothic16","Osaka-Mono","MS Gothic",monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{height:100%;box-sizing:border-box;background:var(--navy)}
+body{height:100%;margin:0;background:var(--navy);color:var(--paper);font-family:var(--f-body);overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.app{height:100%;max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:8px;padding-inline:16px;padding-block:10px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex:0 0 auto}
+.floor-tag{font-size:11px;letter-spacing:.14em;color:var(--muted);margin:0 0 2px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(18px,4.8vw,28px);line-height:1.15;margin:0;text-wrap:balance}
+h1 em{font-style:normal;color:var(--safety)}
+.stats{display:flex;gap:12px;text-align:right;flex:0 0 auto}
+.stat span{display:block;font-size:10px;letter-spacing:.1em;color:var(--muted)}
+.stat b{font-family:var(--f-digit);font-weight:400;font-size:18px;font-variant-numeric:tabular-nums}
+
+.stage{position:relative;flex:1 1 auto;min-height:260px;border-radius:12px;overflow:hidden;background:#a6d2ec}
+.stage canvas.gl{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas.gl:active{cursor:grabbing}
+.hud{position:absolute;left:8px;top:8px;right:8px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none;align-items:flex-start}
+.chip{display:flex;align-items:baseline;gap:6px;background:rgba(28,40,61,.86);color:var(--paper);border-radius:6px;padding:4px 9px;font-size:11px;letter-spacing:.06em}
+.chip b{font-family:var(--f-digit);font-weight:400;font-size:20px;letter-spacing:0;font-variant-numeric:tabular-nums}
+.chip.wax b{font-family:var(--f-body);font-weight:700;font-size:13px}
+.chip.wax.slip b{color:#8fd0ff}
+.chip.wax.heavy b{color:#ffb38a}
+.mini{position:absolute;right:8px;bottom:8px;width:156px;height:52px;border-radius:6px;background:rgba(28,40,61,.86);pointer-events:none}
+.viewbtn{position:absolute;left:8px;bottom:8px;height:34px;padding:0 12px;border:0;border-radius:6px;background:rgba(28,40,61,.86);color:var(--paper);
+  font-family:var(--f-body);font-weight:700;font-size:12px;letter-spacing:.06em;cursor:pointer}
+.viewbtn:focus-visible{outline:2px solid var(--safety);outline-offset:2px}
+
+.bubble{position:absolute;left:0;top:0;transform:translate(-50%,calc(-100% - 14px));background:#fff;color:var(--ink);border:2px solid var(--navy);
+  border-radius:10px;padding:6px 11px;font-weight:700;font-size:14px;line-height:1.45;white-space:pre;text-align:center;pointer-events:none;
+  box-shadow:0 3px 0 rgba(28,40,61,.25)}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-9px;width:12px;height:12px;background:#fff;border-right:2px solid var(--navy);border-bottom:2px solid var(--navy);transform:translateX(-50%) rotate(45deg)}
+.bubble.boss{border-color:var(--hanko);color:var(--hanko);font-family:var(--f-display);font-weight:400;font-size:17px;border-width:3px}
+.bubble.boss::after{border-color:var(--hanko)}
+.pop{position:absolute;left:0;top:0;transform:translate(-50%,-50%);font-family:var(--f-display);font-size:24px;color:var(--safety);pointer-events:none;
+  -webkit-text-stroke:5px var(--navy);paint-order:stroke fill;animation:pop .8s ease-out forwards;white-space:nowrap}
+.pop.glass{color:var(--glass);font-size:28px}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-110%) scale(1)}}
+
+.commute{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:rgba(28,40,61,.92);text-align:center}
+.commute h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0 0 6px;color:var(--safety)}
+.commute p{margin:0;font-size:13px;color:#cfd6e2;line-height:1.7}
+.steps{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:14px 0}
+.steps span{padding:4px 9px;border-radius:4px;background:var(--navy-2);font-size:12px;color:var(--muted);transition:background .2s,color .2s}
+.steps span.on{background:var(--safety);color:var(--navy);font-weight:700}
+.sheet{display:inline-block;margin-top:4px;padding:3px 10px;border:2px solid var(--hanko);color:#ff8f86;border-radius:4px;font-weight:700;font-size:12px;letter-spacing:.08em}
+
+.ctrl{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;padding-bottom:2px}
+.gauge-top{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.1em;color:var(--muted)}
+.gauge-top b{font-family:var(--f-digit);font-weight:400;font-size:18px;color:var(--paper);letter-spacing:0;font-variant-numeric:tabular-nums}
+.gauge{position:relative;height:16px;border-radius:4px;background:var(--navy-2);overflow:hidden}
+.gfill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#4f6c99,var(--safety),#ff7a52)}
+.gtick{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.22)}
+.hint{margin:0;font-size:12px;color:#c3cbd8;line-height:1.6}
+.hint b{color:var(--safety);font-weight:700}
+
+.overlay{position:fixed;inset:0;display:grid;place-items:center;padding:16px;background:rgba(14,20,32,.55);z-index:5}
+.report{position:relative;width:min(380px,100%);background:var(--paper);color:var(--ink);border-radius:6px;padding:20px 20px 18px;
+  box-shadow:0 18px 40px rgba(0,0,0,.35);background-image:repeating-linear-gradient(transparent 0 31px,#e3e6ea 31px 32px);background-position:0 70px}
+.r-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px;padding-right:86px}
+.r-head h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0;letter-spacing:.12em}
+.r-date{font-size:11px;color:#59606c}
+.r-rows{margin:0}
+.r-rows div{display:grid;grid-template-columns:5.5em 1fr;align-items:baseline;min-height:32px;padding-top:4px}
+.r-rows dt{font-size:12px;color:#59606c;letter-spacing:.08em}
+.r-rows dd{margin:0;font-weight:700;font-size:15px;min-width:0}
+.r-rows dd.num{font-family:var(--f-digit);font-weight:400;font-size:20px;font-variant-numeric:tabular-nums}
+.r-comment{margin:8px 0 0;font-size:13px;line-height:1.75;color:#2d333d}
+.r-best{display:inline-block;margin:10px 0 0;padding:2px 8px;border-radius:3px;background:var(--safety);color:var(--navy);font-size:12px;font-weight:700;letter-spacing:.06em}
+.stamp{position:absolute;top:12px;right:14px;width:78px;height:78px;border-radius:50%;border:3px solid var(--hanko);display:grid;place-items:center;
+  color:var(--hanko);font-family:var(--f-display);font-size:17px;line-height:1.05;text-align:center;transform:rotate(-14deg);
+  box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4.5px var(--hanko);opacity:.9;mix-blend-mode:multiply}
+.stamp.pop2{animation:stamp .32s cubic-bezier(.2,1.6,.4,1)}
+@keyframes stamp{from{transform:rotate(-14deg) scale(2.2);opacity:0}to{transform:rotate(-14deg) scale(1);opacity:.9}}
+#again{display:block;width:100%;margin-top:16px;height:50px;border:0;border-radius:8px;background:var(--navy);color:var(--paper);
+  font-family:var(--f-display);font-size:16px;letter-spacing:.06em;cursor:pointer}
+#again:focus-visible{outline:3px solid var(--safety);outline-offset:3px}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--navy);font-weight:700}
+.chip.floor b{font-family:var(--f-body);font-weight:700;font-size:13px}
+.chip.floor i{font-style:normal;color:var(--safety);letter-spacing:.02em;font-size:12px}
+.notice{position:absolute;left:50%;top:84px;transform:translateX(-50%);max-width:min(92%,440px);background:rgba(251,250,244,.96);color:var(--ink);
+  border-left:5px solid var(--hanko);border-radius:4px;padding:6px 12px 7px;font-size:12px;line-height:1.55;pointer-events:none;
+  box-shadow:0 4px 14px rgba(0,0,0,.18);animation:notice 5.2s ease-in-out forwards}
+.notice b{display:block;font-size:10px;letter-spacing:.14em;color:var(--hanko)}
+@keyframes notice{0%{opacity:0;transform:translate(-50%,-8px)}8%{opacity:1;transform:translate(-50%,0)}86%{opacity:1}100%{opacity:0;transform:translate(-50%,-6px)}}
+.bubble.npc{font-size:12px;padding:4px 9px;border-color:#5b6b85;border-width:2px}
+.bubble.npc::after{border-color:#5b6b85}
+.dbg{position:absolute;left:8px;bottom:48px;background:rgba(0,0,0,.6);color:#bfffbf;font:11px/1.45 monospace;padding:5px 8px;border-radius:4px;pointer-events:none;white-space:pre}
+.confetti{position:absolute;top:-12px;width:8px;height:12px;pointer-events:none;animation:conf 2.2s cubic-bezier(.3,.6,.6,1) forwards}
+@keyframes conf{to{transform:translate(var(--dx),calc(var(--h) + 30px)) rotate(var(--r));opacity:.2}}
+.commute .excuse{margin-top:10px;font-size:12px;color:var(--muted)}
+.r-boss{margin:6px 0 0;font-size:12px;color:#59606c}
+.r-boss b{color:var(--hanko)}
+.r-seed{position:absolute;right:16px;bottom:74px;font-size:10px;color:#9aa0a8;font-family:var(--f-digit)}
+@media (prefers-reduced-motion: reduce){.stamp.pop2,.pop,.notice{animation:none}.confetti{display:none}}
+@media (max-width:420px){.stats{gap:9px}.stat b{font-size:15px}.mini{width:120px;height:40px}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div>
+      <p class="floor-tag">12F 総務部 第二課</p>
+      <h1>窓際社員<em>ギリギリ</em>ゲーム</h1>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>営業日</span><b id="sDay">1</b></div>
+      <div class="stat"><span>ベスト</span><b id="sBest">--</b></div>
+      <div class="stat"><span>連続窓際</span><b id="sStreak">0</b></div>
+      <div class="stat"><span>始末書</span><b id="sSheet">0</b></div>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="loading" id="loading">オフィスを準備中…</div>
+    <div class="hud">
+      <div class="chip"><span>窓まで</span><b id="hLeft">--</b><span>m</span></div>
+      <div class="chip wax" id="hWaxChip"><span>床ワックス</span><b id="hWax">普通</b></div>
+      <div class="chip floor"><span>本日</span><b id="hFloor">--</b><i id="hStars"></i></div>
+    </div>
+    <canvas class="mini" id="mini" width="312" height="104" aria-hidden="true"></canvas>
+    <button class="viewbtn" id="viewBtn" type="button">全体を見る</button>
+    <div class="bubble" id="bOji" hidden></div>
+    <div class="bubble boss" id="bBoss" hidden></div>
+    <div class="commute" id="commute" hidden>
+      <div>
+        <h2>再出社中…</h2>
+        <p>窓の外に出てしまったので、<br>もう一度会社に入り直します。</p>
+        <div class="steps" id="steps"><span>植え込み</span><span>1F 受付</span><span>エレベーター</span><span>12F 総務部</span></div>
+        <span class="sheet" id="sheetNote">始末書 +1</span>
+        <p class="excuse" id="excuse"></p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="ctrl">
+    <div class="gauge-top"><span>引っ張り力</span><span><b id="gP">0</b> %</span></div>
+    <div class="gauge"><div class="gfill" id="gFill"></div>
+      <i class="gtick" style="left:25%"></i><i class="gtick" style="left:50%"></i><i class="gtick" style="left:75%"></i></div>
+    <p class="hint">パチンコ式。画面を<b>後ろへドラッグ</b>して離すと、<b>反対方向</b>へ机ごと発射！ 力<b>60%前後</b>で窓の近くまで届きます。壁や障害物では跳ね返り、ワックスの床はよく滑ります。窓（50m）の手前ギリギリで止めよう。</p>
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <article class="report" aria-live="polite">
+    <header class="r-head"><h2>業務日報</h2><span class="r-date" id="rDate"></span></header>
+    <div class="stamp" id="stamp"><span id="stampText"></span></div>
+    <dl class="r-rows">
+      <div><dt>営業日</dt><dd id="rDay"></dd></div>
+      <div><dt>停止位置</dt><dd class="num" id="rPos"></dd></div>
+      <div><dt>窓まで</dt><dd class="num" id="rLeft"></dd></div>
+      <div><dt>判定</dt><dd id="rTitle"></dd></div>
+      <div><dt>フロア</dt><dd id="rFloor"></dd></div>
+    </dl>
+    <p class="r-comment" id="rComment"></p>
+    <p class="r-boss" id="rBoss"></p>
+    <p class="r-best" id="rBest" hidden>自己ベスト更新</p>
+    <span class="r-seed" id="rSeed"></span>
+    <button id="again" type="button">翌日も出社する</button>
+  </article>
+</div>
+
+<script>
+/**
+ * @license
+ * Copyright 2010-2023 Three.js Authors
+ * SPDX-License-Identifier: MIT
+ */
