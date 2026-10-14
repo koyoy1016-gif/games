@@ -140,6 +140,8 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
 #feverBox.on #feverBar i{background:linear-gradient(90deg,#ff4a5c,#ffb21e,#f5ee7a,#7be08a,#5ad0ff,#b37cff);animation:hue .8s linear infinite}
 @keyframes pulse2{to{filter:brightness(1.6)}}
 .stats .stat:last-child:nth-child(even){grid-column:1/-1}
+.btn.next2{flex:none;display:block;text-align:center;text-decoration:none;background:#8fd3ff;font-size:17px}
+.go2{align-self:center;font-size:13px;font-weight:900;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
 @media (prefers-reduced-motion:reduce){#uw,#feverFx,#feverBox.on #feverLabel,#feverBox.on #feverBar i{animation:none}}
 #bigText{top:36%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-display);font-size:clamp(40px,13vw,72px);color:#fff;-webkit-text-stroke:2px var(--ink);text-shadow:0 5px 0 var(--ink);white-space:nowrap;opacity:0;transition:opacity .2s}
 #bigText.show{opacity:1;animation:pop .35s ease-out}
@@ -222,6 +224,7 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
       <p id="diffDesc"></p>
       <p id="bestLine"></p>
       <div class="btns"><button class="btn" id="startBtn">スタート</button></div>
+      <a class="go2" href="../snowboard2/">第2弾「下水道スノボ」→ トイレに流されたその先へ</a>
     </div>
   </div>
 
@@ -255,6 +258,7 @@ body{margin:0;background:var(--stage);color:var(--paper);font-family:var(--font-
       </div>
       <p class="fact">本物の食べ物は、口から出るまでに約24〜72時間かかる。胃で3〜4時間、小腸で約8時間、残りの多くは大腸でゆっくり水分を吸収されている。</p>
       <div class="btns"><button class="btn" id="againBtn">もう一度</button><button class="btn alt" id="titleBtn">タイトルへ</button></div>
+      <a class="btn next2" href="../snowboard2/">第2弾「下水道スノボ」へ →</a>
     </div>
   </div>
 </div>
