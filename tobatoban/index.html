@@ -1903,13 +1903,13 @@ const NETLIB = (() => {
           if (p.sameTab || p.kind !== 'viewer') continue;
           if (!this.peers.has(p.peer)) { this.peers.add(p.peer); this.h.join && this.h.join(p.peer); }
           const last = this.seen.get(p.peer) || {}; const pr = p.presence || {}; const nx = {};
-          for (const k in pr) { nx[k] = pr[k]; if (pr[k] && pr[k] !== last[k] && typeof pr[k] === 'object' && this.h.msg) this.h.msg(pr[k], p.peer); }
+          for (const k in pr) { nx[k] = pr[k]; const m = pr[k]; if (m && m !== last[k] && typeof m === 'object' && (!m.to || m.to === this.self) && this.h.msg) this.h.msg(m, p.peer); }
           this.seen.set(p.peer, nx);
         }
       });
     }
     on(k, f) { this.h[k] = f; }
-    send(msg) { this.pending = Object.assign(this.pending || {}, { [msg.t]: msg }); const T = now(); if (T >= this.flushAt) this.flush(); }
+    send(msg, target) { if (target) msg = Object.assign({}, msg, { to: target }); this.pending = Object.assign(this.pending || {}, { [msg.t]: msg }); const T = now(); if (T >= this.flushAt) this.flush(); }
     flush() { if (!this.pending) return; const p = this.pending; this.pending = null; this.flushAt = now() + 33; this.r.presence(p).catch(() => { }); }
     tick() { if (this.pending && now() >= this.flushAt) this.flush(); }
     clear(t) { this.r.presence({ [t]: null }).catch(() => { }); }
@@ -2051,7 +2051,7 @@ const NETLIB = (() => {
         if (this.snapAcc >= 1 / DATA.NET.snapHz) {
           this.snapAcc = 0;
           const pe = [0, 0, 0, 0]; for (const c of this.clients.values()) pe[c.slot] = c.pt;
-          this.tr.send(PROTO.encodeSnap(sim, { gid: this.gid, pe, maxBytes: this.tr.kind === 'room' ? 3900 : 0, evAge: 0.7 }));
+          this.tr.send(PROTO.encodeSnap(sim, { gid: this.gid, pe, maxBytes: this.tr.kind === 'room' ? 3000 : 0, evAge: 0.7 })); // room の presence は lb と合わせて4KiBまで
         }
       }
     }
