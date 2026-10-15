@@ -263,6 +263,16 @@ with sync_playwright() as p:
         res['server'] = {k: (v if k.startswith('meta') or k.startswith('ids') else '(save)') for k, v in store.items()}
         res['errors'] = eA + eB
         b.close(); results.append(res)
+    if SCEN in ('revive',):
+        # 救助の円（気絶した仲間のまわり）とキャンディー
+        results.append(run(p, 844, 390, 'revive', [ev(START_SOLO), wait(1.0), ev(TO_BOSS), wait(6.5),
+            ev("() => { const s=__tb.G.session.sim; s.allies.forEach(a=>a.inv=999); s.boss.testIdle = true; const a=s.allies[0], o=s.allies[1]; o.x=a.x+1.2; o.z=a.z+1.0; o.inv=0; o.act=null; s.dealToAlly(o, 99999, 'str', s.boss, {}); s.candyT=0.01; return o.st; }", 'down'),
+            wait(0.4), ev("() => __tb.G.session.sim.pickups.filter(p=>p.kind==='candy').map(p=>[+p.x.toFixed(1),+p.z.toFixed(1)])", 'candy'),
+            ev("() => { const s=__tb.G.session.sim, c=s.pickups.find(p=>p.kind==='candy'), a=s.allies[0]; c.x=a.x-1.6; c.z=a.z+1.2; return 1; }"),
+            wait(1.6), shot('95_revive_candy'), ev("() => [__tb.G.v.allies[1].st, __tb.G.v.allies[1].revP]", 'progress'),
+            wait(3.0), ev("() => { const o=__tb.G.session.sim.allies[1]; return [o.st, Math.round(o.hp/o.maxHp*100)]; }", 'after4s'),
+            ev("() => { const s=__tb.G.session.sim, a=s.allies[0], c=s.pickups.find(p=>p.kind==='candy'); a.hp=10; a.x=c.x; a.z=c.z; return 1; }"), wait(0.3),
+            ev("() => { const a=__tb.G.session.sim.allies[0]; return [a.hp, a.maxHp]; }", 'candy_heal'), shot('96_after')]))
     if SCEN in ('menus',):
         results.append(run(p, 844, 390, 'menus', [ev("() => { document.getElementById('btnGuest').click(); return 1; }"), ev("() => { document.getElementById('btnHow').click(); return 1; }"), wait(0.4), shot('40_how'), ev("() => { document.querySelector('#how [data-back]').click(); document.getElementById('btnSet').click(); return 1; }"), wait(0.3), shot('41_settings'), ev("() => { document.querySelector('#settings [data-back]').click(); document.getElementById('btnCoop').click(); return 1; }"), wait(0.3), shot('42_coop')]))
     for r in results:

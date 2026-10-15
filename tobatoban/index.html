@@ -365,7 +365,9 @@ a{color:var(--shu)}
       <span class="k kX">X</span><span>技1。長押しでためるタイプは、離すと発動</span>
       <span class="k kY">Y</span><span>技2。回避・ガード・回復などキャラごとに違う（回避がないキャラもいる）</span>
       <span class="k kS">必殺</span><span>攻撃を当てる・受けるとたまる。満タンで金色に光ったら押す</span>
-      <span class="k kP">B</span><span>気絶した仲間の近くで押し続けると救助。灯籠の近くで押すと灯す</span>
+      <span class="k kP">B</span><span>押している間は走る。灯籠の近くで押すと灯す</span>
+      <span class="k kP">救助</span><span>気絶した仲間のまわりに出る緑の円に入って4秒いると復活（HPは3分の1）。ボタンはいらない</span>
+      <span class="k kP">🍬</span><span>20秒ごとにキャンディーがどこかに出る。拾うとHPが全回復（満タンのときは拾わない）</span>
       <span class="k kP">注目</span><span>ボスや敵にカメラと向きを合わせる。もう一度押すと解除。ボスが飛ぶと外れる</span>
       <span class="k kP">画面</span><span>右側の何もない所をドラッグするとカメラを回せる。「カメラ」で後ろに戻す</span>
       <span class="k kP">仲間</span><span>ソロでは左上の仲間をタップで操作キャラを交代。回復をためている間は回復対象の指定になる</span>
@@ -503,7 +505,7 @@ a{color:var(--shu)}
   <button class="hb btnc" id="bX" aria-label="X 技1"><span class="key">X</span><span class="lb" id="lX"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cX"/></svg><span class="cdt" id="tX" hidden></span></button>
   <button class="hb btnc" id="bY" aria-label="Y 技2"><span class="key">Y</span><span class="lb" id="lY"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cY"/></svg><span class="cdt" id="tY" hidden></span></button>
   <button class="hb btnc" id="bSP" aria-label="必殺技"><span class="key" style="font-size:calc(15px*var(--ui))">必殺</span><span class="lb" id="lSP">0%</span></button>
-  <button class="hb btnc" id="bB" aria-label="B ダッシュ・救助"><span class="key">B</span><span class="lb ctxB" id="lB">走る</span></button>
+  <button class="hb btnc" id="bB" aria-label="B ダッシュ・灯す"><span class="key">B</span><span class="lb ctxB" id="lB">走る</span></button>
   <button class="hb btnc" id="bLock" aria-label="注目"><span class="key" style="font-size:calc(16px*var(--ui))">◎</span><span class="lb">注目</span></button>
   <button class="hb btnc" id="bCam" aria-label="カメラを戻す"><span class="key" style="font-size:calc(15px*var(--ui))">↺</span><span class="lb">視点</span></button>
   <button class="hb btnc" id="bMenu" aria-label="メニュー"><span class="key" style="font-size:calc(16px*var(--ui))">≡</span></button>
@@ -577,11 +579,12 @@ const SIM = {
   stamRedash: p('移動', '息切れ後に再ダッシュできる量', 30, 'points', 'proto'),
   chargeMoveMul: p('移動', 'ため中の移動速度倍率', 0.5, 'ratio', 'proto'),
   inputBuffer: p('入力', '技の入力バッファ', 0.10, 'seconds', 'proto'),
-  reviveTime: p('救助', '通常の救助所要時間', 3.0, 'seconds', 'proto', null, '原作の秒数とはしない'),
-  reviveTimeMomiji: p('救助', 'モミジ翁の救助所要時間', 2.0, 'seconds', 'proto', 24, 'パッシブの存在は資料、秒数は仮値'),
-  reviveRange: p('救助', '救助できる距離', 1.6, 'm', 'proto'),
+  reviveTime: p('救助', '気絶した仲間のまわりの円に入って復活させるまで', 4.0, 'seconds', 'proto', null, 'ボタンは不要。円に誰もいないとゲージはゆっくり減る'),
+  reviveTimeMomiji: p('救助', 'モミジ翁が円に入っているときの復活まで', 2.7, 'seconds', 'proto', 24, 'パッシブ「救助が速い」'),
+  reviveRange: p('救助', '救助の円の半径', 1.6, 'm', 'proto'),
+  reviveDrain: 0.5,
   ascendTime: p('救助', '気絶から昇天まで', 30, 'seconds', 'proto', 2, '気絶と昇天の区別は資料。秒数は仮値'),
-  reviveHp: p('救助', '救助後のHP割合', 0.25, 'ratio', 'proto'),
+  reviveHp: p('救助', '救助後のHP割合', 1 / 3, 'ratio', 'proto', null, '最大HPの3分の1'),
   reviveHpMomiji: p('救助', 'モミジ翁が救助したときのHP割合', 0.5, 'ratio', 'proto', 24),
   critRate: p('ダメージ', '通常の会心率', 0.05, 'ratio', 'proto'),
   critMul: p('ダメージ', '通常の会心倍率', 1.5, 'ratio', 'proto'),
@@ -603,6 +606,9 @@ const SIM = {
   itemStart: p('アイテム', '持ち込み数（各枠）', 2, 'count', 'proto', 2, '2枠は資料、数は仮値'),
   foodHeal: p('パッシブ', 'ブリキドンの食べ物の回復量', 0.10, 'ratio(最大HP)', 'proto', 21, '30秒ごとの生成は資料'),
   foodPeriod: p('パッシブ', 'ブリキドンの食べ物生成周期', 30, 'seconds', 'doc', 21),
+  candyPeriod: p('キャンディー', '出てくる間隔', 20, 'seconds', 'proto', null, 'いま遊んでいる場所（通り／祭り広場）のどこかにランダム'),
+  candyMax: p('キャンディー', '同時に置かれる最大数', 3, 'count', 'proto'),
+  candyHeal: p('キャンディー', '回復量', 1, 'ratio(最大HP)', 'proto', null, '全回復。HPが満タンの仲間は拾わない'),
   hitStagger: p('被弾', '重い攻撃でのけぞる時間', 0.45, 'seconds', 'proto'),
   aiMul: p('AI', 'AIが動かすキャラの能力', 0.9, 'ratio', 'proto', null, 'ちから・ようりょく・まもり・体力・移動速度をすべて90%にする（操作を交代すると元に戻る）'),
 };
@@ -1091,7 +1097,7 @@ class Sim {
     this.inputs = this.allies.map(() => Sim.emptyInput());
     this.boss = null; this.mobs = []; this.projs = []; this.hazards = []; this.traps = []; this.pickups = [];
     this.lanterns = D.STAGE.lanterns.map(([x, z], i) => ({ i, x, z, lit: false }));
-    this.lanternT = 0; this.lanternCool = 0; this.lanternOrder = 0;
+    this.lanternT = 0; this.lanternCool = 0; this.lanternOrder = 0; this.candyT = D.SIM.candyPeriod;
     this.wave = 0; this.waveSpawned = false; this.barrier = 'street'; this.introWait = false; this.result = null;
     this.test = !!o.test;
     if (o.test) this.spawnBoss(true);
@@ -1110,7 +1116,7 @@ class Sim {
       act: null, slots: { X: sw ? c.Y : c.X, Y: sw ? c.X : c.Y }, cd: { X: 0, Y: 0 }, cdMax: { X: 1, Y: 1 }, g: { X: 1, Y: 1 }, gLock: { X: false, Y: false },
       sp: 0, stam: DATA.SIM.stamMax, tired: false, dashing: false,
       buf: null, lastEv: 0, aq: 0, buffs: { str: 0, strMul: 1, def: 0, defMul: 1, taunt: 0, stealth: 0, ramune: 0 }, inv: 0,
-      kx: 0, kz: 0, threat: 0, rev: null, lan: null, items, ctx: '', hurtT: 0, foodT: DATA.SIM.foodPeriod,
+      kx: 0, kz: 0, threat: 0, rev: null, rv: 0, rvNeed: DATA.SIM.reviveTime, rvBy: -1, lan: null, items, ctx: '', hurtT: 0, foodT: DATA.SIM.foodPeriod,
       stats: { dmg: 0, revives: 0, specials: 0, downs: 0, kills: 0 }, lv: Math.max(1, pp.lv | 0 || 1), ai: { next: 0, tx: sx, tz: sz + 2, react: 0.3, hold: null, comboT: 0 },
       nick: pp.nick || '', moving: false, _act: null,
     };
@@ -1134,7 +1140,8 @@ class Sim {
     if (this.boss) this.updateBoss(dt);
     for (const m of this.mobs) this.updateMob(m, dt);
     this.mobs = this.mobs.filter(m => m.st !== 'gone');
-    this.updateProjs(dt); this.updateHazards(dt); this.updateTraps(dt); this.updatePickups(dt); this.updateLanterns(dt);
+    this.updateRevive(dt);
+    this.updateProjs(dt); this.updateHazards(dt); this.updateTraps(dt); this.updateCandy(dt); this.updatePickups(dt); this.updateLanterns(dt);
     this.updateStage(dt);
     this.cleanupEvents();
   }
@@ -1266,29 +1273,35 @@ class Sim {
   }
   bPress(a) {
     if (!this.free(a)) return;
-    const tg = this.reviveTarget(a);
-    if (tg) { a.rev = { target: tg.slot, t: 0 }; return; }
     const l = this.nearLantern(a); if (l) a.lan = { i: l.i, t: 0 };
   }
   reviveTarget(a) { let best = null, bd = DATA.SIM.reviveRange; for (const o of this.allies) if (o !== a && o.st === 'down') { const d = dist2(a.x, a.z, o.x, o.z); if (d < bd) { bd = d; best = o; } } return best; }
   nearLantern(a) { if (this.stage !== 'boss' || this.lanternCool > 0) return null; for (const l of this.lanterns) if (!l.lit && dist2(a.x, a.z, l.x, l.z) < 1.9) return l; return null; }
   updateContext(a, inp, dt) {
-    a.ctx = this.reviveTarget(a) ? 'revive' : this.nearLantern(a) ? 'lantern' : 'dash';
-    // Bを押し続けたまま近づいたときも救助・点灯を始める（移動入力がないとき）
+    a.ctx = this.nearLantern(a) ? 'lantern' : 'dash';
+    // Bを押し続けたまま近づいたときも点灯を始める（移動入力がないとき）
     if (inp.hold.B && !a.rev && !a.lan && a.ctx !== 'dash' && this.free(a) && Math.abs(inp.mx || 0) + Math.abs(inp.mz || 0) < 0.1) this.bPress(a);
-    if (a.rev) {
-      const tg = this.allies[a.rev.target];
-      if (!inp.hold.B || !tg || tg.st !== 'down' || dist2(a.x, a.z, tg.x, tg.z) > DATA.SIM.reviveRange + 0.3 || a.act) { a.rev = null; }
-      else {
-        a.rev.t += dt;
-        const need = a.c.passive === 'reviver' ? DATA.SIM.reviveTimeMomiji : DATA.SIM.reviveTime;
-        if (a.rev.t >= need) { this.revive(tg, a.c.passive === 'reviver' ? DATA.SIM.reviveHpMomiji : DATA.SIM.reviveHp, a); a.rev = null; a.stats.revives++; }
-      }
-    }
     if (a.lan) {
       const l = this.lanterns[a.lan.i];
       if (!inp.hold.B || l.lit || dist2(a.x, a.z, l.x, l.z) > 2.2 || a.act) a.lan = null;
       else { a.lan.t += dt; if (a.lan.t >= DATA.SIM.lanternHold) { this.lightLantern(l, a); a.lan = null; } }
+    }
+  }
+  /** 救助：気絶した仲間のまわりの円に、元気な仲間が入っている間ゲージがたまる（ボタン不要） */
+  updateRevive(dt) {
+    const S = DATA.SIM;
+    for (const o of this.allies) {
+      if (o.st !== 'down') { o.rv = 0; o.rvBy = -1; continue; }
+      let by = null, bd = 1e9, fast = null;
+      for (const a of this.allies) {
+        if (a === o || a.st !== 'ok') continue;
+        const d = dist2(a.x, a.z, o.x, o.z); if (d > S.reviveRange) continue;
+        if (d < bd) { bd = d; by = a; } if (a.c.passive === 'reviver') fast = a;
+      }
+      o.rvNeed = fast ? S.reviveTimeMomiji : S.reviveTime;
+      if (!by) { o.rvBy = -1; o.rv = Math.max(0, o.rv - dt * S.reviveDrain); continue; }
+      o.rvBy = by.slot; o.rv += dt;
+      if (o.rv >= o.rvNeed) { const r = fast || by; this.revive(o, fast ? S.reviveHpMomiji : S.reviveHp, r); r.stats.revives++; o.rv = 0; o.rvBy = -1; }
     }
   }
   revive(o, ratio, by) { o.st = 'ok'; o.downT = 0; o.hp = Math.max(1, Math.round(o.maxHp * ratio)); o.inv = 1.5; o.act = null; this.ev('revive', { slot: o.slot, by: by ? by.slot : -1, x: o.x, z: o.z }); }
@@ -1686,12 +1699,30 @@ class Sim {
     }
     this.traps = this.traps.filter(t => !t.dead);
   }
-  spawnPickup(kind, x, z, item) { const r = this.clampPos(x, z, x, z, 0.3); this.pickups.push({ id: this.id(), kind, x: r[0], z: r[1], item, life: 40 }); }
+  spawnPickup(kind, x, z, item, life) { const r = this.clampPos(x, z, x, z, 0.3); const pk = { id: this.id(), kind, x: r[0], z: r[1], item, life: life || 40 }; this.pickups.push(pk); return pk; }
+  /** キャンディー：20秒ごとに、いま遊んでいる場所のどこかへ1つ（取ると全回復） */
+  updateCandy(dt) {
+    const S = DATA.SIM, ST = DATA.STAGE;
+    if (this.stage !== 'street' && this.stage !== 'boss') return;
+    this.candyT -= dt; if (this.candyT > 0) return;
+    this.candyT = S.candyPeriod;
+    if (this.pickups.filter(p => p.kind === 'candy').length >= S.candyMax) return;
+    for (let k = 0; k < 12; k++) {
+      let x, z;
+      if (this.stage === 'street') { x = this.rng.range(-7, 7); z = this.rng.range(ST.streetZ0 + 4, -3); }
+      else { x = this.rng.range(-ST.plazaHalfW + 1.5, ST.plazaHalfW - 1.5); z = this.rng.range(1.5, ST.plazaZ1 - 1.5); }
+      const r = this.clampPos(x, z, x, z, 0.3);
+      if (Math.abs(r[0] - x) > 0.05 || Math.abs(r[1] - z) > 0.05) continue; // ボスの体などに重なる所は避ける
+      if (this.lanterns.some(l => dist2(l.x, l.z, x, z) < 1.5)) continue;
+      const pk = this.spawnPickup('candy', x, z, null, 1e9); this.ev('candy', { x: pk.x, z: pk.z }); return;
+    }
+  }
   updatePickups(dt) {
     for (const pk of this.pickups) {
       pk.life -= dt; if (pk.life <= 0) { pk.dead = 1; continue; }
       for (const o of this.allies) {
         if (o.st !== 'ok' || dist2(o.x, o.z, pk.x, pk.z) > 0.8) continue;
+        if (pk.kind === 'candy') { if (o.hp >= o.maxHp) continue; this.healAlly(o, Math.ceil(o.maxHp * DATA.SIM.candyHeal), null); pk.dead = 1; this.ev('eatCandy', { slot: o.slot, x: o.x, z: o.z }); break; }
         if (pk.kind === 'food') { if (o.hp >= o.maxHp) continue; this.healAlly(o, Math.round(o.maxHp * DATA.SIM.foodHeal), null); pk.dead = 1; this.ev('sfx', { s: 'eat', x: o.x, z: o.z }); break; }
         if (pk.kind === 'bag') {
           let s = o.items.find(i => i.id === pk.item && i.n < DATA.SIM.itemMax) || o.items.find(i => i.n <= 0);
@@ -1744,7 +1775,7 @@ class Sim {
     this.stage = 'intro'; this.stageT = 0; this.barrier = 'plaza';
     const spots = [[-2.4, 3.5], [2.4, 3.5], [-0.8, 2.2], [0.8, 2.2]];
     for (const a of this.allies) { a.x = a.px = spots[a.slot][0]; a.z = a.pz = spots[a.slot][1]; a.yaw = 0; a.act = null; a.rev = null; a.lan = null; if (a.st === 'down') { /* 気絶中の仲間も広場へ */ } }
-    this.projs = []; this.traps = []; this.mobs = [];
+    this.projs = []; this.traps = []; this.mobs = []; this.pickups = this.pickups.filter(p => p.z > 0.5); this.candyT = DATA.SIM.candyPeriod;
     this.spawnBoss(false);
     this.ev('stage', { k: 'intro' });
   }
@@ -2084,10 +2115,15 @@ class Sim {
       if (role === 'healer' || closest === a) {
         if (!this.inDanger(tgt.x, tgt.z, 0.5, 1.5)) {
           const d = dist2(a.x, a.z, tgt.x, tgt.z);
-          if (d < DATA.SIM.reviveRange - 0.3) { ai.stay = true; ai.holdB = true; if (!a.rev) push('B+'); ai.tx = a.x; ai.tz = a.z; return; }
+          if (d < DATA.SIM.reviveRange - 0.45) { ai.stay = true; ai.tx = a.x; ai.tz = a.z; return; } // 円の中で待つ
           ai.tx = tgt.x; ai.tz = tgt.z; return;
         }
       }
+    }
+    // 2.5) HPが減っていたら、近くのキャンディーを取りにいく
+    if (a.hp / a.maxHp < 0.5) {
+      const cd = this.pickups.filter(p => p.kind === 'candy' && dist2(a.x, a.z, p.x, p.z) < 14 && !this.inDanger(p.x, p.z, 0.5, 1.5)).sort((p, q) => dist2(a.x, a.z, p.x, p.z) - dist2(a.x, a.z, q.x, q.z))[0];
+      if (cd) { ai.tx = cd.x; ai.tz = cd.z; return; }
     }
     // 3) 回復
     if (role === 'healer') {
@@ -2215,6 +2251,7 @@ const PROTO = (() => {
   const ST = ['ok', 'down', 'gone'], ST_I = { ok: 0, down: 1, gone: 2 };
   const STAGES = ['street', 'intro', 'boss', 'won', 'lost'], STAGE_I = Object.fromEntries(STAGES.map((k, i) => [k, i]));
   const BARR = ['street', 'none', 'plaza'], BARR_I = { street: 0, none: 1, plaza: 2 };
+  const PK = ['food', 'bag', 'candy'], PK_I = { food: 0, bag: 1, candy: 2 };
   const CTX = ['dash', 'revive', 'lantern'], CTX_I = { dash: 0, revive: 1, lantern: 2, '': 0 };
   const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
   const FLPH = ['rise', 'cross', 'gap', 'land'], FLPH_I = { rise: 0, cross: 1, gap: 2, land: 3 };
@@ -2231,11 +2268,10 @@ const PROTO = (() => {
   }
   function encodeSnap(sim, o) {
     o = o || {};
-    const need = a => a.c.passive === 'reviver' ? DATA.SIM.reviveTimeMomiji : DATA.SIM.reviveTime;
     const A = sim.allies.map(a => [
       a.slot, CH_I[a.ch], r2(a.x), r2(a.z), r2(a.yaw), ST_I[a.st], a.act ? ACT_I[a.act.k] : 0, a.act ? r2(a.act.t) : 0,
       Math.round(a.hp / a.maxHp * 1000), Math.floor(a.sp), Math.round(a.stam), allyFlags(sim, a), r1(a.downT), r1(a.cd.X), r1(a.cd.Y), Math.round(a.g.X * 100), Math.round(a.g.Y * 100),
-      IT_I[a.items[0].id], a.items[0].n, IT_I[a.items[1].id], a.items[1].n, CTX_I[a.ctx], a.rev ? Math.round(a.rev.t / need(a) * 100) : 0, a.rev ? a.rev.target : -1,
+      IT_I[a.items[0].id], a.items[0].n, IT_I[a.items[1].id], a.items[1].n, CTX_I[a.ctx], a.st === 'down' ? Math.round(Math.min(1, a.rv / (a.rvNeed || DATA.SIM.reviveTime)) * 100) : 0, a.st === 'down' ? a.rvBy : -1,
       a.act && a.act.ratio != null ? Math.round(a.act.ratio * 100) : 0, a.act && a.act.slot ? (a.act.slot === 'X' ? 1 : 2) : 0, a.lastEv, r1(a.cdMax.X), r1(a.cdMax.Y),
       SK_I[a.slots.X], SK_I[a.slots.Y], a.lan ? Math.round(a.lan.t / DATA.SIM.lanternHold * 100) : 0, a.aq || 0,
       a.act && a.act.k === 'item' ? IT_I[a.act.it] : -1, a.buffs.stealth > 0 ? r1(a.buffs.stealth) : 0, a.lv || 1, a.stats.kills,
@@ -2249,7 +2285,7 @@ const PROTO = (() => {
       r2(h.kind === 'fan' ? h.r0 : h.kind === 'circle' ? h.r : h.len), r2(h.kind === 'fan' ? h.r1 : h.w || 0), r2(h.kind === 'fan' ? h.half : 0),
       r2(h.t), r2(h.warn), r2(h.act + (h.keep || 0)), FX_I[h.fx] || 0, h.brief || 0]);
     const T = sim.traps.map(t => [t.id, t.kind === 'mine' ? 1 : 0, r2(t.x), r2(t.z), t.t >= t.arm ? 1 : 0]);
-    const K = sim.pickups.map(p => [p.id, p.kind === 'food' ? 0 : 1, r2(p.x), r2(p.z), p.item ? IT_I[p.item] : -1]);
+    const K = sim.pickups.map(p => [p.id, PK_I[p.kind] || 0, r2(p.x), r2(p.z), p.item ? IT_I[p.item] : -1]);
     const L = [sim.lanterns.reduce((s, l, i) => s | (l.lit ? 1 << i : 0), 0), r1(sim.lanternT), r1(sim.lanternCool), sim.lanternOrder > sim.t ? 1 : 0];
     const evMin = sim.t - (o.evAge || 0.6);
     let E = []; let swings = 0;
@@ -2282,7 +2318,7 @@ const PROTO = (() => {
     v.projs = s.p.map(r => ({ id: r[0], kind: PJ[r[1]], x: r[2], z: r[3], yaw: r[4], team: r[5] ? 'enemy' : 'ally', owner: r[6], r: r[7] }));
     v.hz = s.h.map(r => ({ id: r[0], kind: HZ[r[1]], x: r[2], z: r[3], yaw: r[4], a: r[5], b: r[6], c: r[7], t: r[8], warn: r[9], act: r[10], fx: FX[r[11]], brief: r[12] }));
     v.traps = s.k.map(r => ({ id: r[0], kind: r[1] ? 'mine' : 'para', x: r[2], z: r[3], armed: !!r[4] }));
-    v.pickups = s.u.map(r => ({ id: r[0], kind: r[1] ? 'bag' : 'food', x: r[2], z: r[3], item: r[4] >= 0 ? DATA.ITEM_IDS[r[4]] : null }));
+    v.pickups = s.u.map(r => ({ id: r[0], kind: PK[r[1]] || 'food', x: r[2], z: r[3], item: r[4] >= 0 ? DATA.ITEM_IDS[r[4]] : null }));
     v.lan = { lit: [0, 1, 2, 3].map(i => !!(s.l[0] & (1 << i))), T: s.l[1], cool: s.l[2], order: !!s.l[3] };
     v.ev = s.e;
     return v;
@@ -3691,8 +3727,33 @@ const R = (() => {
   function pickMesh(kind) {
     const g = new THREE.Group();
     if (kind === 'food') { const o = GFX.parts.K(g, 0.2, 0.3, 0xffffff, 0, 0.3, 0); o.rotation.z = Math.PI; GFX.parts.B(g, 0.22, 0.12, 0.03, 0x1d2a1d, 0, 0.22, 0.13); }
+    else if (kind === 'candy') { // 包み紙のキャンディー（全回復）
+      const c = GFX.parts.G(g, 0, 0.55, 0); g.userData.spin = c;
+      GFX.parts.S(c, 0.2, GFX.lam(0xff5fa8, { emissive: 0xff3c8c, emissiveIntensity: 0.55 }), 0, 0, 0, 1.25, 1, 1);
+      GFX.parts.S(c, 0.205, GFX.lam(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.3 }), 0, 0, 0, 0.35, 1.02, 1.02);
+      for (const s of [-1, 1]) { const w = GFX.parts.K(c, 0.15, 0.24, GFX.lam(0xffe066, { emissive: 0xc08a00, emissiveIntensity: 0.5 }), s * 0.33, 0, 0); w.rotation.z = s * Math.PI / 2; }
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.55, 28), new THREE.MeshBasicMaterial({ color: 0xff8ac4, transparent: true, opacity: 0.6, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; g.add(ring); g.userData.ring = ring;
+    }
     else { GFX.parts.S(g, 0.2, 0xa04a6a, 0, 0.25, 0); GFX.parts.S(g, 0.07, 0xf2c94c, 0, 0.45, 0); }
     scene.add(g); return g;
+  }
+
+  /* ---------- 救助の円（気絶した仲間のまわり。中に入るとゲージがたまる） ---------- */
+  const rings = [];
+  function reviveRing(i, a, T) {
+    let o = rings[i];
+    if (!o) {
+      const R = DATA.SIM.reviveRange, g = new THREE.Group(); g.renderOrder = 4;
+      const mk = (geo, col, op) => { const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide })); m.rotation.x = -Math.PI / 2; g.add(m); return m; };
+      const fill = mk(new THREE.CircleGeometry(R, 40), 0x7dffb0, 0.12), edge = mk(new THREE.RingGeometry(R - 0.09, R, 48), 0xbfffd8, 0.85);
+      const arc = mk(new THREE.RingGeometry(R - 0.32, R - 0.12, 48, 1, Math.PI / 2, 0.001), 0x3cff8a, 0.95); arc.position.y = 0.005;
+      g.position.y = 0.05; scene.add(g); o = rings[i] = { g, fill, edge, arc, p: -1 };
+    }
+    const on = a.st === 'down'; o.g.visible = on; if (!on) return;
+    o.g.position.x = a.x; o.g.position.z = a.z;
+    const p = Math.round((a.revP || 0) * 50) / 50, someone = a.revT >= 0;
+    if (p !== o.p) { o.p = p; const R = DATA.SIM.reviveRange; o.arc.geometry.dispose(); o.arc.geometry = new THREE.RingGeometry(R - 0.32, R - 0.12, 48, 1, Math.PI / 2, Math.max(0.001, -p * Math.PI * 2)); o.arc.geometry.scale(1, 1, 1); o.arc.visible = p > 0; }
+    o.edge.material.opacity = someone ? 0.95 : 0.55 + Math.sin(T * 5) * 0.25; o.fill.material.opacity = someone ? 0.22 : 0.1;
   }
 
   /* ---------- 同期 ---------- */
@@ -3708,6 +3769,7 @@ const R = (() => {
       if (a.ch === 'kemuridama' && Math.random() < 0.15) { const f = a.yaw; emit('norm', { x: a.x + Math.sin(f) * 0.35, y: 0.5, z: a.z + Math.cos(f) * 0.35, vy: 0.5, vx: (Math.random() - 0.5) * 0.2, life: 1.2, s0: 0.12, s1: 0.4, c: 0xe6e6ea, a: 0.5 }); }
       if (a.ch === 'kagetsubame' && a.moving && Math.random() < 0.4) emit('norm', { x: a.x, y: 0.4, z: a.z, vy: 0.2, life: 0.5, s0: 0.3, s1: 0.1, c: 0x1a1c3a, a: 0.45 });
       if (a.st === 'down' && Math.random() < 0.06) emit('add', { x: a.x, y: 0.6, z: a.z, vy: 0.6, life: 1.0, s0: 0.25, s1: 0.05, c: 0xaad0ff });
+      reviveRing(i, a, T);
       if (a.strBuff && Math.random() < 0.12) emit('add', { x: a.x + (Math.random() - 0.5) * 0.6, y: 0.2, z: a.z + (Math.random() - 0.5) * 0.6, vy: 1.2, life: 0.5, s0: 0.14, s1: 0.03, c: 0xff5a4a });
     });
     // ボス
@@ -3755,7 +3817,11 @@ const R = (() => {
     for (const t of v.traps) { seenT.add(t.id); let m = traps.get(t.id); if (!m) { m = trapMesh(t.kind); traps.set(t.id, m); } m.position.set(t.x, 0, t.z); if (t.kind === 'mine' && t.armed && Math.random() < 0.4) emit('add', { x: t.x, y: 0.55, z: t.z, vy: 1, life: 0.2, s0: 0.15, s1: 0.02, c: 0xffd040 }); if (t.kind === 'para') m.children[0].material.emissiveIntensity = t.armed ? 0.6 + Math.sin(T * 10) * 0.4 : 0.1; }
     for (const [id, m] of traps) if (!seenT.has(id)) { scene.remove(m); traps.delete(id); }
     const seenK = new Set();
-    for (const p of v.pickups) { seenK.add(p.id); let m = picks.get(p.id); if (!m) { m = pickMesh(p.kind); picks.set(p.id, m); } m.position.set(p.x, 0.1 + Math.sin(T * 4 + p.id) * 0.08, p.z); m.rotation.y = T * 1.5; if (Math.random() < 0.05) emit('add', { x: p.x, y: 0.6, z: p.z, vy: 0.6, life: 0.6, s0: 0.15, s1: 0.02, c: 0xfff6c0 }); }
+    for (const p of v.pickups) {
+      seenK.add(p.id); let m = picks.get(p.id); if (!m) { m = pickMesh(p.kind); picks.set(p.id, m); }
+      if (p.kind === 'candy') { m.position.set(p.x, 0, p.z); m.userData.spin.position.y = 0.55 + Math.sin(T * 3 + p.id) * 0.1; m.userData.spin.rotation.y = T * 2; const k = 1 + Math.sin(T * 5) * 0.12; m.userData.ring.scale.set(k, k, 1); if (Math.random() < 0.12) emit('add', { x: p.x + (Math.random() - 0.5) * 0.5, y: 0.5, z: p.z + (Math.random() - 0.5) * 0.5, vy: 0.8, life: 0.7, s0: 0.16, s1: 0.02, c: 0xff9ad0 }); continue; }
+      m.position.set(p.x, 0.1 + Math.sin(T * 4 + p.id) * 0.08, p.z); m.rotation.y = T * 1.5; if (Math.random() < 0.05) emit('add', { x: p.x, y: 0.6, z: p.z, vy: 0.6, life: 0.6, s0: 0.15, s1: 0.02, c: 0xfff6c0 });
+    }
     for (const [id, m] of picks) if (!seenK.has(id)) { scene.remove(m); picks.delete(id); }
     // 先に進むべきとき：黄色い小さな矢印で行き先を示す
     {
@@ -3871,6 +3937,8 @@ const R = (() => {
       case 'revive': A('revive', e.x, e.z); burst('add', 20, { x: e.x, y: 0.2, z: e.z, spd: 1.5, up: 2.5, life: 0.8, s0: 0.3, s1: 0.03, c: 0xfff6a0 }); break;
       case 'ascend': A('ascend'); break;
       case 'item': case 'pick': A(e.type, e.x, e.z); break;
+      case 'candy': A('food', e.x, e.z); burst('add', 14, { x: e.x, y: 0.5, z: e.z, spd: 1.8, up: 2, life: 0.7, s0: 0.22, s1: 0.03, c: 0xff8ac4 }); break;
+      case 'eatCandy': A('heal', e.x, e.z); burst('add', 22, { x: e.x, y: 0.4, z: e.z, spd: 2.2, up: 2.5, life: 0.8, s0: 0.25, s1: 0.03, c: 0xff9ad0 }); break;
       case 'lantern': A('lantern', e.x, e.z); burst('add', 20, { x: e.x, y: 1.6, z: e.z, spd: 2, up: 1, life: 0.6, s0: 0.3, s1: 0.03, c: 0xffd070 }); break;
       case 'allLit': A('allLit'); break;
       case 'lanternFail': A('lanternFail'); break;
@@ -4651,7 +4719,7 @@ function onEvent(e, v) {
     case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.kind === 'sp' ? 'sp' : e.crit ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e); break;
     case 'hurt': dmgNum(e.x, 1.2, e.z, e.v, 'hurt'); if (e.slot === me) vib(25); break;
     case 'heal': if (e.v > 0) dmgNum(e.x, 1.2, e.z, '+' + e.v, 'heal'); break;
-    case 'down': notice(`P${e.slot + 1}が気絶した${e.slot === me ? '…' : '（近くでBを押し続けて救助）'}`, 'warn', 2200); if (e.slot === me && G.session.kind === 'solo') setTimeout(() => notice('仲間のカードを押すと操作を交代できます', 'info', 2600), 900); break;
+    case 'down': notice(`P${e.slot + 1}が気絶した${e.slot === me ? '…' : '（まわりの円に入って4秒で救助）'}`, 'warn', 2200); if (e.slot === me && G.session.kind === 'solo') setTimeout(() => notice('仲間のカードを押すと操作を交代できます', 'info', 2600), 900); break;
     case 'ascend': notice(`P${e.slot + 1}が昇天した（この戦闘では戻らない）`, 'warn', 2400); break;
     case 'revive': notice(`P${e.slot + 1}が復活した`, '', 1400); break;
     case 'lantern': { const n = v.lan.lit.filter(Boolean).length; notice(`灯籠 ${n}/4${n < 4 ? `（残り${Math.ceil(v.lan.T)}秒）` : ''}`, '', 1600); break; }
@@ -4661,6 +4729,8 @@ function onEvent(e, v) {
     case 'parry': if (e.slot === me) notice('受け流し成功！', 'sp', 1000); break;
     case 'item': if (e.slot === me) notice(DATA.ITEMS[e.it].nm + 'を使った', '', 1000); break;
     case 'pick': if (e.slot === me) notice(DATA.ITEMS[e.it].nm + 'を拾った', '', 1000); break;
+    case 'candy': notice('🍬 キャンディーが出た！（取ると全回復）', 'info', 1800); break;
+    case 'eatCandy': notice(e.slot === me ? '🍬 キャンディーで全回復！' : `P${e.slot + 1}がキャンディーで全回復`, '', 1400); break;
   }
 }
 /* ---------- ダメージ数字 ---------- */
@@ -4714,7 +4784,7 @@ function updateHud(v, dt) {
   }
   const spb = $('#bSP'); spb.classList.toggle('full', me.sp >= 100); $('#lSP').textContent = me.sp >= 100 ? '満タン' : me.sp + '%';
   if (me.sp >= 100 && !G.spReadyShown) { G.spReadyShown = true; AUDIO.sfx('ready'); } if (me.sp < 100) G.spReadyShown = false;
-  $('#lB').textContent = me.ctx === 'revive' ? '救助' : me.ctx === 'lantern' ? '灯す' : '走る';
+  $('#lB').textContent = me.ctx === 'lantern' ? '灯す' : '走る';
   $('#bLock').classList.toggle('on', !!G.lock);
   for (const i of [0, 1]) { const it = me.items[i], b = $('#bI' + i); b.textContent = DATA.ITEMS[it.id].icon; const n = el('span', 'n', '×' + it.n); b.appendChild(n); b.classList.toggle('empty', it.n <= 0); }
   // 時間・通信
@@ -4753,7 +4823,7 @@ function overlays(v, me) {
     const h = DATA.CHI[a.ch].h;
     put('a' + i, a.x, a.st === 'ok' ? h * 1.25 + 0.2 : 0.8, a.z, () => { const e = el('div', 'label3d'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const hp = el('div', 'mini hp'); const hi = el('i'); hp.appendChild(hi); const dt = el('span', 'downt'); const pg = el('div', 'prog'); const pgi = el('i'); pg.appendChild(pgi); e.append(dt, pg, pn, hp); return { e, hi, hp, dt, pg, pgi }; },
       o => { setBar(o.hi, a.hpR); o.hp.style.display = i === G.my || a.st !== 'ok' ? 'none' : ''; o.dt.style.display = a.st === 'down' ? '' : 'none'; o.dt.textContent = a.st === 'down' ? '気絶 ' + Math.max(0, Math.ceil(DATA.SIM.ascendTime - a.downT)) : '';
-        const reviver = v.allies.find(q => q.revT === i); o.pg.style.display = reviver || a.lanHold ? '' : 'none'; if (reviver) setBar(o.pgi, reviver.revP); else if (a.lanHold) setBar(o.pgi, a.lanP); o.e.style.opacity = a.st === 'gone' ? 0.4 : 1; });
+        const rv = a.st === 'down' && a.revP > 0; o.pg.style.display = rv || a.lanHold ? '' : 'none'; if (rv) setBar(o.pgi, a.revP); else if (a.lanHold) setBar(o.pgi, a.lanP); o.e.style.opacity = a.st === 'gone' ? 0.4 : 1; });
     if (i !== G.my && a.st !== 'gone') edge('a' + i, a.x, 0.5, a.z, a.st === 'down' ? '#ff5a3a' : pcol(i), 'P' + (i + 1));
   });
   for (const mo of v.mobs) {
@@ -4799,7 +4869,7 @@ function drawMap(v) {
   for (const h of v.hz) { if (h.kind === 'circle') { const [x, z] = P(h.x, h.z); g.strokeStyle = 'rgba(255,110,60,.9)'; g.lineWidth = 2; g.beginPath(); g.arc(x, z, Math.max(3, h.a * sc), 0, 7); g.stroke(); } if (h.kind === 'path') { const [x0, z0] = P(h.x, h.z), [x1, z1] = P(h.x + Math.sin(h.yaw) * h.a, h.z + Math.cos(h.yaw) * h.a); g.strokeStyle = 'rgba(255,90,200,.75)'; g.lineWidth = Math.max(4, h.b * sc); g.beginPath(); g.moveTo(x0, z0); g.lineTo(x1, z1); g.stroke(); } }
   // 灯籠
   DATA.STAGE.lanterns.forEach(([x, z], i) => { const [px, pz] = P(x, z); g.fillStyle = v.lan.lit[i] ? '#ffd070' : v.lan.cool > 0 ? '#666' : '#c9b48a'; g.fillRect(px - 7, pz - 7, 14, 14); g.fillStyle = '#1b1838'; g.fillText(v.lan.lit[i] ? '✓' : String(i + 1), px, pz + 1); });
-  for (const p of v.pickups) { const [x, z] = P(p.x, p.z); g.fillStyle = p.kind === 'food' ? '#fff' : '#d07aa0'; g.beginPath(); g.arc(x, z, 3.5, 0, 7); g.fill(); }
+  for (const p of v.pickups) { const [x, z] = P(p.x, p.z); if (p.kind === 'candy') { g.fillStyle = '#ff5fa8'; g.beginPath(); g.arc(x, z, 6, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); continue; } g.fillStyle = p.kind === 'food' ? '#fff' : '#d07aa0'; g.beginPath(); g.arc(x, z, 3.5, 0, 7); g.fill(); }
   for (const m of v.mobs) { if (m.dying) continue; const [x, z] = P(m.x, m.z); g.fillStyle = '#ff5a4a'; g.beginPath(); g.moveTo(x, z - 6); g.lineTo(x + 5, z); g.lineTo(x, z + 6); g.lineTo(x - 5, z); g.closePath(); g.fill(); }
   if (v.boss && v.stage !== 'street') { const b = v.boss, [x, z] = P(b.x, b.z); g.fillStyle = b.st === 'fly' ? '#ff5ac8' : '#cb4b46'; g.beginPath(); g.arc(x, z, 10, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); const fx = -Math.sin(b.yaw) * 14, fz = -Math.cos(b.yaw) * 14; g.beginPath(); g.moveTo(x, z); g.lineTo(x + fx, z + fz); g.stroke(); g.fillStyle = '#fff'; g.fillText('ボ', x, z + 1); }
   v.allies.forEach((a, i) => {

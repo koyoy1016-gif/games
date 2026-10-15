@@ -659,7 +659,7 @@ function onEvent(e, v) {
     case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.kind === 'sp' ? 'sp' : e.crit ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e); break;
     case 'hurt': dmgNum(e.x, 1.2, e.z, e.v, 'hurt'); if (e.slot === me) vib(25); break;
     case 'heal': if (e.v > 0) dmgNum(e.x, 1.2, e.z, '+' + e.v, 'heal'); break;
-    case 'down': notice(`P${e.slot + 1}が気絶した${e.slot === me ? '…' : '（近くでBを押し続けて救助）'}`, 'warn', 2200); if (e.slot === me && G.session.kind === 'solo') setTimeout(() => notice('仲間のカードを押すと操作を交代できます', 'info', 2600), 900); break;
+    case 'down': notice(`P${e.slot + 1}が気絶した${e.slot === me ? '…' : '（まわりの円に入って4秒で救助）'}`, 'warn', 2200); if (e.slot === me && G.session.kind === 'solo') setTimeout(() => notice('仲間のカードを押すと操作を交代できます', 'info', 2600), 900); break;
     case 'ascend': notice(`P${e.slot + 1}が昇天した（この戦闘では戻らない）`, 'warn', 2400); break;
     case 'revive': notice(`P${e.slot + 1}が復活した`, '', 1400); break;
     case 'lantern': { const n = v.lan.lit.filter(Boolean).length; notice(`灯籠 ${n}/4${n < 4 ? `（残り${Math.ceil(v.lan.T)}秒）` : ''}`, '', 1600); break; }
@@ -669,6 +669,8 @@ function onEvent(e, v) {
     case 'parry': if (e.slot === me) notice('受け流し成功！', 'sp', 1000); break;
     case 'item': if (e.slot === me) notice(DATA.ITEMS[e.it].nm + 'を使った', '', 1000); break;
     case 'pick': if (e.slot === me) notice(DATA.ITEMS[e.it].nm + 'を拾った', '', 1000); break;
+    case 'candy': notice('🍬 キャンディーが出た！（取ると全回復）', 'info', 1800); break;
+    case 'eatCandy': notice(e.slot === me ? '🍬 キャンディーで全回復！' : `P${e.slot + 1}がキャンディーで全回復`, '', 1400); break;
   }
 }
 /* ---------- ダメージ数字 ---------- */
@@ -722,7 +724,7 @@ function updateHud(v, dt) {
   }
   const spb = $('#bSP'); spb.classList.toggle('full', me.sp >= 100); $('#lSP').textContent = me.sp >= 100 ? '満タン' : me.sp + '%';
   if (me.sp >= 100 && !G.spReadyShown) { G.spReadyShown = true; AUDIO.sfx('ready'); } if (me.sp < 100) G.spReadyShown = false;
-  $('#lB').textContent = me.ctx === 'revive' ? '救助' : me.ctx === 'lantern' ? '灯す' : '走る';
+  $('#lB').textContent = me.ctx === 'lantern' ? '灯す' : '走る';
   $('#bLock').classList.toggle('on', !!G.lock);
   for (const i of [0, 1]) { const it = me.items[i], b = $('#bI' + i); b.textContent = DATA.ITEMS[it.id].icon; const n = el('span', 'n', '×' + it.n); b.appendChild(n); b.classList.toggle('empty', it.n <= 0); }
   // 時間・通信
@@ -761,7 +763,7 @@ function overlays(v, me) {
     const h = DATA.CHI[a.ch].h;
     put('a' + i, a.x, a.st === 'ok' ? h * 1.25 + 0.2 : 0.8, a.z, () => { const e = el('div', 'label3d'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const hp = el('div', 'mini hp'); const hi = el('i'); hp.appendChild(hi); const dt = el('span', 'downt'); const pg = el('div', 'prog'); const pgi = el('i'); pg.appendChild(pgi); e.append(dt, pg, pn, hp); return { e, hi, hp, dt, pg, pgi }; },
       o => { setBar(o.hi, a.hpR); o.hp.style.display = i === G.my || a.st !== 'ok' ? 'none' : ''; o.dt.style.display = a.st === 'down' ? '' : 'none'; o.dt.textContent = a.st === 'down' ? '気絶 ' + Math.max(0, Math.ceil(DATA.SIM.ascendTime - a.downT)) : '';
-        const reviver = v.allies.find(q => q.revT === i); o.pg.style.display = reviver || a.lanHold ? '' : 'none'; if (reviver) setBar(o.pgi, reviver.revP); else if (a.lanHold) setBar(o.pgi, a.lanP); o.e.style.opacity = a.st === 'gone' ? 0.4 : 1; });
+        const rv = a.st === 'down' && a.revP > 0; o.pg.style.display = rv || a.lanHold ? '' : 'none'; if (rv) setBar(o.pgi, a.revP); else if (a.lanHold) setBar(o.pgi, a.lanP); o.e.style.opacity = a.st === 'gone' ? 0.4 : 1; });
     if (i !== G.my && a.st !== 'gone') edge('a' + i, a.x, 0.5, a.z, a.st === 'down' ? '#ff5a3a' : pcol(i), 'P' + (i + 1));
   });
   for (const mo of v.mobs) {
@@ -807,7 +809,7 @@ function drawMap(v) {
   for (const h of v.hz) { if (h.kind === 'circle') { const [x, z] = P(h.x, h.z); g.strokeStyle = 'rgba(255,110,60,.9)'; g.lineWidth = 2; g.beginPath(); g.arc(x, z, Math.max(3, h.a * sc), 0, 7); g.stroke(); } if (h.kind === 'path') { const [x0, z0] = P(h.x, h.z), [x1, z1] = P(h.x + Math.sin(h.yaw) * h.a, h.z + Math.cos(h.yaw) * h.a); g.strokeStyle = 'rgba(255,90,200,.75)'; g.lineWidth = Math.max(4, h.b * sc); g.beginPath(); g.moveTo(x0, z0); g.lineTo(x1, z1); g.stroke(); } }
   // 灯籠
   DATA.STAGE.lanterns.forEach(([x, z], i) => { const [px, pz] = P(x, z); g.fillStyle = v.lan.lit[i] ? '#ffd070' : v.lan.cool > 0 ? '#666' : '#c9b48a'; g.fillRect(px - 7, pz - 7, 14, 14); g.fillStyle = '#1b1838'; g.fillText(v.lan.lit[i] ? '✓' : String(i + 1), px, pz + 1); });
-  for (const p of v.pickups) { const [x, z] = P(p.x, p.z); g.fillStyle = p.kind === 'food' ? '#fff' : '#d07aa0'; g.beginPath(); g.arc(x, z, 3.5, 0, 7); g.fill(); }
+  for (const p of v.pickups) { const [x, z] = P(p.x, p.z); if (p.kind === 'candy') { g.fillStyle = '#ff5fa8'; g.beginPath(); g.arc(x, z, 6, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); continue; } g.fillStyle = p.kind === 'food' ? '#fff' : '#d07aa0'; g.beginPath(); g.arc(x, z, 3.5, 0, 7); g.fill(); }
   for (const m of v.mobs) { if (m.dying) continue; const [x, z] = P(m.x, m.z); g.fillStyle = '#ff5a4a'; g.beginPath(); g.moveTo(x, z - 6); g.lineTo(x + 5, z); g.lineTo(x, z + 6); g.lineTo(x - 5, z); g.closePath(); g.fill(); }
   if (v.boss && v.stage !== 'street') { const b = v.boss, [x, z] = P(b.x, b.z); g.fillStyle = b.st === 'fly' ? '#ff5ac8' : '#cb4b46'; g.beginPath(); g.arc(x, z, 10, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); const fx = -Math.sin(b.yaw) * 14, fz = -Math.cos(b.yaw) * 14; g.beginPath(); g.moveTo(x, z); g.lineTo(x + fx, z + fz); g.stroke(); g.fillStyle = '#fff'; g.fillText('ボ', x, z + 1); }
   v.allies.forEach((a, i) => {

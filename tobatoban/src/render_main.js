@@ -151,8 +151,33 @@ const R = (() => {
   function pickMesh(kind) {
     const g = new THREE.Group();
     if (kind === 'food') { const o = GFX.parts.K(g, 0.2, 0.3, 0xffffff, 0, 0.3, 0); o.rotation.z = Math.PI; GFX.parts.B(g, 0.22, 0.12, 0.03, 0x1d2a1d, 0, 0.22, 0.13); }
+    else if (kind === 'candy') { // 包み紙のキャンディー（全回復）
+      const c = GFX.parts.G(g, 0, 0.55, 0); g.userData.spin = c;
+      GFX.parts.S(c, 0.2, GFX.lam(0xff5fa8, { emissive: 0xff3c8c, emissiveIntensity: 0.55 }), 0, 0, 0, 1.25, 1, 1);
+      GFX.parts.S(c, 0.205, GFX.lam(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.3 }), 0, 0, 0, 0.35, 1.02, 1.02);
+      for (const s of [-1, 1]) { const w = GFX.parts.K(c, 0.15, 0.24, GFX.lam(0xffe066, { emissive: 0xc08a00, emissiveIntensity: 0.5 }), s * 0.33, 0, 0); w.rotation.z = s * Math.PI / 2; }
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.55, 28), new THREE.MeshBasicMaterial({ color: 0xff8ac4, transparent: true, opacity: 0.6, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; g.add(ring); g.userData.ring = ring;
+    }
     else { GFX.parts.S(g, 0.2, 0xa04a6a, 0, 0.25, 0); GFX.parts.S(g, 0.07, 0xf2c94c, 0, 0.45, 0); }
     scene.add(g); return g;
+  }
+
+  /* ---------- 救助の円（気絶した仲間のまわり。中に入るとゲージがたまる） ---------- */
+  const rings = [];
+  function reviveRing(i, a, T) {
+    let o = rings[i];
+    if (!o) {
+      const R = DATA.SIM.reviveRange, g = new THREE.Group(); g.renderOrder = 4;
+      const mk = (geo, col, op) => { const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide })); m.rotation.x = -Math.PI / 2; g.add(m); return m; };
+      const fill = mk(new THREE.CircleGeometry(R, 40), 0x7dffb0, 0.12), edge = mk(new THREE.RingGeometry(R - 0.09, R, 48), 0xbfffd8, 0.85);
+      const arc = mk(new THREE.RingGeometry(R - 0.32, R - 0.12, 48, 1, Math.PI / 2, 0.001), 0x3cff8a, 0.95); arc.position.y = 0.005;
+      g.position.y = 0.05; scene.add(g); o = rings[i] = { g, fill, edge, arc, p: -1 };
+    }
+    const on = a.st === 'down'; o.g.visible = on; if (!on) return;
+    o.g.position.x = a.x; o.g.position.z = a.z;
+    const p = Math.round((a.revP || 0) * 50) / 50, someone = a.revT >= 0;
+    if (p !== o.p) { o.p = p; const R = DATA.SIM.reviveRange; o.arc.geometry.dispose(); o.arc.geometry = new THREE.RingGeometry(R - 0.32, R - 0.12, 48, 1, Math.PI / 2, Math.max(0.001, -p * Math.PI * 2)); o.arc.geometry.scale(1, 1, 1); o.arc.visible = p > 0; }
+    o.edge.material.opacity = someone ? 0.95 : 0.55 + Math.sin(T * 5) * 0.25; o.fill.material.opacity = someone ? 0.22 : 0.1;
   }
 
   /* ---------- 同期 ---------- */
@@ -168,6 +193,7 @@ const R = (() => {
       if (a.ch === 'kemuridama' && Math.random() < 0.15) { const f = a.yaw; emit('norm', { x: a.x + Math.sin(f) * 0.35, y: 0.5, z: a.z + Math.cos(f) * 0.35, vy: 0.5, vx: (Math.random() - 0.5) * 0.2, life: 1.2, s0: 0.12, s1: 0.4, c: 0xe6e6ea, a: 0.5 }); }
       if (a.ch === 'kagetsubame' && a.moving && Math.random() < 0.4) emit('norm', { x: a.x, y: 0.4, z: a.z, vy: 0.2, life: 0.5, s0: 0.3, s1: 0.1, c: 0x1a1c3a, a: 0.45 });
       if (a.st === 'down' && Math.random() < 0.06) emit('add', { x: a.x, y: 0.6, z: a.z, vy: 0.6, life: 1.0, s0: 0.25, s1: 0.05, c: 0xaad0ff });
+      reviveRing(i, a, T);
       if (a.strBuff && Math.random() < 0.12) emit('add', { x: a.x + (Math.random() - 0.5) * 0.6, y: 0.2, z: a.z + (Math.random() - 0.5) * 0.6, vy: 1.2, life: 0.5, s0: 0.14, s1: 0.03, c: 0xff5a4a });
     });
     // ボス
@@ -215,7 +241,11 @@ const R = (() => {
     for (const t of v.traps) { seenT.add(t.id); let m = traps.get(t.id); if (!m) { m = trapMesh(t.kind); traps.set(t.id, m); } m.position.set(t.x, 0, t.z); if (t.kind === 'mine' && t.armed && Math.random() < 0.4) emit('add', { x: t.x, y: 0.55, z: t.z, vy: 1, life: 0.2, s0: 0.15, s1: 0.02, c: 0xffd040 }); if (t.kind === 'para') m.children[0].material.emissiveIntensity = t.armed ? 0.6 + Math.sin(T * 10) * 0.4 : 0.1; }
     for (const [id, m] of traps) if (!seenT.has(id)) { scene.remove(m); traps.delete(id); }
     const seenK = new Set();
-    for (const p of v.pickups) { seenK.add(p.id); let m = picks.get(p.id); if (!m) { m = pickMesh(p.kind); picks.set(p.id, m); } m.position.set(p.x, 0.1 + Math.sin(T * 4 + p.id) * 0.08, p.z); m.rotation.y = T * 1.5; if (Math.random() < 0.05) emit('add', { x: p.x, y: 0.6, z: p.z, vy: 0.6, life: 0.6, s0: 0.15, s1: 0.02, c: 0xfff6c0 }); }
+    for (const p of v.pickups) {
+      seenK.add(p.id); let m = picks.get(p.id); if (!m) { m = pickMesh(p.kind); picks.set(p.id, m); }
+      if (p.kind === 'candy') { m.position.set(p.x, 0, p.z); m.userData.spin.position.y = 0.55 + Math.sin(T * 3 + p.id) * 0.1; m.userData.spin.rotation.y = T * 2; const k = 1 + Math.sin(T * 5) * 0.12; m.userData.ring.scale.set(k, k, 1); if (Math.random() < 0.12) emit('add', { x: p.x + (Math.random() - 0.5) * 0.5, y: 0.5, z: p.z + (Math.random() - 0.5) * 0.5, vy: 0.8, life: 0.7, s0: 0.16, s1: 0.02, c: 0xff9ad0 }); continue; }
+      m.position.set(p.x, 0.1 + Math.sin(T * 4 + p.id) * 0.08, p.z); m.rotation.y = T * 1.5; if (Math.random() < 0.05) emit('add', { x: p.x, y: 0.6, z: p.z, vy: 0.6, life: 0.6, s0: 0.15, s1: 0.02, c: 0xfff6c0 });
+    }
     for (const [id, m] of picks) if (!seenK.has(id)) { scene.remove(m); picks.delete(id); }
     // 先に進むべきとき：黄色い小さな矢印で行き先を示す
     {
@@ -331,6 +361,8 @@ const R = (() => {
       case 'revive': A('revive', e.x, e.z); burst('add', 20, { x: e.x, y: 0.2, z: e.z, spd: 1.5, up: 2.5, life: 0.8, s0: 0.3, s1: 0.03, c: 0xfff6a0 }); break;
       case 'ascend': A('ascend'); break;
       case 'item': case 'pick': A(e.type, e.x, e.z); break;
+      case 'candy': A('food', e.x, e.z); burst('add', 14, { x: e.x, y: 0.5, z: e.z, spd: 1.8, up: 2, life: 0.7, s0: 0.22, s1: 0.03, c: 0xff8ac4 }); break;
+      case 'eatCandy': A('heal', e.x, e.z); burst('add', 22, { x: e.x, y: 0.4, z: e.z, spd: 2.2, up: 2.5, life: 0.8, s0: 0.25, s1: 0.03, c: 0xff9ad0 }); break;
       case 'lantern': A('lantern', e.x, e.z); burst('add', 20, { x: e.x, y: 1.6, z: e.z, spd: 2, up: 1, life: 0.6, s0: 0.3, s1: 0.03, c: 0xffd070 }); break;
       case 'allLit': A('allLit'); break;
       case 'lanternFail': A('lanternFail'); break;

@@ -107,19 +107,44 @@ for (const [ch, n] of [['kogemaru', 10], ['hoshisuzume', 8], ['akaneten', 4], ['
   const d1 = s.dealToAlly(a, 100, 'str', s.boss, {});
   ok(a.act && a.act.k === 'guard' && d1 < d0, `ガード中の被ダメージが減る（${d0}→${d1}）`);
 }
-// 7) 気絶と昇天、救助
+// 7) 気絶と昇天、救助（円に入っているだけで4秒・HP1/3）
 {
-  const s = testSim('momiji'); const a = s.allies[0], o = s.allies[1];
+  const s = testSim('kogemaru'); const a = s.allies[0], o = s.allies[1];
+  s.allies[2].x = a.x - 9; s.allies[3].x = a.x + 9; // ほかの2人は遠くへ
   o.x = a.x + 1; o.z = a.z; o.hp = 1; s.dealToAlly(o, 999, 'str', s.boss, {});
   ok(o.st === 'down', '体力0で気絶');
-  run(s, 0, [[0, 'B+', 2.5]], 2.3);
-  ok(o.st === 'ok', `モミジ翁は約2秒で救助（${o.st}）`);
+  for (let i = 0; i < 60 * 3.8; i++) s.step();
+  ok(o.st === 'down', `円の中にいても4秒たつまでは気絶のまま（${(o.rv).toFixed(2)}秒）`);
+  for (let i = 0; i < 60 * 0.3; i++) s.step();
+  ok(o.st === 'ok' && Math.abs(o.hp - Math.round(o.maxHp / 3)) <= 1, `ボタンなし・円に4秒で復活、HPは3分の1（${o.hp}/${o.maxHp}）`);
   o.hp = 1; o.inv = 0; s.dealToAlly(o, 999, 'str', s.boss, {});
-  s.inputs[0] = SIMLIB.Sim.emptyInput(); a.x += 5;
+  for (let i = 0; i < 60 * 2; i++) s.step(); a.x += 5; for (let i = 0; i < 60 * 1; i++) s.step();
+  ok(o.st === 'down' && o.rv > 1 && o.rv < 2, `円から出るとゲージはゆっくり減る（${o.rv.toFixed(2)}）`);
   for (let i = 0; i < 60 * 31; i++) s.step();
   ok(o.st === 'gone', '30秒放置で昇天');
   s.allies[0].sp = 100; run(s, 0, [[0, 'SP']], 2);
   ok(o.st === 'gone', '昇天済みは必殺でも蘇生しない');
+}
+{
+  const s = testSim('momiji'); const a = s.allies[0], o = s.allies[1];
+  s.allies[2].x = a.x - 9; s.allies[3].x = a.x + 9;
+  o.x = a.x + 1; o.z = a.z; o.hp = 1; s.dealToAlly(o, 999, 'str', s.boss, {});
+  for (let i = 0; i < 60 * 2.8; i++) s.step();
+  ok(o.st === 'ok' && a.stats.revives === 1, `モミジ翁が円に入ると約2.7秒で救助（${o.st}・HP${Math.round(o.hp / o.maxHp * 100)}%）`);
+}
+// 7.5) キャンディー：20秒ごとに広場のどこかへ。拾うと全回復、満タンなら拾わない
+{
+  const s = testSim('kogemaru', { barrier: 'plaza' }); const a = s.allies[0]; // 本番のボス戦と同じく結界は広場側
+  s.candyT = 0.01; s.step();
+  const c = s.pickups.find(p => p.kind === 'candy'), ST = DATA.STAGE;
+  ok(!!c && Math.abs(c.x) <= ST.plazaHalfW && c.z >= 0 && c.z <= ST.plazaZ1, `キャンディーが広場の中に出る（${c && c.x.toFixed(1)}, ${c && c.z.toFixed(1)}）`);
+  ok(s.candyT > 19.9, `次は20秒後（${s.candyT.toFixed(1)}）`);
+  a.hp = a.maxHp; const ox = a.x, oz = a.z; a.x = c.x; a.z = c.z; s.step();
+  ok(s.pickups.includes(c), 'HP満タンのときは拾わない');
+  a.hp = 10; s.step();
+  ok(a.hp === a.maxHp && !s.pickups.includes(c), `取ると全回復（${a.hp}/${a.maxHp}）`);
+  s.candyT = 0.01; for (let i = 0; i < 5; i++) { s.candyT = 0.01; s.step(); }
+  ok(s.pickups.filter(p => p.kind === 'candy').length === DATA.SIM.candyMax, `同時に置かれるのは${DATA.SIM.candyMax}個まで`);
 }
 // 8) 接触してから当たる（離れた所からの空振りは当たらない）
 {

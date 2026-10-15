@@ -55,7 +55,7 @@ class Sim {
     this.inputs = this.allies.map(() => Sim.emptyInput());
     this.boss = null; this.mobs = []; this.projs = []; this.hazards = []; this.traps = []; this.pickups = [];
     this.lanterns = D.STAGE.lanterns.map(([x, z], i) => ({ i, x, z, lit: false }));
-    this.lanternT = 0; this.lanternCool = 0; this.lanternOrder = 0;
+    this.lanternT = 0; this.lanternCool = 0; this.lanternOrder = 0; this.candyT = D.SIM.candyPeriod;
     this.wave = 0; this.waveSpawned = false; this.barrier = 'street'; this.introWait = false; this.result = null;
     this.test = !!o.test;
     if (o.test) this.spawnBoss(true);
@@ -74,7 +74,7 @@ class Sim {
       act: null, slots: { X: sw ? c.Y : c.X, Y: sw ? c.X : c.Y }, cd: { X: 0, Y: 0 }, cdMax: { X: 1, Y: 1 }, g: { X: 1, Y: 1 }, gLock: { X: false, Y: false },
       sp: 0, stam: DATA.SIM.stamMax, tired: false, dashing: false,
       buf: null, lastEv: 0, aq: 0, buffs: { str: 0, strMul: 1, def: 0, defMul: 1, taunt: 0, stealth: 0, ramune: 0 }, inv: 0,
-      kx: 0, kz: 0, threat: 0, rev: null, lan: null, items, ctx: '', hurtT: 0, foodT: DATA.SIM.foodPeriod,
+      kx: 0, kz: 0, threat: 0, rev: null, rv: 0, rvNeed: DATA.SIM.reviveTime, rvBy: -1, lan: null, items, ctx: '', hurtT: 0, foodT: DATA.SIM.foodPeriod,
       stats: { dmg: 0, revives: 0, specials: 0, downs: 0, kills: 0 }, lv: Math.max(1, pp.lv | 0 || 1), ai: { next: 0, tx: sx, tz: sz + 2, react: 0.3, hold: null, comboT: 0 },
       nick: pp.nick || '', moving: false, _act: null,
     };
@@ -98,7 +98,8 @@ class Sim {
     if (this.boss) this.updateBoss(dt);
     for (const m of this.mobs) this.updateMob(m, dt);
     this.mobs = this.mobs.filter(m => m.st !== 'gone');
-    this.updateProjs(dt); this.updateHazards(dt); this.updateTraps(dt); this.updatePickups(dt); this.updateLanterns(dt);
+    this.updateRevive(dt);
+    this.updateProjs(dt); this.updateHazards(dt); this.updateTraps(dt); this.updateCandy(dt); this.updatePickups(dt); this.updateLanterns(dt);
     this.updateStage(dt);
     this.cleanupEvents();
   }
@@ -230,29 +231,35 @@ class Sim {
   }
   bPress(a) {
     if (!this.free(a)) return;
-    const tg = this.reviveTarget(a);
-    if (tg) { a.rev = { target: tg.slot, t: 0 }; return; }
     const l = this.nearLantern(a); if (l) a.lan = { i: l.i, t: 0 };
   }
   reviveTarget(a) { let best = null, bd = DATA.SIM.reviveRange; for (const o of this.allies) if (o !== a && o.st === 'down') { const d = dist2(a.x, a.z, o.x, o.z); if (d < bd) { bd = d; best = o; } } return best; }
   nearLantern(a) { if (this.stage !== 'boss' || this.lanternCool > 0) return null; for (const l of this.lanterns) if (!l.lit && dist2(a.x, a.z, l.x, l.z) < 1.9) return l; return null; }
   updateContext(a, inp, dt) {
-    a.ctx = this.reviveTarget(a) ? 'revive' : this.nearLantern(a) ? 'lantern' : 'dash';
-    // Bを押し続けたまま近づいたときも救助・点灯を始める（移動入力がないとき）
+    a.ctx = this.nearLantern(a) ? 'lantern' : 'dash';
+    // Bを押し続けたまま近づいたときも点灯を始める（移動入力がないとき）
     if (inp.hold.B && !a.rev && !a.lan && a.ctx !== 'dash' && this.free(a) && Math.abs(inp.mx || 0) + Math.abs(inp.mz || 0) < 0.1) this.bPress(a);
-    if (a.rev) {
-      const tg = this.allies[a.rev.target];
-      if (!inp.hold.B || !tg || tg.st !== 'down' || dist2(a.x, a.z, tg.x, tg.z) > DATA.SIM.reviveRange + 0.3 || a.act) { a.rev = null; }
-      else {
-        a.rev.t += dt;
-        const need = a.c.passive === 'reviver' ? DATA.SIM.reviveTimeMomiji : DATA.SIM.reviveTime;
-        if (a.rev.t >= need) { this.revive(tg, a.c.passive === 'reviver' ? DATA.SIM.reviveHpMomiji : DATA.SIM.reviveHp, a); a.rev = null; a.stats.revives++; }
-      }
-    }
     if (a.lan) {
       const l = this.lanterns[a.lan.i];
       if (!inp.hold.B || l.lit || dist2(a.x, a.z, l.x, l.z) > 2.2 || a.act) a.lan = null;
       else { a.lan.t += dt; if (a.lan.t >= DATA.SIM.lanternHold) { this.lightLantern(l, a); a.lan = null; } }
+    }
+  }
+  /** 救助：気絶した仲間のまわりの円に、元気な仲間が入っている間ゲージがたまる（ボタン不要） */
+  updateRevive(dt) {
+    const S = DATA.SIM;
+    for (const o of this.allies) {
+      if (o.st !== 'down') { o.rv = 0; o.rvBy = -1; continue; }
+      let by = null, bd = 1e9, fast = null;
+      for (const a of this.allies) {
+        if (a === o || a.st !== 'ok') continue;
+        const d = dist2(a.x, a.z, o.x, o.z); if (d > S.reviveRange) continue;
+        if (d < bd) { bd = d; by = a; } if (a.c.passive === 'reviver') fast = a;
+      }
+      o.rvNeed = fast ? S.reviveTimeMomiji : S.reviveTime;
+      if (!by) { o.rvBy = -1; o.rv = Math.max(0, o.rv - dt * S.reviveDrain); continue; }
+      o.rvBy = by.slot; o.rv += dt;
+      if (o.rv >= o.rvNeed) { const r = fast || by; this.revive(o, fast ? S.reviveHpMomiji : S.reviveHp, r); r.stats.revives++; o.rv = 0; o.rvBy = -1; }
     }
   }
   revive(o, ratio, by) { o.st = 'ok'; o.downT = 0; o.hp = Math.max(1, Math.round(o.maxHp * ratio)); o.inv = 1.5; o.act = null; this.ev('revive', { slot: o.slot, by: by ? by.slot : -1, x: o.x, z: o.z }); }
@@ -650,12 +657,30 @@ class Sim {
     }
     this.traps = this.traps.filter(t => !t.dead);
   }
-  spawnPickup(kind, x, z, item) { const r = this.clampPos(x, z, x, z, 0.3); this.pickups.push({ id: this.id(), kind, x: r[0], z: r[1], item, life: 40 }); }
+  spawnPickup(kind, x, z, item, life) { const r = this.clampPos(x, z, x, z, 0.3); const pk = { id: this.id(), kind, x: r[0], z: r[1], item, life: life || 40 }; this.pickups.push(pk); return pk; }
+  /** キャンディー：20秒ごとに、いま遊んでいる場所のどこかへ1つ（取ると全回復） */
+  updateCandy(dt) {
+    const S = DATA.SIM, ST = DATA.STAGE;
+    if (this.stage !== 'street' && this.stage !== 'boss') return;
+    this.candyT -= dt; if (this.candyT > 0) return;
+    this.candyT = S.candyPeriod;
+    if (this.pickups.filter(p => p.kind === 'candy').length >= S.candyMax) return;
+    for (let k = 0; k < 12; k++) {
+      let x, z;
+      if (this.stage === 'street') { x = this.rng.range(-7, 7); z = this.rng.range(ST.streetZ0 + 4, -3); }
+      else { x = this.rng.range(-ST.plazaHalfW + 1.5, ST.plazaHalfW - 1.5); z = this.rng.range(1.5, ST.plazaZ1 - 1.5); }
+      const r = this.clampPos(x, z, x, z, 0.3);
+      if (Math.abs(r[0] - x) > 0.05 || Math.abs(r[1] - z) > 0.05) continue; // ボスの体などに重なる所は避ける
+      if (this.lanterns.some(l => dist2(l.x, l.z, x, z) < 1.5)) continue;
+      const pk = this.spawnPickup('candy', x, z, null, 1e9); this.ev('candy', { x: pk.x, z: pk.z }); return;
+    }
+  }
   updatePickups(dt) {
     for (const pk of this.pickups) {
       pk.life -= dt; if (pk.life <= 0) { pk.dead = 1; continue; }
       for (const o of this.allies) {
         if (o.st !== 'ok' || dist2(o.x, o.z, pk.x, pk.z) > 0.8) continue;
+        if (pk.kind === 'candy') { if (o.hp >= o.maxHp) continue; this.healAlly(o, Math.ceil(o.maxHp * DATA.SIM.candyHeal), null); pk.dead = 1; this.ev('eatCandy', { slot: o.slot, x: o.x, z: o.z }); break; }
         if (pk.kind === 'food') { if (o.hp >= o.maxHp) continue; this.healAlly(o, Math.round(o.maxHp * DATA.SIM.foodHeal), null); pk.dead = 1; this.ev('sfx', { s: 'eat', x: o.x, z: o.z }); break; }
         if (pk.kind === 'bag') {
           let s = o.items.find(i => i.id === pk.item && i.n < DATA.SIM.itemMax) || o.items.find(i => i.n <= 0);
@@ -708,7 +733,7 @@ class Sim {
     this.stage = 'intro'; this.stageT = 0; this.barrier = 'plaza';
     const spots = [[-2.4, 3.5], [2.4, 3.5], [-0.8, 2.2], [0.8, 2.2]];
     for (const a of this.allies) { a.x = a.px = spots[a.slot][0]; a.z = a.pz = spots[a.slot][1]; a.yaw = 0; a.act = null; a.rev = null; a.lan = null; if (a.st === 'down') { /* 気絶中の仲間も広場へ */ } }
-    this.projs = []; this.traps = []; this.mobs = [];
+    this.projs = []; this.traps = []; this.mobs = []; this.pickups = this.pickups.filter(p => p.z > 0.5); this.candyT = DATA.SIM.candyPeriod;
     this.spawnBoss(false);
     this.ev('stage', { k: 'intro' });
   }
@@ -1048,10 +1073,15 @@ class Sim {
       if (role === 'healer' || closest === a) {
         if (!this.inDanger(tgt.x, tgt.z, 0.5, 1.5)) {
           const d = dist2(a.x, a.z, tgt.x, tgt.z);
-          if (d < DATA.SIM.reviveRange - 0.3) { ai.stay = true; ai.holdB = true; if (!a.rev) push('B+'); ai.tx = a.x; ai.tz = a.z; return; }
+          if (d < DATA.SIM.reviveRange - 0.45) { ai.stay = true; ai.tx = a.x; ai.tz = a.z; return; } // 円の中で待つ
           ai.tx = tgt.x; ai.tz = tgt.z; return;
         }
       }
+    }
+    // 2.5) HPが減っていたら、近くのキャンディーを取りにいく
+    if (a.hp / a.maxHp < 0.5) {
+      const cd = this.pickups.filter(p => p.kind === 'candy' && dist2(a.x, a.z, p.x, p.z) < 14 && !this.inDanger(p.x, p.z, 0.5, 1.5)).sort((p, q) => dist2(a.x, a.z, p.x, p.z) - dist2(a.x, a.z, q.x, q.z))[0];
+      if (cd) { ai.tx = cd.x; ai.tz = cd.z; return; }
     }
     // 3) 回復
     if (role === 'healer') {

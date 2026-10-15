@@ -11,6 +11,7 @@ const PROTO = (() => {
   const ST = ['ok', 'down', 'gone'], ST_I = { ok: 0, down: 1, gone: 2 };
   const STAGES = ['street', 'intro', 'boss', 'won', 'lost'], STAGE_I = Object.fromEntries(STAGES.map((k, i) => [k, i]));
   const BARR = ['street', 'none', 'plaza'], BARR_I = { street: 0, none: 1, plaza: 2 };
+  const PK = ['food', 'bag', 'candy'], PK_I = { food: 0, bag: 1, candy: 2 };
   const CTX = ['dash', 'revive', 'lantern'], CTX_I = { dash: 0, revive: 1, lantern: 2, '': 0 };
   const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
   const FLPH = ['rise', 'cross', 'gap', 'land'], FLPH_I = { rise: 0, cross: 1, gap: 2, land: 3 };
@@ -27,11 +28,10 @@ const PROTO = (() => {
   }
   function encodeSnap(sim, o) {
     o = o || {};
-    const need = a => a.c.passive === 'reviver' ? DATA.SIM.reviveTimeMomiji : DATA.SIM.reviveTime;
     const A = sim.allies.map(a => [
       a.slot, CH_I[a.ch], r2(a.x), r2(a.z), r2(a.yaw), ST_I[a.st], a.act ? ACT_I[a.act.k] : 0, a.act ? r2(a.act.t) : 0,
       Math.round(a.hp / a.maxHp * 1000), Math.floor(a.sp), Math.round(a.stam), allyFlags(sim, a), r1(a.downT), r1(a.cd.X), r1(a.cd.Y), Math.round(a.g.X * 100), Math.round(a.g.Y * 100),
-      IT_I[a.items[0].id], a.items[0].n, IT_I[a.items[1].id], a.items[1].n, CTX_I[a.ctx], a.rev ? Math.round(a.rev.t / need(a) * 100) : 0, a.rev ? a.rev.target : -1,
+      IT_I[a.items[0].id], a.items[0].n, IT_I[a.items[1].id], a.items[1].n, CTX_I[a.ctx], a.st === 'down' ? Math.round(Math.min(1, a.rv / (a.rvNeed || DATA.SIM.reviveTime)) * 100) : 0, a.st === 'down' ? a.rvBy : -1,
       a.act && a.act.ratio != null ? Math.round(a.act.ratio * 100) : 0, a.act && a.act.slot ? (a.act.slot === 'X' ? 1 : 2) : 0, a.lastEv, r1(a.cdMax.X), r1(a.cdMax.Y),
       SK_I[a.slots.X], SK_I[a.slots.Y], a.lan ? Math.round(a.lan.t / DATA.SIM.lanternHold * 100) : 0, a.aq || 0,
       a.act && a.act.k === 'item' ? IT_I[a.act.it] : -1, a.buffs.stealth > 0 ? r1(a.buffs.stealth) : 0, a.lv || 1, a.stats.kills,
@@ -45,7 +45,7 @@ const PROTO = (() => {
       r2(h.kind === 'fan' ? h.r0 : h.kind === 'circle' ? h.r : h.len), r2(h.kind === 'fan' ? h.r1 : h.w || 0), r2(h.kind === 'fan' ? h.half : 0),
       r2(h.t), r2(h.warn), r2(h.act + (h.keep || 0)), FX_I[h.fx] || 0, h.brief || 0]);
     const T = sim.traps.map(t => [t.id, t.kind === 'mine' ? 1 : 0, r2(t.x), r2(t.z), t.t >= t.arm ? 1 : 0]);
-    const K = sim.pickups.map(p => [p.id, p.kind === 'food' ? 0 : 1, r2(p.x), r2(p.z), p.item ? IT_I[p.item] : -1]);
+    const K = sim.pickups.map(p => [p.id, PK_I[p.kind] || 0, r2(p.x), r2(p.z), p.item ? IT_I[p.item] : -1]);
     const L = [sim.lanterns.reduce((s, l, i) => s | (l.lit ? 1 << i : 0), 0), r1(sim.lanternT), r1(sim.lanternCool), sim.lanternOrder > sim.t ? 1 : 0];
     const evMin = sim.t - (o.evAge || 0.6);
     let E = []; let swings = 0;
@@ -78,7 +78,7 @@ const PROTO = (() => {
     v.projs = s.p.map(r => ({ id: r[0], kind: PJ[r[1]], x: r[2], z: r[3], yaw: r[4], team: r[5] ? 'enemy' : 'ally', owner: r[6], r: r[7] }));
     v.hz = s.h.map(r => ({ id: r[0], kind: HZ[r[1]], x: r[2], z: r[3], yaw: r[4], a: r[5], b: r[6], c: r[7], t: r[8], warn: r[9], act: r[10], fx: FX[r[11]], brief: r[12] }));
     v.traps = s.k.map(r => ({ id: r[0], kind: r[1] ? 'mine' : 'para', x: r[2], z: r[3], armed: !!r[4] }));
-    v.pickups = s.u.map(r => ({ id: r[0], kind: r[1] ? 'bag' : 'food', x: r[2], z: r[3], item: r[4] >= 0 ? DATA.ITEM_IDS[r[4]] : null }));
+    v.pickups = s.u.map(r => ({ id: r[0], kind: PK[r[1]] || 'food', x: r[2], z: r[3], item: r[4] >= 0 ? DATA.ITEM_IDS[r[4]] : null }));
     v.lan = { lit: [0, 1, 2, 3].map(i => !!(s.l[0] & (1 << i))), T: s.l[1], cool: s.l[2], order: !!s.l[3] };
     v.ev = s.e;
     return v;

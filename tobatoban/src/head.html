@@ -365,7 +365,9 @@ a{color:var(--shu)}
       <span class="k kX">X</span><span>技1。長押しでためるタイプは、離すと発動</span>
       <span class="k kY">Y</span><span>技2。回避・ガード・回復などキャラごとに違う（回避がないキャラもいる）</span>
       <span class="k kS">必殺</span><span>攻撃を当てる・受けるとたまる。満タンで金色に光ったら押す</span>
-      <span class="k kP">B</span><span>気絶した仲間の近くで押し続けると救助。灯籠の近くで押すと灯す</span>
+      <span class="k kP">B</span><span>押している間は走る。灯籠の近くで押すと灯す</span>
+      <span class="k kP">救助</span><span>気絶した仲間のまわりに出る緑の円に入って4秒いると復活（HPは3分の1）。ボタンはいらない</span>
+      <span class="k kP">🍬</span><span>20秒ごとにキャンディーがどこかに出る。拾うとHPが全回復（満タンのときは拾わない）</span>
       <span class="k kP">注目</span><span>ボスや敵にカメラと向きを合わせる。もう一度押すと解除。ボスが飛ぶと外れる</span>
       <span class="k kP">画面</span><span>右側の何もない所をドラッグするとカメラを回せる。「カメラ」で後ろに戻す</span>
       <span class="k kP">仲間</span><span>ソロでは左上の仲間をタップで操作キャラを交代。回復をためている間は回復対象の指定になる</span>
@@ -503,7 +505,7 @@ a{color:var(--shu)}
   <button class="hb btnc" id="bX" aria-label="X 技1"><span class="key">X</span><span class="lb" id="lX"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cX"/></svg><span class="cdt" id="tX" hidden></span></button>
   <button class="hb btnc" id="bY" aria-label="Y 技2"><span class="key">Y</span><span class="lb" id="lY"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cY"/></svg><span class="cdt" id="tY" hidden></span></button>
   <button class="hb btnc" id="bSP" aria-label="必殺技"><span class="key" style="font-size:calc(15px*var(--ui))">必殺</span><span class="lb" id="lSP">0%</span></button>
-  <button class="hb btnc" id="bB" aria-label="B ダッシュ・救助"><span class="key">B</span><span class="lb ctxB" id="lB">走る</span></button>
+  <button class="hb btnc" id="bB" aria-label="B ダッシュ・灯す"><span class="key">B</span><span class="lb ctxB" id="lB">走る</span></button>
   <button class="hb btnc" id="bLock" aria-label="注目"><span class="key" style="font-size:calc(16px*var(--ui))">◎</span><span class="lb">注目</span></button>
   <button class="hb btnc" id="bCam" aria-label="カメラを戻す"><span class="key" style="font-size:calc(15px*var(--ui))">↺</span><span class="lb">視点</span></button>
   <button class="hb btnc" id="bMenu" aria-label="メニュー"><span class="key" style="font-size:calc(16px*var(--ui))">≡</span></button>
