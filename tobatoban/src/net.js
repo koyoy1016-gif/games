@@ -89,7 +89,7 @@ const NETLIB = (() => {
       this.tr = o.transport || null; this.kind = this.tr ? 'host' : 'solo'; this.code = o.code || '';
       this.local = new LocalInput(); this.mySlot = 0; this.sim = null; this.gid = 0; this.acc = 0; this.snapAcc = 0;
       this.views = []; this.clients = new Map(); this.notices = []; this.timeScale = 1; this.paused = false;
-      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'] }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), phase: 'lobby' };
+      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'], lv: o.lv || 1 }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), lvs: o.lvs || {}, phase: 'lobby' };
       this.lastLobbySend = 0;
       if (this.tr) {
         this.tr.on('msg', (m, from) => this.onMsg(m, from));
@@ -112,7 +112,7 @@ const NETLIB = (() => {
         c.lastSeen = now();
         const ch = DATA.CHI[m.ch] ? m.ch : 'kogemaru';
         const items = Array.isArray(m.items) ? m.items.filter(i => DATA.ITEMS[i]).slice(0, 2) : ['onigiri', 'ramune']; while (items.length < 2) items.push('onigiri');
-        this.lobby.slots[c.slot] = { who: 'peer', peer: from, nick: String(m.nick || '').slice(0, 10) || ('P' + (c.slot + 1)), ch, swap: !!m.swap, items, ready: !!m.ready };
+        this.lobby.slots[c.slot] = { who: 'peer', peer: from, nick: String(m.nick || '').slice(0, 10) || ('P' + (c.slot + 1)), ch, swap: !!m.swap, items, ready: !!m.ready, lv: Math.min(99, Math.max(1, m.lv | 0 || 1)) };
         this.dirtyLobby = true;
       } else if (m.t === 'in') {
         const c = this.clients.get(from); if (!c) return;
@@ -134,13 +134,13 @@ const NETLIB = (() => {
       this.dirtyLobby = true;
     }
     notice(s) { this.notices.push({ s, t: now() }); }
-    lobbyMsg() { return { t: 'lb', v: VERSION, code: this.code, diff: this.lobby.diff, phase: this.lobby.phase, gid: this.gid, slots: this.lobby.slots.map(s => s ? { who: s.who, peer: s.peer, nick: s.nick, ch: s.ch, swap: s.swap, items: s.items } : null), ai: this.aiFill() }; }
+    lobbyMsg() { return { t: 'lb', v: VERSION, code: this.code, diff: this.lobby.diff, phase: this.lobby.phase, gid: this.gid, slots: this.lobby.slots.map(s => s ? { who: s.who, peer: s.peer, nick: s.nick, ch: s.ch, swap: s.swap, items: s.items, lv: s.lv || 1 } : null), ai: this.aiFill(), aiLv: this.aiFill().map(c => c ? (this.lobby.lvs[c] || 1) : 0) }; }
     aiFill() { const taken = new Set(this.lobby.slots.filter(Boolean).map(s => s.ch)); const pool = this.lobby.aiParty.concat(DATA.CHARS.map(c => c.id)).filter((c, i, a) => a.indexOf(c) === i && !taken.has(c)); return this.lobby.slots.map(s => s ? null : pool.shift()); }
     setMine(o) { Object.assign(this.lobby.slots[0], o); this.dirtyLobby = true; }
     startGame(o) {
       o = o || {};
       const fill = this.aiFill();
-      const party = this.lobby.slots.map((s, i) => s ? { ch: s.ch, swap: s.swap, items: s.items, nick: s.nick } : { ch: fill[i], swap: false, items: ['onigiri', 'ramune'], nick: 'AI' });
+      const party = this.lobby.slots.map((s, i) => s ? { ch: s.ch, swap: s.swap, items: s.items, nick: s.nick, lv: s.lv || 1 } : { ch: fill[i], swap: false, items: ['onigiri', 'ramune'], nick: 'AI', lv: this.lobby.lvs[fill[i]] || 1 });
       if (o.party) o.party.forEach((p, i) => { if (!this.lobby.slots[i] || i === 0) Object.assign(party[i], p); });
       this.gid++; this.lobby.phase = 'game';
       this.sim = new Sim({ party, diff: this.lobby.diff, seed: (Math.random() * 1e9) | 0 });

@@ -30,6 +30,8 @@ with sync_playwright() as p:
         pg.goto(f'http://127.0.0.1:{port}/index.html'); pg.wait_for_function('window.__tb && __tb.G.mode === "title"', timeout=30000)
         time.sleep(3.2)
         tag = f'{w}x{h}_{rotdir}'
+        pg.screenshot(path=os.path.join(OUT, f'59_login_{tag}.png'))
+        x, y = center(pg, '#btnGuest'); pg.mouse.click(x, y); time.sleep(0.5)  # 毎回出るログイン画面（回転した画面で本当に押す）
         info = pg.evaluate("({rot: __tb.R && 0, view: [document.getElementById('app').style.width, document.getElementById('app').style.height, document.getElementById('app').style.transform]})")
         pg.screenshot(path=os.path.join(OUT, f'60_title_{tag}.png'))
         # ボタンを本当に押す（画面座標で）

@@ -6,9 +6,9 @@ import os
 d = os.path.dirname(os.path.abspath(__file__))
 r = lambda n: open(os.path.join(d, n), encoding='utf-8').read()
 THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js'
-parts = ['data.js', 'sim.js', 'proto.js', 'net.js', 'audio.js', 'render_world.js', 'render_models.js', 'render_main.js', 'ui.js']
+parts = ['data.js', 'save.js', 'sim.js', 'proto.js', 'net.js', 'audio.js', 'render_world.js', 'render_models.js', 'render_main.js', 'ui.js']
 js = "import * as THREE from '%s';\n" % THREE_URL + '\n'.join('/* ===== %s ===== */\n' % p + r(p) for p in parts)
-js += "\nwindow.__tb = { G, R, DATA, SIMLIB, PROTO, NETLIB, AUDIO, GFX };\n"
+js += "\nwindow.__tb = { G, R, DATA, SAVE, SIMLIB, PROTO, NETLIB, AUDIO, GFX };\n"
 out = r('head.html') + '<script type="module">\n' + js + '\n</script>\n</body>\n</html>\n'
 open(os.path.join(d, '..', 'index.html'), 'w', encoding='utf-8').write(out)
 print('built index.html', len(out), 'bytes')

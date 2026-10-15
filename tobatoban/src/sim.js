@@ -75,7 +75,7 @@ class Sim {
       sp: 0, stam: DATA.SIM.stamMax, tired: false, dashing: false,
       buf: null, lastEv: 0, aq: 0, buffs: { str: 0, strMul: 1, def: 0, defMul: 1, taunt: 0, stealth: 0, ramune: 0 }, inv: 0,
       kx: 0, kz: 0, threat: 0, rev: null, lan: null, items, ctx: '', hurtT: 0, foodT: DATA.SIM.foodPeriod,
-      stats: { dmg: 0, revives: 0, specials: 0, downs: 0 }, ai: { next: 0, tx: sx, tz: sz + 2, react: 0.3, hold: null, comboT: 0 },
+      stats: { dmg: 0, revives: 0, specials: 0, downs: 0, kills: 0 }, lv: Math.max(1, pp.lv | 0 || 1), ai: { next: 0, tx: sx, tz: sz + 2, react: 0.3, hold: null, comboT: 0 },
       nick: pp.nick || '', moving: false, _act: null,
     };
     const sim = this;
@@ -753,6 +753,7 @@ class Sim {
   }
   mobDie(m, by) {
     m.st = 'dying'; m.dieT = 0.6; this.ev('mobdie', { x: m.x, z: m.z });
+    if (by && by.stats) by.stats.kills++; // セーブの記録（倒した敵の数）
     if (this.rng.next() < 0.4) this.spawnPickup('bag', m.x, m.z, DATA.ITEM_IDS[(this.rng.next() * DATA.ITEM_IDS.length) | 0]);
   }
 

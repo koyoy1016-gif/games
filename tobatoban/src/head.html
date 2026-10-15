@@ -63,7 +63,32 @@ p{margin:0;line-height:1.7;font-size:14px}
 .btn[disabled]{opacity:.45;pointer-events:none}
 .chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 12px;font-weight:900;font-size:13px;border:2px solid var(--ink);background:#fff;color:var(--ink);min-height:40px}
 .chip.on{background:var(--ink);color:var(--paper)}
-input[type=text]{font:900 18px var(--f-body);padding:11px 14px;border:2.5px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);width:100%;min-width:0}
+input[type=text],input[type=password],textarea{font:900 18px var(--f-body);padding:11px 14px;border:2.5px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);width:100%;min-width:0}
+textarea{font:900 15px ui-monospace,Menlo,monospace;letter-spacing:.06em;resize:none}
+/* セーブ・アカウント */
+.acct-bar{display:flex;align-items:center;gap:8px;background:#fff6e2;border:2px dashed rgba(228,87,46,.55);border-radius:12px;padding:5px 6px 5px 10px;min-width:0}
+.acct-bar .who{flex:1;min-width:0;font-weight:900;font-size:13px;line-height:1.3;overflow:hidden;text-overflow:ellipsis}
+.acct-bar .who small{display:block;font-size:11px;color:#5d5570;font-weight:700}
+.acct-bar .chip{min-height:44px;padding:4px 12px;flex:none}
+.lg-cols,.lg-l,.lg-r{display:flex;flex-direction:column;gap:12px;min-width:0}
+.lg-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center}
+.lg-grid label{font-weight:900;font-size:14px;white-space:nowrap}
+.lg-msg{min-height:1.6em;font-size:13px;font-weight:900;color:var(--shu);line-height:1.5}
+.lg-msg.ok{color:#1f7a4a}
+details{border:2px solid #e6dcc6;border-radius:12px;padding:6px 10px;background:#fffaf0}
+details summary{cursor:pointer;font-weight:900;font-size:13px;min-height:32px;display:flex;align-items:center}
+details[open]{display:flex;flex-direction:column;gap:8px}
+.ac-roster{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.ac-roster div{background:#fff;border:2px solid #e6dcc6;border-radius:10px;display:flex;flex-direction:column;align-items:center;padding:3px 2px 5px;min-width:0}
+.ac-roster img{width:100%;max-width:64px;aspect-ratio:1;object-fit:contain}
+.ac-roster b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.lv{font-family:var(--f-disp);font-size:11px;color:#fff;background:#3a3358;border-radius:5px;padding:0 5px;line-height:1.5;white-space:nowrap}
+.ac-code{font:900 15px ui-monospace,Menlo,monospace;letter-spacing:.05em;background:#fff;border:2px dashed var(--ink);border-radius:10px;padding:8px 10px;word-break:break-all;user-select:all;-webkit-user-select:all}
+#mtoast{position:absolute;left:50%;top:max(12px,var(--sat,0px));transform:translate(-50%,-140%);background:#1f1a2e;color:#fff;font-weight:900;font-size:14px;padding:9px 16px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:60;transition:transform .25s;pointer-events:none;max-width:90%;text-align:center}
+#mtoast.show{transform:translate(-50%,0)}
+@container app (max-height:520px) and (min-width:600px){.ac-roster{grid-template-columns:repeat(10,minmax(0,1fr))}#login .panel{width:min(880px,100%);padding:14px 18px}#account .panel{width:min(860px,100%)}
+  .lg-cols{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:20px;align-items:start}.lg-l,.lg-r{gap:8px}.lg-r .row .btn{flex:1 1 100%}
+  #login input{padding:8px 12px;font-size:16px}#login h2{font-size:20px}#lgLead{font-size:11.5px;line-height:1.5}}
 .status{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:#5d5570;line-height:1.55}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none;margin-top:4px}.dot.ok{background:var(--ok)}.dot.ng{background:var(--shu)}
 a{color:var(--shu)}
@@ -106,6 +131,11 @@ a{color:var(--shu)}
 .card img{width:100%;aspect-ratio:1;object-fit:contain}
 .card .nm{font-size:10.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .card .el{font-size:10px;color:#fff;border-radius:5px;padding:0 5px}
+.card .meta{display:flex;gap:3px;align-items:center;flex-wrap:wrap;justify-content:center}.card .lv{font-size:10px}
+.slot .lv{font-size:10px}
+.detail .hd .lv{font-size:12px}
+.pcard .lv{font-size:10px;background:rgba(255,255,255,.16);padding:0 4px;flex:none}
+.res-c .lv{align-self:center}
 .card.cur{border-color:var(--ink);box-shadow:0 0 0 2px var(--gold)}
 .card .used{position:absolute;top:2px;right:2px;display:flex;gap:2px}
 .detail{background:#fff;border:2.5px solid var(--ink);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
@@ -261,6 +291,7 @@ a{color:var(--shu)}
 <body>
 <div id="app">
 <canvas id="gl" aria-label="3Dの戦闘画面"></canvas>
+<div id="mtoast" role="status" aria-live="polite"></div>
 
 <!-- タイトル -->
 <section class="screen" id="title" hidden>
@@ -274,6 +305,7 @@ a{color:var(--shu)}
     </div>
     <p class="lead">駅前のアーケード通りに、古い大看板の付喪神「トバトーバン」が現れた。小さなもののけ4体で力を合わせ、祭り広場で鎮めよう。</p>
     <div class="menu-list">
+      <div class="acct-bar span" id="acctBar"><span class="who" id="acctWho">ログインしていません<small>セーブするにはログイン</small></span><button class="chip" id="btnTSave" type="button" hidden>セーブ</button><button class="chip" id="btnAcct" type="button">ログイン</button></div>
       <button class="btn main span" id="btnSolo">ひとりで遊ぶ（AIの仲間3体）</button>
       <button class="btn gold span" id="btnCoop">協力プレイ（2〜4人）</button>
       <button class="btn" id="btnHow">遊び方</button>
@@ -337,6 +369,7 @@ a{color:var(--shu)}
     </div>
     <p class="small">このゲームは横画面で遊びます。スマホを縦に持っていても画面は横向きで表示されるので、スマホを左に倒して（上側を左へ）遊んでください。逆向きに持つ場合は設定の「横向きの回転方向」で変えられます。</p>
     <p class="small">赤い縞の範囲がボスの攻撃予兆。紫の帯は空中突進の通り道（横・斜め・縦など毎回ちがう向きから飛んでくる）。4基の灯籠を30秒以内に灯すとボスが6秒止まる。仲間が気絶して30秒放置すると昇天し、その戦闘では戻らない。</p>
+    <p class="small">セーブ：配られたID（1001〜10100）と自分で決めたパスワードでログインします。開くたびにログインをたずねます。ログイン中はタイトルや一時停止メニューの「セーブ」を押すだけで保存でき、祭り広場に着いたときと戦いが終わったときは自動でセーブします。別の端末で続けるときは「アカウント」の引き継ぎコードを使います。</p>
     <p class="small">パソコン：WASD移動・J=A・K=X・L=Y・U=必殺・Space=B・F=注目・Q/E=カメラ・1/2=アイテム・Esc=メニュー</p>
     <div class="row"><button class="btn main" data-back>とじる</button></div>
   </div>
@@ -363,6 +396,51 @@ a{color:var(--shu)}
   </div>
 </section>
 
+<!-- ログイン（毎回たずねる） -->
+<section class="screen" id="login" hidden>
+  <div class="panel"><div class="lg-cols"><div class="lg-l">
+    <div class="eyebrow">セーブデータ</div><h2 id="lgTitle">ログイン</h2>
+    <p class="small" id="lgLead">配られたID（1001〜10100）と、自分で決めたパスワードを入れてください。ログインしている間は「セーブ」を押すだけで続きを保存できます。</p>
+    <div class="lg-grid">
+      <label for="lgId">ID</label><input type="text" id="lgId" inputmode="numeric" maxlength="6" autocomplete="username" placeholder="1001〜10100">
+      <label for="lgPw">パスワード</label><input type="password" id="lgPw" maxlength="16" autocomplete="current-password" placeholder="4〜16文字">
+      <label for="lgPw2" id="lgPw2L" hidden>もう一度</label><input type="password" id="lgPw2" maxlength="16" autocomplete="new-password" placeholder="確認のためもう一度" hidden>
+    </div>
+    <div class="lg-msg" id="lgMsg" role="status"></div>
+    </div><div class="lg-r">
+    <div class="row">
+      <button class="btn main" id="btnLogin" type="button">ログイン</button>
+      <button class="btn gold" id="btnRegister" type="button">はじめて使うIDで登録</button>
+    </div>
+    <details id="lgMove"><summary>別の端末から続きを持ってくる（引き継ぎコード）</summary>
+      <p class="small">前の端末の「アカウント」画面にある引き継ぎコードを入れてください。上のIDとパスワードも必要です。</p>
+      <textarea id="lgCode" rows="2" placeholder="XXXX-XXXX-XXXX-…" autocomplete="off" spellcheck="false"></textarea>
+      <button class="btn" id="btnRestore" type="button">コードで引き継ぐ</button>
+    </details>
+    <div class="row"><button class="btn ghost" id="btnGuest" type="button">ログインせずに遊ぶ（セーブなし）</button></div>
+    <p class="small">セーブはこの端末のブラウザに保存されます。ほかのサービスと同じパスワードは使わないでください。</p>
+  </div></div></div>
+</section>
+
+<!-- アカウント -->
+<section class="screen" id="account" hidden>
+  <div class="panel wide">
+    <div class="eyebrow">アカウント</div><h2 id="acTitle">ID</h2>
+    <div class="kv" id="acKv"></div>
+    <h3>もののけのレベル</h3>
+    <div class="ac-roster" id="acRoster"></div>
+    <h3>引き継ぎコード（別の端末で続けるとき）</h3>
+    <p class="small">セーブするたびに変わります。別の端末のログイン画面で、このコードとIDとパスワードを入れると続きから遊べます。</p>
+    <div class="ac-code" id="acCode"></div>
+    <div class="row">
+      <button class="btn main" id="btnAcSave" type="button">セーブする</button>
+      <button class="btn" id="btnAcCopy" type="button">コードをコピー</button>
+      <button class="btn" id="btnLogout" type="button">ログアウト</button>
+      <button class="btn ghost" id="btnAcBack" type="button">とじる</button>
+    </div>
+  </div>
+</section>
+
 <!-- メニュー（一時停止） -->
 <section class="screen" id="pause" hidden>
   <div class="panel">
@@ -372,6 +450,7 @@ a{color:var(--shu)}
       <button class="btn main span" id="btnResume">つづける</button>
       <button class="btn" id="btnPSet">設定</button>
       <button class="btn" id="btnPHow">遊び方</button>
+      <button class="btn gold" id="btnPSave">セーブする</button>
       <button class="btn span" id="btnSkip" hidden>登場演出をとばす</button>
       <button class="btn span ghost" id="btnQuit">タイトルへもどる</button>
     </div>
@@ -385,6 +464,7 @@ a{color:var(--shu)}
     <div class="kv" id="resKv"></div>
     <div class="res-grid" id="resGrid"></div>
     <div class="small" id="resReward"></div>
+    <div class="row" id="resSaveRow"><span class="small" id="resSave" style="flex:1 1 220px"></span><button class="btn gold" id="btnResLogin" hidden style="flex:0 1 220px">ログインしてセーブ</button></div>
     <div class="row" id="resBtns">
       <button class="btn main" id="btnRetry">もう一度</button>
       <button class="btn" id="btnReteam">編成を変える</button>

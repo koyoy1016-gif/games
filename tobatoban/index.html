@@ -63,7 +63,32 @@ p{margin:0;line-height:1.7;font-size:14px}
 .btn[disabled]{opacity:.45;pointer-events:none}
 .chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 12px;font-weight:900;font-size:13px;border:2px solid var(--ink);background:#fff;color:var(--ink);min-height:40px}
 .chip.on{background:var(--ink);color:var(--paper)}
-input[type=text]{font:900 18px var(--f-body);padding:11px 14px;border:2.5px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);width:100%;min-width:0}
+input[type=text],input[type=password],textarea{font:900 18px var(--f-body);padding:11px 14px;border:2.5px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);width:100%;min-width:0}
+textarea{font:900 15px ui-monospace,Menlo,monospace;letter-spacing:.06em;resize:none}
+/* セーブ・アカウント */
+.acct-bar{display:flex;align-items:center;gap:8px;background:#fff6e2;border:2px dashed rgba(228,87,46,.55);border-radius:12px;padding:5px 6px 5px 10px;min-width:0}
+.acct-bar .who{flex:1;min-width:0;font-weight:900;font-size:13px;line-height:1.3;overflow:hidden;text-overflow:ellipsis}
+.acct-bar .who small{display:block;font-size:11px;color:#5d5570;font-weight:700}
+.acct-bar .chip{min-height:44px;padding:4px 12px;flex:none}
+.lg-cols,.lg-l,.lg-r{display:flex;flex-direction:column;gap:12px;min-width:0}
+.lg-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center}
+.lg-grid label{font-weight:900;font-size:14px;white-space:nowrap}
+.lg-msg{min-height:1.6em;font-size:13px;font-weight:900;color:var(--shu);line-height:1.5}
+.lg-msg.ok{color:#1f7a4a}
+details{border:2px solid #e6dcc6;border-radius:12px;padding:6px 10px;background:#fffaf0}
+details summary{cursor:pointer;font-weight:900;font-size:13px;min-height:32px;display:flex;align-items:center}
+details[open]{display:flex;flex-direction:column;gap:8px}
+.ac-roster{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.ac-roster div{background:#fff;border:2px solid #e6dcc6;border-radius:10px;display:flex;flex-direction:column;align-items:center;padding:3px 2px 5px;min-width:0}
+.ac-roster img{width:100%;max-width:64px;aspect-ratio:1;object-fit:contain}
+.ac-roster b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.lv{font-family:var(--f-disp);font-size:11px;color:#fff;background:#3a3358;border-radius:5px;padding:0 5px;line-height:1.5;white-space:nowrap}
+.ac-code{font:900 15px ui-monospace,Menlo,monospace;letter-spacing:.05em;background:#fff;border:2px dashed var(--ink);border-radius:10px;padding:8px 10px;word-break:break-all;user-select:all;-webkit-user-select:all}
+#mtoast{position:absolute;left:50%;top:max(12px,var(--sat,0px));transform:translate(-50%,-140%);background:#1f1a2e;color:#fff;font-weight:900;font-size:14px;padding:9px 16px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:60;transition:transform .25s;pointer-events:none;max-width:90%;text-align:center}
+#mtoast.show{transform:translate(-50%,0)}
+@container app (max-height:520px) and (min-width:600px){.ac-roster{grid-template-columns:repeat(10,minmax(0,1fr))}#login .panel{width:min(880px,100%);padding:14px 18px}#account .panel{width:min(860px,100%)}
+  .lg-cols{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:20px;align-items:start}.lg-l,.lg-r{gap:8px}.lg-r .row .btn{flex:1 1 100%}
+  #login input{padding:8px 12px;font-size:16px}#login h2{font-size:20px}#lgLead{font-size:11.5px;line-height:1.5}}
 .status{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:#5d5570;line-height:1.55}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none;margin-top:4px}.dot.ok{background:var(--ok)}.dot.ng{background:var(--shu)}
 a{color:var(--shu)}
@@ -106,6 +131,11 @@ a{color:var(--shu)}
 .card img{width:100%;aspect-ratio:1;object-fit:contain}
 .card .nm{font-size:10.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .card .el{font-size:10px;color:#fff;border-radius:5px;padding:0 5px}
+.card .meta{display:flex;gap:3px;align-items:center;flex-wrap:wrap;justify-content:center}.card .lv{font-size:10px}
+.slot .lv{font-size:10px}
+.detail .hd .lv{font-size:12px}
+.pcard .lv{font-size:10px;background:rgba(255,255,255,.16);padding:0 4px;flex:none}
+.res-c .lv{align-self:center}
 .card.cur{border-color:var(--ink);box-shadow:0 0 0 2px var(--gold)}
 .card .used{position:absolute;top:2px;right:2px;display:flex;gap:2px}
 .detail{background:#fff;border:2.5px solid var(--ink);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
@@ -261,6 +291,7 @@ a{color:var(--shu)}
 <body>
 <div id="app">
 <canvas id="gl" aria-label="3Dの戦闘画面"></canvas>
+<div id="mtoast" role="status" aria-live="polite"></div>
 
 <!-- タイトル -->
 <section class="screen" id="title" hidden>
@@ -274,6 +305,7 @@ a{color:var(--shu)}
     </div>
     <p class="lead">駅前のアーケード通りに、古い大看板の付喪神「トバトーバン」が現れた。小さなもののけ4体で力を合わせ、祭り広場で鎮めよう。</p>
     <div class="menu-list">
+      <div class="acct-bar span" id="acctBar"><span class="who" id="acctWho">ログインしていません<small>セーブするにはログイン</small></span><button class="chip" id="btnTSave" type="button" hidden>セーブ</button><button class="chip" id="btnAcct" type="button">ログイン</button></div>
       <button class="btn main span" id="btnSolo">ひとりで遊ぶ（AIの仲間3体）</button>
       <button class="btn gold span" id="btnCoop">協力プレイ（2〜4人）</button>
       <button class="btn" id="btnHow">遊び方</button>
@@ -337,6 +369,7 @@ a{color:var(--shu)}
     </div>
     <p class="small">このゲームは横画面で遊びます。スマホを縦に持っていても画面は横向きで表示されるので、スマホを左に倒して（上側を左へ）遊んでください。逆向きに持つ場合は設定の「横向きの回転方向」で変えられます。</p>
     <p class="small">赤い縞の範囲がボスの攻撃予兆。紫の帯は空中突進の通り道（横・斜め・縦など毎回ちがう向きから飛んでくる）。4基の灯籠を30秒以内に灯すとボスが6秒止まる。仲間が気絶して30秒放置すると昇天し、その戦闘では戻らない。</p>
+    <p class="small">セーブ：配られたID（1001〜10100）と自分で決めたパスワードでログインします。開くたびにログインをたずねます。ログイン中はタイトルや一時停止メニューの「セーブ」を押すだけで保存でき、祭り広場に着いたときと戦いが終わったときは自動でセーブします。別の端末で続けるときは「アカウント」の引き継ぎコードを使います。</p>
     <p class="small">パソコン：WASD移動・J=A・K=X・L=Y・U=必殺・Space=B・F=注目・Q/E=カメラ・1/2=アイテム・Esc=メニュー</p>
     <div class="row"><button class="btn main" data-back>とじる</button></div>
   </div>
@@ -363,6 +396,51 @@ a{color:var(--shu)}
   </div>
 </section>
 
+<!-- ログイン（毎回たずねる） -->
+<section class="screen" id="login" hidden>
+  <div class="panel"><div class="lg-cols"><div class="lg-l">
+    <div class="eyebrow">セーブデータ</div><h2 id="lgTitle">ログイン</h2>
+    <p class="small" id="lgLead">配られたID（1001〜10100）と、自分で決めたパスワードを入れてください。ログインしている間は「セーブ」を押すだけで続きを保存できます。</p>
+    <div class="lg-grid">
+      <label for="lgId">ID</label><input type="text" id="lgId" inputmode="numeric" maxlength="6" autocomplete="username" placeholder="1001〜10100">
+      <label for="lgPw">パスワード</label><input type="password" id="lgPw" maxlength="16" autocomplete="current-password" placeholder="4〜16文字">
+      <label for="lgPw2" id="lgPw2L" hidden>もう一度</label><input type="password" id="lgPw2" maxlength="16" autocomplete="new-password" placeholder="確認のためもう一度" hidden>
+    </div>
+    <div class="lg-msg" id="lgMsg" role="status"></div>
+    </div><div class="lg-r">
+    <div class="row">
+      <button class="btn main" id="btnLogin" type="button">ログイン</button>
+      <button class="btn gold" id="btnRegister" type="button">はじめて使うIDで登録</button>
+    </div>
+    <details id="lgMove"><summary>別の端末から続きを持ってくる（引き継ぎコード）</summary>
+      <p class="small">前の端末の「アカウント」画面にある引き継ぎコードを入れてください。上のIDとパスワードも必要です。</p>
+      <textarea id="lgCode" rows="2" placeholder="XXXX-XXXX-XXXX-…" autocomplete="off" spellcheck="false"></textarea>
+      <button class="btn" id="btnRestore" type="button">コードで引き継ぐ</button>
+    </details>
+    <div class="row"><button class="btn ghost" id="btnGuest" type="button">ログインせずに遊ぶ（セーブなし）</button></div>
+    <p class="small">セーブはこの端末のブラウザに保存されます。ほかのサービスと同じパスワードは使わないでください。</p>
+  </div></div></div>
+</section>
+
+<!-- アカウント -->
+<section class="screen" id="account" hidden>
+  <div class="panel wide">
+    <div class="eyebrow">アカウント</div><h2 id="acTitle">ID</h2>
+    <div class="kv" id="acKv"></div>
+    <h3>もののけのレベル</h3>
+    <div class="ac-roster" id="acRoster"></div>
+    <h3>引き継ぎコード（別の端末で続けるとき）</h3>
+    <p class="small">セーブするたびに変わります。別の端末のログイン画面で、このコードとIDとパスワードを入れると続きから遊べます。</p>
+    <div class="ac-code" id="acCode"></div>
+    <div class="row">
+      <button class="btn main" id="btnAcSave" type="button">セーブする</button>
+      <button class="btn" id="btnAcCopy" type="button">コードをコピー</button>
+      <button class="btn" id="btnLogout" type="button">ログアウト</button>
+      <button class="btn ghost" id="btnAcBack" type="button">とじる</button>
+    </div>
+  </div>
+</section>
+
 <!-- メニュー（一時停止） -->
 <section class="screen" id="pause" hidden>
   <div class="panel">
@@ -372,6 +450,7 @@ a{color:var(--shu)}
       <button class="btn main span" id="btnResume">つづける</button>
       <button class="btn" id="btnPSet">設定</button>
       <button class="btn" id="btnPHow">遊び方</button>
+      <button class="btn gold" id="btnPSave">セーブする</button>
       <button class="btn span" id="btnSkip" hidden>登場演出をとばす</button>
       <button class="btn span ghost" id="btnQuit">タイトルへもどる</button>
     </div>
@@ -385,6 +464,7 @@ a{color:var(--shu)}
     <div class="kv" id="resKv"></div>
     <div class="res-grid" id="resGrid"></div>
     <div class="small" id="resReward"></div>
+    <div class="row" id="resSaveRow"><span class="small" id="resSave" style="flex:1 1 220px"></span><button class="btn gold" id="btnResLogin" hidden style="flex:0 1 220px">ログインしてセーブ</button></div>
     <div class="row" id="resBtns">
       <button class="btn main" id="btnRetry">もう一度</button>
       <button class="btn" id="btnReteam">編成を変える</button>
@@ -689,6 +769,131 @@ p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 
 
 const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };
 
+/* ===== save.js ===== */
+/* =====================================================================
+   save.js — セーブデータ（配られたID＋自分で決めたパスワード）と引き継ぎコード
+   サーバーなし：データはこの端末のブラウザ（localStorage）に保存する。
+   パスワードそのものは保存せず、IDとまぜたハッシュだけを持つ。
+   別の端末へは「引き継ぎコード」＋ID＋パスワードで移す。three.js 非依存。
+   ===================================================================== */
+const SAVE = (() => {
+  const ID_MIN = 1001, ID_MAX = 10100, VER = 1, KEY = 'tb.acct.', PW_MIN = 4, PW_MAX = 16;
+  const ALPHA = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // 見まちがえやすい I L O U を使わない
+  function cyrb53(str, seed) {
+    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+    for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  }
+  /** パスワードのハッシュ（8桁の16進）。IDごとに結果が変わる */
+  function pwHash(id, pw) { let s = 'tobatoban/' + id + '/' + pw, v = 0; for (let i = 0; i < 1200; i++) { v = cyrb53(s, i); s = v.toString(36) + '/' + pw; } return (v % 4294967296).toString(16).padStart(8, '0'); }
+  const validId = id => Number.isInteger(id) && id >= ID_MIN && id <= ID_MAX;
+  const parseId = s => { const t = String(s || '').replace(/[^0-9０-９]/g, '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)); return t ? parseInt(t, 10) : NaN; };
+  function checkPw(pw) { if (typeof pw !== 'string' || pw.length < PW_MIN) return `パスワードは${PW_MIN}文字以上にしてください`; if (pw.length > PW_MAX) return `パスワードは${PW_MAX}文字までです`; if (/\s/.test(pw)) return 'パスワードに空白は使えません'; return null; }
+  function storageOk() { try { const k = KEY + '_t'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return true; } catch (e) { return false; } }
+  function freshChars() { const o = {}; for (const c of DATA.CHARS) o[c.id] = { lv: 1, exp: 0, b: 0, w: 0, k: 0 }; return o; }
+  function fresh(id, pw) { return { v: VER, id, pw, created: Date.now(), saved: 0, chars: freshChars(), rec: { b: 0, w: 0, mobs: 0, best: 0 }, party: null, swap: null, items: null, nick: '' }; }
+  /** 古い形式や、あとで増えたキャラにも対応させる */
+  function normalize(s) {
+    if (!s || typeof s !== 'object') return null;
+    const f = fresh(s.id, s.pw);
+    const o = Object.assign(f, s); o.chars = Object.assign(freshChars(), s.chars || {}); o.rec = Object.assign(f.rec, s.rec || {});
+    for (const c of DATA.CHARS) { const x = o.chars[c.id]; for (const k of ['lv', 'exp', 'b', 'w', 'k']) x[k] = Math.max(k === 'lv' ? 1 : 0, Math.floor(+x[k] || 0)); }
+    return o;
+  }
+  function load(id) { try { const j = localStorage.getItem(KEY + id); return j ? normalize(JSON.parse(j)) : null; } catch (e) { return null; } }
+  function write(s) { try { s.saved = Date.now(); localStorage.setItem(KEY + s.id, JSON.stringify(s)); return true; } catch (e) { return false; } }
+
+  /** 登録：はじめて使うID */
+  function register(id, pw, pw2) {
+    if (!validId(id)) return { ok: false, msg: `IDは${ID_MIN}〜${ID_MAX}の番号です` };
+    const e = checkPw(pw); if (e) return { ok: false, msg: e };
+    if (pw !== pw2) return { ok: false, msg: '2回入れたパスワードが同じではありません' };
+    if (!storageOk()) return { ok: false, msg: 'この画面ではセーブできません（プライベートブラウズなど）' };
+    if (load(id)) return { ok: false, msg: `ID ${id} はこの端末ですでに登録されています。ログインしてください` };
+    const s = fresh(id, pwHash(id, pw)); if (!write(s)) return { ok: false, msg: 'セーブできませんでした' };
+    return { ok: true, save: s, msg: `ID ${id} を登録しました` };
+  }
+  /** ログイン：IDとパスワードで認証 */
+  function login(id, pw) {
+    if (!validId(id)) return { ok: false, msg: `IDは${ID_MIN}〜${ID_MAX}の番号です` };
+    if (!pw) return { ok: false, msg: 'パスワードを入れてください' };
+    if (!storageOk()) return { ok: false, msg: 'この画面ではセーブを読み込めません（プライベートブラウズなど）' };
+    const s = load(id);
+    if (!s) return { ok: false, none: true, msg: `ID ${id} はこの端末ではまだ登録されていません。はじめてなら「はじめて使うIDで登録」、別の端末で使っていたなら引き継ぎコードを使ってください` };
+    if (s.pw !== pwHash(id, pw)) return { ok: false, msg: 'IDかパスワードがちがいます' };
+    return { ok: true, save: s, msg: `ID ${id} でログインしました` };
+  }
+
+  /** 戦いの記録を足す。op = { kills: {キャラID: 倒した数}, fin: null | { ids: [...], win, time } } */
+  function apply(s, op) {
+    for (const id in op.kills || {}) { const c = s.chars[id]; if (!c) continue; const k = op.kills[id] | 0; c.k += k; s.rec.mobs += k; }
+    const f = op.fin;
+    if (f) {
+      s.rec.b++; if (f.win) { s.rec.w++; if (f.time > 0 && (!s.rec.best || f.time < s.rec.best)) s.rec.best = Math.round(f.time); }
+      for (const id of f.ids) { const c = s.chars[id]; if (!c) continue; c.b++; if (f.win) c.w++; }
+    }
+    // レベルの上がり方はあとで決める（いまは全員Lv.1のまま）
+    return s;
+  }
+
+  /* ---------- 引き継ぎコード（base32・チェック付き） ---------- */
+  function encode(s) {
+    const b = [];
+    const vi = n => { n = Math.max(0, Math.floor(n)); while (n >= 128) { b.push((n & 127) | 128); n = Math.floor(n / 128); } b.push(n); };
+    b.push(VER); vi(s.id);
+    const ph = parseInt(s.pw, 16) >>> 0; b.push(ph >>> 24, (ph >>> 16) & 255, (ph >>> 8) & 255, ph & 255);
+    vi(s.rec.b); vi(s.rec.w); vi(s.rec.mobs); vi(s.rec.best);
+    const n = DATA.CHARS.length; vi(n);
+    const used = DATA.CHARS.map(c => { const x = s.chars[c.id]; return x.lv > 1 || x.exp || x.b || x.w || x.k; });
+    for (let i = 0; i < n; i += 8) { let m = 0; for (let j = 0; j < 8 && i + j < n; j++) if (used[i + j]) m |= 1 << j; b.push(m); }
+    DATA.CHARS.forEach((c, i) => { if (!used[i]) return; const x = s.chars[c.id]; vi(x.lv); vi(x.exp); vi(x.b); vi(x.w); vi(x.k); });
+    const sum = cyrb53(String.fromCharCode.apply(null, b), 77) & 0xffff; b.push(sum >>> 8, sum & 255);
+    let bits = '', out = ''; for (const v of b) bits += v.toString(2).padStart(8, '0');
+    while (bits.length % 5) bits += '0';
+    for (let i = 0; i < bits.length; i += 5) out += ALPHA[parseInt(bits.slice(i, i + 5), 2)];
+    return out.match(/.{1,4}/g).join('-');
+  }
+  function decode(code) {
+    const t = String(code || '').toUpperCase().replace(/[Ａ-Ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/O/g, '0').replace(/[IL]/g, '1').replace(/U/g, 'V').replace(/[^0-9A-Z]/g, '');
+    if (t.length < 16) return { ok: false, msg: '引き継ぎコードが短すぎます' };
+    let bits = ''; for (const ch of t) { const i = ALPHA.indexOf(ch); if (i < 0) return { ok: false, msg: 'コードに使えない文字があります' }; bits += i.toString(2).padStart(5, '0'); }
+    const b = []; for (let i = 0; i + 8 <= bits.length; i += 8) b.push(parseInt(bits.slice(i, i + 8), 2));
+    // 末尾の詰め物を考えて、チェックが合う長さを探す
+    for (let L = b.length; L >= Math.max(10, b.length - 1); L--) {
+      const body = b.slice(0, L - 2), sum = (b[L - 2] << 8) | b[L - 1];
+      if ((cyrb53(String.fromCharCode.apply(null, body), 77) & 0xffff) !== sum) continue;
+      try {
+        let p = 0; const u8 = () => { if (p >= body.length) throw 0; return body[p++]; };
+        const vi = () => { let n = 0, m = 1, v; do { v = u8(); n += (v & 127) * m; m *= 128; } while (v & 128); return n; };
+        if (u8() !== VER) return { ok: false, msg: 'このコードはこの版では読めません' };
+        const id = vi(); const pw = ((u8() << 24 >>> 0) + (u8() << 16) + (u8() << 8) + u8()).toString(16).padStart(8, '0');
+        const s = fresh(id, pw); s.rec.b = vi(); s.rec.w = vi(); s.rec.mobs = vi(); s.rec.best = vi();
+        const n = vi(), mask = []; for (let i = 0; i < n; i += 8) { const m = u8(); for (let j = 0; j < 8 && i + j < n; j++) mask.push(!!(m & (1 << j))); }
+        for (let i = 0; i < n; i++) { if (!mask[i]) continue; const x = { lv: vi(), exp: vi(), b: vi(), w: vi(), k: vi() }; const c = DATA.CHARS[i]; if (c) s.chars[c.id] = x; }
+        if (p !== body.length) continue;
+        return { ok: true, save: normalize(s) };
+      } catch (e) { continue; }
+    }
+    return { ok: false, msg: '引き継ぎコードがちがいます（打ちまちがいがないか確認してください）' };
+  }
+  /** 引き継ぎ：コード＋ID＋パスワードがそろったときだけ、この端末に書き込む */
+  function restore(id, pw, code, overwrite) {
+    if (!validId(id)) return { ok: false, msg: `IDは${ID_MIN}〜${ID_MAX}の番号です` };
+    const d = decode(code); if (!d.ok) return d;
+    if (d.save.id !== id) return { ok: false, msg: `このコードはID ${d.save.id} のものです` };
+    if (d.save.pw !== pwHash(id, pw)) return { ok: false, msg: 'IDかパスワードがちがいます' };
+    if (!storageOk()) return { ok: false, msg: 'この画面ではセーブできません（プライベートブラウズなど）' };
+    const cur = load(id);
+    if (cur && !overwrite) return { ok: false, confirm: true, msg: `この端末にもID ${id} のセーブがあります。もう一度押すとコードの内容で上書きします` };
+    const s = d.save; if (cur) { s.party = cur.party; s.swap = cur.swap; s.items = cur.items; s.nick = cur.nick; s.created = cur.created; }
+    if (!write(s)) return { ok: false, msg: 'セーブできませんでした' };
+    return { ok: true, save: s, msg: `ID ${id} の続きを引き継ぎました` };
+  }
+  return { ID_MIN, ID_MAX, PW_MIN, PW_MAX, pwHash, validId, parseId, checkPw, storageOk, fresh, normalize, load, write, register, login, apply, encode, decode, restore };
+})();
+
 /* ===== sim.js ===== */
 /* =====================================================================
    sim.js — 60Hz固定ステップの戦闘シミュレーション（three.js 非依存）
@@ -767,7 +972,7 @@ class Sim {
       sp: 0, stam: DATA.SIM.stamMax, tired: false, dashing: false,
       buf: null, lastEv: 0, aq: 0, buffs: { str: 0, strMul: 1, def: 0, defMul: 1, taunt: 0, stealth: 0, ramune: 0 }, inv: 0,
       kx: 0, kz: 0, threat: 0, rev: null, lan: null, items, ctx: '', hurtT: 0, foodT: DATA.SIM.foodPeriod,
-      stats: { dmg: 0, revives: 0, specials: 0, downs: 0 }, ai: { next: 0, tx: sx, tz: sz + 2, react: 0.3, hold: null, comboT: 0 },
+      stats: { dmg: 0, revives: 0, specials: 0, downs: 0, kills: 0 }, lv: Math.max(1, pp.lv | 0 || 1), ai: { next: 0, tx: sx, tz: sz + 2, react: 0.3, hold: null, comboT: 0 },
       nick: pp.nick || '', moving: false, _act: null,
     };
     const sim = this;
@@ -1445,6 +1650,7 @@ class Sim {
   }
   mobDie(m, by) {
     m.st = 'dying'; m.dieT = 0.6; this.ev('mobdie', { x: m.x, z: m.z });
+    if (by && by.stats) by.stats.kills++; // セーブの記録（倒した敵の数）
     if (this.rng.next() < 0.4) this.spawnPickup('bag', m.x, m.z, DATA.ITEM_IDS[(this.rng.next() * DATA.ITEM_IDS.length) | 0]);
   }
 
@@ -1893,7 +2099,7 @@ const PROTO = (() => {
       IT_I[a.items[0].id], a.items[0].n, IT_I[a.items[1].id], a.items[1].n, CTX_I[a.ctx], a.rev ? Math.round(a.rev.t / need(a) * 100) : 0, a.rev ? a.rev.target : -1,
       a.act && a.act.ratio != null ? Math.round(a.act.ratio * 100) : 0, a.act && a.act.slot ? (a.act.slot === 'X' ? 1 : 2) : 0, a.lastEv, r1(a.cdMax.X), r1(a.cdMax.Y),
       SK_I[a.slots.X], SK_I[a.slots.Y], a.lan ? Math.round(a.lan.t / DATA.SIM.lanternHold * 100) : 0, a.aq || 0,
-      a.act && a.act.k === 'item' ? IT_I[a.act.it] : -1, a.buffs.stealth > 0 ? r1(a.buffs.stealth) : 0,
+      a.act && a.act.k === 'item' ? IT_I[a.act.it] : -1, a.buffs.stealth > 0 ? r1(a.buffs.stealth) : 0, a.lv || 1, a.stats.kills,
     ]);
     const b = sim.boss;
     const B = b ? [r2(b.x), r2(b.z), r2(b.y), r2(b.yaw), Math.round(b.hp / b.maxHp * 1000), BST_I[b.st], b.mv ? BMV_I[b.mv] : 0, r2(b.t), b.phase, (b.defDown > 0 ? 1 : 0) | (b.st === 'stun' ? 2 : 0) | (b.dots && b.dots.length ? 4 : 0),
@@ -1929,7 +2135,7 @@ const PROTO = (() => {
       gLockX: !!(r[11] & 512), gLockY: !!(r[11] & 1024), ramune: !!(r[11] & 2048), moving: !!(r[11] & 4096), lanHold: !!(r[11] & 8192), ai: !!(r[11] & 16384), reflect: !!(r[11] & 32768),
       downT: r[12], cdX: r[13], cdY: r[14], gX: r[15] / 100, gY: r[16] / 100, items: [{ id: DATA.ITEM_IDS[r[17]], n: r[18] }, { id: DATA.ITEM_IDS[r[19]], n: r[20] }],
       ctx: CTX[r[21]], revP: r[22] / 100, revT: r[23], chg: r[24] / 100, actSlot: r[25] === 1 ? 'X' : r[25] === 2 ? 'Y' : '', lastEv: r[26], cdMaxX: r[27], cdMaxY: r[28],
-      sk: { X: SK_IDS[r[29]], Y: SK_IDS[r[30]] }, lanP: r[31] / 100, aq: r[32], item: r[33] >= 0 ? DATA.ITEM_IDS[r[33]] : null, stealthT: r[34],
+      sk: { X: SK_IDS[r[29]], Y: SK_IDS[r[30]] }, lanP: r[31] / 100, aq: r[32], item: r[33] >= 0 ? DATA.ITEM_IDS[r[33]] : null, stealthT: r[34], lv: r[35] || 1, kills: r[36] || 0,
     }));
     const b = s.b;
     v.boss = b ? { x: b[0], z: b[1], y: b[2], yaw: b[3], hpR: b[4] / 1000, st: BST[b[5]], mv: BMV[b[6]], t: b[7], phase: b[8], defDown: !!(b[9] & 1), stun: !!(b[9] & 2), dot: !!(b[9] & 4), fl: b[10] ? { ph: FLPH[b[10][0]], yaw: b[10][1], i: b[10][2], n: b[10][3], len: b[10][4], t: b[10][5] } : null, target: b[11], downT: b[12] } : null;
@@ -2054,7 +2260,7 @@ const NETLIB = (() => {
       this.tr = o.transport || null; this.kind = this.tr ? 'host' : 'solo'; this.code = o.code || '';
       this.local = new LocalInput(); this.mySlot = 0; this.sim = null; this.gid = 0; this.acc = 0; this.snapAcc = 0;
       this.views = []; this.clients = new Map(); this.notices = []; this.timeScale = 1; this.paused = false;
-      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'] }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), phase: 'lobby' };
+      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'], lv: o.lv || 1 }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), lvs: o.lvs || {}, phase: 'lobby' };
       this.lastLobbySend = 0;
       if (this.tr) {
         this.tr.on('msg', (m, from) => this.onMsg(m, from));
@@ -2077,7 +2283,7 @@ const NETLIB = (() => {
         c.lastSeen = now();
         const ch = DATA.CHI[m.ch] ? m.ch : 'kogemaru';
         const items = Array.isArray(m.items) ? m.items.filter(i => DATA.ITEMS[i]).slice(0, 2) : ['onigiri', 'ramune']; while (items.length < 2) items.push('onigiri');
-        this.lobby.slots[c.slot] = { who: 'peer', peer: from, nick: String(m.nick || '').slice(0, 10) || ('P' + (c.slot + 1)), ch, swap: !!m.swap, items, ready: !!m.ready };
+        this.lobby.slots[c.slot] = { who: 'peer', peer: from, nick: String(m.nick || '').slice(0, 10) || ('P' + (c.slot + 1)), ch, swap: !!m.swap, items, ready: !!m.ready, lv: Math.min(99, Math.max(1, m.lv | 0 || 1)) };
         this.dirtyLobby = true;
       } else if (m.t === 'in') {
         const c = this.clients.get(from); if (!c) return;
@@ -2099,13 +2305,13 @@ const NETLIB = (() => {
       this.dirtyLobby = true;
     }
     notice(s) { this.notices.push({ s, t: now() }); }
-    lobbyMsg() { return { t: 'lb', v: VERSION, code: this.code, diff: this.lobby.diff, phase: this.lobby.phase, gid: this.gid, slots: this.lobby.slots.map(s => s ? { who: s.who, peer: s.peer, nick: s.nick, ch: s.ch, swap: s.swap, items: s.items } : null), ai: this.aiFill() }; }
+    lobbyMsg() { return { t: 'lb', v: VERSION, code: this.code, diff: this.lobby.diff, phase: this.lobby.phase, gid: this.gid, slots: this.lobby.slots.map(s => s ? { who: s.who, peer: s.peer, nick: s.nick, ch: s.ch, swap: s.swap, items: s.items, lv: s.lv || 1 } : null), ai: this.aiFill(), aiLv: this.aiFill().map(c => c ? (this.lobby.lvs[c] || 1) : 0) }; }
     aiFill() { const taken = new Set(this.lobby.slots.filter(Boolean).map(s => s.ch)); const pool = this.lobby.aiParty.concat(DATA.CHARS.map(c => c.id)).filter((c, i, a) => a.indexOf(c) === i && !taken.has(c)); return this.lobby.slots.map(s => s ? null : pool.shift()); }
     setMine(o) { Object.assign(this.lobby.slots[0], o); this.dirtyLobby = true; }
     startGame(o) {
       o = o || {};
       const fill = this.aiFill();
-      const party = this.lobby.slots.map((s, i) => s ? { ch: s.ch, swap: s.swap, items: s.items, nick: s.nick } : { ch: fill[i], swap: false, items: ['onigiri', 'ramune'], nick: 'AI' });
+      const party = this.lobby.slots.map((s, i) => s ? { ch: s.ch, swap: s.swap, items: s.items, nick: s.nick, lv: s.lv || 1 } : { ch: fill[i], swap: false, items: ['onigiri', 'ramune'], nick: 'AI', lv: this.lobby.lvs[fill[i]] || 1 });
       if (o.party) o.party.forEach((p, i) => { if (!this.lobby.slots[i] || i === 0) Object.assign(party[i], p); });
       this.gid++; this.lobby.phase = 'game';
       this.sim = new Sim({ party, diff: this.lobby.diff, seed: (Math.random() * 1e9) | 0 });
@@ -3722,7 +3928,7 @@ async function boot() {
   makeThumbs();
   bindMenus(); bindHud(); bindRotScroll(); applySettings();
   detectNet();
-  G.mode = 'title'; show('title');
+  G.mode = 'title'; updateAcctBar(); openLogin('title'); // 開くたびにログインをたずねる
   requestAnimationFrame(frame);
 }
 function makeThumbs() {
@@ -3771,6 +3977,7 @@ function bindMenus() {
   $('#btnResume').onclick = () => resume();
   $('#btnPSet').onclick = () => openSub('settings', 'pause');
   $('#btnPHow').onclick = () => openSub('how', 'pause');
+  $('#btnPSave').onclick = () => doSave('pause');
   $('#btnQuit').onclick = () => { AUDIO.sfx('back'); goTitle(); };
   $('#btnSkip').onclick = () => { const s = G.session; if (s && s.sim && s.sim.stage === 'intro' && s.kind === 'solo') s.sim.stageT = DATA.BOSS.introT; resume(); };
   $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else startSolo(); };
@@ -3795,11 +4002,12 @@ function bindMenus() {
   const fs = $('#sFull'); const fsOk = !!(document.documentElement.requestFullscreen && document.fullscreenEnabled !== false); fs.closest('.set-row').hidden = !fsOk;
   fs.onclick = async () => { try { if (!document.fullscreenElement) { await document.documentElement.requestFullscreen(); try { await screen.orientation.lock('landscape'); } catch (e) { } fs.textContent = '全画面をやめる'; } else { await document.exitFullscreen(); fs.textContent = '全画面にする'; } } catch (e) { fs.textContent = 'この画面では使えません'; } setTimeout(onViewChange, 300); };
   $('#nick').oninput = () => { G.nick = $('#nick').value.trim().slice(0, 10); STORE.set('nick', G.nick); };
+  bindAccount();
 }
 function bindRotScroll() {
   let drag = null;
-  document.querySelectorAll('.screen, #dataTable').forEach(el => {
-    el.addEventListener('pointerdown', e => { if (!VIEW.rot) return; drag = { el: e.currentTarget.id === 'dataTable' ? e.currentTarget : (e.target.closest('#dataTable') || e.currentTarget), id: e.pointerId, y: toApp(e)[1] }; }, { passive: true });
+  document.querySelectorAll('.screen').forEach(el => {
+    el.addEventListener('pointerdown', e => { if (!VIEW.rot) return; drag = { el: e.currentTarget, id: e.pointerId, y: toApp(e)[1] }; }, { passive: true });
   });
   addEventListener('pointermove', e => { if (!drag || e.pointerId !== drag.id) return; const y = toApp(e)[1]; drag.el.scrollTop -= y - drag.y; drag.y = y; }, { passive: true });
   addEventListener('pointerup', () => { drag = null; }); addEventListener('pointercancel', () => { drag = null; });
@@ -3833,17 +4041,17 @@ function renderTeam() {
   let lob = null; if (coop && S) lob = S.kind === 'host' ? S.lobbyMsg() : S.lobby;
   for (let i = 0; i < 4; i++) {
     const b = el('button', 'slot'); b.type = 'button';
-    let ch = G.party[i], nm = DATA.CHI[ch].nm, tag = i === 0 ? 'あなた' : 'AI';
+    let ch = G.party[i], nm = DATA.CHI[ch].nm, tag = i === 0 ? 'あなた' : 'AI', lv = lvOf(ch);
     if (coop) {
       const s = lob && lob.slots[i];
-      if (s) { ch = s.ch; nm = s.nick; tag = s.peer === (S.tr && S.tr.self) ? 'あなた' : '参加者'; }
-      else if (lob && lob.ai) { ch = lob.ai[i] || 'kogemaru'; nm = DATA.CHI[ch].nm; tag = 'AI'; }
+      if (s) { ch = s.ch; nm = s.nick; tag = s.peer === (S.tr && S.tr.self) ? 'あなた' : '参加者'; lv = s.peer === (S.tr && S.tr.self) ? lvOf(ch) : (s.lv || 1); }
+      else if (lob && lob.ai) { ch = lob.ai[i] || 'kogemaru'; nm = DATA.CHI[ch].nm; tag = 'AI'; lv = (lob.aiLv && lob.aiLv[i]) || 1; }
       else { tag = '空き'; }
       if (i === myLobbySlot()) b.classList.add('sel');
     } else if (i === G.selSlot) b.classList.add('sel');
     const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); b.appendChild(pn);
     const im = el('img'); im.src = G.thumbs[ch] || ''; im.alt = ''; b.appendChild(im);
-    b.appendChild(el('span', 'nm', nm)); const t = el('span', 'tag', tag); if (tag === 'あなた') t.style.background = 'var(--shu)'; b.appendChild(t);
+    b.appendChild(el('span', 'nm', nm)); b.appendChild(el('span', 'lv', 'Lv.' + lv)); const t = el('span', 'tag', tag); if (tag === 'あなた') t.style.background = 'var(--shu)'; b.appendChild(t);
     if (!coop) b.onclick = () => { G.selSlot = i; G.focus = G.party[i]; AUDIO.sfx('ui'); renderTeam(); };
     box.appendChild(b);
   }
@@ -3853,7 +4061,7 @@ function renderTeam() {
   for (const c of DATA.CHARS) {
     const b = el('button', 'card' + (c.id === G.focus ? ' cur' : '')); b.type = 'button';
     const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; b.appendChild(im);
-    b.appendChild(el('span', 'nm', c.nm)); const e = el('span', 'el', c.el); e.style.background = DATA.ELEM_COL[c.el]; b.appendChild(e);
+    b.appendChild(el('span', 'nm', c.nm)); const mt = el('span', 'meta'); const e = el('span', 'el', c.el); e.style.background = DATA.ELEM_COL[c.el]; mt.append(el('span', 'lv', 'Lv.' + lvOf(c.id)), e); b.appendChild(mt);
     const used = el('span', 'used');
     (coop ? [mySel] : G.party).forEach((id, i) => { if (id === c.id) { const p = el('span', 'pn', 'P' + (coop ? myLobbySlot() + 1 : i + 1)); p.style.background = pcol(coop ? myLobbySlot() : i); used.appendChild(p); } });
     b.appendChild(used);
@@ -3883,7 +4091,7 @@ function renderTeam() {
 }
 function renderDetail() {
   const c = DATA.CHI[G.focus] || DATA.CHARS[0], d = $('#detail'); d.textContent = '';
-  const hd = el('div', 'hd'); hd.appendChild(el('b', '', c.nm)); const r = el('span', 'chip', c.role); hd.appendChild(r); const e = el('span', 'badge', c.el + '属性'); e.style.background = DATA.ELEM_COL[c.el]; hd.appendChild(e); d.appendChild(hd);
+  const hd = el('div', 'hd'); hd.appendChild(el('b', '', c.nm)); hd.appendChild(el('span', 'lv', 'Lv.' + lvOf(c.id))); const r = el('span', 'chip', c.role); hd.appendChild(r); const e = el('span', 'badge', c.el + '属性'); e.style.background = DATA.ELEM_COL[c.el]; hd.appendChild(e); d.appendChild(hd);
   d.appendChild(el('p', 'small', c.blurb));
   const st = el('div', 'stat');
   for (const [l, v, col] of [['ちから', c.str, '#e4572e'], ['ようりょく', c.yo, '#7446b8'], ['まもり', c.def, '#3f78d6']]) { st.appendChild(el('span', '', `${l} ${v}`)); const b = el('div', 'bar'); const i = el('i'); i.style.width = Math.round(v / 260 * 100) + '%'; i.style.background = col; b.appendChild(i); st.appendChild(b); }
@@ -3907,8 +4115,117 @@ function skillDesc(s) {
 }
 function sendMine() {
   const S = G.session; if (!G.coop || !S) return;
-  const o = { nick: G.nick || 'もののけ', ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2) };
+  const o = { nick: G.nick || 'もののけ', ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2), lv: lvOf(G.party[0]) };
   if (S.kind === 'host') S.setMine(o); else S.hello(o);
+}
+
+/* ---------- セーブ（配られたID＋自分で決めたパスワード） ----------
+   ログインはこの画面を開いている間だけ有効。開き直すたびにログインをたずねる。
+   ログイン中は「セーブ」を押すだけで保存。祭り広場に着いたときと戦いの終わりに自動セーブ。 */
+G.acct = null; G.pending = []; G.run = null;
+const lvOf = id => (G.acct && G.acct.chars[id] ? G.acct.chars[id].lv : 1);
+const fmtDate = ts => { if (!ts) return 'まだ'; const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
+function mtoast(t, ms) { const m = $('#mtoast'); m.textContent = t; m.classList.add('show'); clearTimeout(G.mtT); G.mtT = setTimeout(() => m.classList.remove('show'), ms || 2400); }
+function updateAcctBar() {
+  const w = $('#acctWho'); w.textContent = '';
+  if (G.acct) { w.append(`ID ${G.acct.id} でログイン中`); w.appendChild(el('small', '', `最後のセーブ ${fmtDate(G.acct.saved)}`)); $('#btnAcct').textContent = 'アカウント'; $('#btnTSave').hidden = false; }
+  else { w.append('ログインしていません'); w.appendChild(el('small', '', 'セーブするにはログイン')); $('#btnAcct').textContent = 'ログイン'; $('#btnTSave').hidden = true; }
+}
+function lgMsg(t, ok) { const m = $('#lgMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
+function setRegMode(on) {
+  G.regMode = on; $('#lgPw2').hidden = $('#lgPw2L').hidden = !on;
+  $('#btnRegister').textContent = on ? 'このパスワードで登録する' : 'はじめて使うIDで登録'; $('#btnLogin').textContent = on ? '登録済みのIDでログイン' : 'ログイン'; $('#btnLogin').classList.toggle('main', !on);
+  $('#lgTitle').textContent = on ? 'はじめて使うIDの登録' : 'ログイン';
+  $('#lgPw').setAttribute('autocomplete', on ? 'new-password' : 'current-password');
+}
+function openLogin(back, msg) {
+  G.loginBack = back || 'title'; setRegMode(false);
+  const last = STORE.get('lastId', ''); if (!$('#lgId').value && last) $('#lgId').value = last;
+  $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg(msg || '', false); G.restoreConfirm = null;
+  $('#btnGuest').textContent = G.loginBack === 'title' ? 'ログインせずに遊ぶ（セーブなし）' : 'もどる';
+  show('login');
+}
+/** ログインできた：編成などをアカウントから読み、ログイン前の記録があれば足して保存 */
+function loginOk(save, msg) {
+  G.acct = save; G.lgFail = 0; STORE.set('lastId', String(save.id));
+  if (Array.isArray(save.party) && save.party.length === 4 && save.party.every(id => DATA.CHI[id])) G.party = save.party.slice();
+  if (Array.isArray(save.swap) && save.swap.length === 4) G.swap = save.swap.map(Boolean);
+  if (Array.isArray(save.items) && save.items.length === 2 && save.items.every(i => DATA.ITEMS[i])) G.items = save.items.slice();
+  if (save.nick) G.nick = save.nick;
+  let extra = '';
+  if (G.pending.length) { for (const op of G.pending) SAVE.apply(save, op); G.pending = []; extra = '。ログイン前の戦いの記録もセーブしました'; if (G.run) G.lastAuto = `ID ${save.id} にセーブしました`; }
+  persist(); updateAcctBar(); AUDIO.sfx('ok');
+  const back = G.loginBack || 'title'; show(back);
+  if (back === 'result') refreshResSave();
+  mtoast(msg + extra, 2800);
+}
+function persist() { const s = G.acct; if (!s) return false; s.party = G.party.slice(); s.swap = G.swap.slice(); s.items = G.items.slice(); s.nick = G.nick || ''; const ok = SAVE.write(s); updateAcctBar(); return ok; }
+/** セーブボタン：ログイン中ならそのまま保存。していなければログイン画面へ */
+function doSave(from) {
+  if (!G.acct) { AUDIO.sfx('ui'); openLogin(from, 'セーブするにはログインしてください'); return; }
+  if (persist()) { AUDIO.sfx('ok'); mtoast(`セーブしました（ID ${G.acct.id}・${fmtDate(G.acct.saved)}）`); }
+  else mtoast('セーブできませんでした（このブラウザでは保存できません）', 3200);
+}
+/** この戦いでまだ記録していない分（倒した敵・出撃・勝敗）をまとめる */
+function runOp(v, fin) {
+  if (!G.run || !v) return null;
+  const slots = G.coop ? [G.my] : [0, 1, 2, 3], op = { kills: {}, fin: null };
+  for (const i of slots) { const a = v.allies[i]; if (!a) continue; const k = Math.max(0, (a.kills || 0) - G.run.applied[i]); if (k) { op.kills[a.ch] = (op.kills[a.ch] || 0) + k; G.run.applied[i] += k; } }
+  if (fin) op.fin = { ids: slots.map(i => v.allies[i] && v.allies[i].ch).filter(Boolean), win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0 };
+  return op;
+}
+/** 自動セーブの区切り（祭り広場に着いた・戦いが終わった） */
+function checkpoint(v, fin, label) {
+  const op = runOp(v, fin); if (!op) return;
+  if (G.acct) {
+    SAVE.apply(G.acct, op); const ok = persist();
+    G.lastAuto = ok ? `${label}ので自動セーブしました（ID ${G.acct.id}）` : '自動セーブできませんでした（このブラウザでは保存できません）';
+    if (!fin) notice(ok ? '自動セーブしました' : '自動セーブできませんでした', 'info', 1800);
+  } else G.pending.push(op);
+}
+function refreshResSave() {
+  const t = $('#resSave'), b = $('#btnResLogin');
+  if (G.acct) { t.textContent = G.lastAuto || `ID ${G.acct.id} にセーブしました`; b.hidden = true; }
+  else { t.textContent = 'ログインしていないので、この戦いの記録はまだセーブされていません。'; b.hidden = false; }
+}
+function openAccount(from) { if (!G.acct) { openLogin(from || 'title'); return; } G.acBack = from || 'title'; renderAccount(); show('account'); }
+function renderAccount() {
+  const s = G.acct; $('#acTitle').textContent = `ID ${s.id}`;
+  const kv = $('#acKv'); kv.textContent = '';
+  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['最速クリア', s.rec.best ? fmt(s.rec.best) : 'まだ']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
+  const ro = $('#acRoster'); ro.textContent = '';
+  for (const c of DATA.CHARS) { const d = el('div'); const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; d.append(im, el('b', '', c.nm), el('span', 'lv', 'Lv.' + s.chars[c.id].lv)); ro.appendChild(d); }
+  $('#acCode').textContent = SAVE.encode(s);
+}
+function bindAccount() {
+  $('#btnAcct').onclick = () => { AUDIO.sfx('ui'); if (G.acct) openAccount('title'); else openLogin('title'); };
+  $('#btnTSave').onclick = () => doSave('title');
+  $('#btnLogin').onclick = () => {
+    if (G.regMode) { setRegMode(false); $('#lgPw2').value = ''; lgMsg(''); AUDIO.sfx('ui'); return; }
+    if (G.lgLock && performance.now() < G.lgLock) { lgMsg(`まちがいが続いたので、${Math.ceil((G.lgLock - performance.now()) / 1000)}秒待ってからためしてください`); return; }
+    const id = SAVE.parseId($('#lgId').value), r = SAVE.login(id, $('#lgPw').value);
+    if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); if (!r.none && SAVE.validId(id)) { G.lgFail = (G.lgFail || 0) + 1; if (G.lgFail >= 5) { G.lgFail = 0; G.lgLock = performance.now() + 30000; } } return; }
+    loginOk(r.save, r.msg);
+  };
+  $('#btnRegister').onclick = () => {
+    if (!G.regMode) { setRegMode(true); $('#lgPw2').value = ''; lgMsg('配られたIDと、自分で決めたパスワード（4〜16文字）を2回入れてください', true); AUDIO.sfx('ui'); return; }
+    const id = SAVE.parseId($('#lgId').value), r = SAVE.register(id, $('#lgPw').value, $('#lgPw2').value);
+    if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); return; }
+    loginOk(r.save, r.msg + '。全員Lv.1からスタート');
+  };
+  $('#btnRestore').onclick = () => {
+    const id = SAVE.parseId($('#lgId').value), code = $('#lgCode').value, key = id + '|' + code;
+    const r = SAVE.restore(id, $('#lgPw').value, code, G.restoreConfirm === key);
+    if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); G.restoreConfirm = r.confirm ? key : null; return; }
+    G.restoreConfirm = null; $('#lgCode').value = ''; loginOk(r.save, r.msg);
+  };
+  $('#btnGuest').onclick = () => { AUDIO.sfx('back'); show(G.loginBack || 'title'); };
+  for (const id of ['#lgId', '#lgPw', '#lgPw2']) $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); (G.regMode ? $('#btnRegister') : $('#btnLogin')).click(); } });
+  $('#btnAcSave').onclick = () => { doSave('account'); renderAccount(); };
+  $('#btnAcCopy').onclick = async () => { const t = $('#acCode').textContent; try { await navigator.clipboard.writeText(t); mtoast('引き継ぎコードをコピーしました'); } catch (e) { mtoast('コピーできませんでした。コードを長押しして選んでください', 3000); } };
+  $('#btnLogout').onclick = () => { G.acct = null; updateAcctBar(); AUDIO.sfx('back'); mtoast('ログアウトしました'); show('title'); };
+  $('#btnAcBack').onclick = () => { AUDIO.sfx('back'); show(G.acBack || 'title'); };
+  $('#btnResLogin').onclick = () => openLogin('result', 'ログインすると、この戦いの記録もセーブされます');
 }
 
 /* ---------- 協力プレイの開始 ---------- */
@@ -3924,7 +4241,7 @@ async function startHost() {
   const b = $('#btnHost'); b.disabled = true; b.textContent = '部屋を準備しています…';
   try {
     const tr = await openTransport(code);
-    G.session = new NETLIB.HostSession({ transport: tr, code, nick: G.nick, ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2), aiParty: G.party.slice(1) });
+    G.session = new NETLIB.HostSession({ transport: tr, code, nick: G.nick, ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2), aiParty: G.party.slice(1), lv: lvOf(G.party[0]), lvs: Object.fromEntries(DATA.CHARS.map(c => [c.id, lvOf(c.id)])) });
     G.session.lobby.diff = G.diff; G.coop = true; openLobby();
   } catch (e) { console.error(e); toast('部屋を作れませんでした。電波のよい所でもう一度。'); }
   b.disabled = false; b.textContent = '部屋を作る';
@@ -3947,10 +4264,11 @@ function startSolo() {
   AUDIO.init();
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
   S.lobby.diff = G.diff;
-  S.startGame({ party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI' })) });
+  S.startGame({ party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {
+  G.run = { applied: [0, 0, 0, 0] }; G.lastAuto = null; // この戦いでセーブ済みの記録
   G.mode = 'play'; G.lock = null; G.resultShown = false; G.lagBoss = 1; G.lagMe = 1; G.spTotals = {}; G.lastStage = ''; G.hint = 0;
   R.clearEntities(); R.cam.lock = null; R.cam.yaw = 0; R.cam.introDone = false;
   show(null); $('#hud').hidden = false; layoutHud(); buildPartyCards();
@@ -4080,7 +4398,7 @@ function bindHud() {
   // キーボード（パソコンでの確認用）
   const KM = { KeyJ: ['A'], KeyK: ['X+', 'X', 'X-'], KeyL: ['Y+', 'Y', 'Y-'], KeyU: ['SP'], Space: ['B+', 'B', 'B-'], Digit1: ['I0'], Digit2: ['I1'] };
   addEventListener('keydown', e => {
-    if (e.target && e.target.tagName === 'INPUT') return;
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     if (e.code === 'Escape') { if (G.mode === 'play') pause(); else if (G.mode === 'pause') resume(); return; }
     if (G.mode !== 'play') return;
     if (INP.keys.has(e.code)) return; INP.keys.add(e.code);
@@ -4113,13 +4431,13 @@ function buildPartyCards() {
   for (let i = 0; i < n; i++) {
     const c = el('div', 'pcard'); const f = el('div', 'face'); const im = el('img'); im.alt = ''; f.appendChild(im); c.appendChild(f);
     const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); c.appendChild(pn);
-    const info = el('div', 'info'); const nm = el('div', 'nm'); const nmT = el('span', '', ''); const ic = el('span', 'ic', ''); nm.append(nmT, ic); info.appendChild(nm);
+    const info = el('div', 'info'); const nm = el('div', 'nm'); const lvT = el('span', 'lv', ''); const nmT = el('span', '', ''); const ic = el('span', 'ic', ''); nm.append(lvT, nmT, ic); info.appendChild(nm);
     const hp = el('div', 'mini hp'); const hpi = el('i'); hp.appendChild(hpi); info.appendChild(hp);
     const sp = el('div', 'mini sp'); const spi = el('i'); sp.appendChild(spi); info.appendChild(sp); c.appendChild(info);
     const st = el('span', 'state', ''); st.hidden = true; c.appendChild(st);
     const ht = el('span', 'healtag', '回復対象'); ht.hidden = true; c.appendChild(ht);
     c.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); partyTap(i); });
-    box.appendChild(c); G.cards.push({ c, im, nmT, ic, hp, hpi, sp, spi, st, ht, ch: null });
+    box.appendChild(c); G.cards.push({ c, im, nmT, lvT, ic, hp, hpi, sp, spi, st, ht, ch: null });
   }
 }
 function partyTap(i) {
@@ -4147,7 +4465,7 @@ function onNotice(o) {
   else if (o.k === 'stage') {
     if (o.s === 'wave2') notice('札小僧がまた出た！', 'info', 1500);
     if (o.s === 'open') { banner('結界が解けた', '奥の祭り広場へ進もう', 2200); AUDIO.sfx('lantern'); }
-    if (o.s === 'intro') { AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
+    if (o.s === 'intro') { checkpoint(G.v, false, '祭り広場に着いた'); AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
     if (o.s === 'fight') { AUDIO.bgm('boss'); banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
     if (o.s === 'won') { AUDIO.jingle(true); banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
     if (o.s === 'lost') { AUDIO.jingle(false); banner(G.v && G.v.result && G.v.result.why === 'time' ? '時間切れ' : '全滅', '', 2500); }
@@ -4233,7 +4551,7 @@ function updateHud(v, dt) {
     const C = G.cards[i]; if (!C) return;
     if (C.ch !== a.ch) { C.ch = a.ch; C.im.src = G.thumbs[a.ch] || ''; }
     C.c.classList.toggle('me', i === G.my); C.c.classList.toggle('down', a.st === 'down'); C.c.classList.toggle('gone', a.st === 'gone');
-    C.nmT.textContent = DATA.CHI[a.ch].nm + (a.ai && G.session.kind !== 'solo' ? '·AI' : '');
+    C.nmT.textContent = DATA.CHI[a.ch].nm + (a.ai && G.session.kind !== 'solo' ? '·AI' : ''); C.lvT.textContent = 'Lv' + (a.lv || 1);
     setBar(C.hpi, a.hpR); C.hp.classList.toggle('low', a.hpR < 0.3); setBar(C.spi, a.sp / 100); C.sp.classList.toggle('full', a.sp >= 100);
     C.ic.textContent = (a.strBuff ? '⚔' : '') + (a.defBuff ? '🛡' : '') + (a.stealth ? '👁' : '') + (a.taunt ? '❗' : '') + (a.sp >= 100 ? '★' : '');
     C.st.hidden = a.st === 'ok'; C.st.textContent = a.st === 'down' ? `気絶 ${Math.max(0, Math.ceil(DATA.SIM.ascendTime - a.downT))}` : '昇天';
@@ -4331,13 +4649,14 @@ function showResult(v) {
   for (const [k, val] of [['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : '協力プレイ']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
   const grid = $('#resGrid'); grid.textContent = '';
   const stats = S.sim ? S.sim.allies.map(a => a.stats) : null;
-  v.allies.forEach((a, i) => { const c = el('div', 'res-c'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const im = el('img'); im.src = G.thumbs[a.ch] || ''; im.alt = ''; c.append(pn, im, el('b', '', DATA.CHI[a.ch].nm)); if (stats) { c.appendChild(el('span', '', `与えたダメージ ${stats[i].dmg}`)); c.appendChild(el('span', '', `救助 ${stats[i].revives}・必殺 ${stats[i].specials}`)); } c.appendChild(el('span', 'small', a.st === 'ok' ? '元気' : a.st === 'down' ? '気絶' : '昇天')); grid.appendChild(c); });
+  v.allies.forEach((a, i) => { const c = el('div', 'res-c'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const im = el('img'); im.src = G.thumbs[a.ch] || ''; im.alt = ''; c.append(pn, im, el('b', '', DATA.CHI[a.ch].nm), el('span', 'lv', 'Lv.' + (a.lv || 1))); if (stats) { c.appendChild(el('span', '', `与えたダメージ ${stats[i].dmg}`)); c.appendChild(el('span', '', `救助 ${stats[i].revives}・必殺 ${stats[i].specials}`)); } c.appendChild(el('span', 'small', a.st === 'ok' ? '元気' : a.st === 'down' ? '気絶' : '昇天')); grid.appendChild(c); });
   const rw = '金の提灯芯';
   $('#resReward').textContent = win ? `獲得：${rw} ×${v.result.time < 240 ? 3 : v.result.time < 480 ? 2 : 1}（育成は今後の拡張で使う予定です）` : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
   const host = S.kind !== 'client';
   $('#btnRetry').hidden = !host; $('#btnReteam').hidden = !host && G.coop;
   $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : 'もう一度';
   if (!host) $('#resReward').textContent += '　ホストがロビーへ戻ると次の戦いを始められます。';
+  checkpoint(v, true, '戦いが終わった'); refreshResSave();
   $('#hud').hidden = true; show('result');
 }
 
@@ -4383,7 +4702,7 @@ function titleCam(T) {
 }
 boot();
 
-window.__tb = { G, R, DATA, SIMLIB, PROTO, NETLIB, AUDIO, GFX };
+window.__tb = { G, R, DATA, SAVE, SIMLIB, PROTO, NETLIB, AUDIO, GFX };
 
 </script>
 </body>

@@ -34,7 +34,7 @@ const PROTO = (() => {
       IT_I[a.items[0].id], a.items[0].n, IT_I[a.items[1].id], a.items[1].n, CTX_I[a.ctx], a.rev ? Math.round(a.rev.t / need(a) * 100) : 0, a.rev ? a.rev.target : -1,
       a.act && a.act.ratio != null ? Math.round(a.act.ratio * 100) : 0, a.act && a.act.slot ? (a.act.slot === 'X' ? 1 : 2) : 0, a.lastEv, r1(a.cdMax.X), r1(a.cdMax.Y),
       SK_I[a.slots.X], SK_I[a.slots.Y], a.lan ? Math.round(a.lan.t / DATA.SIM.lanternHold * 100) : 0, a.aq || 0,
-      a.act && a.act.k === 'item' ? IT_I[a.act.it] : -1, a.buffs.stealth > 0 ? r1(a.buffs.stealth) : 0,
+      a.act && a.act.k === 'item' ? IT_I[a.act.it] : -1, a.buffs.stealth > 0 ? r1(a.buffs.stealth) : 0, a.lv || 1, a.stats.kills,
     ]);
     const b = sim.boss;
     const B = b ? [r2(b.x), r2(b.z), r2(b.y), r2(b.yaw), Math.round(b.hp / b.maxHp * 1000), BST_I[b.st], b.mv ? BMV_I[b.mv] : 0, r2(b.t), b.phase, (b.defDown > 0 ? 1 : 0) | (b.st === 'stun' ? 2 : 0) | (b.dots && b.dots.length ? 4 : 0),
@@ -70,7 +70,7 @@ const PROTO = (() => {
       gLockX: !!(r[11] & 512), gLockY: !!(r[11] & 1024), ramune: !!(r[11] & 2048), moving: !!(r[11] & 4096), lanHold: !!(r[11] & 8192), ai: !!(r[11] & 16384), reflect: !!(r[11] & 32768),
       downT: r[12], cdX: r[13], cdY: r[14], gX: r[15] / 100, gY: r[16] / 100, items: [{ id: DATA.ITEM_IDS[r[17]], n: r[18] }, { id: DATA.ITEM_IDS[r[19]], n: r[20] }],
       ctx: CTX[r[21]], revP: r[22] / 100, revT: r[23], chg: r[24] / 100, actSlot: r[25] === 1 ? 'X' : r[25] === 2 ? 'Y' : '', lastEv: r[26], cdMaxX: r[27], cdMaxY: r[28],
-      sk: { X: SK_IDS[r[29]], Y: SK_IDS[r[30]] }, lanP: r[31] / 100, aq: r[32], item: r[33] >= 0 ? DATA.ITEM_IDS[r[33]] : null, stealthT: r[34],
+      sk: { X: SK_IDS[r[29]], Y: SK_IDS[r[30]] }, lanP: r[31] / 100, aq: r[32], item: r[33] >= 0 ? DATA.ITEM_IDS[r[33]] : null, stealthT: r[34], lv: r[35] || 1, kills: r[36] || 0,
     }));
     const b = s.b;
     v.boss = b ? { x: b[0], z: b[1], y: b[2], yaw: b[3], hpR: b[4] / 1000, st: BST[b[5]], mv: BMV[b[6]], t: b[7], phase: b[8], defDown: !!(b[9] & 1), stun: !!(b[9] & 2), dot: !!(b[9] & 4), fl: b[10] ? { ph: FLPH[b[10][0]], yaw: b[10][1], i: b[10][2], n: b[10][3], len: b[10][4], t: b[10][5] } : null, target: b[11], downT: b[12] } : null;

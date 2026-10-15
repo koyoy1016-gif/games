@@ -87,7 +87,7 @@ with sync_playwright() as p:
     results = []
     if SCEN in ('all', 'land'):
         results.append(run(p, 844, 390, 'land', [
-            shot('01_title_land'), ev(START_SOLO, 'mode'), wait(2.5), shot('02_street_land'), check_overlap('overlap_land'), ev(NOHP, 'hpnums'),
+            shot('00_login_land'), ev("() => { document.getElementById('btnGuest').click(); return 1; }"), wait(0.3), shot('01_title_land'), ev(START_SOLO, 'mode'), wait(2.5), shot('02_street_land'), check_overlap('overlap_land'), ev(NOHP, 'hpnums'),
             ev("() => { const L = __tb.G.session.local; L.push('A'); L.push('A'); return 1; }"), wait(0.6), shot('03_attack_land'),
             ev(TO_BOSS), wait(1.0), shot('04_intro1'), wait(2.3), shot('05_intro2'), wait(2.6), shot('06_boss_land'),
             ev("() => { const s=__tb.G.session.sim; s.allies.forEach(a=>{a.inv=999}); return 1; }"),
@@ -102,7 +102,7 @@ with sync_playwright() as p:
         ]))
     if SCEN in ('all', 'port'):
         results.append(run(p, 390, 844, 'port', [
-            shot('20_title_port'), ev("() => { document.getElementById('btnSolo').click(); return 1; }"), wait(0.5), shot('21_team_port'),
+            shot('19_login_port'), ev("() => { document.getElementById('btnGuest').click(); return 1; }"), wait(0.3), shot('20_title_port'), ev("() => { document.getElementById('btnSolo').click(); return 1; }"), wait(0.5), shot('21_team_port'),
             ev("() => { document.getElementById('btnGo').click(); return 1; }"), wait(2.5), shot('22_street_port'), check_overlap('overlap_port'),
             ev(TO_BOSS), wait(6.5), shot('23_boss_port'), check_overlap('overlap_port_boss'),
         ]))
@@ -115,8 +115,30 @@ with sync_playwright() as p:
         for i in range(9):
             steps += [wait(0.55), shot(f'5{i}_fly'), ev("() => { const f=__tb.G.session.sim.boss.fl; return f ? f.ph + ' ' + Math.round(f.yaw*180/Math.PI) + '° i' + f.i : __tb.G.session.sim.boss.st; }", f'fly{i}')]
         results.append(run(p, 844, 390, 'fly', steps))
+    if SCEN in ('save',):
+        # ログイン（毎回）→ 登録 → 戦う → 自動セーブ → 開き直す → ログインして続きから
+        def reload(page, res):
+            page.reload(); page.wait_for_function('window.__tb && window.__tb.G.mode === "title"', timeout=30000); time.sleep(0.8)
+        vis = "() => [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',')"
+        typ = lambda sel, val: ev("() => { const e = document.querySelector('%s'); e.value = '%s'; return 1; }" % (sel, val))
+        click = lambda sel: ev("() => { document.querySelector('%s').click(); return 1; }" % sel)
+        txt = lambda sel, key: ev("() => document.querySelector('%s').textContent" % sel, key)
+        results.append(run(p, 844, 390, 'save', [
+            ev(vis, 'boot_screen'), shot('80_login'),
+            typ('#lgId', '1001'), typ('#lgPw', 'neko'), click('#btnLogin'), txt('#lgMsg', 'login_unregistered'),
+            click('#btnRegister'), typ('#lgPw', 'neko22'), typ('#lgPw2', 'neko22'), shot('81_register'), click('#btnRegister'), wait(0.3), ev(vis, 'after_register'), txt('#acctWho', 'acct_bar'), shot('82_title_login'),
+            click('#btnSolo'), wait(0.4), txt('#cards', 'cards_text'), shot('83_team_lv'), click('#btnGo'), wait(2.0),
+            ev("() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); return s.allies[0].stats.kills; }", 'kills'), wait(1.5),
+            ev(TO_BOSS), wait(1.0), ev("() => { const a = __tb.G.acct; return a ? [a.rec.mobs, a.chars.kogemaru.k] : null; }", 'autosave_plaza'), shot('84_hud_lv'), wait(6.0),
+            ev("() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); return s.stage; }"), wait(5), txt('#resSave', 'result_save'), shot('85_result_save'),
+            click('#btnResTitle'), wait(0.3), click('#btnAcct'), wait(0.3), txt('#acKv', 'account_kv'), txt('#acCode', 'code'), shot('86_account'), click('#btnAcBack'),
+            reload, ev(vis, 'after_reload'), ev("() => !!__tb.G.acct", 'logged_in_after_reload'),
+            typ('#lgPw', 'wrong'), click('#btnLogin'), txt('#lgMsg', 'wrong_pw'),
+            typ('#lgPw', 'neko22'), click('#btnLogin'), wait(0.3), ev("() => { const a = __tb.G.acct; return a ? [a.id, a.rec.b, a.rec.w, a.rec.mobs] : null; }", 'restored'),
+            click('#btnSolo'), click('#btnGo'), wait(1.5), ev("() => { document.dispatchEvent(new KeyboardEvent('keydown', {code:'Escape'})); window.dispatchEvent(new KeyboardEvent('keydown', {code:'Escape'})); return __tb.G.mode; }", 'paused'), wait(0.3), click('#btnPSave'), wait(0.3), txt('#mtoast', 'pause_save_toast'), shot('87_pause_save'),
+        ]))
     if SCEN in ('menus',):
-        results.append(run(p, 844, 390, 'menus', [ev("() => { document.getElementById('btnHow').click(); return 1; }"), wait(0.4), shot('40_how'), ev("() => { document.querySelector('#how [data-back]').click(); document.getElementById('btnSet').click(); return 1; }"), wait(0.3), shot('41_settings'), ev("() => { document.querySelector('#settings [data-back]').click(); document.getElementById('btnCoop').click(); return 1; }"), wait(0.3), shot('42_coop')]))
+        results.append(run(p, 844, 390, 'menus', [ev("() => { document.getElementById('btnGuest').click(); return 1; }"), ev("() => { document.getElementById('btnHow').click(); return 1; }"), wait(0.4), shot('40_how'), ev("() => { document.querySelector('#how [data-back]').click(); document.getElementById('btnSet').click(); return 1; }"), wait(0.3), shot('41_settings'), ev("() => { document.querySelector('#settings [data-back]').click(); document.getElementById('btnCoop').click(); return 1; }"), wait(0.3), shot('42_coop')]))
     for r in results:
         print('===', r['tag'])
         for k, v in r.items():

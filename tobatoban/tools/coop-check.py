@@ -7,7 +7,7 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else '/tmp/tb-shots'; os.makedirs(OUT, ex
 THREE_LOCAL = os.environ.get('THREE_LOCAL')
 class Q(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
-srv = socketserver.TCPServer(('127.0.0.1', 0), functools.partial(Q, directory=ROOT)); port = srv.server_address[1]
+srv = socketserver.ThreadingTCPServer(('127.0.0.1', 0), functools.partial(Q, directory=ROOT)); port = srv.server_address[1]
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 URL = f'http://127.0.0.1:{port}/index.html?net=bc'
 def route(page):
@@ -25,7 +25,7 @@ with sync_playwright() as p:
     for pg, nm in ((A, 'host'), (B, 'guest')):
         pg.on('pageerror', lambda e, nm=nm: errs.append(f'{nm}: {e}'))
         pg.on('console', lambda m, nm=nm: errs.append(f'{nm} [{m.type}] {m.text}') if m.type == 'error' and 'ERR_FAILED' not in m.text else None)
-        pg.goto(URL); pg.wait_for_function('window.__tb && window.__tb.G.mode === "title"', timeout=30000)
+        pg.goto(URL, wait_until='domcontentloaded', timeout=120000); pg.wait_for_function('window.__tb && window.__tb.G.mode === "title"', timeout=60000); print(nm, 'loaded', flush=True)
     A.evaluate("() => { document.getElementById('btnCoop').click(); document.getElementById('nick').value='ホスト'; document.getElementById('btnHost').click(); }")
     A.wait_for_function('window.__tb.G.session && window.__tb.G.session.code', timeout=10000)
     code = A.evaluate('__tb.G.session.code'); print('code', code)

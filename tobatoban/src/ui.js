@@ -75,7 +75,7 @@ async function boot() {
   makeThumbs();
   bindMenus(); bindHud(); bindRotScroll(); applySettings();
   detectNet();
-  G.mode = 'title'; show('title');
+  G.mode = 'title'; updateAcctBar(); openLogin('title'); // 開くたびにログインをたずねる
   requestAnimationFrame(frame);
 }
 function makeThumbs() {
@@ -124,6 +124,7 @@ function bindMenus() {
   $('#btnResume').onclick = () => resume();
   $('#btnPSet').onclick = () => openSub('settings', 'pause');
   $('#btnPHow').onclick = () => openSub('how', 'pause');
+  $('#btnPSave').onclick = () => doSave('pause');
   $('#btnQuit').onclick = () => { AUDIO.sfx('back'); goTitle(); };
   $('#btnSkip').onclick = () => { const s = G.session; if (s && s.sim && s.sim.stage === 'intro' && s.kind === 'solo') s.sim.stageT = DATA.BOSS.introT; resume(); };
   $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else startSolo(); };
@@ -148,11 +149,12 @@ function bindMenus() {
   const fs = $('#sFull'); const fsOk = !!(document.documentElement.requestFullscreen && document.fullscreenEnabled !== false); fs.closest('.set-row').hidden = !fsOk;
   fs.onclick = async () => { try { if (!document.fullscreenElement) { await document.documentElement.requestFullscreen(); try { await screen.orientation.lock('landscape'); } catch (e) { } fs.textContent = '全画面をやめる'; } else { await document.exitFullscreen(); fs.textContent = '全画面にする'; } } catch (e) { fs.textContent = 'この画面では使えません'; } setTimeout(onViewChange, 300); };
   $('#nick').oninput = () => { G.nick = $('#nick').value.trim().slice(0, 10); STORE.set('nick', G.nick); };
+  bindAccount();
 }
 function bindRotScroll() {
   let drag = null;
-  document.querySelectorAll('.screen, #dataTable').forEach(el => {
-    el.addEventListener('pointerdown', e => { if (!VIEW.rot) return; drag = { el: e.currentTarget.id === 'dataTable' ? e.currentTarget : (e.target.closest('#dataTable') || e.currentTarget), id: e.pointerId, y: toApp(e)[1] }; }, { passive: true });
+  document.querySelectorAll('.screen').forEach(el => {
+    el.addEventListener('pointerdown', e => { if (!VIEW.rot) return; drag = { el: e.currentTarget, id: e.pointerId, y: toApp(e)[1] }; }, { passive: true });
   });
   addEventListener('pointermove', e => { if (!drag || e.pointerId !== drag.id) return; const y = toApp(e)[1]; drag.el.scrollTop -= y - drag.y; drag.y = y; }, { passive: true });
   addEventListener('pointerup', () => { drag = null; }); addEventListener('pointercancel', () => { drag = null; });
@@ -186,17 +188,17 @@ function renderTeam() {
   let lob = null; if (coop && S) lob = S.kind === 'host' ? S.lobbyMsg() : S.lobby;
   for (let i = 0; i < 4; i++) {
     const b = el('button', 'slot'); b.type = 'button';
-    let ch = G.party[i], nm = DATA.CHI[ch].nm, tag = i === 0 ? 'あなた' : 'AI';
+    let ch = G.party[i], nm = DATA.CHI[ch].nm, tag = i === 0 ? 'あなた' : 'AI', lv = lvOf(ch);
     if (coop) {
       const s = lob && lob.slots[i];
-      if (s) { ch = s.ch; nm = s.nick; tag = s.peer === (S.tr && S.tr.self) ? 'あなた' : '参加者'; }
-      else if (lob && lob.ai) { ch = lob.ai[i] || 'kogemaru'; nm = DATA.CHI[ch].nm; tag = 'AI'; }
+      if (s) { ch = s.ch; nm = s.nick; tag = s.peer === (S.tr && S.tr.self) ? 'あなた' : '参加者'; lv = s.peer === (S.tr && S.tr.self) ? lvOf(ch) : (s.lv || 1); }
+      else if (lob && lob.ai) { ch = lob.ai[i] || 'kogemaru'; nm = DATA.CHI[ch].nm; tag = 'AI'; lv = (lob.aiLv && lob.aiLv[i]) || 1; }
       else { tag = '空き'; }
       if (i === myLobbySlot()) b.classList.add('sel');
     } else if (i === G.selSlot) b.classList.add('sel');
     const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); b.appendChild(pn);
     const im = el('img'); im.src = G.thumbs[ch] || ''; im.alt = ''; b.appendChild(im);
-    b.appendChild(el('span', 'nm', nm)); const t = el('span', 'tag', tag); if (tag === 'あなた') t.style.background = 'var(--shu)'; b.appendChild(t);
+    b.appendChild(el('span', 'nm', nm)); b.appendChild(el('span', 'lv', 'Lv.' + lv)); const t = el('span', 'tag', tag); if (tag === 'あなた') t.style.background = 'var(--shu)'; b.appendChild(t);
     if (!coop) b.onclick = () => { G.selSlot = i; G.focus = G.party[i]; AUDIO.sfx('ui'); renderTeam(); };
     box.appendChild(b);
   }
@@ -206,7 +208,7 @@ function renderTeam() {
   for (const c of DATA.CHARS) {
     const b = el('button', 'card' + (c.id === G.focus ? ' cur' : '')); b.type = 'button';
     const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; b.appendChild(im);
-    b.appendChild(el('span', 'nm', c.nm)); const e = el('span', 'el', c.el); e.style.background = DATA.ELEM_COL[c.el]; b.appendChild(e);
+    b.appendChild(el('span', 'nm', c.nm)); const mt = el('span', 'meta'); const e = el('span', 'el', c.el); e.style.background = DATA.ELEM_COL[c.el]; mt.append(el('span', 'lv', 'Lv.' + lvOf(c.id)), e); b.appendChild(mt);
     const used = el('span', 'used');
     (coop ? [mySel] : G.party).forEach((id, i) => { if (id === c.id) { const p = el('span', 'pn', 'P' + (coop ? myLobbySlot() + 1 : i + 1)); p.style.background = pcol(coop ? myLobbySlot() : i); used.appendChild(p); } });
     b.appendChild(used);
@@ -236,7 +238,7 @@ function renderTeam() {
 }
 function renderDetail() {
   const c = DATA.CHI[G.focus] || DATA.CHARS[0], d = $('#detail'); d.textContent = '';
-  const hd = el('div', 'hd'); hd.appendChild(el('b', '', c.nm)); const r = el('span', 'chip', c.role); hd.appendChild(r); const e = el('span', 'badge', c.el + '属性'); e.style.background = DATA.ELEM_COL[c.el]; hd.appendChild(e); d.appendChild(hd);
+  const hd = el('div', 'hd'); hd.appendChild(el('b', '', c.nm)); hd.appendChild(el('span', 'lv', 'Lv.' + lvOf(c.id))); const r = el('span', 'chip', c.role); hd.appendChild(r); const e = el('span', 'badge', c.el + '属性'); e.style.background = DATA.ELEM_COL[c.el]; hd.appendChild(e); d.appendChild(hd);
   d.appendChild(el('p', 'small', c.blurb));
   const st = el('div', 'stat');
   for (const [l, v, col] of [['ちから', c.str, '#e4572e'], ['ようりょく', c.yo, '#7446b8'], ['まもり', c.def, '#3f78d6']]) { st.appendChild(el('span', '', `${l} ${v}`)); const b = el('div', 'bar'); const i = el('i'); i.style.width = Math.round(v / 260 * 100) + '%'; i.style.background = col; b.appendChild(i); st.appendChild(b); }
@@ -260,8 +262,117 @@ function skillDesc(s) {
 }
 function sendMine() {
   const S = G.session; if (!G.coop || !S) return;
-  const o = { nick: G.nick || 'もののけ', ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2) };
+  const o = { nick: G.nick || 'もののけ', ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2), lv: lvOf(G.party[0]) };
   if (S.kind === 'host') S.setMine(o); else S.hello(o);
+}
+
+/* ---------- セーブ（配られたID＋自分で決めたパスワード） ----------
+   ログインはこの画面を開いている間だけ有効。開き直すたびにログインをたずねる。
+   ログイン中は「セーブ」を押すだけで保存。祭り広場に着いたときと戦いの終わりに自動セーブ。 */
+G.acct = null; G.pending = []; G.run = null;
+const lvOf = id => (G.acct && G.acct.chars[id] ? G.acct.chars[id].lv : 1);
+const fmtDate = ts => { if (!ts) return 'まだ'; const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
+function mtoast(t, ms) { const m = $('#mtoast'); m.textContent = t; m.classList.add('show'); clearTimeout(G.mtT); G.mtT = setTimeout(() => m.classList.remove('show'), ms || 2400); }
+function updateAcctBar() {
+  const w = $('#acctWho'); w.textContent = '';
+  if (G.acct) { w.append(`ID ${G.acct.id} でログイン中`); w.appendChild(el('small', '', `最後のセーブ ${fmtDate(G.acct.saved)}`)); $('#btnAcct').textContent = 'アカウント'; $('#btnTSave').hidden = false; }
+  else { w.append('ログインしていません'); w.appendChild(el('small', '', 'セーブするにはログイン')); $('#btnAcct').textContent = 'ログイン'; $('#btnTSave').hidden = true; }
+}
+function lgMsg(t, ok) { const m = $('#lgMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
+function setRegMode(on) {
+  G.regMode = on; $('#lgPw2').hidden = $('#lgPw2L').hidden = !on;
+  $('#btnRegister').textContent = on ? 'このパスワードで登録する' : 'はじめて使うIDで登録'; $('#btnLogin').textContent = on ? '登録済みのIDでログイン' : 'ログイン'; $('#btnLogin').classList.toggle('main', !on);
+  $('#lgTitle').textContent = on ? 'はじめて使うIDの登録' : 'ログイン';
+  $('#lgPw').setAttribute('autocomplete', on ? 'new-password' : 'current-password');
+}
+function openLogin(back, msg) {
+  G.loginBack = back || 'title'; setRegMode(false);
+  const last = STORE.get('lastId', ''); if (!$('#lgId').value && last) $('#lgId').value = last;
+  $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg(msg || '', false); G.restoreConfirm = null;
+  $('#btnGuest').textContent = G.loginBack === 'title' ? 'ログインせずに遊ぶ（セーブなし）' : 'もどる';
+  show('login');
+}
+/** ログインできた：編成などをアカウントから読み、ログイン前の記録があれば足して保存 */
+function loginOk(save, msg) {
+  G.acct = save; G.lgFail = 0; STORE.set('lastId', String(save.id));
+  if (Array.isArray(save.party) && save.party.length === 4 && save.party.every(id => DATA.CHI[id])) G.party = save.party.slice();
+  if (Array.isArray(save.swap) && save.swap.length === 4) G.swap = save.swap.map(Boolean);
+  if (Array.isArray(save.items) && save.items.length === 2 && save.items.every(i => DATA.ITEMS[i])) G.items = save.items.slice();
+  if (save.nick) G.nick = save.nick;
+  let extra = '';
+  if (G.pending.length) { for (const op of G.pending) SAVE.apply(save, op); G.pending = []; extra = '。ログイン前の戦いの記録もセーブしました'; if (G.run) G.lastAuto = `ID ${save.id} にセーブしました`; }
+  persist(); updateAcctBar(); AUDIO.sfx('ok');
+  const back = G.loginBack || 'title'; show(back);
+  if (back === 'result') refreshResSave();
+  mtoast(msg + extra, 2800);
+}
+function persist() { const s = G.acct; if (!s) return false; s.party = G.party.slice(); s.swap = G.swap.slice(); s.items = G.items.slice(); s.nick = G.nick || ''; const ok = SAVE.write(s); updateAcctBar(); return ok; }
+/** セーブボタン：ログイン中ならそのまま保存。していなければログイン画面へ */
+function doSave(from) {
+  if (!G.acct) { AUDIO.sfx('ui'); openLogin(from, 'セーブするにはログインしてください'); return; }
+  if (persist()) { AUDIO.sfx('ok'); mtoast(`セーブしました（ID ${G.acct.id}・${fmtDate(G.acct.saved)}）`); }
+  else mtoast('セーブできませんでした（このブラウザでは保存できません）', 3200);
+}
+/** この戦いでまだ記録していない分（倒した敵・出撃・勝敗）をまとめる */
+function runOp(v, fin) {
+  if (!G.run || !v) return null;
+  const slots = G.coop ? [G.my] : [0, 1, 2, 3], op = { kills: {}, fin: null };
+  for (const i of slots) { const a = v.allies[i]; if (!a) continue; const k = Math.max(0, (a.kills || 0) - G.run.applied[i]); if (k) { op.kills[a.ch] = (op.kills[a.ch] || 0) + k; G.run.applied[i] += k; } }
+  if (fin) op.fin = { ids: slots.map(i => v.allies[i] && v.allies[i].ch).filter(Boolean), win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0 };
+  return op;
+}
+/** 自動セーブの区切り（祭り広場に着いた・戦いが終わった） */
+function checkpoint(v, fin, label) {
+  const op = runOp(v, fin); if (!op) return;
+  if (G.acct) {
+    SAVE.apply(G.acct, op); const ok = persist();
+    G.lastAuto = ok ? `${label}ので自動セーブしました（ID ${G.acct.id}）` : '自動セーブできませんでした（このブラウザでは保存できません）';
+    if (!fin) notice(ok ? '自動セーブしました' : '自動セーブできませんでした', 'info', 1800);
+  } else G.pending.push(op);
+}
+function refreshResSave() {
+  const t = $('#resSave'), b = $('#btnResLogin');
+  if (G.acct) { t.textContent = G.lastAuto || `ID ${G.acct.id} にセーブしました`; b.hidden = true; }
+  else { t.textContent = 'ログインしていないので、この戦いの記録はまだセーブされていません。'; b.hidden = false; }
+}
+function openAccount(from) { if (!G.acct) { openLogin(from || 'title'); return; } G.acBack = from || 'title'; renderAccount(); show('account'); }
+function renderAccount() {
+  const s = G.acct; $('#acTitle').textContent = `ID ${s.id}`;
+  const kv = $('#acKv'); kv.textContent = '';
+  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['最速クリア', s.rec.best ? fmt(s.rec.best) : 'まだ']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
+  const ro = $('#acRoster'); ro.textContent = '';
+  for (const c of DATA.CHARS) { const d = el('div'); const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; d.append(im, el('b', '', c.nm), el('span', 'lv', 'Lv.' + s.chars[c.id].lv)); ro.appendChild(d); }
+  $('#acCode').textContent = SAVE.encode(s);
+}
+function bindAccount() {
+  $('#btnAcct').onclick = () => { AUDIO.sfx('ui'); if (G.acct) openAccount('title'); else openLogin('title'); };
+  $('#btnTSave').onclick = () => doSave('title');
+  $('#btnLogin').onclick = () => {
+    if (G.regMode) { setRegMode(false); $('#lgPw2').value = ''; lgMsg(''); AUDIO.sfx('ui'); return; }
+    if (G.lgLock && performance.now() < G.lgLock) { lgMsg(`まちがいが続いたので、${Math.ceil((G.lgLock - performance.now()) / 1000)}秒待ってからためしてください`); return; }
+    const id = SAVE.parseId($('#lgId').value), r = SAVE.login(id, $('#lgPw').value);
+    if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); if (!r.none && SAVE.validId(id)) { G.lgFail = (G.lgFail || 0) + 1; if (G.lgFail >= 5) { G.lgFail = 0; G.lgLock = performance.now() + 30000; } } return; }
+    loginOk(r.save, r.msg);
+  };
+  $('#btnRegister').onclick = () => {
+    if (!G.regMode) { setRegMode(true); $('#lgPw2').value = ''; lgMsg('配られたIDと、自分で決めたパスワード（4〜16文字）を2回入れてください', true); AUDIO.sfx('ui'); return; }
+    const id = SAVE.parseId($('#lgId').value), r = SAVE.register(id, $('#lgPw').value, $('#lgPw2').value);
+    if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); return; }
+    loginOk(r.save, r.msg + '。全員Lv.1からスタート');
+  };
+  $('#btnRestore').onclick = () => {
+    const id = SAVE.parseId($('#lgId').value), code = $('#lgCode').value, key = id + '|' + code;
+    const r = SAVE.restore(id, $('#lgPw').value, code, G.restoreConfirm === key);
+    if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); G.restoreConfirm = r.confirm ? key : null; return; }
+    G.restoreConfirm = null; $('#lgCode').value = ''; loginOk(r.save, r.msg);
+  };
+  $('#btnGuest').onclick = () => { AUDIO.sfx('back'); show(G.loginBack || 'title'); };
+  for (const id of ['#lgId', '#lgPw', '#lgPw2']) $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); (G.regMode ? $('#btnRegister') : $('#btnLogin')).click(); } });
+  $('#btnAcSave').onclick = () => { doSave('account'); renderAccount(); };
+  $('#btnAcCopy').onclick = async () => { const t = $('#acCode').textContent; try { await navigator.clipboard.writeText(t); mtoast('引き継ぎコードをコピーしました'); } catch (e) { mtoast('コピーできませんでした。コードを長押しして選んでください', 3000); } };
+  $('#btnLogout').onclick = () => { G.acct = null; updateAcctBar(); AUDIO.sfx('back'); mtoast('ログアウトしました'); show('title'); };
+  $('#btnAcBack').onclick = () => { AUDIO.sfx('back'); show(G.acBack || 'title'); };
+  $('#btnResLogin').onclick = () => openLogin('result', 'ログインすると、この戦いの記録もセーブされます');
 }
 
 /* ---------- 協力プレイの開始 ---------- */
@@ -277,7 +388,7 @@ async function startHost() {
   const b = $('#btnHost'); b.disabled = true; b.textContent = '部屋を準備しています…';
   try {
     const tr = await openTransport(code);
-    G.session = new NETLIB.HostSession({ transport: tr, code, nick: G.nick, ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2), aiParty: G.party.slice(1) });
+    G.session = new NETLIB.HostSession({ transport: tr, code, nick: G.nick, ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2), aiParty: G.party.slice(1), lv: lvOf(G.party[0]), lvs: Object.fromEntries(DATA.CHARS.map(c => [c.id, lvOf(c.id)])) });
     G.session.lobby.diff = G.diff; G.coop = true; openLobby();
   } catch (e) { console.error(e); toast('部屋を作れませんでした。電波のよい所でもう一度。'); }
   b.disabled = false; b.textContent = '部屋を作る';
@@ -300,10 +411,11 @@ function startSolo() {
   AUDIO.init();
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
   S.lobby.diff = G.diff;
-  S.startGame({ party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI' })) });
+  S.startGame({ party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {
+  G.run = { applied: [0, 0, 0, 0] }; G.lastAuto = null; // この戦いでセーブ済みの記録
   G.mode = 'play'; G.lock = null; G.resultShown = false; G.lagBoss = 1; G.lagMe = 1; G.spTotals = {}; G.lastStage = ''; G.hint = 0;
   R.clearEntities(); R.cam.lock = null; R.cam.yaw = 0; R.cam.introDone = false;
   show(null); $('#hud').hidden = false; layoutHud(); buildPartyCards();
@@ -433,7 +545,7 @@ function bindHud() {
   // キーボード（パソコンでの確認用）
   const KM = { KeyJ: ['A'], KeyK: ['X+', 'X', 'X-'], KeyL: ['Y+', 'Y', 'Y-'], KeyU: ['SP'], Space: ['B+', 'B', 'B-'], Digit1: ['I0'], Digit2: ['I1'] };
   addEventListener('keydown', e => {
-    if (e.target && e.target.tagName === 'INPUT') return;
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     if (e.code === 'Escape') { if (G.mode === 'play') pause(); else if (G.mode === 'pause') resume(); return; }
     if (G.mode !== 'play') return;
     if (INP.keys.has(e.code)) return; INP.keys.add(e.code);
@@ -466,13 +578,13 @@ function buildPartyCards() {
   for (let i = 0; i < n; i++) {
     const c = el('div', 'pcard'); const f = el('div', 'face'); const im = el('img'); im.alt = ''; f.appendChild(im); c.appendChild(f);
     const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); c.appendChild(pn);
-    const info = el('div', 'info'); const nm = el('div', 'nm'); const nmT = el('span', '', ''); const ic = el('span', 'ic', ''); nm.append(nmT, ic); info.appendChild(nm);
+    const info = el('div', 'info'); const nm = el('div', 'nm'); const lvT = el('span', 'lv', ''); const nmT = el('span', '', ''); const ic = el('span', 'ic', ''); nm.append(lvT, nmT, ic); info.appendChild(nm);
     const hp = el('div', 'mini hp'); const hpi = el('i'); hp.appendChild(hpi); info.appendChild(hp);
     const sp = el('div', 'mini sp'); const spi = el('i'); sp.appendChild(spi); info.appendChild(sp); c.appendChild(info);
     const st = el('span', 'state', ''); st.hidden = true; c.appendChild(st);
     const ht = el('span', 'healtag', '回復対象'); ht.hidden = true; c.appendChild(ht);
     c.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); partyTap(i); });
-    box.appendChild(c); G.cards.push({ c, im, nmT, ic, hp, hpi, sp, spi, st, ht, ch: null });
+    box.appendChild(c); G.cards.push({ c, im, nmT, lvT, ic, hp, hpi, sp, spi, st, ht, ch: null });
   }
 }
 function partyTap(i) {
@@ -500,7 +612,7 @@ function onNotice(o) {
   else if (o.k === 'stage') {
     if (o.s === 'wave2') notice('札小僧がまた出た！', 'info', 1500);
     if (o.s === 'open') { banner('結界が解けた', '奥の祭り広場へ進もう', 2200); AUDIO.sfx('lantern'); }
-    if (o.s === 'intro') { AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
+    if (o.s === 'intro') { checkpoint(G.v, false, '祭り広場に着いた'); AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
     if (o.s === 'fight') { AUDIO.bgm('boss'); banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
     if (o.s === 'won') { AUDIO.jingle(true); banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
     if (o.s === 'lost') { AUDIO.jingle(false); banner(G.v && G.v.result && G.v.result.why === 'time' ? '時間切れ' : '全滅', '', 2500); }
@@ -586,7 +698,7 @@ function updateHud(v, dt) {
     const C = G.cards[i]; if (!C) return;
     if (C.ch !== a.ch) { C.ch = a.ch; C.im.src = G.thumbs[a.ch] || ''; }
     C.c.classList.toggle('me', i === G.my); C.c.classList.toggle('down', a.st === 'down'); C.c.classList.toggle('gone', a.st === 'gone');
-    C.nmT.textContent = DATA.CHI[a.ch].nm + (a.ai && G.session.kind !== 'solo' ? '·AI' : '');
+    C.nmT.textContent = DATA.CHI[a.ch].nm + (a.ai && G.session.kind !== 'solo' ? '·AI' : ''); C.lvT.textContent = 'Lv' + (a.lv || 1);
     setBar(C.hpi, a.hpR); C.hp.classList.toggle('low', a.hpR < 0.3); setBar(C.spi, a.sp / 100); C.sp.classList.toggle('full', a.sp >= 100);
     C.ic.textContent = (a.strBuff ? '⚔' : '') + (a.defBuff ? '🛡' : '') + (a.stealth ? '👁' : '') + (a.taunt ? '❗' : '') + (a.sp >= 100 ? '★' : '');
     C.st.hidden = a.st === 'ok'; C.st.textContent = a.st === 'down' ? `気絶 ${Math.max(0, Math.ceil(DATA.SIM.ascendTime - a.downT))}` : '昇天';
@@ -684,13 +796,14 @@ function showResult(v) {
   for (const [k, val] of [['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : '協力プレイ']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
   const grid = $('#resGrid'); grid.textContent = '';
   const stats = S.sim ? S.sim.allies.map(a => a.stats) : null;
-  v.allies.forEach((a, i) => { const c = el('div', 'res-c'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const im = el('img'); im.src = G.thumbs[a.ch] || ''; im.alt = ''; c.append(pn, im, el('b', '', DATA.CHI[a.ch].nm)); if (stats) { c.appendChild(el('span', '', `与えたダメージ ${stats[i].dmg}`)); c.appendChild(el('span', '', `救助 ${stats[i].revives}・必殺 ${stats[i].specials}`)); } c.appendChild(el('span', 'small', a.st === 'ok' ? '元気' : a.st === 'down' ? '気絶' : '昇天')); grid.appendChild(c); });
+  v.allies.forEach((a, i) => { const c = el('div', 'res-c'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const im = el('img'); im.src = G.thumbs[a.ch] || ''; im.alt = ''; c.append(pn, im, el('b', '', DATA.CHI[a.ch].nm), el('span', 'lv', 'Lv.' + (a.lv || 1))); if (stats) { c.appendChild(el('span', '', `与えたダメージ ${stats[i].dmg}`)); c.appendChild(el('span', '', `救助 ${stats[i].revives}・必殺 ${stats[i].specials}`)); } c.appendChild(el('span', 'small', a.st === 'ok' ? '元気' : a.st === 'down' ? '気絶' : '昇天')); grid.appendChild(c); });
   const rw = '金の提灯芯';
   $('#resReward').textContent = win ? `獲得：${rw} ×${v.result.time < 240 ? 3 : v.result.time < 480 ? 2 : 1}（育成は今後の拡張で使う予定です）` : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
   const host = S.kind !== 'client';
   $('#btnRetry').hidden = !host; $('#btnReteam').hidden = !host && G.coop;
   $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : 'もう一度';
   if (!host) $('#resReward').textContent += '　ホストがロビーへ戻ると次の戦いを始められます。';
+  checkpoint(v, true, '戦いが終わった'); refreshResSave();
   $('#hud').hidden = true; show('result');
 }
 
