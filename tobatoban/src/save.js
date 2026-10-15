@@ -63,7 +63,7 @@ const SAVE = (() => {
     if (!mig.d) { const now = Date.now(); for (const id of DATA.NEW_D_IDS) if (!ch[id]) ch[id] = charRec(now, 0); mig.d = 1; }
     for (const id in ch) {
       const x = ch[id], c = DATA.CHI[id]; if (!c) { delete ch[id]; continue; }
-      for (const k of ['b', 'w', 'k', 'got']) x[k] = int(x[k]); x.seen = x.seen ? 1 : 0;
+      for (const k of ['b', 'w', 'k', 'got', 'used']) x[k] = int(x[k]); x.seen = x.seen ? 1 : 0;
       x.exp = Math.max(int(x.exp), DATA.GROWTH.cum(c.rank, int(x.lv, 1))); // Lvだけの旧セーブは、そのLvの累積EXPにする（下げない）
       x.exp = Math.min(x.exp, DATA.GROWTH.cum(c.rank, 99)); x.lv = DATA.GROWTH.levelOf(c.rank, x.exp);
       x.eq = (Array.isArray(x.eq) ? x.eq : []).filter((e, i, a) => DATA.EQUIP_I[e] && a.indexOf(e) === i); // 存在しない・重複の装備は外す

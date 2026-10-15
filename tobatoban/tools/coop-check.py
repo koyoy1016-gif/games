@@ -27,23 +27,30 @@ with sync_playwright() as p:
         pg.on('console', lambda m, nm=nm: errs.append(f'{nm} [{m.type}] {m.text}') if m.type == 'error' and 'ERR_FAILED' not in m.text else None)
         pg.goto(URL, wait_until='domcontentloaded', timeout=120000); pg.wait_for_function('window.__tb && window.__tb.G.mode === "title"', timeout=60000); print(nm, 'loaded', flush=True)
     if os.environ.get('STAGE') == 'joban': A.evaluate("() => { __tb.G.sessClear.senju = true; }")  # ホストはトバトーバを倒している
+    rects = "() => JSON.stringify(['btnSolo','btnStageSel','btnTeam','btnCoop','btnGacha'].map(id => { const r = document.getElementById(id).getBoundingClientRect(); return [id, Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; }).concat([...document.querySelectorAll('#hmTags .hm-tag')].map((t, i) => ['tag' + i, Math.round(parseFloat(t.style.left)), Math.round(parseFloat(t.style.top))])))"
+    for pg in (A, B): pg.evaluate("() => document.getElementById('btnGuest').click()")
+    time.sleep(1.0); solo_rects = A.evaluate(rects)
     A.evaluate("() => { document.getElementById('btnCoop').click(); document.getElementById('nick').value='ホスト'; document.getElementById('btnHost').click(); }")
     A.wait_for_function('window.__tb.G.session && window.__tb.G.session.code', timeout=10000)
     code = A.evaluate('__tb.G.session.code'); print('code', code)
     B.evaluate(f"() => {{ document.getElementById('btnCoop').click(); document.getElementById('nick').value='さんか'; document.getElementById('code').value='{code}'; document.getElementById('btnJoin').click(); }}")
     B.wait_for_function('window.__tb.G.session && window.__tb.G.session.mySlot >= 0', timeout=15000)
-    B.evaluate("() => { document.querySelectorAll('#cards .card')[1].click(); }")  # ホシスズメを選ぶ
-    time.sleep(2.0)
+    time.sleep(1.0); one_rects = A.evaluate(rects)
+    B.evaluate("() => { document.getElementById('btnTeam').click(); [...document.querySelectorAll('#cards .rs-card')].find(b => b.querySelector('.nm').textContent === 'ホシスズメ').click(); document.getElementById('btnChPick').click(); document.getElementById('btnRosterHome').click(); }")  # ホシスズメを選ぶ
+    time.sleep(2.0); two_rects = A.evaluate(rects)
+    print('rects solo', solo_rects); print('rects host 1p', one_rects); print('rects host 2p', two_rects)
+    print('same layout', solo_rects == one_rects == two_rects)
+    print('host tags', A.evaluate("() => [...document.querySelectorAll('#hmTags .hm-tag')].map(t => t.innerText.replace(/\\n/g, ' ')).join(' | ')"))
+    print('guest tags', B.evaluate("() => [...document.querySelectorAll('#hmTags .hm-tag')].map(t => t.innerText.replace(/\\n/g, ' ')).join(' | ')"), 'guest go', B.evaluate("() => [document.getElementById('btnSolo').disabled, document.getElementById('hmGoSub').textContent, document.getElementById('hmRoomSt').textContent]"))
     A.screenshot(path=os.path.join(OUT, '50_lobby_host.png')); B.screenshot(path=os.path.join(OUT, '51_lobby_guest.png'))
     print('host slots', A.evaluate("JSON.stringify(__tb.G.session.lobbyMsg().slots.map(s => s && [s.nick, s.ch]))"))
     print('clients before', A.evaluate("JSON.stringify([...__tb.G.session.clients.values()].map(c=>[c.slot, Math.round(performance.now()-c.lastSeen)]))"))
     JOBAN = os.environ.get('STAGE') == 'joban'
     if JOBAN:  # ステージ2：ホストがトバトーバを倒した扱いにして、部屋のステージを常磐線にする
-        print('chips', A.evaluate("() => [...document.querySelectorAll('#stageChips button')].map(b => b.textContent + (b.disabled ? '(x)' : ''))"))
-        A.evaluate("() => document.querySelectorAll('#stageChips button')[1].click()"); time.sleep(1.2)
+        A.evaluate("() => { document.getElementById('btnStageSel').click(); document.querySelectorAll('#stages .ss-card')[1].click(); }"); time.sleep(1.2)
         print('guest lobby stage', B.evaluate("() => __tb.G.session.lobby && __tb.G.session.lobby.stage"))
         B.screenshot(path=os.path.join(OUT, '51b_lobby_guest_joban.png'))
-    A.evaluate("() => document.getElementById('btnGo').click()")
+    A.evaluate("() => document.getElementById('btnSolo').click()")
     print('ctrlAI at start', A.evaluate("JSON.stringify(__tb.G.session.sim.allies.map(a=>!!a.ctrlAI))"))
     B.wait_for_function('window.__tb.G.mode === "play"', timeout=15000)
     time.sleep(3)

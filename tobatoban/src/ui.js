@@ -4,9 +4,10 @@
 const $ = s => document.querySelector(s);
 const STORE = { get(k, d) { try { const v = localStorage.getItem('tb.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem('tb.' + k, JSON.stringify(v)); } catch (e) { } } };
 const SET = Object.assign({ land: true, rotDir: 'left', ui: 100, mirror: false, stick: 'fixed', shake: true, simple: false, relock: false, vib: true, bgm: 50, sfx: 85, dev: false }, STORE.get('set', {}));
+const VC = { t: 0, w: 0, h: 0 }; // 画面サイズの変化をまとめる（requestViewChange）
 const PUBLIC_URL = 'https://koyoy1016-gif.github.io/games/tobatoban/';
 const G = {
-  mode: 'boot', session: null, v: null, T: 0, party: STORE.get('party', DATA.DEFAULT_PARTY.slice()), swap: STORE.get('swap', [false, false, false, false]),
+  mode: 'boot', session: null, v: null, T: 0, busts: {}, party: STORE.get('party', DATA.DEFAULT_PARTY.slice()), swap: STORE.get('swap', [false, false, false, false]),
   items: STORE.get('items', ['onigiri', 'ramune']), diff: 'normal', selSlot: 0, focus: null, thumbs: {}, netMode: null, roomCap: null,
   lock: null, back: 'title', coop: false, nick: STORE.get('nick', ''), lagBoss: 1, lagMe: 1, spTotals: {}, resultShown: false, rotateDismissed: false, firstRun: !STORE.get('played', false),
 };
@@ -48,13 +49,15 @@ function toApp(e) {
   if (VIEW.rot === -90) return [window.innerHeight - e.clientY, e.clientX];
   return [e.clientX, e.clientY];
 }
-function onViewChange() { applyRotation(); R.resize(); layoutHud(); }
+function onViewChange() { applyRotation(); R.resize(); layoutHud(); VC.w = window.innerWidth; VC.h = window.innerHeight; }
 
 /* ---------- 画面 ---------- */
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id);
   $('#hud').hidden = !(G.mode === 'play' && !id);
-  if (id === 'team' && $('#btnWalkReplay')) $('#btnWalkReplay').hidden = !(G.teamMode === 'zukan' && typeof ACC === 'function' && ACC().walkSeen);
+  // メニューの3D：ホーム（4体）とキャラ詳細（1体）だけ。ほかの画面では止めて隠す
+  if (id === 'title' && typeof renderHome === 'function') { if (G.mode !== 'lobby' && G.mode !== 'walk') G.mode = 'title'; renderHome(); }
+  else if (id !== 'chara' && typeof LOBBY3D !== 'undefined') LOBBY3D.hide();
 }
 function goTitle() {
   if (G.session) { try { G.session.leave(); } catch (e) { } }
@@ -62,7 +65,7 @@ function goTitle() {
   $('#bossCard').classList.remove('show'); $('#banner').classList.remove('show'); $('#rotateHint').hidden = true;
   show('title');
 }
-document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { AUDIO.sfx('back'); show(G.back); if (G.back === 'pause') {} });
+document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => { AUDIO.sfx('back'); const to = G.back; if (to === 'settings' && G.backPrev) { G.back = G.backPrev; G.backPrev = null; } show(to); });
 function openSub(id, from) { G.back = from; show(id); }
 
 /* ---------- 起動 ---------- */
@@ -89,7 +92,11 @@ function makeThumbs() {
       const m = GFX.makeChar(c); sc.add(m.root); m.root.rotation.y = 0.45; m.root.position.set(0, 0, 0);
       GFX.animChar(m, { x: 0, z: 0, yaw: 0.45, st: 'ok', act: '', actT: 0, slot: 0, moving: false }, 0.3, 0, {});
       const hh = c.h; cm.position.set(0, 0.62 * hh, 3.1 * hh); cm.lookAt(0, 0.52 * hh, 0);
-      r.render(sc, cm); G.thumbs[c.id] = r.domElement.toDataURL('image/png'); sc.remove(m.root);
+      r.render(sc, cm); G.thumbs[c.id] = r.domElement.toDataURL('image/png');
+      // 一覧のカード用：顔・上半身を大きく（同じモデルから作る）
+      GFX.animChar(m, { x: 0, z: 0, yaw: 0.3, st: 'ok', act: '', actT: 0, slot: 0, moving: false }, 0.3, 0, {}); m.root.rotation.y = 0.3;
+      cm.position.set(0, 0.8 * hh, 1.75 * hh); cm.lookAt(0, 0.66 * hh, 0); r.render(sc, cm); G.busts[c.id] = r.domElement.toDataURL('image/png');
+      sc.remove(m.root);
     }
     r.dispose(); if (r.forceContextLoss) r.forceContextLoss();
   } catch (e) { console.warn('thumbs', e); }
@@ -114,16 +121,8 @@ async function detectNet() {
 function bindMenus() {
   const unlock = () => { AUDIO.init(); AUDIO.setVol(SET.bgm / 100, SET.sfx / 100); if (G.mode === 'title') AUDIO.bgm('title'); };
   document.addEventListener('pointerdown', unlock, { once: false, passive: true });
-  $('#btnSolo').onclick = () => { AUDIO.sfx('ok'); G.coop = false; openTeam('title'); }; // 出動：まずキャラ選択 → 次にステージ選択
-  $('#btnCoop').onclick = () => { AUDIO.sfx('ok'); $('#nick').value = G.nick; show('coop'); };
-  $('#btnCoopBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
-  $('#btnHow').onclick = () => openSub('how', 'title');
-  $('#btnSet').onclick = () => openSub('settings', 'title');
   $('#btnHost').onclick = () => startHost();
   $('#btnJoin').onclick = () => startJoin();
-  $('#btnTeamBack').onclick = () => { AUDIO.sfx('back'); if (G.coop) goTitle(); else { persistPrefs(); show(G.teamBack || 'title'); } };
-  $('#btnGo').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session && G.session.kind === 'host') { const S = G.session; S.lobby.diff = G.diff; if (!stageOpen(S.lobby.stage)) S.lobby.stage = 'senju'; S.startGame({ bid: newBid() }); enterGame(); } } else { persistPrefs(); if (G.teamBack === 'prep') openPrep(); else if (G.teamBack === 'akiba') openAkibaWalkPrep(); else openSortie(); } };
-  $('#btnStageBack').onclick = () => { AUDIO.sfx('back'); openTeam('title'); }; // ステージ選択から戻ると、キャラ選択へ
   bindHub();
   $('#btnResume').onclick = () => resume();
   $('#btnPSet').onclick = () => openSub('settings', 'pause');
@@ -137,11 +136,11 @@ function bindMenus() {
     const nx = G.next; G.next = null;
     if (nx === 'street') { leaveBattle(); startSolo('ueno_street'); }
     else if (nx === 'prep') { leaveBattle(); openPrep('ueno'); }
-    else if (nx === 'akiba') { leaveBattle(); openTeam('akiba'); }
+    else if (nx === 'akiba') { leaveBattle(); openRoster('akiba'); }
     else if (nx === 'prepAkiba') { leaveBattle(); openPrep('akiba_plaza'); }
     else startSolo(G.stageId || 'senju');
   };
-  $('#btnReteam').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') G.session.backToLobby(); openLobby(); } else { leaveBattle(); openTeam('stage'); } };
+  $('#btnReteam').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') G.session.backToLobby(); openLobby(); } else { leaveBattle(); openRoster('home'); } };
   $('#btnResGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop && G.session) goTitle(); else leaveBattle(); openGacha(); };
   $('#btnResTitle').onclick = () => { AUDIO.sfx('back'); goTitle(); };
   $('#btnLostOk').onclick = () => goTitle();
@@ -183,22 +182,11 @@ function applySettings() {
   layoutHud();
 }
 
-/* ---------- 編成・ロビー ---------- */
-function openTeam(back) {
-  G.coop = false; G.teamMode = 'solo'; G.teamBack = back || 'title'; $('#teamEyebrow').textContent = back === 'title' ? '出動 ① キャラ選択（P1を操作＋AI3体）' : '編成（P1を操作＋AI3体）'; $('#teamTitle').textContent = '4体を選ぶ';
-  $('#lobCode').hidden = true; $('#lobStatus').hidden = true; $('#btnGo').disabled = false; $('#btnGo').textContent = back === 'prep' ? '上野の準備へ ▶' : back === 'akiba' ? '秋葉原へ向かう ▶' : 'ステージ選択へ ▶'; $('#btnRecommend').hidden = false; $('#itemsBox').hidden = false;
-  G.focus = G.party[G.selSlot]; renderTeam(); show('team');
-}
-function openLobby() {
-  G.coop = true; G.mode = 'lobby'; G.teamMode = 'lobby'; $('#hud').hidden = true;
-  $('#teamEyebrow').textContent = '協力プレイのロビー'; $('#teamTitle').textContent = '自分のもののけを選ぶ'; $('#btnRecommend').hidden = true; $('#itemsBox').hidden = false;
-  $('#lobCode').hidden = false; $('#lobStatus').hidden = false;
-  G.focus = G.party[0]; renderTeam(); show('team');
-}
+/* ---------- 協力プレイの自分の枠 ---------- */
 function myLobbySlot() { const s = G.session; if (!s) return 0; return s.kind === 'host' ? 0 : s.mySlot; }
 function sendMine() {
   const S = G.session; if (!G.coop || !S) return;
-  const o = { nick: G.nick || 'もののけ', ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2), lv: lvOf(G.party[0]) };
+  const o = { nick: G.nick || 'もののけ', ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2), lv: lvOf(G.party[0]), eq: eqOf(G.party[0]) };
   if (S.kind === 'host') S.setMine(o); else S.hello(o);
 }
 
@@ -211,17 +199,13 @@ G.acct = null; G.pending = []; G.run = null;
 const fmtDate = ts => { if (!ts) return 'まだ'; const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const cloud = () => ACCT.mode === 'cloud';
 function mtoast(t, ms) { const m = $('#mtoast'); m.textContent = t; m.classList.add('show'); clearTimeout(G.mtT); G.mtT = setTimeout(() => m.classList.remove('show'), ms || 2400); }
-function updateAcctBar() {
-  const w = $('#acctWho'); w.textContent = '';
-  if (G.acct) { w.append(`ID ${G.acct.id} でログイン中`); w.appendChild(el('small', '', `最後のセーブ ${fmtDate(G.acct.saved)}`)); $('#btnAcct').textContent = 'アカウント'; $('#btnTSave').hidden = false; }
-  else { w.append('ログインしていません'); w.appendChild(el('small', '', 'セーブするにはログイン')); $('#btnAcct').textContent = 'ログイン'; $('#btnTSave').hidden = true; }
-}
+function updateAcctBar() { if (typeof renderHome === 'function' && !$('#title').hidden) renderHome(); }
 function lgMsg(t, ok) { const m = $('#lgMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
 function lgBusy(on) { G.lgBusy = on; for (const q of ['#btnLogin', '#btnRegister', '#btnRestore', '#btnDoneOk']) $(q).disabled = on; if (on) lgMsg('サーバーと通信しています…', true); }
 const PW_TXT = () => `${SAVE.PW_MIN}文字以上`;
 function setRegMode(on) {
   G.regMode = on; $('#lgPw2').hidden = $('#lgPw2L').hidden = !on; $('#lgId').hidden = $('#lgIdL').hidden = on;
-  $('#btnRegister').textContent = on ? 'アカウントを作る（IDは自動で決まります）' : '新しくアカウントを作る'; $('#btnLogin').textContent = on ? 'IDを持っている人はログイン' : 'ログイン'; $('#btnLogin').classList.toggle('main', !on);
+  $('#btnRegister').hidden = !on; $('#btnLogin').hidden = on; $('#lgMove').hidden = on || cloud();
   $('#lgTitle').textContent = on ? '新しくアカウントを作る' : 'ログイン';
   $('#lgLead').textContent = on ? `パスワードを自分で決めて2回入れてください（${PW_TXT()}）。IDは作った順に自動で決まります。` : 'IDと、自分で決めたパスワードを入れてください。ログインしている間は「セーブ」を押すだけで続きを保存できます。';
   $('#lgPw').setAttribute('autocomplete', on ? 'new-password' : 'current-password'); $('#lgPw').placeholder = PW_TXT();
@@ -229,7 +213,8 @@ function setRegMode(on) {
 /** アカウントを作った直後：決まったIDを大きく見せる */
 function showDone(on, id) {
   $('#lgDone').hidden = !on; if (on) $('#lgDoneId').textContent = String(id);
-  for (const q of ['#lgGrid', '#btnLogin', '#btnRegister', '#btnGuest']) $(q).hidden = on;
+  for (const q of ['#lgGrid', '#btnLgBack']) $(q).hidden = on;
+  if (on) { $('#btnLogin').hidden = true; $('#btnRegister').hidden = true; }
   $('#lgMove').hidden = on || cloud();
   $('#btnDoneOk').hidden = !on;
   if (on) { $('#lgTitle').textContent = 'アカウントができました'; $('#lgLead').textContent = 'これからはこのIDと、いま決めたパスワードでログインします。'; }
@@ -238,8 +223,9 @@ function openLogin(back, msg) {
   G.loginBack = back || 'title'; showDone(false); setRegMode(false); lgBusy(false);
   const last = STORE.get('lastId', ''); if (!$('#lgId').value && last) $('#lgId').value = last;
   $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg(msg || '', false); G.restoreConfirm = null;
-  $('#btnGuest').textContent = G.loginBack === 'title' ? 'ログインせずに遊ぶ（セーブなし）' : 'もどる';
-  $('#lgNote').textContent = cloud() ? 'セーブはサーバーに保存されます。どの端末でも、IDとパスワードでログインすれば続きから遊べます。ほかのサービスと同じパスワードは使わないでください。' : 'セーブはこの端末のブラウザに保存されます。ほかのサービスと同じパスワードは使わないでください。';
+  $('#btnGuest').textContent = G.loginBack === 'title' ? 'ログインせずに遊ぶ' : 'もどる';
+  $('#lgNote').textContent = cloud() ? 'セーブデータはサーバーに保存されます' : 'セーブデータはこの端末に保存されます';
+  $('#lgPanel').hidden = !msg; // 「セーブするにはログイン」などは入力欄を最初から開く
   show('login');
 }
 /** ログインできた：編成などをアカウントから読み、ログイン前の記録があれば足して保存 */
@@ -323,7 +309,6 @@ function bindAccount() {
   $('#btnAcct').onclick = () => { AUDIO.sfx('ui'); if (G.acct) openAccount('title'); else openLogin('title'); };
   $('#btnTSave').onclick = () => doSave('title');
   $('#btnLogin').onclick = async () => {
-    if (G.regMode) { setRegMode(false); $('#lgPw2').value = ''; lgMsg(''); AUDIO.sfx('ui'); return; }
     if (G.lgBusy) return;
     if (G.lgLock && performance.now() < G.lgLock) { lgMsg(`まちがいが続いたので、${Math.ceil((G.lgLock - performance.now()) / 1000)}秒待ってからためしてください`); return; }
     const id = SAVE.parseId($('#lgId').value), pw = $('#lgPw').value;
@@ -332,7 +317,6 @@ function bindAccount() {
     lgMsg(''); loginOk(r.save, r.msg);
   };
   $('#btnRegister').onclick = async () => {
-    if (!G.regMode) { setRegMode(true); $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg(''); AUDIO.sfx('ui'); return; }
     if (G.lgBusy) return;
     lgBusy(true); const r = await ACCT.register($('#lgPw').value, $('#lgPw2').value); lgBusy(false);
     if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); return; }
@@ -353,7 +337,7 @@ function bindAccount() {
   for (const id of ['#lgId', '#lgPw', '#lgPw2']) $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); (G.regMode ? $('#btnRegister') : $('#btnLogin')).click(); } });
   $('#btnAcSave').onclick = async () => { await doSave('account'); renderAccount(); };
   $('#btnAcCopy').onclick = async () => { const t = $('#acCode').textContent; try { await navigator.clipboard.writeText(t); mtoast('引き継ぎコードをコピーしました'); } catch (e) { mtoast('コピーできませんでした。コードを長押しして選んでください', 3000); } };
-  $('#btnLogout').onclick = () => { G.acct = null; ACCT.logout(); updateAcctBar(); AUDIO.sfx('back'); mtoast('ログアウトしました'); show('title'); };
+  $('#btnLogout').onclick = () => { G.acct = null; ACCT.logout(); AUDIO.sfx('back'); mtoast('ログアウトしました'); openLogin('title'); };
   $('#btnAcBack').onclick = () => { AUDIO.sfx('back'); show(G.acBack || 'title'); };
   $('#btnResLogin').onclick = async () => { if (G.acct) { const ok = await doSave('result'); G.lastAuto = ok ? `ID ${G.acct.id} にセーブしました` : G.lastAuto; refreshResSave(); } else openLogin('result', 'ログインすると、この戦いの記録もセーブされます'); };
 }
@@ -396,6 +380,7 @@ function startSolo(stageId) {
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
   S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
   const carry = G.stageId === 'ueno_street' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
+  markUsed(G.party);
   S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch), eq: eqOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
@@ -477,9 +462,24 @@ function layoutHud() {
   $('#rotateHint').style.top = (safe.t + 176 * posS) + 'px';
   buildPartyCards();
 }
-addEventListener('resize', () => setTimeout(onViewChange, 60));
-addEventListener('orientationchange', () => setTimeout(onViewChange, 250));
-if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(onViewChange, 60));
+/* 画面サイズの変化：回転（CSS transform）とブラウザのリサイズが重ならないよう1回にまとめる。
+   ・resize / visualViewport / orientationchange の連続は最後の1回だけ
+   ・1〜2pxの行ったり来たり（アドレスバーの伸縮途中など）は無視
+   ・入力中（キーボード表示）は、向きが変わらない限り並べ直さない（入力欄やメニューがぶれない） */
+function requestViewChange(delay) {
+  clearTimeout(VC.t);
+  VC.t = setTimeout(() => {
+    const vw = window.innerWidth, vh = window.innerHeight, swapped = VC.w && (vw > vh) !== (VC.w > VC.h);
+    const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    if (VC.w && !swapped && Math.abs(vw - VC.w) <= 2 && Math.abs(vh - VC.h) <= 2) return;
+    if (typing && !swapped && VC.w) return;
+    VC.w = vw; VC.h = vh; onViewChange();
+  }, delay);
+}
+addEventListener('resize', () => requestViewChange(80));
+addEventListener('orientationchange', () => requestViewChange(260));
+if (window.visualViewport) visualViewport.addEventListener('resize', () => requestViewChange(80));
+document.addEventListener('focusout', () => requestViewChange(200)); // キーボードを閉じたら、まとめて1回だけ合わせる
 function sizeMapCanvas() { const mc = $('#mapc'), mb = $('#map'); mc.width = Math.round(mb.offsetWidth * 2); mc.height = Math.round(mb.offsetHeight * 2); }
 function gameArea() { if (!curLayout) return null; const L = curLayout.L; if (!curLayout.portrait) return { top: safe.t + 30, bottom: VIEW.h - safe.b }; return { top: safe.t + L.area[0] * curLayout.posS, bottom: VIEW.h - safe.b - (L.H - L.area[1]) * curLayout.posS }; }
 
@@ -970,7 +970,7 @@ function frame(ts) {
         else if ((G.mode === 'result' || G.mode === 'play') && S.lobby && S.lobby.phase === 'lobby' && G.resultShown) { openLobby(); }
         else if (G.mode === 'lobby' && !S.lobby && performance.now() - (G.joinT || 0) > 15000) { $('#lostTitle').textContent = '部屋が見つかりません'; $('#lostMsg').textContent = '合言葉が同じか、ホストが「部屋を作る」を押しているか確認してください。'; G.mode = 'lost'; show('netlost'); }
       }
-      if (G.mode === 'lobby') { G.lobT = (G.lobT || 0) + dt; if (G.lobT > 0.5) { G.lobT = 0; renderTeam(); } }
+      if (G.mode === 'lobby') { G.lobT = (G.lobT || 0) + dt; if (G.lobT > 0.5) { G.lobT = 0; if (!$('#title').hidden) renderHome(); } }
       G.my = S.kind === 'client' ? Math.max(0, S.mySlot) : S.mySlot;
       const v = (G.mode === 'play' || G.mode === 'pause' || G.mode === 'result') ? S.view() : null;
       if (v) {
@@ -985,7 +985,8 @@ function frame(ts) {
         if ((v.stage === 'won' || v.stage === 'lost') && v.stageT > (v.stage === 'won' ? 3.4 : 2.6) && G.mode === 'play') showResult(v);
       }
     } else if (G.mode === 'walk') { let end = true; try { end = WALK.step(dt, G.T); } catch (e) { console.error(e); } if (end) finishWalk(false); }
-    else titleCam(G.T);
+    else if (!LOBBY3D.active()) titleCam(G.T);
+    if (LOBBY3D.active() && G.mode !== 'play') { LOBBY3D.update(dt, G.T); lobbyTick(); }
   } catch (e) { console.error(e); }
   R.render(dt);
   requestAnimationFrame(frame);

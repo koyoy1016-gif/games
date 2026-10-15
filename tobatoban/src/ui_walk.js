@@ -98,8 +98,8 @@ function finishWalk(skipped) {
   if (G.mode !== 'walk') return;
   WALK.stop();
   const a = ACC(); if (!a.walkSeen) { a.walkSeen = true; try { persist(); } catch (e) { } }
-  if (G.walkReplay) { G.walkReplay = false; G.mode = 'title'; openZukan('title'); return; }
+  if (G.walkReplay) { G.walkReplay = false; G.mode = 'title'; openStageSel(); return; }
   startSolo('akiba_platform');
 }
 $('#btnWalkSkip').onclick = () => { AUDIO.sfx('ok'); finishWalk(true); };
-$('#btnWalkReplay').onclick = () => { AUDIO.sfx('ok'); openAkibaWalkPrep(true); }; // 図鑑から再視聴（報酬なし）
+$('#btnWalkReplay').onclick = () => { AUDIO.sfx('ok'); openAkibaWalkPrep(true); }; // ステージ選択から再視聴（報酬なし）

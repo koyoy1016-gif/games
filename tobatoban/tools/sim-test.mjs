@@ -373,10 +373,10 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   ok(og.hp === 5000 && ka.hp === 5000 && og.def === 150 && ka.def === 150 && og.str === 600 && og.yo === 600, 'ホーム：オガ・カエ（各HP5,000・まもり150・ちから600・ようりょく600）');
   const kg = pf.allies[0]; kg.ctrlAI = false; pf.syncAi(kg); kg.inv = 0;
   const hit = (pw, st) => { kg.hp = kg.maxHp; kg.act = null; const h0 = kg.hp; pf.dealToAlly(kg, pw, st, og, { src: og }); return h0 - kg.hp; };
-  { // オガ・カエの1発：まもり120の相手へ150〜200（技ごとの幅）。1回ごとに幅の中でランダム
+  { // オガ・カエの1発：まもり100の相手へ150〜200（技ごとの幅）。1回ごとに幅の中でランダム
     const AM = DATA.AKIBA.moves, list = Object.keys(AM).filter(k => AM[k].dmg && (AM[k].who === 'oga' || AM[k].who === 'kae'));
-    const rng = list.map(k => { const M = AM[k], avg = (M.dmg[0] + M.dmg[1]) / 2, base = M.pw * 600 / 240; return [Math.round(base * M.dmg[0] / avg), Math.round(base * M.dmg[1] / avg)]; });
-    ok(list.length === 5 && rng.every(([lo, hi]) => lo >= 147 && hi <= 203), `オガ・カエの技5つ：まもり120の相手へ ${rng.map(r => r.join('〜')).join('／')}`);
+    const rng = list.map(k => { const M = AM[k], avg = (M.dmg[0] + M.dmg[1]) / 2, base = M.pw * 600 / 220; return [Math.round(base * M.dmg[0] / avg), Math.round(base * M.dmg[1] / avg)]; });
+    ok(list.length === 5 && rng.every(([lo, hi]) => lo >= 147 && hi <= 203), `オガ・カエの技5つ：まもり100の相手へ ${rng.map(r => r.join('〜')).join('／')}`);
     const muls = []; for (let i = 0; i < 40; i++) { og.act = null; og.cd = {}; const n0 = pf.hazards.length; pf.akibaStart(og, 'ougi', kg); const h = pf.hazards[pf.hazards.length - 1]; if (pf.hazards.length > n0) muls.push(h.mul); }
     const M = AM.ougi, avg = (M.dmg[0] + M.dmg[1]) / 2, mn = Math.min(...muls), mx = Math.max(...muls);
     ok(mn >= M.dmg[0] / avg - 1e-9 && mx <= M.dmg[1] / avg + 1e-9 && mx - mn > 0.05, `1発ごとの幅：×${mn.toFixed(3)}〜×${mx.toFixed(3)}`);

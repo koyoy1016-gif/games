@@ -201,7 +201,7 @@ function bindGacha() {
   $('#btnGcSample').onclick = () => { AUDIO.sfx('ui'); gcSample(); };
   $('#gcSkip').onclick = () => { if (GC.ph === 'show' || GC.ph === 'idle') return; if (GC.cap) { GC.sc.remove(GC.cap.g); GC.cap = null; } GC.ph = 'show'; GC.t = 0; gcShowChar(); }; // 見た目だけ短く（結果・消費は変わらない）
   $('#btnGcBack').onclick = () => { AUDIO.sfx('back'); closeGacha(); };
-  $('#btnGcTeam').onclick = () => { AUDIO.sfx('ok'); const id = G.gcLast; closeGacha(); G.selSlot = 0; G.focus = id; openTeam('title'); };
-  $('#btnGcLook').onclick = () => { AUDIO.sfx('ok'); const id = G.gcLast; closeGacha(); G.focus = id; openZukan('title'); };
+  $('#btnGcTeam').onclick = () => { AUDIO.sfx('ok'); closeGacha(); openRoster('home'); };
+  $('#btnGcLook').onclick = () => { AUDIO.sfx('ok'); const id = G.gcLast; closeGacha(); G.rosterBack = 'home'; if (id && DATA.CHI[id]) openChara(id); else openRoster('home'); };
 }
 bindGacha();

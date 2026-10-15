@@ -360,7 +360,7 @@ const AKIBA = {
     oga: { nm: 'オガ', hp: 5000, str: 600, yo: 600, def: 150, h: 1.48, r: 0.42, scale: 1.5, spd: 2.5, col: 0xff7a5a },
     kae: { nm: 'カエ', hp: 5000, str: 600, yo: 600, def: 150, h: 1.50, r: 0.42, scale: 1.5, spd: 2.5, col: 0x6ad8a8 },
   },
-  // オガ・カエの dmg：まもり120の相手への1発の目安（v6の依頼で150〜200）。技ごとに幅の中でランダム。威力 pw ＝ 平均×(120＋120)÷600
+  // オガ・カエの dmg：まもり100（Lv50〜60の多くの味方）の相手への1発の目安（v6の依頼で150〜200）。技ごとに幅の中でランダム。威力 pw ＝ 平均×(120＋100)÷600
   moves: { // 威力・秒数は本作の初期調整値（原作の実測ではない）
     hoshizuna: { who: 'hoshi', nm: '星砂おとし', pw: 49, stat: 'yo', r: 1.4, warn: 1.1, act: 0.15, cd: 4.5, rng: 9, rec: 0.6 },
     hoshirai: { who: 'hoshi', nm: '星雷のしるし', pw: 65, stat: 'yo', r: 1.0, n: 3, delay: 0.65, warn: 1.3, act: 0.15, cd: 9, max: 2, rng: 10, rec: 0.8 },
@@ -368,11 +368,11 @@ const AKIBA = {
     shizuku: { who: 'naka', nm: '中の水しずく', pw: 49, stat: 'yo', w: 0.8, len: 12, speed: 8, warn: 0.9, cd: 4.5, rng: 11, rec: 0.5 },
     hyoutei: { who: 'naka', nm: '銀氷の小庭', pw: 65, stat: 'yo', r: 1.5, n: 3, warn: 1.4, act: 0.2, cd: 10, rng: 10, rec: 0.8 },
     mayoi: { who: 'naka', nm: '迷いの銀札', eff: 'spd', mul: 0.9, dur: 4, r: 1.0, warn: 1.2, act: 0.1, cd: 18, rng: 10, rec: 0.5 },
-    ougi: { who: 'oga', nm: '紅扇たたき', pw: 65, dmg: [150, 175], stat: 'str', r: 2.5, half: Math.PI / 4, warn: 0.75, act: 0.12, cd: 3.5, rng: 2.3, rec: 0.6 },
-    iki: { who: 'oga', nm: '灯りの息', pw: 64, dmg: [150, 170], stat: 'yo', r: 6, half: Math.PI / 6, warn: 1.2, act: 0.8, cd: 7, rng: 5, rec: 1.4 },
-    benibana: { who: 'oga', nm: '紅花おとし', pw: 75, dmg: [175, 200], stat: 'str', r: 2.0, warn: 1.5, act: 0.15, cd: 11, rng: 9, rec: 0.8 },
-    nagi: { who: 'kae', nm: '水杖なぎ', pw: 67, dmg: [155, 180], stat: 'str', r: 3.0, half: Math.PI * 55 / 180, warn: 0.85, act: 0.12, cd: 3.8, rng: 2.8, rec: 0.6 },
-    meguri: { who: 'kae', nm: '水環めぐり', pw: 69, dmg: [160, 185], stat: 'yo', w: 0.8, len: 8, sweep: Math.PI * 2 / 3, dur: 2.5, warn: 1.5, cd: 12, rng: 6, rec: 0.8 },
+    ougi: { who: 'oga', nm: '紅扇たたき', pw: 60, dmg: [150, 175], stat: 'str', r: 2.5, half: Math.PI / 4, warn: 0.75, act: 0.12, cd: 3.5, rng: 2.3, rec: 0.6 },
+    iki: { who: 'oga', nm: '灯りの息', pw: 59, dmg: [150, 170], stat: 'yo', r: 6, half: Math.PI / 6, warn: 1.2, act: 0.8, cd: 7, rng: 5, rec: 1.4 },
+    benibana: { who: 'oga', nm: '紅花おとし', pw: 69, dmg: [175, 200], stat: 'str', r: 2.0, warn: 1.5, act: 0.15, cd: 11, rng: 9, rec: 0.8 },
+    nagi: { who: 'kae', nm: '水杖なぎ', pw: 61, dmg: [155, 180], stat: 'str', r: 3.0, half: Math.PI * 55 / 180, warn: 0.85, act: 0.12, cd: 3.8, rng: 2.8, rec: 0.6 },
+    meguri: { who: 'kae', nm: '水環めぐり', pw: 63, dmg: [160, 185], stat: 'yo', w: 0.8, len: 8, sweep: Math.PI * 2 / 3, dur: 2.5, warn: 1.5, cd: 12, rng: 6, rec: 0.8 },
     kagami: { who: 'kae', nm: '水鏡の足どめ', r: 1.1, n: 2, life: 4, mul: 0.9, warn: 1.2, cd: 14, rng: 9, rec: 0.6 },
   },
   rights: p('秋葉原', '同時に通常攻撃する相手（全体）', 2, '人', 'spec'),

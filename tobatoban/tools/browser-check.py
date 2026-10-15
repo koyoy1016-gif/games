@@ -79,7 +79,8 @@ def ev(js, key=None):
 def check_overlap(key):
     def f(page, res): res[key] = overlaps(page)
     return f
-START_SOLO = '''() => { const g = document.getElementById('btnGuest'); if (g && !document.getElementById('login').hidden) g.click(); document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); return __tb.G.mode; }'''
+SEL = lambda i: "document.getElementById('btnStageSel').click(); document.querySelectorAll('#stages .ss-card')[%d].click();" % i
+START_SOLO = '''() => { const g = document.getElementById('btnGuest'); if (g && !document.getElementById('login').hidden) g.click(); document.getElementById('btnSolo').click(); return __tb.G.mode; }'''
 TO_BOSS = '''() => { const s = __tb.G.session.sim; s.mobs = []; s.wave = 1; s.barrier = 'none'; s.allies.forEach((a,i) => { a.x = -2 + i; a.z = -1; }); s.allies[0].z = 3; return 'ok'; }'''
 FORCE = '''(mv) => { const s = __tb.G.session.sim; const b = s.boss; if (!b || s.stage !== 'boss') return 'nostage'; b.st='idle'; b.gap=99; b.cds={}; const t = s.allies[0]; s.bossStart(mv, t); return b.st; }'''
 NOHP = '''() => { const t = document.getElementById('hud').innerText; const m = t.match(/\\d+\\s*\\/\\s*\\d+/g); return m || []; }'''
@@ -103,8 +104,8 @@ with sync_playwright() as p:
         ]))
     if SCEN in ('all', 'port'):
         results.append(run(p, 390, 844, 'port', [
-            shot('19_login_port'), ev("() => { document.getElementById('btnGuest').click(); return 1; }"), wait(0.3), shot('20_title_port'), ev("() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); return 1; }"), wait(0.5), shot('21_team_port'),
-            ev("() => { document.getElementById('btnGo').click(); return 1; }"), wait(0.4), shot('21b_stage_port'), ev("() => { document.querySelector('#stages .stage-card').click(); return 1; }"), wait(2.5), shot('22_street_port'), check_overlap('overlap_port'),
+            shot('19_login_port'), ev("() => { document.getElementById('btnGuest').click(); return 1; }"), wait(0.3), shot('20_title_port'), ev("() => { document.getElementById('btnTeam').click(); return 1; }"), wait(0.5), shot('21_team_port'),
+            ev("() => { document.getElementById('btnRosterHome').click(); document.getElementById('btnStageSel').click(); return 1; }"), wait(0.4), shot('21b_stage_port'), ev("() => { document.querySelectorAll('#stages .ss-card')[0].click(); document.getElementById('btnSolo').click(); return 1; }"), wait(2.5), shot('22_street_port'), check_overlap('overlap_port'),
             ev(TO_BOSS), wait(6.5), shot('23_boss_port'), check_overlap('overlap_port_boss'),
         ]))
     if SCEN in ('all', 'small'):
@@ -123,9 +124,9 @@ with sync_playwright() as p:
         port = SCEN == 'jobanport'
         W, H = (390, 844) if port else (844, 390)
         pre = 'p' if port else ''
-        steps = [ev("() => { document.getElementById('btnGuest').click(); document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return 1; }"), wait(0.4), ev(vis, 'screen'), shot(pre + '60_stage_locked'),
-            ev("() => { __tb.G.guest.clear.senju = 1; __tb.G.party.forEach(c => { __tb.G.guest.chars[c].lv = 20; __tb.G.guest.chars[c].exp = __tb.DATA.GROWTH.cum(__tb.DATA.CHI[c].rank, 20); }); document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'cards'), wait(0.3), shot(pre + '61_stage_open'),
-            ev("() => { document.querySelectorAll('#stages .stage-card')[0].click(); return __tb.G.mode + ' ' + " + sim + ".stageId + ' ' + " + sim + ".stage; }", 'start'),
+        steps = [ev("() => { document.getElementById('btnGuest').click(); document.getElementById('btnStageSel').click(); return 1; }"), wait(0.4), ev(vis, 'screen'), shot(pre + '60_stage_locked'),
+            ev("() => { __tb.G.guest.clear.senju = 1; __tb.G.party.forEach(c => { __tb.G.guest.chars[c].lv = 20; __tb.G.guest.chars[c].exp = __tb.DATA.GROWTH.cum(__tb.DATA.CHI[c].rank, 20); }); document.getElementById('btnStageHub').click(); document.getElementById('btnStageSel').click(); return [...document.querySelectorAll('#stages .ss-card')].map(c => c.className); }", 'cards'), wait(0.3), shot(pre + '61_stage_open'),
+            ev("() => { document.querySelectorAll('#stages .ss-card')[1].click(); document.getElementById('btnSolo').click(); return __tb.G.mode + ' ' + " + sim + ".stageId + ' ' + " + sim + ".stage; }", 'start'),
             wait(1.2), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_62_cut_collapse'), shot(pre + '62_cut_collapse'), wait(2.4), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_63_cut_platform'), shot(pre + '63_cut_platform'), wait(1.8), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_64_cut_board'), shot(pre + '64_cut_board'), wait(2.6), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_65_cut_inside'), shot(pre + '65_cut_inside'), wait(2.6), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_66_cut_depart'), shot(pre + '66_cut_depart'),
             wait(2.0), ev("() => " + sim + ".stage + ' mobs ' + " + sim + ".mobs.length", 'after_intro'), shot(pre + '67_train'), check_overlap('overlap_train'),
             ev("() => { const s=" + sim + "; s.allies.forEach(a => a.inv = 999); const L = __tb.G.session.local; L.push('A'); L.push('A'); return 1; }"), wait(3.0), shot(pre + '68_fight'),
@@ -151,9 +152,9 @@ with sync_playwright() as p:
         port = SCEN == 'uenoport'
         W, H = (390, 844) if port else (844, 390)
         pre = 'p' if port else ''
-        steps = [ev("() => { document.getElementById('btnGuest').click(); const g = __tb.G.guest; g.clear.senju = 1; g.clear.joban = 1; g.clear.ueno_street = 1; g.uenoOpen = true; __tb.G.party.forEach(c => { g.chars[c].lv = 40; g.chars[c].exp = __tb.DATA.GROWTH.cum(__tb.DATA.CHI[c].rank, 40); }); document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'cards'), wait(0.4), shot(pre + '80_sortie_ueno'),
+        steps = [ev("() => { document.getElementById('btnGuest').click(); const g = __tb.G.guest; g.clear.senju = 1; g.clear.joban = 1; g.clear.ueno_street = 1; g.uenoOpen = true; __tb.G.party.forEach(c => { g.chars[c].lv = 40; g.chars[c].exp = __tb.DATA.GROWTH.cum(__tb.DATA.CHI[c].rank, 40); }); document.getElementById('btnStageSel').click(); return [...document.querySelectorAll('#stages .ss-card')].map(c => c.className); }", 'cards'), wait(0.4), shot(pre + '80_sortie_ueno'),
             ev("() => document.getElementById('stages').innerText.replace(/\\n/g, ' | ').slice(0, 400)", 'sortie_text'),
-            ev("() => { document.querySelectorAll('#stages .stage-card')[2].click(); return __tb.G.mode + ' ' + " + sim + ".stageId + ' ' + " + sim + ".stage; }", 'start'),
+            ev("() => { document.querySelectorAll('#stages .ss-card')[3].click(); document.getElementById('btnSolo').click(); return __tb.G.mode + ' ' + " + sim + ".stageId + ' ' + " + sim + ".stage; }", 'start'),
             wait(0.6), shot(pre + '81_intro_a'), wait(0.8), shot(pre + '82_intro_snap'), wait(1.0), shot(pre + '83_intro_lean'), wait(1.6), ev("() => [" + sim + ".stage, " + sim + ".mobs.length, " + sim + ".hazards.length]", 'after_intro'), shot(pre + '84_charge'),
             ev("() => { const s=" + sim + "; s.allies.forEach(a => a.inv = 1e9); return 1; }"), wait(3.0), shot(pre + '85_fight'), check_overlap('overlap_ueno'),
             ev("() => { const i = __tb.R.renderer.info; return {calls: i.render.calls, tris: i.render.triangles, geos: i.memory.geometries, tex: i.memory.textures}; }", 'perf'),
@@ -210,32 +211,38 @@ with sync_playwright() as p:
         click = lambda sel: ev("() => { document.querySelector('%s').click(); return 1; }" % sel)
         W, H = (390, 844) if SCEN == 'gachabugport' else (844, 390)
         results.append(run(p, W, H, 'gachabug', [
-            ev(vis, 's0'), click('#btnLgGacha'), wait(0.6), ev(vis, 's1_gacha'), ev(back_rect, 'back_rect'), shot('g01_gacha'),
+            ev(vis, 's0'), ev("() => !document.getElementById('login').innerText.includes('ガチャ')", 'login_has_no_gacha'), click('#btnGuest'), wait(0.6), ev(vis, 's1_home'), click('#btnGacha'), wait(0.6), ev(vis, 's1_gacha'), ev(back_rect, 'back_rect'), shot('g01_gacha'),
             click('#btnGcBack'), wait(0.3), ev(vis, 's2_after_back'), shot('g02_after_back'),
-            click('#btnLgGacha'), wait(0.6), ev(vis, 's3_gacha_again'), shot('g03_gacha_again'), click('#btnGcDraw'), wait(0.4), ev(vis, 's4_login_from_draw'), shot('g04_login'),
+            click('#btnGacha'), wait(0.6), ev(vis, 's3_gacha_again'), shot('g03_gacha_again'), click('#btnGcDraw'), wait(0.4), ev(vis, 's4_login_from_draw'), shot('g04_login'),
             click('#btnGuest'), wait(0.4), ev(vis, 's5_after_cancel'), shot('g05_after_cancel'), click('#btnGcBack'), wait(0.3), ev(vis, 's6'),
-            click('#btnGuest'), wait(0.3), ev(vis, 's7_title'), click('#btnGacha'), wait(0.6), ev(vis, 's8_gacha_from_hub'), click('#btnGcSample'), wait(1.0), click('#btnGcBack'), wait(0.3), ev(vis, 's9_back_mid_anim'),
+            click('#btnGacha'), wait(0.6), ev(vis, 's8_gacha_from_hub'), click('#btnGcSample'), wait(1.0), click('#btnGcBack'), wait(0.3), ev(vis, 's9_back_mid_anim'),
             click('#btnGacha'), wait(0.8), ev(vis, 's10_gacha3'), ev("() => [!!__tb.GC.r, __tb.GC.run, !!__tb.GC.sc]", "gc_state"), shot('g10_gacha3'), click('#btnGcSample'), wait(4.0), shot('g11_sample'), click('#btnGcBack'), wait(0.3), ev(vis, 's12'),
         ]))
     if SCEN in ('hub',):
         # BIGバスターズ：ログイン画面のガチャ入口→演出見本→拠点→編成（絞り込み・詳細）→図鑑→出動（章タブ）→北千住で勝つ→結果のEXP
         vis = "() => [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',')"
         click = lambda sel: ev("() => { document.querySelector('%s').click(); return 1; }" % sel)
+        cards = "() => [...document.querySelectorAll('#cards .rs-card')].map(c => (c.querySelector('.nm') || {}).textContent + ':' + ((c.querySelector('.lvb b') || {}).textContent || '-'))"
         results.append(run(p, 844, 390, 'hub', [
-            shot('h00_login'), click('#btnLgGacha'), wait(0.6), ev(vis, 'gacha_screen'), shot('h01_gacha_guest'),
-            ev("() => { __tb.G.thumbs; const ids = __tb.DATA.GACHA_IDS.filter(id => __tb.DATA.CHI[id].rank === 'S'); return ids.length; }"),
-            ev("() => { document.getElementById('btnGcSample').click(); return 1; }"), wait(1.2), shot('h02_gacha_turn'), wait(1.4), shot('h03_gacha_open'), wait(2.6), shot('h04_gacha_show'),
-            click('#btnGcBack'), wait(0.3), click('#btnGuest'), wait(0.3), ev(vis, 'after_guest'), shot('h05_hub'),
-            click('#btnTeam'), wait(0.4), shot('h06_team'), ev("() => { const p = document.querySelector('#team .panel'); p.scrollTop = 170; return p.scrollHeight; }", 'team_scroll'), wait(0.2), shot('h06b_team_scroll'), ev("() => { document.querySelector('#team .panel').scrollTop = 0; return 1; }"), click('#rsFilterBtn'), ev("() => { [...document.querySelectorAll('#rsRank .chip')].find(b => b.textContent === 'D').click(); return document.querySelectorAll('#cards .card').length; }", 'cards_D'), wait(0.2), shot('h07_team_filter'),
-            ev("() => { const c = [...document.querySelectorAll('#cards .card .det')][3]; c.click(); return document.querySelector('#detail .hd b').textContent; }", 'detail'), wait(0.2), shot('h08_detail'),
-            ev("() => { document.getElementById('rsClear').click(); document.querySelectorAll('#cards .card')[2].click(); return __tb.G.party.join(','); }", 'party_after_pick'),
-            click('#btnTeamBack'), wait(0.2), click('#btnZukan'), wait(0.4), ev("() => { __tb.G.prefs.owned = false; document.getElementById('rsSort').dispatchEvent(new Event('change')); return document.querySelectorAll('#cards .card.unowned').length; }", 'zukan_unowned'), wait(0.2), shot('h09_zukan'),
-            click('#btnTeamBack'), wait(0.2), click('#btnSolo'), click('#btnGo'), wait(0.3), shot('h10_sortie_senju'), ev("() => { document.querySelectorAll('#chTabs .tab')[1].click(); return document.querySelectorAll('#stages .stage-card.locked').length; }", 'ueno_locked'), wait(0.2), shot('h11_sortie_ueno'),
-            ev("() => { document.querySelectorAll('#chTabs .tab')[0].click(); document.querySelector('#stages .stage-card').click(); return __tb.G.mode; }", 'start'), wait(2.0),
+            shot('h00_login'), ev("() => [...document.querySelectorAll('#lgChoices button')].map(b => b.textContent)", 'login_choices'),
+            click('#btnGuest'), wait(0.6), ev(vis, 'after_guest'), shot('h05_hub'), check_overlap('overlap_home'),
+            ev("() => { const r = id => { const q = document.getElementById(id).getBoundingClientRect(); return [q.left, q.top, q.right, q.bottom]; }; const ids = ['btnTeam','btnCoop','btnGacha','btnSet','btnStageSel','btnSolo','acctBar']; const R = ids.map(r); const ov = []; for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) { const a = R[i], b = R[j]; if (Math.min(a[2], b[2]) - Math.max(a[0], b[0]) > 1 && Math.min(a[3], b[3]) - Math.max(a[1], b[1]) > 1) ov.push(ids[i] + 'x' + ids[j]); } const tags = [...document.querySelectorAll('.hm-tag')].map(t => t.getBoundingClientRect()); for (const t of tags) for (let k = 0; k < R.length; k++) { const a = R[k]; if (Math.min(a[2], t.right) - Math.max(a[0], t.left) > 1 && Math.min(a[3], t.bottom) - Math.max(a[1], t.top) > 1) ov.push('tag x ' + ids[k]); } return ov; }", 'home_overlaps'),
+            click('#btnTeam'), wait(0.6), shot('h06_team'), ev(cards, 'cards_level'),
+            ev("() => { const g = document.getElementById('cards'); g.scrollLeft = 400; return [g.scrollWidth, g.clientWidth, g.scrollLeft]; }", 'team_scroll'), wait(0.2), shot('h06b_team_scroll'),
+            ev("() => { const s = document.getElementById('rsSort'); s.value = 'rank'; s.dispatchEvent(new Event('change')); return 1; }"), wait(0.2), ev(cards, 'cards_rank'),
+            ev("() => { const s = document.getElementById('rsSort'); s.value = 'str'; s.dispatchEvent(new Event('change')); return 1; }"), wait(0.2), ev(cards, 'cards_str'),
+            ev("() => { const s = document.getElementById('rsSort'); s.value = 'recent'; s.dispatchEvent(new Event('change')); return 1; }"), wait(0.2), ev(cards, 'cards_recent'),
+            ev("() => document.querySelectorAll('#cards .rs-card.unowned').length", 'unowned'),
+            ev("() => { document.querySelectorAll('#rsSlots button')[2].click(); [...document.querySelectorAll('#cards .rs-card')].find(c => c.querySelector('.nm').textContent === 'サヤノスケ').click(); return document.querySelector('#chLeft .nm').textContent; }", 'detail'), wait(0.6), shot('h08_detail'),
+            ev("() => { document.getElementById('btnChPick').click(); return __tb.G.party.join(','); }", 'party_after_pick'),
+            click('#btnRosterHome'), wait(0.3), click('#btnStageSel'), wait(0.3), shot('h10_stagesel'), ev("() => document.querySelectorAll('#stages .ss-card .lockov').length", 'ueno_locked'),
+            ev("() => { document.querySelectorAll('#stages .ss-card')[0].click(); return [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(','); }", 'after_pick_stage'),
+            ev("() => { document.getElementById('btnSolo').click(); return __tb.G.mode; }", 'start'), wait(2.0),
             ev(TO_BOSS), wait(6.5), ev("() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); return s.stage; }"), wait(5),
             ev("() => document.getElementById('resExp').innerText.replace(/\\n/g,' | ')", 'res_exp'), shot('h12_result'),
-            ev("() => { const a = __tb.G.guest; return [a.chars[__tb.G.party[0]].lv, a.chars[__tb.G.party[1]].exp, a.wins.tobatoban, a.clear.senju]; }", 'guest_after'),
-            click('#btnResTitle'), wait(0.3), click('#btnSolo'), click('#btnGo'), wait(0.3), ev("() => { document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'ueno_tab_after_win'), shot('h13_sortie_after'),
+            ev("() => { const a = __tb.G.guest; return [a.chars[__tb.G.party[0]].lv, a.chars[__tb.G.party[1]].exp, a.wins.tobatoban, a.clear.senju, !!a.chars[__tb.G.party[0]].used]; }", 'guest_after'),
+            click('#btnResTitle'), wait(0.3), click('#btnStageSel'), wait(0.3), ev("() => [...document.querySelectorAll('#stages .ss-card')].map(c => c.className + (c.querySelector('.lockov') ? ' locked' : ''))", 'stages_after_win'), shot('h13_sortie_after'),
+            click('#btnStageHub'), click('#btnTeam'), wait(0.3), ev("() => { const s = document.getElementById('rsSort'); s.value = 'recent'; s.dispatchEvent(new Event('change')); return 1; }"), wait(0.2), ev(cards, 'cards_recent_after'),
         ]))
     if SCEN in ('tap',):
         # 敵をタップ → 注目＋「追尾」の印 → 射撃の弾が追いかけて当たる。遠い敵は「遠すぎて狙えません」
@@ -255,7 +262,7 @@ with sync_playwright() as p:
                 res['notice_' + ('near' if near else 'far')] = page.evaluate("() => document.getElementById('notice').innerText.slice(0, 80)")
             return f
         results.append(run(p, 844, 390, 'tap', [
-            ev("() => { document.getElementById('btnGuest').click(); __tb.G.party = ['hoshisuzume', 'kogemaru', 'burikidon', 'momiji']; __tb.G.sessClear.senju = true; document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.getElementById('btnGo').click(); document.querySelectorAll('#stages .stage-card')[1].click(); return 1; }"),
+            ev("() => { document.getElementById('btnGuest').click(); __tb.G.party = ['hoshisuzume', 'kogemaru', 'burikidon', 'momiji']; __tb.G.sessClear.senju = true; document.getElementById('btnStageSel').click(); document.querySelectorAll('#stages .ss-card')[1].click(); document.getElementById('btnSolo').click(); return 1; }"),
             wait(0.5), ev("() => { const s=" + sim + "; s.stageT = __tb.DATA.JOBAN.introT; return 1; }"), wait(2.0),
             ev("() => { const s=" + sim + "; s.allies.forEach(a => a.inv = 999); s.mobs.forEach(m => { m.hp = m.maxHp = 50000; }); s.allies.forEach((a, i) => { if (i) { a.x = -1 + i * 0.5; a.z = -12; } }); return s.mobs.length; }", 'mobs'),
             wait(1.5), tap_mob(True), wait(0.3), shot('a0_tap_lock'),
@@ -278,7 +285,7 @@ with sync_playwright() as p:
         results.append(run(p, 844, 390, 'save', [
             ev(vis, 'boot_screen'), shot('80_login'),
             click('#btnRegister'), typ('#lgPw', 'neko22'), typ('#lgPw2', 'neko22'), shot('81_register'), click('#btnRegister'), wait(0.3), txt('#lgDoneId', 'assigned_id'), shot('81b_done'), click('#btnDoneOk'), wait(0.3), ev(vis, 'after_register'), txt('#acctWho', 'acct_bar'), shot('82_title_login'),
-            click('#btnSolo'), wait(0.4), shot('83_team_lv'), click('#btnGo'), wait(0.3), click('#stages .stage-card'), wait(2.0),
+            click('#btnTeam'), wait(0.4), shot('83_team_lv'), click('#btnRosterHome'), wait(0.3), click('#btnSolo'), wait(2.0),
             ev("() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); return s.allies[0].stats.kills; }", 'kills'), wait(1.5),
             ev(TO_BOSS), wait(1.5), ev("() => JSON.parse(localStorage.getItem('tb.acct.1')).rec.mobs", 'stored_mobs_at_plaza(0=no autosave)'), wait(5.5),
             ev("() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); return s.stage; }"), wait(5), txt('#resSave', 'result_save'), ev("() => JSON.parse(localStorage.getItem('tb.acct.1')).rec", 'stored_after_battle'), shot('85_result_save'),
@@ -332,7 +339,7 @@ with sync_playwright() as p:
         res['A_register'] = until(A, "() => !document.querySelector('#lgDone').hidden") and J(A, "() => document.querySelector('#lgDoneId').textContent")
         A.screenshot(path=os.path.join(OUT, '90_cloud_done.png'))
         clk(A, '#btnDoneOk'); time.sleep(0.5); res['A_bar'] = J(A, "() => document.querySelector('#acctWho').textContent")
-        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); }"); time.sleep(2.5)
+        J(A, "() => { document.getElementById('btnSolo').click(); }"); time.sleep(2.5)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); }"); time.sleep(1)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs=[]; s.barrier='none'; s.allies.forEach((a,i)=>{a.x=-2+i;a.z=-1;}); s.allies[0].z=3; }"); time.sleep(7)
         J(A, "() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); }")
@@ -396,7 +403,7 @@ with sync_playwright() as p:
         if not res['A_register']: res['A_msg'] = J(A, "() => document.querySelector('#lgMsg').textContent")
         A.screenshot(path=os.path.join(OUT, '90_cloud_done.png'))
         clk(A, '#btnDoneOk'); time.sleep(0.5); res['A_bar'] = J(A, "() => document.querySelector('#acctWho').textContent")
-        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); }"); time.sleep(2.5)
+        J(A, "() => { document.getElementById('btnSolo').click(); }"); time.sleep(2.5)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); }"); time.sleep(1)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs=[]; s.barrier='none'; s.allies.forEach((a,i)=>{a.x=-2+i;a.z=-1;}); s.allies[0].z=3; }"); time.sleep(7)
         J(A, "() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); }")
@@ -426,7 +433,11 @@ with sync_playwright() as p:
             ev("() => { const s=__tb.G.session.sim, a=s.allies[0], c=s.pickups.find(p=>p.kind==='candy'); a.hp=10; a.x=c.x; a.z=c.z; return 1; }"), wait(0.3),
             ev("() => { const a=__tb.G.session.sim.allies[0]; return [a.hp, a.maxHp]; }", 'candy_heal'), shot('96_after')]))
     if SCEN in ('menus',):
-        results.append(run(p, 844, 390, 'menus', [ev("() => { document.getElementById('btnGuest').click(); return 1; }"), ev("() => { document.getElementById('btnHow').click(); return 1; }"), wait(0.4), shot('40_how'), ev("() => { document.querySelector('#how [data-back]').click(); document.getElementById('btnSet').click(); return 1; }"), wait(0.3), shot('41_settings'), ev("() => { document.querySelector('#settings [data-back]').click(); document.getElementById('btnCoop').click(); return 1; }"), wait(0.3), shot('42_coop')]))
+        vis = "() => [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',')"
+        results.append(run(p, 844, 390, 'menus', [ev("() => { document.getElementById('btnGuest').click(); return 1; }"), ev("() => { document.getElementById('btnSet').click(); return 1; }"), wait(0.3), ev(vis, 's_settings'), shot('41_settings'), ev("() => document.getElementById('btnSet').getAttribute('aria-label') + '/' + document.getElementById('btnSet').textContent.trim()", 'gear_label'),
+            ev("() => { document.getElementById('btnSetHow').click(); return 1; }"), wait(0.3), ev(vis, 's_how'), shot('40_how'), ev("() => { document.querySelector('#how [data-back]').click(); return 1; }"), wait(0.2), ev(vis, 's_back_settings'), ev("() => { document.querySelector('#settings [data-back]').click(); return 1; }"), wait(0.2), ev(vis, 's_back_home'),
+            ev("() => { document.getElementById('btnTeam').click(); document.querySelector('#roster [data-gear]').click(); return 1; }"), wait(0.2), ev(vis, 's_settings_from_roster'), ev("() => { document.querySelector('#settings [data-back]').click(); return 1; }"), wait(0.2), ev(vis, 's_back_roster'),
+            ev("() => { document.getElementById('btnRosterHome').click(); document.getElementById('btnCoop').click(); return 1; }"), wait(0.3), shot('42_coop'), ev(vis, 's_coop'), ev("() => { document.getElementById('btnCoopBack').click(); document.getElementById('btnAcct').click(); return 1; }"), wait(0.3), ev(vis, 's_acct_guest')]))
     for r in results:
         print('===', r['tag'])
         for k, v in r.items():
