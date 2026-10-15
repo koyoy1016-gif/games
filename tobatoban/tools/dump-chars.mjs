@@ -35,6 +35,6 @@ md += `| ${M.zouen.nm} | － | － | 札小僧を2体呼ぶ（同時に${M.zouen
 md += `HPが3分の1以下で「本気」になり、千住大巡行が3回横断になる（横・斜め・縦など毎回ちがう向き）。\n\n`;
 const Mo = D.MOB;
 md += `## 札小僧（ザコ）\n\n| HP | ちから | ようりょく | まもり | 攻撃 | 1回のダメージ（${lo.nm}／${hi.nm}） |\n|---:|---:|---:|---:|---|---|\n| ${B.mobHp} | ${Mo.str} | ${Mo.yo} | ${Mo.def} | 札を投げる（威力${Mo.shotPw}・${Mo.shotPeriod}秒ごと） | ${dmg(Mo.shotPw, Mo.str, lo.def)}／${dmg(Mo.shotPw, Mo.str, hi.def)} |\n\n`;
-md += `## 回復・救助\n\n| もの | 効果 |\n|---|---|\n| 救助 | 気絶した仲間のまわりの円に${S.reviveTime}秒いると復活（HP 3分の1）。モミジ翁が円にいると${S.reviveTimeMomiji}秒・HP${Math.round(S.reviveHpMomiji * 100)}%。30秒放っておくと昇天 |\n| キャンディー | ${S.candyPeriod}秒ごとに1つ（最大${S.candyMax}個）。取るとHP全回復 |\n| おにぎり | HPを${Math.round(D.ITEMS.onigiri.heal * 100)}%回復 |\n| ブリキドンの食べ物 | ${S.foodPeriod}秒ごと。HPを${Math.round(S.foodHeal * 100)}%回復 |\n`;
+md += `## 回復・救助\n\n| もの | 効果 |\n|---|---|\n| 救助 | 気絶した仲間のまわりの円に${S.reviveTime}秒いると復活（HP 3分の1）。2人で入ると${S.reviveFaster[2] * 100}%、3人で${S.reviveFaster[3] * 100}%早い。モミジ翁が円にいると${S.reviveTimeMomiji}秒・HP${Math.round(S.reviveHpMomiji * 100)}%。30秒放っておくと昇天 |\n| キャンディー | ${S.candyPeriod}秒ごとに1つ（最大${S.candyMax}個）。取るとHP全回復 |\n| おにぎり | HPを${Math.round(D.ITEMS.onigiri.heal * 100)}%回復 |\n| ブリキドンの食べ物 | ${S.foodPeriod}秒ごと。HPを${Math.round(S.foodHeal * 100)}%回復 |\n`;
 fs.writeFileSync(path.join(root, 'CHARACTERS.md'), md);
 console.log(md);

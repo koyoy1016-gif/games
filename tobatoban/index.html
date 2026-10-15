@@ -76,6 +76,7 @@ textarea{font:900 15px ui-monospace,Menlo,monospace;letter-spacing:.06em;resize:
 .lg-done{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:3px solid var(--gold);border-radius:14px;padding:8px 12px;text-align:center}
 .lg-done>span:first-child{font-weight:900;font-size:13px}
 .lg-done b{font-family:var(--f-disp);font-weight:400;font-size:44px;line-height:1.1;color:var(--shu);letter-spacing:.04em}
+.url-tip{margin:0;font-size:12px;line-height:1.55;font-weight:700;color:#7a3b12;background:#fff1c9;border:2px solid #f2c94c;border-radius:10px;padding:6px 10px}
 .lg-msg{min-height:1.6em;font-size:13px;font-weight:900;color:var(--shu);line-height:1.5}
 .lg-msg.ok{color:#1f7a4a}
 details{border:2px solid #e6dcc6;border-radius:12px;padding:6px 10px;background:#fffaf0}
@@ -329,6 +330,7 @@ a{color:var(--shu)}
     <label class="small" for="code">友だちの合言葉（4けた）</label>
     <div class="row"><input type="text" id="code" maxlength="8" inputmode="numeric" autocomplete="off" placeholder="1234" style="flex:1 1 120px"><button class="btn gold" id="btnJoin" style="flex:0 1 160px">部屋に入る</button></div>
     <div class="status"><span class="dot" id="netDot"></span><span id="netMsg">通信の準備を確認しています…</span></div>
+    <p class="url-tip">📱 友だちにURLを送るときは「スマホでURLを直接タップして開くと、画面がブレることがあります。URLをメモ帳などに貼り付けてから、そこから開くのがおすすめです。」と伝えてください。</p>
     <p class="small">ホストの端末が戦闘を進め、他の人は入力を送ります。ホストが抜けると中断します。参加者が抜けたキャラはAIが引き継ぎます。</p>
     <div class="row"><button class="btn ghost" id="btnCoopBack">もどる</button></div>
   </div>
@@ -425,6 +427,7 @@ a{color:var(--shu)}
       <button class="btn" id="btnRestore" type="button">コードで引き継ぐ</button>
     </details>
     <div class="row"><button class="btn ghost" id="btnGuest" type="button">ログインせずに遊ぶ（セーブなし）</button></div>
+    <p class="url-tip">📱 スマホでURLを直接タップして開くと、画面がブレることがあります。URLをメモ帳などに貼り付けてから、そこから開くのがおすすめです。</p>
     <p class="small" id="lgNote">セーブはこの端末のブラウザに保存されます。ほかのサービスと同じパスワードは使わないでください。</p>
   </div></div></div>
 </section>
@@ -583,6 +586,7 @@ const SIM = {
   reviveTimeMomiji: p('救助', 'モミジ翁が円に入っているときの復活まで', 2.7, 'seconds', 'proto', 24, 'パッシブ「救助が速い」'),
   reviveRange: p('救助', '救助の円の半径', 1.6, 'm', 'proto'),
   reviveDrain: 0.5,
+  reviveFaster: p('救助', '円に入っている人数ごとの速さ（かかる時間を減らす割合）', [0, 0, 0.25, 0.5], 'ratio', 'proto', null, '1人は4秒、2人なら25%短く（3秒）、3人なら50%短く（2秒）'),
   ascendTime: p('救助', '気絶から昇天まで', 30, 'seconds', 'proto', 2, '気絶と昇天の区別は資料。秒数は仮値'),
   reviveHp: p('救助', '救助後のHP割合', 1 / 3, 'ratio', 'proto', null, '最大HPの3分の1'),
   reviveHpMomiji: p('救助', 'モミジ翁が救助したときのHP割合', 0.5, 'ratio', 'proto', 24),
@@ -1292,16 +1296,19 @@ class Sim {
     const S = DATA.SIM;
     for (const o of this.allies) {
       if (o.st !== 'down') { o.rv = 0; o.rvBy = -1; continue; }
-      let by = null, bd = 1e9, fast = null;
+      let by = null, bd = 1e9, fast = null, n = 0;
       for (const a of this.allies) {
         if (a === o || a.st !== 'ok') continue;
         const d = dist2(a.x, a.z, o.x, o.z); if (d > S.reviveRange) continue;
-        if (d < bd) { bd = d; by = a; } if (a.c.passive === 'reviver') fast = a;
+        n++; if (d < bd) { bd = d; by = a; } if (a.c.passive === 'reviver') fast = a;
       }
-      o.rvNeed = fast ? S.reviveTimeMomiji : S.reviveTime;
-      if (!by) { o.rvBy = -1; o.rv = Math.max(0, o.rv - dt * S.reviveDrain); continue; }
-      o.rvBy = by.slot; o.rv += dt;
-      if (o.rv >= o.rvNeed) { const r = fast || by; this.revive(o, fast ? S.reviveHpMomiji : S.reviveHp, r); r.stats.revives++; o.rv = 0; o.rvBy = -1; }
+      // 円に入っている人数が多いほど早い（2人で25%・3人で50%短くなる）
+      const cut = S.reviveFaster[Math.min(n, S.reviveFaster.length - 1)] || 0;
+      o.rvNeed = (fast ? S.reviveTimeMomiji : S.reviveTime) * (1 - cut); o.rvN = n;
+      // o.rv はゲージ（0〜1）。人数が途中で変わっても、たまった分はそのまま
+      if (!by) { o.rvBy = -1; o.rv = Math.max(0, o.rv - dt * S.reviveDrain / S.reviveTime); continue; }
+      o.rvBy = by.slot; o.rv += dt / o.rvNeed;
+      if (o.rv >= 1) { const r = fast || by; this.revive(o, fast ? S.reviveHpMomiji : S.reviveHp, r); r.stats.revives++; o.rv = 0; o.rvBy = -1; }
     }
   }
   revive(o, ratio, by) { o.st = 'ok'; o.downT = 0; o.hp = Math.max(1, Math.round(o.maxHp * ratio)); o.inv = 1.5; o.act = null; this.ev('revive', { slot: o.slot, by: by ? by.slot : -1, x: o.x, z: o.z }); }
@@ -2112,7 +2119,10 @@ class Sim {
       const tgt = down.sort((p, q) => dist2(a.x, a.z, p.x, p.z) - dist2(a.x, a.z, q.x, q.z))[0];
       const helpers = this.allies.filter(o => o.st === 'ok' && o.ctrlAI && o !== tgt);
       const closest = helpers.sort((p, q) => dist2(p.x, p.z, tgt.x, tgt.z) - dist2(q.x, q.z, tgt.x, tgt.z))[0];
-      if (role === 'healer' || closest === a) {
+      // 気絶した仲間が、いちばん近い敵より近くにいるときは、助けることを優先する
+      let nearEnemy = 1e9; for (const e of this.enemiesAlive()) nearEnemy = Math.min(nearEnemy, this.gapTo(a.x, a.z, e).g);
+      const toDown = dist2(a.x, a.z, tgt.x, tgt.z) - DATA.SIM.reviveRange;
+      if (role === 'healer' || closest === a || toDown < nearEnemy) {
         if (!this.inDanger(tgt.x, tgt.z, 0.5, 1.5)) {
           const d = dist2(a.x, a.z, tgt.x, tgt.z);
           if (d < DATA.SIM.reviveRange - 0.45) { ai.stay = true; ai.tx = a.x; ai.tz = a.z; return; } // 円の中で待つ
@@ -2271,7 +2281,7 @@ const PROTO = (() => {
     const A = sim.allies.map(a => [
       a.slot, CH_I[a.ch], r2(a.x), r2(a.z), r2(a.yaw), ST_I[a.st], a.act ? ACT_I[a.act.k] : 0, a.act ? r2(a.act.t) : 0,
       Math.round(a.hp / a.maxHp * 1000), Math.floor(a.sp), Math.round(a.stam), allyFlags(sim, a), r1(a.downT), r1(a.cd.X), r1(a.cd.Y), Math.round(a.g.X * 100), Math.round(a.g.Y * 100),
-      IT_I[a.items[0].id], a.items[0].n, IT_I[a.items[1].id], a.items[1].n, CTX_I[a.ctx], a.st === 'down' ? Math.round(Math.min(1, a.rv / (a.rvNeed || DATA.SIM.reviveTime)) * 100) : 0, a.st === 'down' ? a.rvBy : -1,
+      IT_I[a.items[0].id], a.items[0].n, IT_I[a.items[1].id], a.items[1].n, CTX_I[a.ctx], a.st === 'down' ? Math.round(Math.min(1, a.rv) * 100) : 0, a.st === 'down' ? a.rvBy : -1,
       a.act && a.act.ratio != null ? Math.round(a.act.ratio * 100) : 0, a.act && a.act.slot ? (a.act.slot === 'X' ? 1 : 2) : 0, a.lastEv, r1(a.cdMax.X), r1(a.cdMax.Y),
       SK_I[a.slots.X], SK_I[a.slots.Y], a.lan ? Math.round(a.lan.t / DATA.SIM.lanternHold * 100) : 0, a.aq || 0,
       a.act && a.act.k === 'item' ? IT_I[a.act.it] : -1, a.buffs.stealth > 0 ? r1(a.buffs.stealth) : 0, a.lv || 1, a.stats.kills,

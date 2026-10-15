@@ -114,12 +114,12 @@ for (const [ch, n] of [['kogemaru', 10], ['hoshisuzume', 8], ['akaneten', 4], ['
   o.x = a.x + 1; o.z = a.z; o.hp = 1; s.dealToAlly(o, 999, 'str', s.boss, {});
   ok(o.st === 'down', '体力0で気絶');
   for (let i = 0; i < 60 * 3.8; i++) s.step();
-  ok(o.st === 'down', `円の中にいても4秒たつまでは気絶のまま（${(o.rv).toFixed(2)}秒）`);
+  ok(o.st === 'down', `円の中にいても4秒たつまでは気絶のまま（ゲージ${Math.round(o.rv * 100)}%）`);
   for (let i = 0; i < 60 * 0.3; i++) s.step();
   ok(o.st === 'ok' && Math.abs(o.hp - Math.round(o.maxHp / 3)) <= 1, `ボタンなし・円に4秒で復活、HPは3分の1（${o.hp}/${o.maxHp}）`);
   o.hp = 1; o.inv = 0; s.dealToAlly(o, 999, 'str', s.boss, {});
   for (let i = 0; i < 60 * 2; i++) s.step(); a.x += 5; for (let i = 0; i < 60 * 1; i++) s.step();
-  ok(o.st === 'down' && o.rv > 1 && o.rv < 2, `円から出るとゲージはゆっくり減る（${o.rv.toFixed(2)}）`);
+  ok(o.st === 'down' && o.rv > 0.3 && o.rv < 0.45, `円から出るとゲージはゆっくり減る（50%→${Math.round(o.rv * 100)}%）`);
   for (let i = 0; i < 60 * 31; i++) s.step();
   ok(o.st === 'gone', '30秒放置で昇天');
   s.allies[0].sp = 100; run(s, 0, [[0, 'SP']], 2);
@@ -131,6 +131,17 @@ for (const [ch, n] of [['kogemaru', 10], ['hoshisuzume', 8], ['akaneten', 4], ['
   o.x = a.x + 1; o.z = a.z; o.hp = 1; s.dealToAlly(o, 999, 'str', s.boss, {});
   for (let i = 0; i < 60 * 2.8; i++) s.step();
   ok(o.st === 'ok' && a.stats.revives === 1, `モミジ翁が円に入ると約2.7秒で救助（${o.st}・HP${Math.round(o.hp / o.maxHp * 100)}%）`);
+}
+// 7.2) 円に入る人数が多いほど早い（1人4秒・2人3秒・3人2秒）
+for (const [n, sec] of [[2, 3], [3, 2]]) {
+  const s = testSim('kogemaru'); const o = s.allies[1]; // モミジ翁を気絶させ、ほかの3人で助ける
+  s.allies.forEach((a, i) => { if (i !== 1) { a.x = 30; a.z = 30; } });
+  o.x = 0; o.z = 8; o.hp = 1; o.inv = 0; s.dealToAlly(o, 999, 'str', s.boss, {});
+  [0, 2, 3].slice(0, n).forEach((i, k) => { const a = s.allies[i]; a.x = o.x + [1, -1, 0][k]; a.z = o.z + [0, 0, 1][k]; });
+  for (let i = 0; i < 60 * (sec - 0.15); i++) s.step();
+  const still = o.st === 'down';
+  for (let i = 0; i < 60 * 0.3; i++) s.step();
+  ok(still && o.st === 'ok', `${n}人で円に入ると約${sec}秒で復活`);
 }
 // 7.5) キャンディー：20秒ごとに広場のどこかへ。拾うと全回復、満タンなら拾わない
 {

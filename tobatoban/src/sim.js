@@ -250,16 +250,19 @@ class Sim {
     const S = DATA.SIM;
     for (const o of this.allies) {
       if (o.st !== 'down') { o.rv = 0; o.rvBy = -1; continue; }
-      let by = null, bd = 1e9, fast = null;
+      let by = null, bd = 1e9, fast = null, n = 0;
       for (const a of this.allies) {
         if (a === o || a.st !== 'ok') continue;
         const d = dist2(a.x, a.z, o.x, o.z); if (d > S.reviveRange) continue;
-        if (d < bd) { bd = d; by = a; } if (a.c.passive === 'reviver') fast = a;
+        n++; if (d < bd) { bd = d; by = a; } if (a.c.passive === 'reviver') fast = a;
       }
-      o.rvNeed = fast ? S.reviveTimeMomiji : S.reviveTime;
-      if (!by) { o.rvBy = -1; o.rv = Math.max(0, o.rv - dt * S.reviveDrain); continue; }
-      o.rvBy = by.slot; o.rv += dt;
-      if (o.rv >= o.rvNeed) { const r = fast || by; this.revive(o, fast ? S.reviveHpMomiji : S.reviveHp, r); r.stats.revives++; o.rv = 0; o.rvBy = -1; }
+      // 円に入っている人数が多いほど早い（2人で25%・3人で50%短くなる）
+      const cut = S.reviveFaster[Math.min(n, S.reviveFaster.length - 1)] || 0;
+      o.rvNeed = (fast ? S.reviveTimeMomiji : S.reviveTime) * (1 - cut); o.rvN = n;
+      // o.rv はゲージ（0〜1）。人数が途中で変わっても、たまった分はそのまま
+      if (!by) { o.rvBy = -1; o.rv = Math.max(0, o.rv - dt * S.reviveDrain / S.reviveTime); continue; }
+      o.rvBy = by.slot; o.rv += dt / o.rvNeed;
+      if (o.rv >= 1) { const r = fast || by; this.revive(o, fast ? S.reviveHpMomiji : S.reviveHp, r); r.stats.revives++; o.rv = 0; o.rvBy = -1; }
     }
   }
   revive(o, ratio, by) { o.st = 'ok'; o.downT = 0; o.hp = Math.max(1, Math.round(o.maxHp * ratio)); o.inv = 1.5; o.act = null; this.ev('revive', { slot: o.slot, by: by ? by.slot : -1, x: o.x, z: o.z }); }
@@ -1070,7 +1073,10 @@ class Sim {
       const tgt = down.sort((p, q) => dist2(a.x, a.z, p.x, p.z) - dist2(a.x, a.z, q.x, q.z))[0];
       const helpers = this.allies.filter(o => o.st === 'ok' && o.ctrlAI && o !== tgt);
       const closest = helpers.sort((p, q) => dist2(p.x, p.z, tgt.x, tgt.z) - dist2(q.x, q.z, tgt.x, tgt.z))[0];
-      if (role === 'healer' || closest === a) {
+      // 気絶した仲間が、いちばん近い敵より近くにいるときは、助けることを優先する
+      let nearEnemy = 1e9; for (const e of this.enemiesAlive()) nearEnemy = Math.min(nearEnemy, this.gapTo(a.x, a.z, e).g);
+      const toDown = dist2(a.x, a.z, tgt.x, tgt.z) - DATA.SIM.reviveRange;
+      if (role === 'healer' || closest === a || toDown < nearEnemy) {
         if (!this.inDanger(tgt.x, tgt.z, 0.5, 1.5)) {
           const d = dist2(a.x, a.z, tgt.x, tgt.z);
           if (d < DATA.SIM.reviveRange - 0.45) { ai.stay = true; ai.tx = a.x; ai.tz = a.z; return; } // 円の中で待つ

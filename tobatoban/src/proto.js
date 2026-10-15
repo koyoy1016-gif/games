@@ -31,7 +31,7 @@ const PROTO = (() => {
     const A = sim.allies.map(a => [
       a.slot, CH_I[a.ch], r2(a.x), r2(a.z), r2(a.yaw), ST_I[a.st], a.act ? ACT_I[a.act.k] : 0, a.act ? r2(a.act.t) : 0,
       Math.round(a.hp / a.maxHp * 1000), Math.floor(a.sp), Math.round(a.stam), allyFlags(sim, a), r1(a.downT), r1(a.cd.X), r1(a.cd.Y), Math.round(a.g.X * 100), Math.round(a.g.Y * 100),
-      IT_I[a.items[0].id], a.items[0].n, IT_I[a.items[1].id], a.items[1].n, CTX_I[a.ctx], a.st === 'down' ? Math.round(Math.min(1, a.rv / (a.rvNeed || DATA.SIM.reviveTime)) * 100) : 0, a.st === 'down' ? a.rvBy : -1,
+      IT_I[a.items[0].id], a.items[0].n, IT_I[a.items[1].id], a.items[1].n, CTX_I[a.ctx], a.st === 'down' ? Math.round(Math.min(1, a.rv) * 100) : 0, a.st === 'down' ? a.rvBy : -1,
       a.act && a.act.ratio != null ? Math.round(a.act.ratio * 100) : 0, a.act && a.act.slot ? (a.act.slot === 'X' ? 1 : 2) : 0, a.lastEv, r1(a.cdMax.X), r1(a.cdMax.Y),
       SK_I[a.slots.X], SK_I[a.slots.Y], a.lan ? Math.round(a.lan.t / DATA.SIM.lanternHold * 100) : 0, a.aq || 0,
       a.act && a.act.k === 'item' ? IT_I[a.act.it] : -1, a.buffs.stealth > 0 ? r1(a.buffs.stealth) : 0, a.lv || 1, a.stats.kills,

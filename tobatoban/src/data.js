@@ -53,6 +53,7 @@ const SIM = {
   reviveTimeMomiji: p('救助', 'モミジ翁が円に入っているときの復活まで', 2.7, 'seconds', 'proto', 24, 'パッシブ「救助が速い」'),
   reviveRange: p('救助', '救助の円の半径', 1.6, 'm', 'proto'),
   reviveDrain: 0.5,
+  reviveFaster: p('救助', '円に入っている人数ごとの速さ（かかる時間を減らす割合）', [0, 0, 0.25, 0.5], 'ratio', 'proto', null, '1人は4秒、2人なら25%短く（3秒）、3人なら50%短く（2秒）'),
   ascendTime: p('救助', '気絶から昇天まで', 30, 'seconds', 'proto', 2, '気絶と昇天の区別は資料。秒数は仮値'),
   reviveHp: p('救助', '救助後のHP割合', 1 / 3, 'ratio', 'proto', null, '最大HPの3分の1'),
   reviveHpMomiji: p('救助', 'モミジ翁が救助したときのHP割合', 0.5, 'ratio', 'proto', 24),

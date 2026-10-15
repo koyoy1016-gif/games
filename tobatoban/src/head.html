@@ -76,6 +76,7 @@ textarea{font:900 15px ui-monospace,Menlo,monospace;letter-spacing:.06em;resize:
 .lg-done{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:3px solid var(--gold);border-radius:14px;padding:8px 12px;text-align:center}
 .lg-done>span:first-child{font-weight:900;font-size:13px}
 .lg-done b{font-family:var(--f-disp);font-weight:400;font-size:44px;line-height:1.1;color:var(--shu);letter-spacing:.04em}
+.url-tip{margin:0;font-size:12px;line-height:1.55;font-weight:700;color:#7a3b12;background:#fff1c9;border:2px solid #f2c94c;border-radius:10px;padding:6px 10px}
 .lg-msg{min-height:1.6em;font-size:13px;font-weight:900;color:var(--shu);line-height:1.5}
 .lg-msg.ok{color:#1f7a4a}
 details{border:2px solid #e6dcc6;border-radius:12px;padding:6px 10px;background:#fffaf0}
@@ -329,6 +330,7 @@ a{color:var(--shu)}
     <label class="small" for="code">友だちの合言葉（4けた）</label>
     <div class="row"><input type="text" id="code" maxlength="8" inputmode="numeric" autocomplete="off" placeholder="1234" style="flex:1 1 120px"><button class="btn gold" id="btnJoin" style="flex:0 1 160px">部屋に入る</button></div>
     <div class="status"><span class="dot" id="netDot"></span><span id="netMsg">通信の準備を確認しています…</span></div>
+    <p class="url-tip">📱 友だちにURLを送るときは「スマホでURLを直接タップして開くと、画面がブレることがあります。URLをメモ帳などに貼り付けてから、そこから開くのがおすすめです。」と伝えてください。</p>
     <p class="small">ホストの端末が戦闘を進め、他の人は入力を送ります。ホストが抜けると中断します。参加者が抜けたキャラはAIが引き継ぎます。</p>
     <div class="row"><button class="btn ghost" id="btnCoopBack">もどる</button></div>
   </div>
@@ -425,6 +427,7 @@ a{color:var(--shu)}
       <button class="btn" id="btnRestore" type="button">コードで引き継ぐ</button>
     </details>
     <div class="row"><button class="btn ghost" id="btnGuest" type="button">ログインせずに遊ぶ（セーブなし）</button></div>
+    <p class="url-tip">📱 スマホでURLを直接タップして開くと、画面がブレることがあります。URLをメモ帳などに貼り付けてから、そこから開くのがおすすめです。</p>
     <p class="small" id="lgNote">セーブはこの端末のブラウザに保存されます。ほかのサービスと同じパスワードは使わないでください。</p>
   </div></div></div>
 </section>
