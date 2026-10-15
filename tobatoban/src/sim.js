@@ -760,7 +760,7 @@ class Sim {
   /* ---------- ボス ---------- */
   spawnBoss(test) {
     const [x, z] = DATA.STAGE.bossSpawn, d = this.diff;
-    this.boss = { id: 'boss', x, z, y: 0, yaw: Math.PI, hp: d.hp, maxHp: d.hp, str: d.str, yo: d.yo, def: d.def, st: test ? 'idle' : 'intro', mv: null, t: 0, gap: 1, phase: 1, cds: {}, last: null, target: 0, defDown: 0, paraImm: 0, dots: [], walkT: 0, noCand: 0, fl: null, downT: 0, stunT: 0 };
+    this.boss = { id: 'boss', x, z, y: 0, yaw: Math.PI, hp: d.hp, maxHp: d.hp, str: d.str * (d.dmgMul || 1), yo: d.yo * (d.dmgMul || 1), def: d.def, st: test ? 'idle' : 'intro', mv: null, t: 0, gap: 1, phase: 1, cds: {}, last: null, target: 0, defDown: 0, paraImm: 0, dots: [], walkT: 0, noCand: 0, fl: null, downT: 0, stunT: 0 };
     if (test) this.boss.testIdle = true;
   }
   bossStun(t) { const b = this.boss; if (b.st === 'fly' || b.st === 'dead' || b.st === 'down') return; b.st = 'stun'; b.stunT = t; b.t = 0; b.mv = null; this.hazards = this.hazards.filter(h => h.src !== 'boss' || h.t > h.warn); }

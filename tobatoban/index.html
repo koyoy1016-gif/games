@@ -610,7 +610,7 @@ const SIM = {
 /* ---------------- 難易度・ボス ---------------- */
 // むずかしさは1つだけ。旧「超」の強さを「通常」とし、体力は旧「超」(32000)の約70%
 const DIFF = {
-  normal: { nm: '通常', str: p('ボス', 'ちから', 440, 'points', 'doc', 13), yo: p('ボス', 'ようりょく', 500, 'points', 'doc', 13), def: p('ボス', 'まもり', 141, 'points', 'doc', 13), hp: p('ボス', '体力', 22400, 'points', 'proto', null, '旧「超」32000の70%。数値は画面に出さない', true), mobHp: 480 },
+  normal: { nm: '通常', str: p('ボス', 'ちから', 440, 'points', 'doc', 13), yo: p('ボス', 'ようりょく', 500, 'points', 'doc', 13), def: p('ボス', 'まもり', 141, 'points', 'doc', 13), hp: p('ボス', '体力', 22400, 'points', 'proto', null, '旧「超」32000の70%。数値は画面に出さない', true), dmgMul: p('ボス', 'トバトーバンが与えるダメージの倍率', 0.7, 'ratio', 'proto', null, 'ちから・ようりょくに掛けて、すべての攻撃のダメージを30%減らす。攻撃の速さ・回数・パターンはそのまま'), mobHp: 480 },
 };
 const BOSS = {
   nm: 'トバトーバン',
@@ -1796,7 +1796,7 @@ class Sim {
   /* ---------- ボス ---------- */
   spawnBoss(test) {
     const [x, z] = DATA.STAGE.bossSpawn, d = this.diff;
-    this.boss = { id: 'boss', x, z, y: 0, yaw: Math.PI, hp: d.hp, maxHp: d.hp, str: d.str, yo: d.yo, def: d.def, st: test ? 'idle' : 'intro', mv: null, t: 0, gap: 1, phase: 1, cds: {}, last: null, target: 0, defDown: 0, paraImm: 0, dots: [], walkT: 0, noCand: 0, fl: null, downT: 0, stunT: 0 };
+    this.boss = { id: 'boss', x, z, y: 0, yaw: Math.PI, hp: d.hp, maxHp: d.hp, str: d.str * (d.dmgMul || 1), yo: d.yo * (d.dmgMul || 1), def: d.def, st: test ? 'idle' : 'intro', mv: null, t: 0, gap: 1, phase: 1, cds: {}, last: null, target: 0, defDown: 0, paraImm: 0, dots: [], walkT: 0, noCand: 0, fl: null, downT: 0, stunT: 0 };
     if (test) this.boss.testIdle = true;
   }
   bossStun(t) { const b = this.boss; if (b.st === 'fly' || b.st === 'dead' || b.st === 'down') return; b.st = 'stun'; b.stunT = t; b.t = 0; b.mv = null; this.hazards = this.hazards.filter(h => h.src !== 'boss' || h.t > h.warn); }
