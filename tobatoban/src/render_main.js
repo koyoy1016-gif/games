@@ -60,7 +60,7 @@ const R = (() => {
     camera = new THREE.PerspectiveCamera(50, 1, 0.2, 400);
     W = GFX.buildWorld(scene);
     PA = makePoints(700, true); PN = makePoints(500, false); scene.add(PA.pts); scene.add(PN.pts);
-    resize(); addEventListener('resize', resize);
+    resize();
     // 自分の足元の印（ボスの体に隠れても見える）
     cam.ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.55, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthTest: false })); cam.ring.rotation.x = -Math.PI / 2; cam.ring.renderOrder = 20; scene.add(cam.ring);
     cam.arrow = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.3, 3), new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.9 })); cam.arrow.rotation.x = Math.PI / 2; cam.arrow.renderOrder = 21; scene.add(cam.arrow);
@@ -75,7 +75,7 @@ const R = (() => {
     return { renderer, scene, camera };
   }
   function resize() {
-    const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+    const w = VIEW.w, h = VIEW.h; renderer.setSize(w, h, false); camera.aspect = w / h;
     const portrait = h > w; camera.fov = portrait ? DATA.CAM.portrait_framing.fov : DATA.CAM.vertical_fov_deg; camera.updateProjectionMatrix();
     cam.portrait = portrait;
   }
@@ -398,7 +398,7 @@ const R = (() => {
     if (cam.shake > 0.001) { cx += (Math.random() - 0.5) * cam.shake; cy += (Math.random() - 0.5) * cam.shake; cam.shake *= Math.pow(0.02, dt); }
     camera.position.set(cx, cy, cz); camera.lookAt(lx, ly, lz);
     // 足元をゲーム表示領域の決めた高さに置く
-    const h = innerHeight, w = innerWidth;
+    const h = VIEW.h, w = VIEW.w;
     if (v.stage !== 'intro' && area) { const want = area.top + fr.feetY * (area.bottom - area.top); camera.setViewOffset(w, h, 0, -(want - h / 2), w, h); }
     else camera.clearViewOffset();
     // 光源
@@ -410,7 +410,7 @@ const R = (() => {
   }
   function render(dt) {
     stepPoints(PA, dt); stepPoints(PN, dt);
-    const projScale = innerHeight * pr / (2 * Math.tan(camera.fov * Math.PI / 360));
+    const projScale = VIEW.h * pr / (2 * Math.tan(camera.fov * Math.PI / 360));
     PA.mat.uniforms.uScale.value = PN.mat.uniforms.uScale.value = projScale;
     renderer.render(scene, camera);
     // 端末が重いときは解像度を下げる
@@ -418,7 +418,7 @@ const R = (() => {
     const T = performance.now();
     if (T - lastFrame > 3000) { lastFrame = T; if (frameAvg > 24 && pr > 1) { pr = Math.max(1, pr - 0.25); renderer.setPixelRatio(pr); resize(); } else if (frameAvg < 15 && pr < Math.min(window.devicePixelRatio || 1, 1.75)) { pr = Math.min(pr + 0.25, 1.75); renderer.setPixelRatio(pr); resize(); } }
   }
-  function project(x, y, z) { V.set(x, y, z).project(camera); return { x: (V.x + 1) / 2 * innerWidth, y: (1 - V.y) / 2 * innerHeight, front: V.z < 1 && V.z > -1, ndc: { x: V.x, y: V.y, z: V.z } }; }
+  function project(x, y, z) { V.set(x, y, z).project(camera); return { x: (V.x + 1) / 2 * VIEW.w, y: (1 - V.y) / 2 * VIEW.h, front: V.z < 1 && V.z > -1, ndc: { x: V.x, y: V.y, z: V.z } }; }
   function clearEntities() {
     for (const m of allies) if (m) { scene.remove(m.root); scene.remove(m.shadow); } allies.length = 0;
     if (boss) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }

@@ -22,15 +22,24 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#1b1838;color:var(--paper);font-family:var(--f-body)}
-body{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
-#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+body{touch-action:none;}
+#app.rot .screen,#app.rot #dataTable{touch-action:none}
+body{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#app{position:fixed;left:0;top:0;width:100vw;height:100vh;overflow:hidden;transform-origin:0 0;transform:translate(0,0);container-type:size;container-name:app;--aw:1vw;--ah:1vh;background:#1b1838}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
+#turnHint{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(18,16,40,.88);pointer-events:none;text-align:center;padding:16px;animation:thFade 2.8s ease-in forwards}
+#turnHint .ph{font-size:56px;display:inline-block;animation:thTurn 1.2s ease-in-out 2}
+#turnHint b{font-family:var(--f-disp);font-weight:400;font-size:22px}
+#turnHint small{font-size:13px;color:#cfc8e6}
+@keyframes thTurn{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@keyframes thFade{0%,75%{opacity:1}100%{opacity:0}}
 [hidden]{display:none!important}
 button{font-family:var(--f-body);font-weight:900;cursor:pointer;border:0;color:inherit}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 
 /* ---------- メニュー画面 ---------- */
-.screen{position:fixed;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;display:flex;align-items:flex-start;justify-content:center;
-  padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));
+.screen{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;display:flex;align-items:flex-start;justify-content:center;
+  padding:max(14px,var(--sat,0px)) max(16px,var(--sar,0px)) max(14px,var(--sab,0px)) max(16px,var(--sal,0px));
   background:radial-gradient(120% 90% at 50% 0%,rgba(27,24,56,.15),rgba(12,10,28,.72))}
 .screen>.panel{margin:auto}
 .panel{background:var(--paper);color:var(--ink);border-radius:18px;padding:18px;width:min(560px,100%);display:flex;flex-direction:column;gap:12px;
@@ -38,7 +47,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .panel.wide{width:min(980px,100%)}
 .panel::before{content:"";position:absolute;inset:8px;border:1.5px dashed rgba(228,87,46,.35);border-radius:12px;pointer-events:none}
 .eyebrow{font-family:var(--f-sign);color:var(--shu);font-size:15px;letter-spacing:.12em}
-h1{font-family:var(--f-disp);font-weight:400;margin:0;font-size:clamp(30px,7.6vw,52px);line-height:1.08;text-wrap:balance}
+h1{font-family:var(--f-disp);font-weight:400;margin:0;font-size:clamp(30px,calc(var(--aw)*7.6),52px);line-height:1.08;text-wrap:balance}
 h1 .em{color:var(--shu)}
 h2{font-family:var(--f-disp);font-weight:400;margin:0;font-size:22px}
 h3{margin:0;font-size:15px;font-weight:900}
@@ -65,10 +74,23 @@ a{color:var(--shu)}
 .menu-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .menu-list .btn{flex:none}
 .menu-list .span{grid-column:1/-1}
+.land-only{display:none}
+/* 横画面（高さが低い）ではメニューを左右2列にして、スクロールなしで押せるようにする */
+@container app (max-height:520px) and (min-width:600px){
+  #title .panel{width:min(860px,100%);display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-areas:"head menu" "lead menu" "note menu";column-gap:22px;row-gap:8px;padding:16px 20px}
+  #title .titlebar{grid-area:head}#title .lead{grid-area:lead;font-size:13px}#title .menu-list{grid-area:menu;align-content:center}#title .note{grid-area:note}
+  #title h1{font-size:clamp(28px,calc(var(--ah)*10),46px)}
+  #title .lantern-badge{writing-mode:horizontal-tb;padding:5px 10px;font-size:13px;white-space:nowrap}
+  #coop .panel,#settings .panel,#how .panel,#pause .panel{width:min(760px,100%)}
+  #pause .menu-list{grid-template-columns:1fr 1fr 1fr}
+  .btn{padding:10px 14px}
+}
+.sticky-actions{position:sticky;bottom:-18px;background:var(--paper);padding:10px 0 12px;margin:0 -4px;z-index:3;box-shadow:0 -10px 14px -10px rgba(31,26,46,.35)}
+.sticky-actions .btn.ghost{background:#fff}
 
 /* 編成 */
 .team{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px}
-@media (max-width:720px){.team{grid-template-columns:1fr}}
+@container app (max-width:720px){.team{grid-template-columns:1fr}}
 .slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .slot{border:2.5px solid var(--ink);border-radius:12px;background:#fff;padding:6px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;position:relative;min-height:48px}
 .slot.sel{background:#fff1c9;box-shadow:0 0 0 3px var(--gold)}
@@ -78,7 +100,7 @@ a{color:var(--shu)}
 .slot .pn{position:absolute;left:4px;top:4px}
 .slot .tag{font-size:10px;background:var(--muted);color:#fff;border-radius:6px;padding:0 6px}
 .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-@media (max-width:480px){.cards{grid-template-columns:repeat(5,1fr)}}
+
 .card{border:2px solid #d9cfba;border-radius:12px;background:#fff;padding:3px 2px 5px;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;color:var(--ink);position:relative;min-height:48px}
 .card img{width:100%;aspect-ratio:1;object-fit:contain}
 .card .nm{font-size:10.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -108,7 +130,7 @@ a{color:var(--shu)}
 .grp{font-family:var(--f-disp);font-weight:400;font-size:14px;padding-top:12px}
 
 /* ---------- HUD ---------- */
-#hud{position:fixed;inset:0;pointer-events:none;font-family:var(--f-body)}
+#hud{position:absolute;inset:0;pointer-events:none;font-family:var(--f-body)}
 #hud .hb{position:absolute;pointer-events:auto;touch-action:none;transition:opacity .3s}
 #hud.intro .btnc,#hud.intro .itm,#hud.intro .stick,#hud.intro #mebox{opacity:0!important;pointer-events:none}
 .bossbox{display:flex;flex-direction:column;gap:3px}
@@ -126,7 +148,7 @@ a{color:var(--shu)}
 .pcard{display:flex;align-items:center;gap:6px;background:var(--veil);border:2px solid rgba(255,255,255,.12);border-radius:12px;padding:3px 6px 3px 3px;height:48px;min-width:0;position:relative}
 .party.row .pcard{flex:1;padding:2px 4px 2px 2px;gap:4px}
 .pcard.me{border-color:var(--gold)}
-@media (max-height:380px) and (orientation:landscape){.pcard{height:42px}.pcard .face{width:34px;height:34px}.party{gap:3px}}
+@container app (max-height:380px) and (orientation:landscape){.pcard{height:42px}.pcard .face{width:34px;height:34px}.party{gap:3px}}
 .pcard.tgt{box-shadow:0 0 0 2px #7dff9a}
 .pcard .face{width:40px;height:40px;border-radius:9px;background:#efe6d3;flex:none;overflow:hidden;position:relative}
 .party.row .pcard .face{width:30px;height:30px}
@@ -159,7 +181,7 @@ a{color:var(--shu)}
 #timer .net{font-family:var(--f-body);font-size:11px;font-weight:900;background:var(--veil);border-radius:6px;padding:1px 6px}
 #map{border-radius:10px;background:rgba(12,10,30,.66);border:2px solid rgba(255,255,255,.18);overflow:hidden}
 #map canvas{width:100%;height:100%;display:block}
-#map.big{position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%);width:min(86vw,520px)!important;height:min(70vh,520px)!important;z-index:30}
+#map.big{position:absolute!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%);width:min(calc(var(--aw)*86),520px)!important;height:min(calc(var(--ah)*70),520px)!important;z-index:30}
 .btnc{border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border:2.5px solid rgba(255,255,255,.75);color:#fff;opacity:.68;position:absolute;line-height:1.05;text-shadow:0 1px 2px rgba(0,0,0,.6);box-shadow:0 3px 10px rgba(0,0,0,.35)}
 .btnc .key{font-family:var(--f-disp);font-size:calc(19px*var(--ui))}
 .btnc .lb{font-size:calc(10.5px*var(--ui));font-weight:900;max-width:92%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -179,7 +201,7 @@ a{color:var(--shu)}
 .stick{position:absolute;border-radius:50%;background:radial-gradient(rgba(20,18,44,.55),rgba(20,18,44,.35));border:2px solid rgba(255,255,255,.45)}
 .stick .knob{position:absolute;left:50%;top:50%;border-radius:50%;background:rgba(255,255,255,.85);transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .stick .ar{position:absolute;color:rgba(255,255,255,.55);font-size:12px;font-weight:900}
-#touch{position:fixed;inset:0;pointer-events:auto;touch-action:none}
+#touch{position:absolute;inset:0;pointer-events:auto;touch-action:none}
 .label3d{position:absolute;transform:translate(-50%,-100%);font-size:11px;font-weight:900;text-align:center;pointer-events:none;white-space:nowrap;text-shadow:0 1px 2px #000;display:flex;flex-direction:column;align-items:center;gap:1px}
 .label3d .pn{font-size:11px;border:1.5px solid #0d0b1d}
 .label3d .mini{width:40px;height:5px}
@@ -196,46 +218,47 @@ a{color:var(--shu)}
 .reticle{position:absolute;width:70px;height:70px;margin:-35px 0 0 -35px;border:2.5px dashed #ff6a5a;border-radius:50%;pointer-events:none;animation:spin 3s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #notice{position:absolute;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
-.nt{background:var(--veil);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;padding:4px 14px;font-size:13px;font-weight:900;animation:ntIn .2s ease-out;max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nt{background:var(--veil);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;padding:4px 14px;font-size:13px;font-weight:900;animation:ntIn .2s ease-out;max-width:calc(var(--aw)*92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nt.boss{background:rgba(120,20,30,.85);font-family:var(--f-disp);font-weight:400;font-size:16px;border-radius:6px}
 .nt.sp{background:linear-gradient(90deg,rgba(116,70,184,.9),rgba(60,30,120,.9))}
 .nt.warn{background:rgba(200,60,40,.9)}
 @keyframes ntIn{from{opacity:0;transform:translateY(-6px)}}
-#cutin{position:fixed;right:0;top:34%;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 18px 6px 40px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(116,70,184,.92) 20%);transform:translateX(100%);opacity:0}
+#cutin{position:absolute;right:0;top:34%;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 18px 6px 40px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(116,70,184,.92) 20%);transform:translateX(100%);opacity:0}
 #cutin.show{animation:cut .35s ease-out}
 @keyframes cut{0%{transform:translateX(100%);opacity:1}25%{transform:none;opacity:1}85%{transform:none;opacity:1}100%{transform:translateX(30%);opacity:0}}
 #cutin img{width:48px;height:48px}
 #cutin b{font-family:var(--f-disp);font-weight:400;font-size:22px}
-#banner{position:fixed;left:0;right:0;top:24%;text-align:center;pointer-events:none;font-family:var(--f-disp);font-size:clamp(24px,6vw,44px);padding:0 12px;color:#fff;text-shadow:0 0 16px rgba(255,120,60,.8),0 3px 0 #2a0f0a;opacity:0;transition:opacity .25s,transform .25s;transform:scale(.9)}
+#banner{position:absolute;left:0;right:0;top:24%;text-align:center;pointer-events:none;font-family:var(--f-disp);font-size:clamp(24px,calc(var(--aw)*6),44px);padding:0 12px;color:#fff;text-shadow:0 0 16px rgba(255,120,60,.8),0 3px 0 #2a0f0a;opacity:0;transition:opacity .25s,transform .25s;transform:scale(.9)}
 #banner.show{opacity:1;transform:none}
 #banner small{display:block;font-family:var(--f-body);font-weight:900;font-size:15px;text-shadow:0 1px 3px #000;margin-top:4px}
-#bossCard{position:fixed;left:0;right:0;bottom:18%;text-align:center;pointer-events:none;opacity:0;transition:opacity .3s}
+#bossCard{position:absolute;left:0;right:0;bottom:18%;text-align:center;pointer-events:none;opacity:0;transition:opacity .3s}
 #bossCard.show{opacity:1}
 #bossCard .s{display:inline-block;background:var(--shu);color:#fff;font-weight:900;font-size:13px;letter-spacing:.2em;padding:2px 12px;border-radius:4px}
-#bossCard .n{font-family:var(--f-disp);font-size:clamp(38px,11vw,72px);color:#fff;text-shadow:0 0 22px #ff6a3a,0 4px 0 #2a0f0a;line-height:1.15}
+#bossCard .n{font-family:var(--f-disp);font-size:clamp(38px,calc(var(--aw)*11),72px);color:#fff;text-shadow:0 0 22px #ff6a3a,0 4px 0 #2a0f0a;line-height:1.15}
 #bossCard .d{font-size:13px;font-weight:900;background:rgba(18,16,40,.75);display:inline-block;padding:3px 12px;border-radius:8px}
 #sigmenu{position:absolute;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--veil);padding:8px;border-radius:14px;border:2px solid rgba(255,255,255,.2);pointer-events:auto}
 #sigmenu button{min-height:48px;min-width:96px;border-radius:10px;background:#2b2760;font-size:13px;border:2px solid rgba(255,255,255,.3)}
-#dev{position:absolute;left:8px;bottom:8px;max-width:min(96vw,640px);font:11px/1.35 ui-monospace,Menlo,monospace;background:rgba(0,0,0,.72);color:#bfffcf;padding:6px 8px;border-radius:8px;pointer-events:none;white-space:pre;overflow:hidden}
-#rotateHint{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 64px);transform:translateX(-50%);background:var(--veil);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;padding:6px 12px;font-size:12px;font-weight:900;pointer-events:auto;display:flex;gap:8px;align-items:center;z-index:5}
+#dev{position:absolute;left:8px;bottom:8px;max-width:min(calc(var(--aw)*96),640px);font:11px/1.35 ui-monospace,Menlo,monospace;background:rgba(0,0,0,.72);color:#bfffcf;padding:6px 8px;border-radius:8px;pointer-events:none;white-space:pre;overflow:hidden}
+#rotateHint{position:absolute;left:50%;top:64px;transform:translateX(-50%);background:var(--veil);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;padding:6px 12px;font-size:12px;font-weight:900;pointer-events:auto;display:flex;gap:8px;align-items:center;z-index:5}
 #rotateHint button{background:transparent;color:var(--gold);font-size:12px;min-height:32px}
 .ctxB{font-size:10px}
 .revring{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;pointer-events:none}
 .res-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-@media (max-width:520px){.res-grid{grid-template-columns:repeat(2,1fr)}}
+@container app (max-width:520px){.res-grid{grid-template-columns:repeat(2,1fr)}}
 .res-c{background:#fff;border:2px solid var(--ink);border-radius:12px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px}
 .res-c img{width:54px;height:54px}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px}
 .set-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed #e0d4bb;min-height:48px}
 .set-row label{font-weight:900;font-size:14px}
-.set-row input[type=range]{width:min(220px,48vw)}
+.stepper{display:flex;align-items:center;gap:6px}.stepper button{width:48px;height:44px;border-radius:12px;border:2.5px solid var(--ink);background:#fff;color:var(--ink);font-size:20px}.stepper output{min-width:3.6em;text-align:center;font-weight:900;font-variant-numeric:tabular-nums}
 .toggle{min-width:76px}
 .code-big{font-family:var(--f-disp);font-size:34px;letter-spacing:.2em;background:var(--ink);color:var(--gold);border-radius:12px;padding:4px 14px;text-align:center}
 .lob-slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-@media (max-width:520px){.lob-slots{grid-template-columns:repeat(2,1fr)}}
+@container app (max-width:520px){.lob-slots{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
+<div id="app">
 <canvas id="gl" aria-label="3Dの戦闘画面"></canvas>
 
 <!-- タイトル -->
@@ -248,7 +271,7 @@ a{color:var(--shu)}
       </div>
       <div class="lantern-badge">トバトーバン戦</div>
     </div>
-    <p>駅前のアーケード通りに、古い大看板の付喪神「トバトーバン」が現れた。小さなもののけ4体で力を合わせ、祭り広場で鎮めよう。</p>
+    <p class="lead">駅前のアーケード通りに、古い大看板の付喪神「トバトーバン」が現れた。小さなもののけ4体で力を合わせ、祭り広場で鎮めよう。</p>
     <div class="menu-list">
       <button class="btn main span" id="btnSolo">ひとりで遊ぶ（AIの仲間3体）</button>
       <button class="btn gold span" id="btnCoop">協力プレイ（2〜4人）</button>
@@ -256,7 +279,7 @@ a{color:var(--shu)}
       <button class="btn" id="btnSet">設定</button>
       <button class="btn span ghost" id="btnData">データと出典の一覧</button>
     </div>
-    <p class="small">数値は公開資料の参考値と新作の仮値を区別しています（一覧で確認できます）。キャラクター・技名・音楽・効果音はこの作品用の新規制作です。</p>
+    <p class="small note">数値は公開資料の参考値と新作の仮値を区別しています（一覧で確認できます）。キャラクター・技名・音楽・効果音はこの作品用の新規制作です。</p>
   </div>
 </section>
 
@@ -291,7 +314,7 @@ a{color:var(--shu)}
     </div>
     <div><h3 style="margin-bottom:6px">持ち込むアイテム（2つ）</h3><div class="items" id="items"></div></div>
     <div id="diffRow"><h3 style="margin-bottom:6px">むずかしさ</h3><div class="row" id="diffs"></div></div>
-    <div class="row">
+    <div class="row sticky-actions">
       <button class="btn ghost" id="btnTeamBack">もどる</button>
       <button class="btn main" id="btnGo">出撃する</button>
     </div>
@@ -313,6 +336,7 @@ a{color:var(--shu)}
       <span class="k kP">画面</span><span>右側の何もない所をドラッグするとカメラを回せる。「カメラ」で後ろに戻す</span>
       <span class="k kP">仲間</span><span>ソロでは左上の仲間をタップで操作キャラを交代。回復をためている間は回復対象の指定になる</span>
     </div>
+    <p class="small">このゲームは横画面で遊びます。スマホを縦に持っていても画面は横向きで表示されるので、スマホを左に倒して（上側を左へ）遊んでください。逆向きに持つ場合は設定の「横向きの回転方向」で変えられます。</p>
     <p class="small">赤い縞の範囲がボスの攻撃予兆。紫の帯は空中突進の通り道。4基の灯籠を30秒以内に灯すとボスが6秒止まる。仲間が気絶して30秒放置すると昇天し、その戦闘では戻らない。</p>
     <p class="small">パソコン：WASD移動・J=A・K=X・L=Y・U=必殺・Space=B・F=注目・Q/E=カメラ・1/2=アイテム・Esc=メニュー</p>
     <div class="row"><button class="btn main" data-back>とじる</button></div>
@@ -323,15 +347,18 @@ a{color:var(--shu)}
 <section class="screen" id="settings" hidden>
   <div class="panel">
     <div class="eyebrow">設定</div><h2>見やすさと操作</h2>
-    <div class="set-row"><label for="sUi">ボタンの大きさ</label><div class="row"><input type="range" id="sUi" min="80" max="130" step="5"><span id="sUiV" class="small"></span></div></div>
+    <div class="set-row"><label>ボタンの大きさ</label><div class="stepper" data-key="ui" data-min="80" data-max="130" data-step="5"><button type="button" aria-label="小さく">－</button><output id="sUiV"></output><button type="button" aria-label="大きく">＋</button></div></div>
+    <div class="set-row"><label>縦持ちでも横画面で表示</label><button class="chip toggle" id="sLand"></button></div>
+    <div class="set-row"><label>横向きの回転方向</label><button class="chip toggle" id="sRotDir"></button></div>
+    <div class="set-row"><label>全画面（対応ブラウザのみ）</label><button class="chip toggle" id="sFull">全画面にする</button></div>
     <div class="set-row"><label>左右反転（左利き配置）</label><button class="chip toggle" id="sMirror"></button></div>
     <div class="set-row"><label>スティック</label><button class="chip toggle" id="sStick"></button></div>
     <div class="set-row"><label>画面の揺れ</label><button class="chip toggle" id="sShake"></button></div>
     <div class="set-row"><label>演出を簡略化（判定は同じ）</label><button class="chip toggle" id="sSimple"></button></div>
     <div class="set-row"><label>着地後に自動で注目し直す</label><button class="chip toggle" id="sRelock"></button></div>
     <div class="set-row"><label>振動</label><button class="chip toggle" id="sVib"></button></div>
-    <div class="set-row"><label for="sBgm">BGM</label><input type="range" id="sBgm" min="0" max="100" step="5"></div>
-    <div class="set-row"><label for="sSfx">効果音</label><input type="range" id="sSfx" min="0" max="100" step="5"></div>
+    <div class="set-row"><label>BGM</label><div class="stepper" data-key="bgm" data-min="0" data-max="100" data-step="10"><button type="button" aria-label="小さく">－</button><output></output><button type="button" aria-label="大きく">＋</button></div></div>
+    <div class="set-row"><label>効果音</label><div class="stepper" data-key="sfx" data-min="0" data-max="100" data-step="10"><button type="button" aria-label="小さく">－</button><output></output><button type="button" aria-label="大きく">＋</button></div></div>
     <div class="set-row"><label>開発用の計測表示</label><button class="chip toggle" id="sDev"></button></div>
     <div class="row"><button class="btn main" data-back>とじる</button></div>
   </div>
@@ -343,7 +370,7 @@ a{color:var(--shu)}
     <div class="eyebrow">データと出典</div><h2>値・単位・状態・出典</h2>
     <p class="small">「資料で確認」＝公開資料にある値、「資料の目安」＝攻略記事などの目安、「新作の仮値」＝この初版のための仮の値（原作の測定値ではありません）。原作と完全一致したとは表示しません。体力は画面に数値を出さない調整値です。</p>
     <div class="row" id="dataProfile"></div>
-    <div id="dataTable" style="max-height:62vh;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y"></div>
+    <div id="dataTable" style="max-height:calc(var(--ah)*62);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y"></div>
     <div class="row"><button class="btn main" data-back>とじる</button></div>
   </div>
 </section>
@@ -418,6 +445,8 @@ a{color:var(--shu)}
 <div id="banner"></div>
 <div id="bossCard"><div class="s">付喪神</div><div class="n">トバトーバン</div><div class="d">古い大看板と祭りの台座が、宵の広場で目を覚ました</div></div>
 <div id="rotateHint" hidden>📱↻ 横画面のほうが見やすく遊べます<button id="rotateX">とじる</button></div>
+<div id="turnHint" hidden><span class="ph">📱</span><b>スマホを横向きにしてください</b><small>縦持ちのままでも画面を横向きで表示しています</small></div>
+</div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 /* ===== data.js ===== */
@@ -2392,6 +2421,8 @@ const AUDIO = (() => {
    写真の構図（両側の緑の鉄骨アーケード・ガラス屋根、中高層ビル、正面の駅ビルと
    ペデストリアンデッキ）を参考に、道路や店舗は架空に再構成している。
    ===================================================================== */
+/** 論理画面（横向き固定のとき縦の端末では幅と高さが入れ替わる） */
+const VIEW = { w: typeof innerWidth !== 'undefined' ? innerWidth : 844, h: typeof innerHeight !== 'undefined' ? innerHeight : 390, rot: 0 };
 const GFX = {};
 (() => {
   const V3 = THREE.Vector3;
@@ -3146,7 +3177,7 @@ const R = (() => {
     camera = new THREE.PerspectiveCamera(50, 1, 0.2, 400);
     W = GFX.buildWorld(scene);
     PA = makePoints(700, true); PN = makePoints(500, false); scene.add(PA.pts); scene.add(PN.pts);
-    resize(); addEventListener('resize', resize);
+    resize();
     // 自分の足元の印（ボスの体に隠れても見える）
     cam.ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.55, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthTest: false })); cam.ring.rotation.x = -Math.PI / 2; cam.ring.renderOrder = 20; scene.add(cam.ring);
     cam.arrow = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.3, 3), new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.9 })); cam.arrow.rotation.x = Math.PI / 2; cam.arrow.renderOrder = 21; scene.add(cam.arrow);
@@ -3161,7 +3192,7 @@ const R = (() => {
     return { renderer, scene, camera };
   }
   function resize() {
-    const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+    const w = VIEW.w, h = VIEW.h; renderer.setSize(w, h, false); camera.aspect = w / h;
     const portrait = h > w; camera.fov = portrait ? DATA.CAM.portrait_framing.fov : DATA.CAM.vertical_fov_deg; camera.updateProjectionMatrix();
     cam.portrait = portrait;
   }
@@ -3484,7 +3515,7 @@ const R = (() => {
     if (cam.shake > 0.001) { cx += (Math.random() - 0.5) * cam.shake; cy += (Math.random() - 0.5) * cam.shake; cam.shake *= Math.pow(0.02, dt); }
     camera.position.set(cx, cy, cz); camera.lookAt(lx, ly, lz);
     // 足元をゲーム表示領域の決めた高さに置く
-    const h = innerHeight, w = innerWidth;
+    const h = VIEW.h, w = VIEW.w;
     if (v.stage !== 'intro' && area) { const want = area.top + fr.feetY * (area.bottom - area.top); camera.setViewOffset(w, h, 0, -(want - h / 2), w, h); }
     else camera.clearViewOffset();
     // 光源
@@ -3496,7 +3527,7 @@ const R = (() => {
   }
   function render(dt) {
     stepPoints(PA, dt); stepPoints(PN, dt);
-    const projScale = innerHeight * pr / (2 * Math.tan(camera.fov * Math.PI / 360));
+    const projScale = VIEW.h * pr / (2 * Math.tan(camera.fov * Math.PI / 360));
     PA.mat.uniforms.uScale.value = PN.mat.uniforms.uScale.value = projScale;
     renderer.render(scene, camera);
     // 端末が重いときは解像度を下げる
@@ -3504,7 +3535,7 @@ const R = (() => {
     const T = performance.now();
     if (T - lastFrame > 3000) { lastFrame = T; if (frameAvg > 24 && pr > 1) { pr = Math.max(1, pr - 0.25); renderer.setPixelRatio(pr); resize(); } else if (frameAvg < 15 && pr < Math.min(window.devicePixelRatio || 1, 1.75)) { pr = Math.min(pr + 0.25, 1.75); renderer.setPixelRatio(pr); resize(); } }
   }
-  function project(x, y, z) { V.set(x, y, z).project(camera); return { x: (V.x + 1) / 2 * innerWidth, y: (1 - V.y) / 2 * innerHeight, front: V.z < 1 && V.z > -1, ndc: { x: V.x, y: V.y, z: V.z } }; }
+  function project(x, y, z) { V.set(x, y, z).project(camera); return { x: (V.x + 1) / 2 * VIEW.w, y: (1 - V.y) / 2 * VIEW.h, front: V.z < 1 && V.z > -1, ndc: { x: V.x, y: V.y, z: V.z } }; }
   function clearEntities() {
     for (const m of allies) if (m) { scene.remove(m.root); scene.remove(m.shadow); } allies.length = 0;
     if (boss) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }
@@ -3524,7 +3555,7 @@ const R = (() => {
    ===================================================================== */
 const $ = s => document.querySelector(s);
 const STORE = { get(k, d) { try { const v = localStorage.getItem('tb.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem('tb.' + k, JSON.stringify(v)); } catch (e) { } } };
-const SET = Object.assign({ ui: 100, mirror: false, stick: 'fixed', shake: true, simple: false, relock: false, vib: true, bgm: 50, sfx: 85, dev: false }, STORE.get('set', {}));
+const SET = Object.assign({ land: true, rotDir: 'left', ui: 100, mirror: false, stick: 'fixed', shake: true, simple: false, relock: false, vib: true, bgm: 50, sfx: 85, dev: false }, STORE.get('set', {}));
 const PUBLIC_URL = 'https://koyoy1016-gif.github.io/games/tobatoban/';
 const G = {
   mode: 'boot', session: null, v: null, T: 0, party: STORE.get('party', DATA.DEFAULT_PARTY.slice()), swap: STORE.get('swap', [false, false, false, false]),
@@ -3535,6 +3566,28 @@ if (!G.party.every(id => DATA.CHI[id])) G.party = DATA.DEFAULT_PARTY.slice();
 const vib = p => { try { if (SET.vib && navigator.vibrate) navigator.vibrate(p); } catch (e) { } };
 const pcol = i => DATA.PCOL[i % 4];
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+/* ---------- 横向き固定（縦持ちの端末では画面全体を90度回す） ---------- */
+function applyRotation() {
+  const app = $('#app'); const vw = window.innerWidth, vh = window.innerHeight;
+  const rot = SET.land && vh > vw * 1.05 ? (SET.rotDir === 'right' ? -90 : 90) : 0;
+  VIEW.rot = rot; VIEW.w = rot ? vh : vw; VIEW.h = rot ? vw : vh;
+  app.style.width = VIEW.w + 'px'; app.style.height = VIEW.h + 'px';
+  app.style.transform = rot === 90 ? `translate(${vw}px,0) rotate(90deg)` : rot === -90 ? `translate(0,${vh}px) rotate(-90deg)` : 'translate(0,0)';
+  app.classList.toggle('rot', !!rot);
+  app.style.setProperty('--aw', VIEW.w / 100 + 'px'); app.style.setProperty('--ah', VIEW.h / 100 + 'px');
+  readSafe();
+  for (const [k, v] of [['--sat', safe.t], ['--sar', safe.r], ['--sab', safe.b], ['--sal', safe.l]]) app.style.setProperty(k, v + 'px');
+  if (rot && !G.turnShown) { G.turnShown = true; const t = $('#turnHint'); t.hidden = false; setTimeout(() => t.hidden = true, 2900); }
+  if (!rot) $('#turnHint').hidden = true;
+}
+/** 画面上の指の位置 → 回転後のゲーム画面の座標 */
+function toApp(e) {
+  if (VIEW.rot === 90) return [e.clientY, window.innerWidth - e.clientX];
+  if (VIEW.rot === -90) return [window.innerHeight - e.clientY, e.clientX];
+  return [e.clientX, e.clientY];
+}
+function onViewChange() { applyRotation(); R.resize(); layoutHud(); }
 
 /* ---------- 画面 ---------- */
 function show(id) {
@@ -3554,11 +3607,12 @@ function openSub(id, from) { G.back = from; show(id); }
 async function boot() {
   const fontsReady = Promise.race([Promise.all([document.fonts.load('40px "Yuji Syuku"', '千住'), document.fonts.load('40px "Dela Gothic One"', 'トバ'), document.fonts.load('900 16px "Zen Maru Gothic"', 'もののけ')]), new Promise(r => setTimeout(r, 2500))]).catch(() => { });
   await fontsReady;
+  applyRotation();
   R.init($('#gl'));
   R.setOpts({ shake: SET.shake, simple: SET.simple });
   R.on('notice', onNotice);
   makeThumbs();
-  bindMenus(); bindHud(); applySettings();
+  bindMenus(); bindHud(); bindRotScroll(); applySettings();
   detectNet();
   G.mode = 'title'; show('title');
   requestAnimationFrame(frame);
@@ -3621,13 +3675,31 @@ function bindMenus() {
   const tog = (id, key, labels) => { const b = $(id); const upd = () => { b.textContent = labels ? labels[SET[key] ? 1 : 0] : (SET[key] ? 'ON' : 'OFF'); b.classList.toggle('on', !!SET[key]); }; b.onclick = () => { SET[key] = !SET[key]; upd(); applySettings(); AUDIO.sfx('ui'); }; upd(); };
   tog('#sMirror', 'mirror'); tog('#sShake', 'shake'); tog('#sSimple', 'simple'); tog('#sRelock', 'relock'); tog('#sVib', 'vib'); tog('#sDev', 'dev');
   const sb = $('#sStick'); const updS = () => { sb.textContent = SET.stick === 'fixed' ? '固定' : '触れた所に出る'; }; sb.onclick = () => { SET.stick = SET.stick === 'fixed' ? 'follow' : 'fixed'; updS(); applySettings(); }; updS();
-  const ui = $('#sUi'); ui.value = SET.ui; $('#sUiV').textContent = SET.ui + '%'; ui.oninput = () => { SET.ui = +ui.value; $('#sUiV').textContent = SET.ui + '%'; applySettings(); };
-  const bg = $('#sBgm'); bg.value = SET.bgm; bg.oninput = () => { SET.bgm = +bg.value; applySettings(); };
-  const sf = $('#sSfx'); sf.value = SET.sfx; sf.oninput = () => { SET.sfx = +sf.value; applySettings(); AUDIO.sfx('ui'); };
+  document.querySelectorAll('.stepper').forEach(st => {
+    const k = st.dataset.key, mn = +st.dataset.min, mx = +st.dataset.max, sp = +st.dataset.step, out = st.querySelector('output');
+    const upd = () => { out.textContent = SET[k] + '%'; };
+    const [dn, upB] = st.querySelectorAll('button');
+    dn.onclick = () => { SET[k] = Math.max(mn, SET[k] - sp); upd(); applySettings(); AUDIO.sfx('ui'); };
+    upB.onclick = () => { SET[k] = Math.min(mx, SET[k] + sp); upd(); applySettings(); AUDIO.sfx('ui'); };
+    upd();
+  });
+  tog('#sLand', 'land'); $('#sLand').addEventListener('click', onViewChange);
+  const rd = $('#sRotDir'); const updR = () => { rd.textContent = SET.rotDir === 'right' ? '右に倒す' : '左に倒す'; }; rd.onclick = () => { SET.rotDir = SET.rotDir === 'right' ? 'left' : 'right'; updR(); STORE.set('set', SET); onViewChange(); AUDIO.sfx('ui'); }; updR();
+  const fs = $('#sFull'); const fsOk = !!(document.documentElement.requestFullscreen && document.fullscreenEnabled !== false); fs.closest('.set-row').hidden = !fsOk;
+  fs.onclick = async () => { try { if (!document.fullscreenElement) { await document.documentElement.requestFullscreen(); try { await screen.orientation.lock('landscape'); } catch (e) { } fs.textContent = '全画面をやめる'; } else { await document.exitFullscreen(); fs.textContent = '全画面にする'; } } catch (e) { fs.textContent = 'この画面では使えません'; } setTimeout(onViewChange, 300); };
   $('#nick').oninput = () => { G.nick = $('#nick').value.trim().slice(0, 10); STORE.set('nick', G.nick); };
+}
+function bindRotScroll() {
+  let drag = null;
+  document.querySelectorAll('.screen, #dataTable').forEach(el => {
+    el.addEventListener('pointerdown', e => { if (!VIEW.rot) return; drag = { el: e.currentTarget.id === 'dataTable' ? e.currentTarget : (e.target.closest('#dataTable') || e.currentTarget), id: e.pointerId, y: toApp(e)[1] }; }, { passive: true });
+  });
+  addEventListener('pointermove', e => { if (!drag || e.pointerId !== drag.id) return; const y = toApp(e)[1]; drag.el.scrollTop -= y - drag.y; drag.y = y; }, { passive: true });
+  addEventListener('pointerup', () => { drag = null; }); addEventListener('pointercancel', () => { drag = null; });
 }
 function applySettings() {
   STORE.set('set', SET);
+  applyRotation(); if (R.camera) R.resize();
   document.documentElement.style.setProperty('--ui', Math.max(0.8, Math.min(1.3, SET.ui / 100)));
   R.setOpts({ shake: SET.shake, simple: SET.simple });
   AUDIO.setVol(SET.bgm / 100, SET.sfx / 100);
@@ -3853,11 +3925,13 @@ const LAYOUT = {
     area: [108, 604] },
 };
 let safe = { l: 0, r: 0, t: 0, b: 0 };
-function readSafe() { const p = el('div'); p.style.cssText = 'position:fixed;inset:0;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)'; document.body.appendChild(p); const cs = getComputedStyle(p); safe = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 }; p.remove(); }
+function readSafe() { const p = el('div'); p.style.cssText = 'position:fixed;inset:0;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)'; document.body.appendChild(p); const cs = getComputedStyle(p); safe = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 }; p.remove();
+  if (VIEW.rot === 90) safe = { l: safe.t, r: safe.b, t: safe.r, b: safe.l };
+  else if (VIEW.rot === -90) safe = { l: safe.b, r: safe.t, t: safe.l, b: safe.r }; }
 let curLayout = null;
 function layoutHud() {
   readSafe();
-  const w = innerWidth, h = innerHeight, portrait = h > w, L = portrait ? LAYOUT.port : LAYOUT.land;
+  const w = VIEW.w, h = VIEW.h, portrait = h > w, L = portrait ? LAYOUT.port : LAYOUT.land;
   const fit = Math.max(0.82, Math.min(1.25, portrait ? w / L.W : Math.min(w / L.W, h / L.H) * 1.0));
   const s = fit * Math.max(0.8, Math.min(1.3, SET.ui / 100));
   const posS = Math.min(s, portrait ? w / L.W : Math.min(w / L.W * 1.05, h / L.H * 1.05)); // 位置は画面に収まる倍率
@@ -3883,14 +3957,17 @@ function layoutHud() {
     }
   }
   $('#party').classList.toggle('row', portrait);
-  const n = $('#notice'); const bb = $('#bossbox').getBoundingClientRect(); n.style.top = (portrait ? (G.rotateDismissed ? 176 : 228) * posS + safe.t : bb.bottom + 34) + 'px';
-  const mc = $('#mapc'), mr = $('#map').getBoundingClientRect(); mc.width = Math.round(mr.width * 2); mc.height = Math.round(mr.height * 2);
-  $('#rotateHint').hidden = !(portrait && G.mode === 'play' && !G.rotateDismissed); $('#rotateHint').style.top = (safe.t + 176 * posS) + 'px';
+  const n = $('#notice'); const bbx = $('#bossbox'); n.style.top = (portrait ? (G.rotateDismissed ? 176 : 228) * posS + safe.t : bbx.offsetTop + Math.max(40, bbx.offsetHeight) + 34) + 'px';
+  sizeMapCanvas();
+  $('#rotateHint').hidden = !(portrait && G.mode === 'play' && !G.rotateDismissed);
+  $('#rotateHint').style.top = (safe.t + 176 * posS) + 'px';
   buildPartyCards();
 }
-addEventListener('resize', () => setTimeout(layoutHud, 60));
-addEventListener('orientationchange', () => setTimeout(layoutHud, 250));
-function gameArea() { if (!curLayout) return null; const L = curLayout.L; if (!curLayout.portrait) return { top: safe.t + 30, bottom: innerHeight - safe.b }; return { top: safe.t + L.area[0] * curLayout.posS, bottom: innerHeight - safe.b - (L.H - L.area[1]) * curLayout.posS }; }
+addEventListener('resize', () => setTimeout(onViewChange, 60));
+addEventListener('orientationchange', () => setTimeout(onViewChange, 250));
+if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(onViewChange, 60));
+function sizeMapCanvas() { const mc = $('#mapc'), mb = $('#map'); mc.width = Math.round(mb.offsetWidth * 2); mc.height = Math.round(mb.offsetHeight * 2); }
+function gameArea() { if (!curLayout) return null; const L = curLayout.L; if (!curLayout.portrait) return { top: safe.t + 30, bottom: VIEW.h - safe.b }; return { top: safe.t + L.area[0] * curLayout.posS, bottom: VIEW.h - safe.b - (L.H - L.area[1]) * curLayout.posS }; }
 
 /* ---------- 入力（マルチタッチは指ごとに管理） ---------- */
 const INP = { stick: null, sx: 0, sy: 0, cam: null, buttons: new Map(), keys: new Set(), stickC: null };
@@ -3903,23 +3980,24 @@ function release(code, held) { const L = local(); if (!L) return; L.push(code); 
 function bindHud() {
   const touch = $('#touch'), stick = $('#stick');
   const startStick = (e, cx, cy) => { INP.stick = e.pointerId; INP.stickC = [cx, cy]; moveStick(e); };
-  const moveStick = e => { const [cx, cy] = INP.stickC; let dx = e.clientX - cx, dy = e.clientY - cy; const R0 = (G.stickR || 60) * 0.85, l = Math.hypot(dx, dy); if (l > R0) { dx *= R0 / l; dy *= R0 / l; } INP.sx = dx / R0; INP.sy = -dy / R0; const k = $('#knob'); k.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
+  const moveStick = e => { const [cx, cy] = INP.stickC; const [px, py] = toApp(e); let dx = px - cx, dy = py - cy; const R0 = (G.stickR || 60) * 0.85, l = Math.hypot(dx, dy); if (l > R0) { dx *= R0 / l; dy *= R0 / l; } INP.sx = dx / R0; INP.sy = -dy / R0; const k = $('#knob'); k.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
   const endStick = () => { INP.stick = null; INP.sx = INP.sy = 0; $('#knob').style.transform = 'translate(-50%,-50%)'; if (SET.stick === 'follow') layoutHud(); };
-  stick.addEventListener('pointerdown', e => { e.preventDefault(); stick.setPointerCapture(e.pointerId); const r = stick.getBoundingClientRect(); startStick(e, r.left + r.width / 2, r.top + r.height / 2); });
+  stick.addEventListener('pointerdown', e => { e.preventDefault(); stick.setPointerCapture(e.pointerId); startStick(e, stick.offsetLeft + stick.offsetWidth / 2, stick.offsetTop + stick.offsetHeight / 2); });
   stick.addEventListener('pointermove', e => { if (e.pointerId === INP.stick) moveStick(e); });
   for (const t of ['pointerup', 'pointercancel']) stick.addEventListener(t, e => { if (e.pointerId === INP.stick) endStick(); });
   // 何もない所：左側（追従スティック時）／右側はカメラ回転
   touch.addEventListener('pointerdown', e => {
     e.preventDefault(); touch.setPointerCapture(e.pointerId);
-    const leftSide = SET.mirror ? e.clientX > innerWidth * 0.55 : e.clientX < innerWidth * 0.45;
-    if (SET.stick === 'follow' && leftSide && INP.stick == null && (curLayout && (curLayout.portrait ? e.clientY > innerHeight * 0.55 : true))) {
-      const d = parseFloat(stick.style.width); stick.style.left = (e.clientX - d / 2) + 'px'; stick.style.top = (e.clientY - d / 2) + 'px'; startStick(e, e.clientX, e.clientY); INP.touchStick = true; return;
+    const [ax, ay] = toApp(e);
+    const leftSide = SET.mirror ? ax > VIEW.w * 0.55 : ax < VIEW.w * 0.45;
+    if (SET.stick === 'follow' && leftSide && INP.stick == null && (curLayout && (curLayout.portrait ? ay > VIEW.h * 0.55 : true))) {
+      const d = parseFloat(stick.style.width); stick.style.left = (ax - d / 2) + 'px'; stick.style.top = (ay - d / 2) + 'px'; startStick(e, ax, ay); INP.touchStick = true; return;
     }
-    if (INP.cam == null) { INP.cam = { id: e.pointerId, x: e.clientX, y: e.clientY }; }
+    if (INP.cam == null) { INP.cam = { id: e.pointerId, x: ax, y: ay }; }
   });
   touch.addEventListener('pointermove', e => {
     if (e.pointerId === INP.stick) return moveStick(e);
-    if (INP.cam && e.pointerId === INP.cam.id) { const dx = e.clientX - INP.cam.x, dy = e.clientY - INP.cam.y; INP.cam.x = e.clientX; INP.cam.y = e.clientY; R.cam.yaw -= dx * 0.009; R.cam.dragT = 1.2; const C = DATA.CAM; R.cam.userPitch = Math.max(-10, Math.min(10, (R.cam.userPitch || 0) + dy * 0.12)); }
+    if (INP.cam && e.pointerId === INP.cam.id) { const [ax, ay] = toApp(e); const dx = ax - INP.cam.x, dy = ay - INP.cam.y; INP.cam.x = ax; INP.cam.y = ay; R.cam.yaw -= dx * 0.009; R.cam.dragT = 1.2; const C = DATA.CAM; R.cam.userPitch = Math.max(-10, Math.min(10, (R.cam.userPitch || 0) + dy * 0.12)); }
   });
   for (const t of ['pointerup', 'pointercancel']) touch.addEventListener(t, e => { if (e.pointerId === INP.stick) endStick(); if (INP.cam && e.pointerId === INP.cam.id) INP.cam = null; });
   // ボタン
@@ -3933,9 +4011,9 @@ function bindHud() {
   btn('bCam', () => { R.cam.reset = true; AUDIO.sfx('ui'); });
   btn('bMenu', () => pause());
   btn('bI0', () => press('I0')); btn('bI1', () => press('I1'));
-  btn('bSig', () => { const m = $('#sigmenu'); m.hidden = !m.hidden; const r = $('#bSig').getBoundingClientRect(); m.style.left = Math.min(innerWidth - 220, Math.max(8, r.left)) + 'px'; m.style.top = Math.max(8, r.top - 120) + 'px'; });
+  btn('bSig', () => { const m = $('#sigmenu'); m.hidden = !m.hidden; const b = $('#bSig'); m.style.left = Math.min(VIEW.w - 220, Math.max(8, b.offsetLeft)) + 'px'; m.style.top = Math.max(8, b.offsetTop - 120) + 'px'; });
   document.querySelectorAll('#sigmenu button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); press('sig', undefined); const L = local(); if (L) { L.ev[L.ev.length - 1] = [L.evId, 'sig', b.dataset.sig]; } $('#sigmenu').hidden = true; AUDIO.sfx('ok'); }));
-  $('#map').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); $('#map').classList.toggle('big'); const mc = $('#mapc'), mr = $('#map').getBoundingClientRect(); mc.width = Math.round(mr.width * 2); mc.height = Math.round(mr.height * 2); });
+  $('#map').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); $('#map').classList.toggle('big'); sizeMapCanvas(); });
   // キーボード（パソコンでの確認用）
   const KM = { KeyJ: ['A'], KeyK: ['X+', 'X', 'X-'], KeyL: ['Y+', 'Y', 'Y-'], KeyU: ['SP'], Space: ['B+', 'B', 'B-'], Digit1: ['I0'], Digit2: ['I1'] };
   addEventListener('keydown', e => {
@@ -4107,7 +4185,7 @@ function updateHud(v, dt) {
 const LBL = new Map(), EDG = new Map();
 function overlays(v, me) {
   const box = $('#labels'), eb = $('#edges'); const seen = new Set(), seenE = new Set();
-  const W = innerWidth, H = innerHeight, m = 26;
+  const W = VIEW.w, H = VIEW.h, m = 26;
   const put = (key, x, y, z, build, upd) => { seen.add(key); let o = LBL.get(key); if (!o) { o = build(); box.appendChild(o.e); LBL.set(key, o); } const p = R.project(x, y, z); o.e.style.display = p.front && p.x > -40 && p.x < W + 40 && p.y > -40 && p.y < H + 40 ? '' : 'none'; o.e.style.left = p.x + 'px'; o.e.style.top = p.y + 'px'; upd(o); return p; };
   const edge = (key, x, y, z, col, txt) => {
     const p = R.project(x, y, z); const inside = p.front && p.x > 0 && p.x < W && p.y > 0 && p.y < H; if (inside) return;

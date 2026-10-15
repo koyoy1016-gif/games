@@ -3,6 +3,8 @@
    写真の構図（両側の緑の鉄骨アーケード・ガラス屋根、中高層ビル、正面の駅ビルと
    ペデストリアンデッキ）を参考に、道路や店舗は架空に再構成している。
    ===================================================================== */
+/** 論理画面（横向き固定のとき縦の端末では幅と高さが入れ替わる） */
+const VIEW = { w: typeof innerWidth !== 'undefined' ? innerWidth : 844, h: typeof innerHeight !== 'undefined' ? innerHeight : 390, rot: 0 };
 const GFX = {};
 (() => {
   const V3 = THREE.Vector3;

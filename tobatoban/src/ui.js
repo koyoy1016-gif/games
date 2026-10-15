@@ -3,7 +3,7 @@
    ===================================================================== */
 const $ = s => document.querySelector(s);
 const STORE = { get(k, d) { try { const v = localStorage.getItem('tb.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem('tb.' + k, JSON.stringify(v)); } catch (e) { } } };
-const SET = Object.assign({ ui: 100, mirror: false, stick: 'fixed', shake: true, simple: false, relock: false, vib: true, bgm: 50, sfx: 85, dev: false }, STORE.get('set', {}));
+const SET = Object.assign({ land: true, rotDir: 'left', ui: 100, mirror: false, stick: 'fixed', shake: true, simple: false, relock: false, vib: true, bgm: 50, sfx: 85, dev: false }, STORE.get('set', {}));
 const PUBLIC_URL = 'https://koyoy1016-gif.github.io/games/tobatoban/';
 const G = {
   mode: 'boot', session: null, v: null, T: 0, party: STORE.get('party', DATA.DEFAULT_PARTY.slice()), swap: STORE.get('swap', [false, false, false, false]),
@@ -14,6 +14,28 @@ if (!G.party.every(id => DATA.CHI[id])) G.party = DATA.DEFAULT_PARTY.slice();
 const vib = p => { try { if (SET.vib && navigator.vibrate) navigator.vibrate(p); } catch (e) { } };
 const pcol = i => DATA.PCOL[i % 4];
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+/* ---------- 横向き固定（縦持ちの端末では画面全体を90度回す） ---------- */
+function applyRotation() {
+  const app = $('#app'); const vw = window.innerWidth, vh = window.innerHeight;
+  const rot = SET.land && vh > vw * 1.05 ? (SET.rotDir === 'right' ? -90 : 90) : 0;
+  VIEW.rot = rot; VIEW.w = rot ? vh : vw; VIEW.h = rot ? vw : vh;
+  app.style.width = VIEW.w + 'px'; app.style.height = VIEW.h + 'px';
+  app.style.transform = rot === 90 ? `translate(${vw}px,0) rotate(90deg)` : rot === -90 ? `translate(0,${vh}px) rotate(-90deg)` : 'translate(0,0)';
+  app.classList.toggle('rot', !!rot);
+  app.style.setProperty('--aw', VIEW.w / 100 + 'px'); app.style.setProperty('--ah', VIEW.h / 100 + 'px');
+  readSafe();
+  for (const [k, v] of [['--sat', safe.t], ['--sar', safe.r], ['--sab', safe.b], ['--sal', safe.l]]) app.style.setProperty(k, v + 'px');
+  if (rot && !G.turnShown) { G.turnShown = true; const t = $('#turnHint'); t.hidden = false; setTimeout(() => t.hidden = true, 2900); }
+  if (!rot) $('#turnHint').hidden = true;
+}
+/** 画面上の指の位置 → 回転後のゲーム画面の座標 */
+function toApp(e) {
+  if (VIEW.rot === 90) return [e.clientY, window.innerWidth - e.clientX];
+  if (VIEW.rot === -90) return [window.innerHeight - e.clientY, e.clientX];
+  return [e.clientX, e.clientY];
+}
+function onViewChange() { applyRotation(); R.resize(); layoutHud(); }
 
 /* ---------- 画面 ---------- */
 function show(id) {
@@ -33,11 +55,12 @@ function openSub(id, from) { G.back = from; show(id); }
 async function boot() {
   const fontsReady = Promise.race([Promise.all([document.fonts.load('40px "Yuji Syuku"', '千住'), document.fonts.load('40px "Dela Gothic One"', 'トバ'), document.fonts.load('900 16px "Zen Maru Gothic"', 'もののけ')]), new Promise(r => setTimeout(r, 2500))]).catch(() => { });
   await fontsReady;
+  applyRotation();
   R.init($('#gl'));
   R.setOpts({ shake: SET.shake, simple: SET.simple });
   R.on('notice', onNotice);
   makeThumbs();
-  bindMenus(); bindHud(); applySettings();
+  bindMenus(); bindHud(); bindRotScroll(); applySettings();
   detectNet();
   G.mode = 'title'; show('title');
   requestAnimationFrame(frame);
@@ -100,13 +123,31 @@ function bindMenus() {
   const tog = (id, key, labels) => { const b = $(id); const upd = () => { b.textContent = labels ? labels[SET[key] ? 1 : 0] : (SET[key] ? 'ON' : 'OFF'); b.classList.toggle('on', !!SET[key]); }; b.onclick = () => { SET[key] = !SET[key]; upd(); applySettings(); AUDIO.sfx('ui'); }; upd(); };
   tog('#sMirror', 'mirror'); tog('#sShake', 'shake'); tog('#sSimple', 'simple'); tog('#sRelock', 'relock'); tog('#sVib', 'vib'); tog('#sDev', 'dev');
   const sb = $('#sStick'); const updS = () => { sb.textContent = SET.stick === 'fixed' ? '固定' : '触れた所に出る'; }; sb.onclick = () => { SET.stick = SET.stick === 'fixed' ? 'follow' : 'fixed'; updS(); applySettings(); }; updS();
-  const ui = $('#sUi'); ui.value = SET.ui; $('#sUiV').textContent = SET.ui + '%'; ui.oninput = () => { SET.ui = +ui.value; $('#sUiV').textContent = SET.ui + '%'; applySettings(); };
-  const bg = $('#sBgm'); bg.value = SET.bgm; bg.oninput = () => { SET.bgm = +bg.value; applySettings(); };
-  const sf = $('#sSfx'); sf.value = SET.sfx; sf.oninput = () => { SET.sfx = +sf.value; applySettings(); AUDIO.sfx('ui'); };
+  document.querySelectorAll('.stepper').forEach(st => {
+    const k = st.dataset.key, mn = +st.dataset.min, mx = +st.dataset.max, sp = +st.dataset.step, out = st.querySelector('output');
+    const upd = () => { out.textContent = SET[k] + '%'; };
+    const [dn, upB] = st.querySelectorAll('button');
+    dn.onclick = () => { SET[k] = Math.max(mn, SET[k] - sp); upd(); applySettings(); AUDIO.sfx('ui'); };
+    upB.onclick = () => { SET[k] = Math.min(mx, SET[k] + sp); upd(); applySettings(); AUDIO.sfx('ui'); };
+    upd();
+  });
+  tog('#sLand', 'land'); $('#sLand').addEventListener('click', onViewChange);
+  const rd = $('#sRotDir'); const updR = () => { rd.textContent = SET.rotDir === 'right' ? '右に倒す' : '左に倒す'; }; rd.onclick = () => { SET.rotDir = SET.rotDir === 'right' ? 'left' : 'right'; updR(); STORE.set('set', SET); onViewChange(); AUDIO.sfx('ui'); }; updR();
+  const fs = $('#sFull'); const fsOk = !!(document.documentElement.requestFullscreen && document.fullscreenEnabled !== false); fs.closest('.set-row').hidden = !fsOk;
+  fs.onclick = async () => { try { if (!document.fullscreenElement) { await document.documentElement.requestFullscreen(); try { await screen.orientation.lock('landscape'); } catch (e) { } fs.textContent = '全画面をやめる'; } else { await document.exitFullscreen(); fs.textContent = '全画面にする'; } } catch (e) { fs.textContent = 'この画面では使えません'; } setTimeout(onViewChange, 300); };
   $('#nick').oninput = () => { G.nick = $('#nick').value.trim().slice(0, 10); STORE.set('nick', G.nick); };
+}
+function bindRotScroll() {
+  let drag = null;
+  document.querySelectorAll('.screen, #dataTable').forEach(el => {
+    el.addEventListener('pointerdown', e => { if (!VIEW.rot) return; drag = { el: e.currentTarget.id === 'dataTable' ? e.currentTarget : (e.target.closest('#dataTable') || e.currentTarget), id: e.pointerId, y: toApp(e)[1] }; }, { passive: true });
+  });
+  addEventListener('pointermove', e => { if (!drag || e.pointerId !== drag.id) return; const y = toApp(e)[1]; drag.el.scrollTop -= y - drag.y; drag.y = y; }, { passive: true });
+  addEventListener('pointerup', () => { drag = null; }); addEventListener('pointercancel', () => { drag = null; });
 }
 function applySettings() {
   STORE.set('set', SET);
+  applyRotation(); if (R.camera) R.resize();
   document.documentElement.style.setProperty('--ui', Math.max(0.8, Math.min(1.3, SET.ui / 100)));
   R.setOpts({ shake: SET.shake, simple: SET.simple });
   AUDIO.setVol(SET.bgm / 100, SET.sfx / 100);
@@ -332,11 +373,13 @@ const LAYOUT = {
     area: [108, 604] },
 };
 let safe = { l: 0, r: 0, t: 0, b: 0 };
-function readSafe() { const p = el('div'); p.style.cssText = 'position:fixed;inset:0;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)'; document.body.appendChild(p); const cs = getComputedStyle(p); safe = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 }; p.remove(); }
+function readSafe() { const p = el('div'); p.style.cssText = 'position:fixed;inset:0;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)'; document.body.appendChild(p); const cs = getComputedStyle(p); safe = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 }; p.remove();
+  if (VIEW.rot === 90) safe = { l: safe.t, r: safe.b, t: safe.r, b: safe.l };
+  else if (VIEW.rot === -90) safe = { l: safe.b, r: safe.t, t: safe.l, b: safe.r }; }
 let curLayout = null;
 function layoutHud() {
   readSafe();
-  const w = innerWidth, h = innerHeight, portrait = h > w, L = portrait ? LAYOUT.port : LAYOUT.land;
+  const w = VIEW.w, h = VIEW.h, portrait = h > w, L = portrait ? LAYOUT.port : LAYOUT.land;
   const fit = Math.max(0.82, Math.min(1.25, portrait ? w / L.W : Math.min(w / L.W, h / L.H) * 1.0));
   const s = fit * Math.max(0.8, Math.min(1.3, SET.ui / 100));
   const posS = Math.min(s, portrait ? w / L.W : Math.min(w / L.W * 1.05, h / L.H * 1.05)); // 位置は画面に収まる倍率
@@ -362,14 +405,17 @@ function layoutHud() {
     }
   }
   $('#party').classList.toggle('row', portrait);
-  const n = $('#notice'); const bb = $('#bossbox').getBoundingClientRect(); n.style.top = (portrait ? (G.rotateDismissed ? 176 : 228) * posS + safe.t : bb.bottom + 34) + 'px';
-  const mc = $('#mapc'), mr = $('#map').getBoundingClientRect(); mc.width = Math.round(mr.width * 2); mc.height = Math.round(mr.height * 2);
-  $('#rotateHint').hidden = !(portrait && G.mode === 'play' && !G.rotateDismissed); $('#rotateHint').style.top = (safe.t + 176 * posS) + 'px';
+  const n = $('#notice'); const bbx = $('#bossbox'); n.style.top = (portrait ? (G.rotateDismissed ? 176 : 228) * posS + safe.t : bbx.offsetTop + Math.max(40, bbx.offsetHeight) + 34) + 'px';
+  sizeMapCanvas();
+  $('#rotateHint').hidden = !(portrait && G.mode === 'play' && !G.rotateDismissed);
+  $('#rotateHint').style.top = (safe.t + 176 * posS) + 'px';
   buildPartyCards();
 }
-addEventListener('resize', () => setTimeout(layoutHud, 60));
-addEventListener('orientationchange', () => setTimeout(layoutHud, 250));
-function gameArea() { if (!curLayout) return null; const L = curLayout.L; if (!curLayout.portrait) return { top: safe.t + 30, bottom: innerHeight - safe.b }; return { top: safe.t + L.area[0] * curLayout.posS, bottom: innerHeight - safe.b - (L.H - L.area[1]) * curLayout.posS }; }
+addEventListener('resize', () => setTimeout(onViewChange, 60));
+addEventListener('orientationchange', () => setTimeout(onViewChange, 250));
+if (window.visualViewport) visualViewport.addEventListener('resize', () => setTimeout(onViewChange, 60));
+function sizeMapCanvas() { const mc = $('#mapc'), mb = $('#map'); mc.width = Math.round(mb.offsetWidth * 2); mc.height = Math.round(mb.offsetHeight * 2); }
+function gameArea() { if (!curLayout) return null; const L = curLayout.L; if (!curLayout.portrait) return { top: safe.t + 30, bottom: VIEW.h - safe.b }; return { top: safe.t + L.area[0] * curLayout.posS, bottom: VIEW.h - safe.b - (L.H - L.area[1]) * curLayout.posS }; }
 
 /* ---------- 入力（マルチタッチは指ごとに管理） ---------- */
 const INP = { stick: null, sx: 0, sy: 0, cam: null, buttons: new Map(), keys: new Set(), stickC: null };
@@ -382,23 +428,24 @@ function release(code, held) { const L = local(); if (!L) return; L.push(code); 
 function bindHud() {
   const touch = $('#touch'), stick = $('#stick');
   const startStick = (e, cx, cy) => { INP.stick = e.pointerId; INP.stickC = [cx, cy]; moveStick(e); };
-  const moveStick = e => { const [cx, cy] = INP.stickC; let dx = e.clientX - cx, dy = e.clientY - cy; const R0 = (G.stickR || 60) * 0.85, l = Math.hypot(dx, dy); if (l > R0) { dx *= R0 / l; dy *= R0 / l; } INP.sx = dx / R0; INP.sy = -dy / R0; const k = $('#knob'); k.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
+  const moveStick = e => { const [cx, cy] = INP.stickC; const [px, py] = toApp(e); let dx = px - cx, dy = py - cy; const R0 = (G.stickR || 60) * 0.85, l = Math.hypot(dx, dy); if (l > R0) { dx *= R0 / l; dy *= R0 / l; } INP.sx = dx / R0; INP.sy = -dy / R0; const k = $('#knob'); k.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
   const endStick = () => { INP.stick = null; INP.sx = INP.sy = 0; $('#knob').style.transform = 'translate(-50%,-50%)'; if (SET.stick === 'follow') layoutHud(); };
-  stick.addEventListener('pointerdown', e => { e.preventDefault(); stick.setPointerCapture(e.pointerId); const r = stick.getBoundingClientRect(); startStick(e, r.left + r.width / 2, r.top + r.height / 2); });
+  stick.addEventListener('pointerdown', e => { e.preventDefault(); stick.setPointerCapture(e.pointerId); startStick(e, stick.offsetLeft + stick.offsetWidth / 2, stick.offsetTop + stick.offsetHeight / 2); });
   stick.addEventListener('pointermove', e => { if (e.pointerId === INP.stick) moveStick(e); });
   for (const t of ['pointerup', 'pointercancel']) stick.addEventListener(t, e => { if (e.pointerId === INP.stick) endStick(); });
   // 何もない所：左側（追従スティック時）／右側はカメラ回転
   touch.addEventListener('pointerdown', e => {
     e.preventDefault(); touch.setPointerCapture(e.pointerId);
-    const leftSide = SET.mirror ? e.clientX > innerWidth * 0.55 : e.clientX < innerWidth * 0.45;
-    if (SET.stick === 'follow' && leftSide && INP.stick == null && (curLayout && (curLayout.portrait ? e.clientY > innerHeight * 0.55 : true))) {
-      const d = parseFloat(stick.style.width); stick.style.left = (e.clientX - d / 2) + 'px'; stick.style.top = (e.clientY - d / 2) + 'px'; startStick(e, e.clientX, e.clientY); INP.touchStick = true; return;
+    const [ax, ay] = toApp(e);
+    const leftSide = SET.mirror ? ax > VIEW.w * 0.55 : ax < VIEW.w * 0.45;
+    if (SET.stick === 'follow' && leftSide && INP.stick == null && (curLayout && (curLayout.portrait ? ay > VIEW.h * 0.55 : true))) {
+      const d = parseFloat(stick.style.width); stick.style.left = (ax - d / 2) + 'px'; stick.style.top = (ay - d / 2) + 'px'; startStick(e, ax, ay); INP.touchStick = true; return;
     }
-    if (INP.cam == null) { INP.cam = { id: e.pointerId, x: e.clientX, y: e.clientY }; }
+    if (INP.cam == null) { INP.cam = { id: e.pointerId, x: ax, y: ay }; }
   });
   touch.addEventListener('pointermove', e => {
     if (e.pointerId === INP.stick) return moveStick(e);
-    if (INP.cam && e.pointerId === INP.cam.id) { const dx = e.clientX - INP.cam.x, dy = e.clientY - INP.cam.y; INP.cam.x = e.clientX; INP.cam.y = e.clientY; R.cam.yaw -= dx * 0.009; R.cam.dragT = 1.2; const C = DATA.CAM; R.cam.userPitch = Math.max(-10, Math.min(10, (R.cam.userPitch || 0) + dy * 0.12)); }
+    if (INP.cam && e.pointerId === INP.cam.id) { const [ax, ay] = toApp(e); const dx = ax - INP.cam.x, dy = ay - INP.cam.y; INP.cam.x = ax; INP.cam.y = ay; R.cam.yaw -= dx * 0.009; R.cam.dragT = 1.2; const C = DATA.CAM; R.cam.userPitch = Math.max(-10, Math.min(10, (R.cam.userPitch || 0) + dy * 0.12)); }
   });
   for (const t of ['pointerup', 'pointercancel']) touch.addEventListener(t, e => { if (e.pointerId === INP.stick) endStick(); if (INP.cam && e.pointerId === INP.cam.id) INP.cam = null; });
   // ボタン
@@ -412,9 +459,9 @@ function bindHud() {
   btn('bCam', () => { R.cam.reset = true; AUDIO.sfx('ui'); });
   btn('bMenu', () => pause());
   btn('bI0', () => press('I0')); btn('bI1', () => press('I1'));
-  btn('bSig', () => { const m = $('#sigmenu'); m.hidden = !m.hidden; const r = $('#bSig').getBoundingClientRect(); m.style.left = Math.min(innerWidth - 220, Math.max(8, r.left)) + 'px'; m.style.top = Math.max(8, r.top - 120) + 'px'; });
+  btn('bSig', () => { const m = $('#sigmenu'); m.hidden = !m.hidden; const b = $('#bSig'); m.style.left = Math.min(VIEW.w - 220, Math.max(8, b.offsetLeft)) + 'px'; m.style.top = Math.max(8, b.offsetTop - 120) + 'px'; });
   document.querySelectorAll('#sigmenu button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); press('sig', undefined); const L = local(); if (L) { L.ev[L.ev.length - 1] = [L.evId, 'sig', b.dataset.sig]; } $('#sigmenu').hidden = true; AUDIO.sfx('ok'); }));
-  $('#map').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); $('#map').classList.toggle('big'); const mc = $('#mapc'), mr = $('#map').getBoundingClientRect(); mc.width = Math.round(mr.width * 2); mc.height = Math.round(mr.height * 2); });
+  $('#map').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); $('#map').classList.toggle('big'); sizeMapCanvas(); });
   // キーボード（パソコンでの確認用）
   const KM = { KeyJ: ['A'], KeyK: ['X+', 'X', 'X-'], KeyL: ['Y+', 'Y', 'Y-'], KeyU: ['SP'], Space: ['B+', 'B', 'B-'], Digit1: ['I0'], Digit2: ['I1'] };
   addEventListener('keydown', e => {
@@ -586,7 +633,7 @@ function updateHud(v, dt) {
 const LBL = new Map(), EDG = new Map();
 function overlays(v, me) {
   const box = $('#labels'), eb = $('#edges'); const seen = new Set(), seenE = new Set();
-  const W = innerWidth, H = innerHeight, m = 26;
+  const W = VIEW.w, H = VIEW.h, m = 26;
   const put = (key, x, y, z, build, upd) => { seen.add(key); let o = LBL.get(key); if (!o) { o = build(); box.appendChild(o.e); LBL.set(key, o); } const p = R.project(x, y, z); o.e.style.display = p.front && p.x > -40 && p.x < W + 40 && p.y > -40 && p.y < H + 40 ? '' : 'none'; o.e.style.left = p.x + 'px'; o.e.style.top = p.y + 'px'; upd(o); return p; };
   const edge = (key, x, y, z, col, txt) => {
     const p = R.project(x, y, z); const inside = p.front && p.x > 0 && p.x < W && p.y > 0 && p.y < H; if (inside) return;
