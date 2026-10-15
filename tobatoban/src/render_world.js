@@ -106,7 +106,7 @@ const GFX = {};
     scene.add(new THREE.HemisphereLight(0x9a96e6, 0x3d2c34, 1.25));
     const dusk = new THREE.DirectionalLight(0xffb48c, 0.7); dusk.position.set(-40, 30, -80); scene.add(dusk);
     W.fill = new THREE.DirectionalLight(0xfff4e8, 0.55); scene.add(W.fill); scene.add(W.fill.target);
-    for (const [x, z, c, d] of [[0, -50, 0xffc078, 16], [0, -28, 0xffc078, 16], [0, -8, 0xffb070, 16], [-12, 12, 0xffa860, 22], [12, 12, 0xffa860, 22], [0, 26, 0xffd090, 24]]) { const l = new THREE.PointLight(c, 18, d, 1.6); l.position.set(x, 4.2, z); scene.add(l); }
+    for (const [x, z, c, d] of [[0, -50, 0xffc078, 16], [0, -28, 0xffc078, 16], [0, -8, 0xffb070, 16], [-8.4, 8.4, 0xffa860, 17], [8.4, 8.4, 0xffa860, 17], [0, 18.2, 0xffd090, 18]]) { const l = new THREE.PointLight(c, 18, d, 1.6); l.position.set(x, 4.2, z); scene.add(l); }
 
     /* 地面 */
     const pave = GFX.tex(256, 256, (g, w, h) => { g.fillStyle = '#5b5d68'; g.fillRect(0, 0, w, h); for (let y = 0; y < h; y += 32) for (let x = (y / 32) % 2 ? -32 : 0; x < w; x += 64) { const v = 82 + rnd() * 26 | 0; g.fillStyle = `rgb(${v},${v + 2},${v + 12})`; g.fillRect(x + 2, y + 2, 60, 28); } }, [3.2, 16]);
@@ -126,7 +126,8 @@ const GFX = {};
       g.strokeStyle = 'rgba(216,199,164,.55)'; g.lineWidth = 4; g.strokeRect(14, 14, w - 28, h - 28);
       g.fillStyle = 'rgba(30,24,40,.35)'; for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; g.beginPath(); g.moveTo(w / 2, h * 0.6); g.arc(w / 2, h * 0.6, 230, a, a + 0.08); g.fill(); }
     });
-    const plaza = GFX.mesh(scene, new THREE.PlaneGeometry(40, 32), GFX.lam(0xffffff, { map: plazaT }), 0, 0, 16); plaza.rotation.x = -Math.PI / 2;
+    const PW = ST.plazaHalfW, PZ = ST.plazaZ1, FB = DATA.BMOVES.junkou.outer; // 広場の半幅・奥行き・飛行の外周
+    const plaza = GFX.mesh(scene, new THREE.PlaneGeometry(PW * 2, PZ), GFX.lam(0xffffff, { map: plazaT }), 0, 0, PZ / 2); plaza.rotation.x = -Math.PI / 2;
     const outer = GFX.mesh(scene, new THREE.PlaneGeometry(200, 200), GFX.lam(0x2c2b36), 0, -0.02, 0); outer.rotation.x = -Math.PI / 2;
 
     /* 店とビル（両側） */
@@ -226,21 +227,23 @@ const GFX = {};
     const post = [], plRope = [];
     const postG = new THREE.CylinderGeometry(0.08, 0.08, 3.2, 6);
     const ring = [];
-    for (let z = 0; z <= 32; z += 4) for (const s of [-1, 1]) ring.push([s * 20.4, z]);
-    for (let x = -20; x <= 20; x += 4) ring.push([x, 32.4]);
+    const nZ = Math.round(PZ / 3.2), nX = Math.round(PW * 2 / 3.5);
+    for (let i = 0; i <= nZ; i++) for (const s of [-1, 1]) ring.push([s * (PW + 0.4), PZ * i / nZ]);
+    for (let i = 0; i <= nX; i++) ring.push([-PW + PW * 2 * i / nX, PZ + 0.4]);
     for (const [x, z] of ring) post.push({ geo: postG, m: GFX.M(x, 1.6, z) });
     scene.add(new THREE.Mesh(GFX.merge(post), GFX.lam(0x5a3a28)));
     const plz = new THREE.InstancedMesh(chochinG, litM, ring.length); const plzU = new THREE.InstancedMesh(chochinG, unlitM, ring.length);
     ring.forEach(([x, z], i) => { tmpO.position.set(x, 2.95, z); tmpO.scale.setScalar(1.15); tmpO.updateMatrix(); plz.setMatrixAt(i, tmpO.matrix); plzU.setMatrixAt(i, tmpO.matrix); });
     plz.visible = false; scene.add(plz); scene.add(plzU); W.plazaLit = plz; W.plazaUnlit = plzU;
     const rp = []; const seg = (x0, z0, x1, z1) => { for (let k = 0; k < 6; k++) { const a = k / 6, b = (k + 1) / 6; rp.push(x0 + (x1 - x0) * a, 3.1 - Math.sin(a * Math.PI) * 0.3, z0 + (z1 - z0) * a, x0 + (x1 - x0) * b, 3.1 - Math.sin(b * Math.PI) * 0.3, z0 + (z1 - z0) * b); } };
-    for (let z = 0; z < 32; z += 4) for (const s of [-1, 1]) seg(s * 20.4, z, s * 20.4, z + 4);
-    for (let x = -20; x < 20; x += 4) seg(x, 32.4, x + 4, 32.4);
+    for (let i = 0; i < nZ; i++) for (const s of [-1, 1]) seg(s * (PW + 0.4), PZ * i / nZ, s * (PW + 0.4), PZ * (i + 1) / nZ);
+    for (let i = 0; i < nX; i++) seg(-PW + PW * 2 * i / nX, PZ + 0.4, -PW + PW * 2 * (i + 1) / nX, PZ + 0.4);
     const prg = new THREE.BufferGeometry(); prg.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); scene.add(new THREE.LineSegments(prg, new THREE.LineBasicMaterial({ color: 0xd9c08a })));
     const yataiT = GFX.tex(256, 64, (g, w, h) => { for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#ffffff' : '#d1323a'; g.fillRect(i * 32, 0, 32, h); } });
     const ysign = ['わたあめ', 'やきそば', 'かき氷', 'りんご飴', '金魚すくい', 'お面', 'たこ焼き', 'ヨーヨー'];
     let yi = 0;
-    for (const [x, z, ry] of [[-24, 6, Math.PI / 2], [-24, 14, Math.PI / 2], [-24, 22, Math.PI / 2], [24, 6, -Math.PI / 2], [24, 14, -Math.PI / 2], [24, 22, -Math.PI / 2], [-10, 35, Math.PI], [10, 35, Math.PI]]) {
+    const YX = PW + FB + 2.6, YZ = PZ + FB + 2.6; // 屋台は飛行の外周より外に置く
+    for (const [x, z, ry] of [[-YX, PZ * 0.2, Math.PI / 2], [-YX, PZ * 0.5, Math.PI / 2], [-YX, PZ * 0.8, Math.PI / 2], [YX, PZ * 0.2, -Math.PI / 2], [YX, PZ * 0.5, -Math.PI / 2], [YX, PZ * 0.8, -Math.PI / 2], [-8, YZ, Math.PI], [8, YZ, Math.PI]]) {
       const yg = new THREE.Group(); yg.position.set(x, 0, z); yg.rotation.y = ry; scene.add(yg);
       GFX.mesh(yg, new THREE.BoxGeometry(3.6, 1.0, 1.6), GFX.lam(0x8a5a3a), 0, 0.5, 0);
       GFX.mesh(yg, new THREE.BoxGeometry(3.8, 0.5, 1.9), GFX.lam(0xffffff, { map: yataiT, emissive: 0x552222, emissiveIntensity: 0.3 }), 0, 2.5, 0);
@@ -265,16 +268,17 @@ const GFX = {};
     }
     /* 駅前のペデストリアンデッキと駅ビル */
     const deckM = GFX.lam(0xb9b4aa);
-    GFX.mesh(scene, new THREE.BoxGeometry(70, 0.6, 5), deckM, 0, 5.9, 36.5);
-    for (let x = -30; x <= 30; x += 7.5) GFX.mesh(scene, new THREE.CylinderGeometry(0.35, 0.35, 5.6, 10), deckM, x, 2.8, 36.5);
-    GFX.mesh(scene, new THREE.BoxGeometry(70, 1.0, 0.12), new THREE.MeshLambertMaterial({ color: 0xa8d0d8, transparent: true, opacity: 0.4 }), 0, 6.7, 34.05);
-    GFX.mesh(scene, new THREE.BoxGeometry(70, 0.12, 0.2), green, 0, 7.2, 34.05);
+    const DZ = YZ + 4.5; // デッキの中心（屋台の奥）
+    GFX.mesh(scene, new THREE.BoxGeometry(70, 0.6, 5), deckM, 0, 5.9, DZ);
+    for (let x = -30; x <= 30; x += 7.5) GFX.mesh(scene, new THREE.CylinderGeometry(0.35, 0.35, 5.6, 10), deckM, x, 2.8, DZ);
+    GFX.mesh(scene, new THREE.BoxGeometry(70, 1.0, 0.12), new THREE.MeshLambertMaterial({ color: 0xa8d0d8, transparent: true, opacity: 0.4 }), 0, 6.7, DZ - 2.45);
+    GFX.mesh(scene, new THREE.BoxGeometry(70, 0.12, 0.2), green, 0, 7.2, DZ - 2.45);
     const stT = GFX.tex(512, 512, (g, w, h) => { g.fillStyle = '#e9dccb'; g.fillRect(0, 0, w, h); for (let r = 0; r < 9; r++) { g.fillStyle = r % 3 === 0 ? '#c9b9a4' : '#3a3f58'; g.fillRect(0, 40 + r * 52, w, r % 3 === 0 ? 10 : 26); if (r % 3) for (let c = 0; c < 16; c++) if (rnd() < 0.55) { g.fillStyle = rnd() < 0.7 ? '#ffe2a8' : '#cfe8ff'; g.fillRect(c * 32 + 3, 42 + r * 52, 26, 22); } } });
-    GFX.mesh(scene, new THREE.BoxGeometry(70, 34, 18), [GFX.lam(0xd8ccbb), GFX.lam(0xd8ccbb), GFX.lam(0xd8ccbb), GFX.lam(0xd8ccbb), GFX.lam(0xd8ccbb), GFX.lam(0xffffff, { map: stT, emissive: 0xffffff, emissiveMap: stT, emissiveIntensity: 0.45 })], 0, 17, 48);
+    GFX.mesh(scene, new THREE.BoxGeometry(70, 34, 18), [GFX.lam(0xd8ccbb), GFX.lam(0xd8ccbb), GFX.lam(0xd8ccbb), GFX.lam(0xd8ccbb), GFX.lam(0xd8ccbb), GFX.lam(0xffffff, { map: stT, emissive: 0xffffff, emissiveMap: stT, emissiveIntensity: 0.45 })], 0, 17, DZ + 11.5);
     const signT = GFX.tex(1024, 160, (g, w, h) => { g.fillStyle = '#1d2033'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff6e2'; g.font = `96px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('北千住駅', w / 2, 66); g.font = `30px ${GFX.FONT_UI}`; g.fillStyle = '#c8cde6'; g.fillText('KITA-SENJU STATION', w / 2, 132); });
-    GFX.mesh(scene, new THREE.PlaneGeometry(16, 2.5), GFX.bas(0xffffff, { map: signT }), 0, 10.5, 38.9, Math.PI);
+    GFX.mesh(scene, new THREE.PlaneGeometry(16, 2.5), GFX.bas(0xffffff, { map: signT }), 0, 10.5, DZ + 2.4, Math.PI);
     // 広場の左右のビル
-    for (const s of [-1, 1]) for (let z = -2; z < 34; z += 9) { const H = 10 + rnd() * 14, base = ['#cfc6b8', '#a9aeb6', '#b9a894'][(rnd() * 3) | 0]; const ft = facadeTex(base, 0.6); ft.wrapS = ft.wrapT = THREE.RepeatWrapping; ft.repeat.set(3, Math.round(H / 3)); const fm = GFX.lam(0xffffff, { map: ft, emissive: 0xffffff, emissiveMap: ft, emissiveIntensity: 0.35 }), pl = GFX.lam(new THREE.Color(base).multiplyScalar(0.8)); GFX.mesh(scene, new THREE.BoxGeometry(12, H, 8.6), s > 0 ? [pl, fm, pl, pl, pl, pl] : [fm, pl, pl, pl, pl, pl], s * 33, H / 2, z + 4.3); }
+    for (const s of [-1, 1]) for (let z = -2; z < DZ - 2; z += 9) { const H = 10 + rnd() * 14, base = ['#cfc6b8', '#a9aeb6', '#b9a894'][(rnd() * 3) | 0]; const ft = facadeTex(base, 0.6); ft.wrapS = ft.wrapT = THREE.RepeatWrapping; ft.repeat.set(3, Math.round(H / 3)); const fm = GFX.lam(0xffffff, { map: ft, emissive: 0xffffff, emissiveMap: ft, emissiveIntensity: 0.35 }), pl = GFX.lam(new THREE.Color(base).multiplyScalar(0.8)); GFX.mesh(scene, new THREE.BoxGeometry(12, H, 8.6), s > 0 ? [pl, fm, pl, pl, pl, pl] : [fm, pl, pl, pl, pl, pl], s * (YX + 8), H / 2, z + 4.3); }
     /* 結界（通り→広場の入口） */
     const fudaT = GFX.tex(64, 128, (g, w, h) => { g.fillStyle = '#fbf6e8'; g.fillRect(0, 0, w, h); g.strokeStyle = '#c0392b'; g.lineWidth = 3; g.strokeRect(4, 4, w - 8, h - 8); vtext(g, '通行止', w / 2, 30, 26, 30, GFX.FONT_SIGN, '#c0392b'); });
     const bS = new THREE.Group(); scene.add(bS); bS.position.set(0, 0, -0.2);

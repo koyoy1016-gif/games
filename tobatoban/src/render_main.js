@@ -245,8 +245,8 @@ const R = (() => {
     // 登場演出：紙片が転がり、店先の看板が広場を向く
     if (v.stage === 'intro') {
       const t = v.introWait ? 0 : v.stageT;
-      W.papers.forEach((p, i) => { if (!p.s) { p.s = 1; p.x = (Math.random() - 0.5) * 16; p.z = 4 + Math.random() * 14; p.m.visible = true; } const a = t * 2 + i; p.x += (0 - p.x) * dt * 0.8; p.z += (19 - p.z) * dt * 0.8; p.m.position.set(p.x + Math.sin(a) * 0.5, 0.15 + Math.abs(Math.sin(a * 3)) * 0.3 + (t > 0.8 ? (t - 0.8) * 3 : 0), p.z); p.m.rotation.set(a * 3, a * 2, 0); if (t > 1.2) p.m.visible = false; });
-      W.signs.forEach(s => { s.g.rotation.y += (Math.atan2(0 - s.g.position.x, 19 - s.g.position.z) - s.g.rotation.y) * Math.min(1, dt * 3); });
+      W.papers.forEach((p, i) => { if (!p.s) { p.s = 1; p.x = (Math.random() - 0.5) * 12; p.z = 3 + Math.random() * 10; p.m.visible = true; } const a = t * 2 + i; p.x += (0 - p.x) * dt * 0.8; p.z += (DATA.STAGE.bossSpawn[1] - p.z) * dt * 0.8; p.m.position.set(p.x + Math.sin(a) * 0.5, 0.15 + Math.abs(Math.sin(a * 3)) * 0.3 + (t > 0.8 ? (t - 0.8) * 3 : 0), p.z); p.m.rotation.set(a * 3, a * 2, 0); if (t > 1.2) p.m.visible = false; });
+      W.signs.forEach(s => { s.g.rotation.y += (Math.atan2(0 - s.g.position.x, DATA.STAGE.bossSpawn[1] - s.g.position.z) - s.g.rotation.y) * Math.min(1, dt * 3); });
     } else W.papers.forEach(p => { p.m.visible = false; p.s = 0; });
     // ガラス屋根：アーケードの下では薄く
     const ma = v.allies[me];
@@ -400,7 +400,7 @@ const R = (() => {
     if (v.stage === 'intro' && B) {
       const t = v.introWait ? 0 : v.stageT, bx = B.x, bz = B.z;
       const shots = [
-        { t: 0, c: [0, 2.2, 5], l: [0, 0.3, 15] },
+        { t: 0, c: [0, 2.2, 1.5], l: [0, 0.3, bz - 2] },
         { t: 1.0, c: [3.5, 1.0, bz - 6.5], l: [bx, 0.6, bz] },
         { t: 2.0, c: [2.5, 0.8, bz - 6], l: [bx, 2.6, bz] },
         { t: 3.5, c: [0, 2.4, bz - 11], l: [bx, 3.2, bz] },

@@ -109,8 +109,14 @@ with sync_playwright() as p:
     if SCEN in ('all', 'small'):
         results.append(run(p, 800, 360, 'small_land', [ev(START_SOLO), wait(2.0), shot('30_small_land'), check_overlap('overlap')]))
         results.append(run(p, 360, 800, 'small_port', [ev(START_SOLO), wait(2.0), shot('31_small_port'), check_overlap('overlap')]))
+    if SCEN in ('fly',):
+        # 千住大巡行（終盤3回）を途中で何枚か撮る：毎回ちがう向きから飛ぶか
+        steps = [ev(START_SOLO), wait(1.0), ev(TO_BOSS), wait(6.5), ev("() => { const s=__tb.G.session.sim; s.allies.forEach(a=>{a.inv=999}); s.boss.hp = s.boss.maxHp*0.3; s.boss.phase = 2; const b=s.boss; b.st='idle'; b.gap=99; b.cds={}; s.bossStart('junkou', s.allies[0]); return b.st; }", 'fly')]
+        for i in range(9):
+            steps += [wait(0.55), shot(f'5{i}_fly'), ev("() => { const f=__tb.G.session.sim.boss.fl; return f ? f.ph + ' ' + Math.round(f.yaw*180/Math.PI) + '° i' + f.i : __tb.G.session.sim.boss.st; }", f'fly{i}')]
+        results.append(run(p, 844, 390, 'fly', steps))
     if SCEN in ('menus',):
-        results.append(run(p, 844, 390, 'menus', [ev("() => { document.getElementById('btnData').click(); return 1; }"), wait(0.4), shot('40_data'), ev("() => { document.querySelector('#data [data-back]').click(); document.getElementById('btnSet').click(); return 1; }"), wait(0.3), shot('41_settings'), ev("() => { document.querySelector('#settings [data-back]').click(); document.getElementById('btnCoop').click(); return 1; }"), wait(0.3), shot('42_coop')]))
+        results.append(run(p, 844, 390, 'menus', [ev("() => { document.getElementById('btnHow').click(); return 1; }"), wait(0.4), shot('40_how'), ev("() => { document.querySelector('#how [data-back]').click(); document.getElementById('btnSet').click(); return 1; }"), wait(0.3), shot('41_settings'), ev("() => { document.querySelector('#settings [data-back]').click(); document.getElementById('btnCoop').click(); return 1; }"), wait(0.3), shot('42_coop')]))
     for r in results:
         print('===', r['tag'])
         for k, v in r.items():

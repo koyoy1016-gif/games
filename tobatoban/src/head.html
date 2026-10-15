@@ -123,11 +123,7 @@ a{color:var(--shu)}
 .item b{font-size:20px}
 
 /* データ一覧 */
-.dtable{width:100%;border-collapse:collapse;font-size:12px}
-.dtable th,.dtable td{border-bottom:1px solid #e6dcc6;padding:5px 4px;text-align:left;vertical-align:top}
-.dtable th{position:sticky;top:0;background:var(--paper2);font-size:11px}
 .badge{display:inline-block;border-radius:6px;padding:0 6px;font-size:10.5px;font-weight:900;color:#fff;white-space:nowrap}
-.b-doc{background:#2f6fb5}.b-approx{background:#c98a12}.b-meas{background:#2fa36b}.b-proto{background:#8a8199}
 .grp{font-family:var(--f-disp);font-weight:400;font-size:14px;padding-top:12px}
 
 /* ---------- HUD ---------- */
@@ -282,9 +278,8 @@ a{color:var(--shu)}
       <button class="btn gold span" id="btnCoop">協力プレイ（2〜4人）</button>
       <button class="btn" id="btnHow">遊び方</button>
       <button class="btn" id="btnSet">設定</button>
-      <button class="btn span ghost" id="btnData">データと出典の一覧</button>
     </div>
-    <p class="small note">数値は公開資料の参考値と新作の仮値を区別しています（一覧で確認できます）。キャラクター・技名・音楽・効果音はこの作品用の新規制作です。</p>
+    <p class="small note">キャラクター・技名・音楽・効果音はこの作品用の新規制作です。</p>
   </div>
 </section>
 
@@ -318,7 +313,6 @@ a{color:var(--shu)}
       <div class="detail" id="detail"></div>
     </div>
     <div><h3 style="margin-bottom:6px">持ち込むアイテム（2つ）</h3><div class="items" id="items"></div></div>
-    <div id="diffRow"><h3 style="margin-bottom:6px">むずかしさ</h3><div class="row" id="diffs"></div></div>
     <div class="row sticky-actions">
       <button class="btn ghost" id="btnTeamBack">もどる</button>
       <button class="btn main" id="btnGo">出撃する</button>
@@ -342,7 +336,7 @@ a{color:var(--shu)}
       <span class="k kP">仲間</span><span>ソロでは左上の仲間をタップで操作キャラを交代。回復をためている間は回復対象の指定になる</span>
     </div>
     <p class="small">このゲームは横画面で遊びます。スマホを縦に持っていても画面は横向きで表示されるので、スマホを左に倒して（上側を左へ）遊んでください。逆向きに持つ場合は設定の「横向きの回転方向」で変えられます。</p>
-    <p class="small">赤い縞の範囲がボスの攻撃予兆。紫の帯は空中突進の通り道。4基の灯籠を30秒以内に灯すとボスが6秒止まる。仲間が気絶して30秒放置すると昇天し、その戦闘では戻らない。</p>
+    <p class="small">赤い縞の範囲がボスの攻撃予兆。紫の帯は空中突進の通り道（横・斜め・縦など毎回ちがう向きから飛んでくる）。4基の灯籠を30秒以内に灯すとボスが6秒止まる。仲間が気絶して30秒放置すると昇天し、その戦闘では戻らない。</p>
     <p class="small">パソコン：WASD移動・J=A・K=X・L=Y・U=必殺・Space=B・F=注目・Q/E=カメラ・1/2=アイテム・Esc=メニュー</p>
     <div class="row"><button class="btn main" data-back>とじる</button></div>
   </div>
@@ -365,17 +359,6 @@ a{color:var(--shu)}
     <div class="set-row"><label>BGM</label><div class="stepper" data-key="bgm" data-min="0" data-max="100" data-step="10"><button type="button" aria-label="小さく">－</button><output></output><button type="button" aria-label="大きく">＋</button></div></div>
     <div class="set-row"><label>効果音</label><div class="stepper" data-key="sfx" data-min="0" data-max="100" data-step="10"><button type="button" aria-label="小さく">－</button><output></output><button type="button" aria-label="大きく">＋</button></div></div>
     <div class="set-row"><label>開発用の計測表示</label><button class="chip toggle" id="sDev"></button></div>
-    <div class="row"><button class="btn main" data-back>とじる</button></div>
-  </div>
-</section>
-
-<!-- データ一覧 -->
-<section class="screen" id="data" hidden>
-  <div class="panel wide">
-    <div class="eyebrow">データと出典</div><h2>値・単位・状態・出典</h2>
-    <p class="small">「資料で確認」＝公開資料にある値、「資料の目安」＝攻略記事などの目安、「新作の仮値」＝この初版のための仮の値（原作の測定値ではありません）。原作と完全一致したとは表示しません。体力は画面に数値を出さない調整値です。</p>
-    <div class="row" id="dataProfile"></div>
-    <div id="dataTable" style="max-height:calc(var(--ah)*62);overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y"></div>
     <div class="row"><button class="btn main" data-back>とじる</button></div>
   </div>
 </section>
@@ -422,7 +405,7 @@ a{color:var(--shu)}
 <!-- HUD -->
 <div id="hud" hidden>
   <div id="touch"></div>
-  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="df" id="bossDf">通常</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div></div>
   <div class="hb party" id="party"></div>
   <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
   <div class="hb" id="map"><canvas id="mapc"></canvas></div>

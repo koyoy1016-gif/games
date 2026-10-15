@@ -48,7 +48,7 @@ class Sim {
     const D = DATA;
     this.D = D; this.dt = 1 / D.SIM.hz; this.tick = 0; this.t = 0;
     this.rng = new RNG(o.seed || 12345);
-    this.diffKey = o.diff || 'normal'; this.diff = D.DIFF[this.diffKey];
+    this.diffKey = D.DIFF[o.diff] ? o.diff : 'normal'; this.diff = D.DIFF[this.diffKey]; // むずかしさは「通常」の1つだけ
     this.nextId = 1; this.evId = 0; this.events = []; this.mlog = [];
     this.stage = o.test ? 'boss' : 'street'; this.stageT = 0; this.timeLeft = D.SIM.timeLimit;
     this.allies = o.party.map((pp, i) => this.makeAlly(pp, i));
@@ -105,6 +105,9 @@ class Sim {
   cleanupEvents() { const lim = this.t - 1.2; if (this.events.length && this.events[0].t < lim) this.events = this.events.filter(e => e.t >= lim); }
 
   /* ---------- 味方 ---------- */
+  /** AIが動かしているキャラは能力をすべて90%にする（プレイヤーが操作を交代すると元に戻る） */
+  aiK(a) { return a.ctrlAI ? DATA.SIM.aiMul : 1; }
+  stat(a, k) { return a.c[k] * this.aiK(a); }
   free(a) { return a.st === 'ok' && !a.act; }
   canMove(a) {
     if (a.st !== 'ok' || a.rev || a.lan) return 0;
@@ -175,7 +178,7 @@ class Sim {
       let spd = S.walk;
       const wantDash = inp.hold.B && !a.rev && !a.lan && (!a.act);
       if (wantDash && !a.tired && (a.stam > 0 || a.buffs.ramune > 0)) { spd = S.dash; a.dashing = true; }
-      spd *= mv;
+      spd *= mv * this.aiK(a);
       this.moveAlly(a, mx * spd * dt, mz * spd * dt);
       const ty = yawTo(mx, mz); a.yaw += clamp(angDiff(a.yaw, ty), -12 * dt, 12 * dt);
       a.moving = true;
@@ -432,9 +435,9 @@ class Sim {
       const mul = 1 + (sk.mul - 1) * A.ratio;
       let tg = A.healT != null ? this.allies[A.healT] : null;
       if (!tg || tg.st !== 'ok' || dist2(a.x, a.z, tg.x, tg.z) > sk.range) { tg = null; let lo = 2; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= sk.range) { const r = o.hp / o.maxHp; if (r < lo) { lo = r; tg = o; } } }
-      if (tg) { const v = Math.round(sk.pw * mul * a.c.yo / 100); this.ev('leaf', { from: a.slot, to: tg.slot }); if (this.healAlly(tg, v, a) > 0) this.gainSp(a, DATA.SIM.spHeal); }
+      if (tg) { const v = Math.round(sk.pw * mul * this.stat(a, 'yo') / 100); this.ev('leaf', { from: a.slot, to: tg.slot }); if (this.healAlly(tg, v, a) > 0) this.gainSp(a, DATA.SIM.spHeal); }
     } else if (sk.kind === 'healRing') {
-      const r = sk.r0 + (sk.r1 - sk.r0) * A.ratio, v = Math.round(sk.pw * a.c.yo / 100); let any = 0;
+      const r = sk.r0 + (sk.r1 - sk.r0) * A.ratio, v = Math.round(sk.pw * this.stat(a, 'yo') / 100); let any = 0;
       for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= r) any += this.healAlly(o, v, a);
       this.ev('ring', { slot: a.slot, x: a.x, z: a.z, r });
       if (any > 0) this.gainSp(a, DATA.SIM.spHeal);
@@ -470,7 +473,7 @@ class Sim {
     if (e === this.boss && !this.bossHittable()) return 0;
     if (e.st && e.st !== 'ok' && e !== this.boss) return 0;
     const S = DATA.SIM, P = DATA.PASSIVE;
-    let atk = stat === 'yo' ? a.c.yo : stat === 'mix' ? (a.c.str + a.c.yo) / 2 : a.c.str;
+    let atk = stat === 'yo' ? this.stat(a, 'yo') : stat === 'mix' ? (this.stat(a, 'str') + this.stat(a, 'yo')) / 2 : this.stat(a, 'str');
     let state = 1;
     if (stat !== 'yo') { if (a.buffs.str > 0) state *= a.buffs.strMul; if (this.partyHas('partyStr')) state *= P.partyStr; }
     if (a.c.passive === 'fullHp' && a.hp >= a.maxHp) state *= P.fullHp;
@@ -501,13 +504,13 @@ class Sim {
       return 0;
     }
     const atk = stat === 'yo' ? srcStats.yo : srcStats.str;
-    const def = o.c.def * (o.buffs.def > 0 ? o.buffs.defMul : 1);
-    let dmg = pw * atk / (DATA.SIM.defBase + def);
+    const def = this.stat(o, 'def') * (o.buffs.def > 0 ? o.buffs.defMul : 1);
+    let dmg = pw * atk / (DATA.SIM.defBase + def) / this.aiK(o); // AIが動かすキャラは体力も90%相当
     const guarding = o.act && o.act.k === 'guard';
     if (guarding) {
       dmg *= o.c.passive === 'guardPlus' ? DATA.PASSIVE.guardPlus : o.act.sk.mul;
       this.ev('block', { slot: o.slot, x: o.x, z: o.z });
-      if (o.act.sk.reflect && opt.src && opt.src.hp > 0) { const rv = Math.max(1, Math.round(pw * atk / (DATA.SIM.defBase + def) * o.act.sk.reflect)); this.reflectTo(o, opt.src, rv); }
+      if (o.act.sk.reflect && opt.src && opt.src.hp > 0) { const rv = Math.max(1, Math.round(pw * atk / (DATA.SIM.defBase + def) * o.act.sk.reflect * this.aiK(o))); this.reflectTo(o, opt.src, rv); }
     }
     dmg = Math.max(1, Math.round(dmg));
     o.hp -= dmg; o.hurtT = 0.25; o.rev = null; o.lan = null;
@@ -548,7 +551,7 @@ class Sim {
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'heal') {
       if (!A.done && t >= S.prep) {
-        A.done = 1; const v = Math.round(S.pw * a.c.yo / 100);
+        A.done = 1; const v = Math.round(S.pw * this.stat(a, 'yo') / 100);
         for (const o of this.allies) { if (o.st === 'down') this.revive(o, S.revHp, a); }
         for (const o of this.allies) if (o.st === 'ok') this.healAlly(o, v, a);
         this.ev('spfx', { slot: a.slot, k: 'heal', x: a.x, z: a.z });
@@ -639,7 +642,7 @@ class Sim {
           tr.dead = 1; const hitSet = new Set();
           for (const e of this.enemiesAlive()) { const h = !hitSet.has(e.id) && this.hitCircle(e, tr.x, tr.z, sk.r); if (h) { hitSet.add(e.id); this.dealToEnemy(a, e, sk.pw, 'mix', 'skill', null, h); } }
           for (const o of this.allies) if (o.st === 'ok' && dist2(tr.x, tr.z, o.x, o.z) <= sk.r) { // 味方も巻き込む（1爆発につき1回）
-            const dx = o.x - tr.x, dz = o.z - tr.z; this.dealToAlly(o, sk.pw * sk.allyMul, 'str', { str: (a.c.str + a.c.yo) / 2, yo: a.c.yo }, { knock: 4, kx: dx, kz: dz, src: 'none' });
+            const dx = o.x - tr.x, dz = o.z - tr.z; this.dealToAlly(o, sk.pw * sk.allyMul, 'str', { str: (this.stat(a, 'str') + this.stat(a, 'yo')) / 2, yo: this.stat(a, 'yo') }, { knock: 4, kx: dx, kz: dz, src: 'none' });
           }
           this.ev('boom', { x: tr.x, z: tr.z, r: sk.r, k: 'mine' });
         }
@@ -808,7 +811,7 @@ class Sim {
   }
   bossMove(dx, dz) {
     const b = this.boss, ST = DATA.STAGE;
-    b.x = clamp(b.x + dx, -ST.plazaHalfW + 3, ST.plazaHalfW - 3); b.z = clamp(b.z + dz, 5, ST.plazaZ1 - 3);
+    b.x = clamp(b.x + dx, -ST.plazaHalfW + 3, ST.plazaHalfW - 3); b.z = clamp(b.z + dz, 4, ST.plazaZ1 - 3);
     for (const a of this.allies) { if (a.st === 'gone') continue; const r = this.clampPos(a.x, a.z, a.x, a.z, 0.35); a.x = r[0]; a.z = r[1]; }
   }
   bossChoose(t) {
@@ -849,16 +852,62 @@ class Sim {
       case 'harite': this.hz({ kind: 'rect', x: b.x + fx * M.start, z: b.z + fz * M.start, yaw: b.yaw, len: M.len, w: M.w, warn: M.wind, act: M.act, pw: M.pw, stat: M.stat, fx: 'harite', brief: 0.22, knock: 5 }); break;
       case 'junkou': {
         const n = b.phase === 2 ? M.n2 : M.n1;
-        b.st = 'fly'; b.fl = { ph: 'rise', t: 0, n, i: 0, dir: b.x > 0 ? -1 : 1, z: 0, bombT: 0, sx: b.x, sz: b.z };
-        b.fl.z = this.junkouZ(); b.fl.pathH = this.junkouPath(b.fl.dir, b.fl.z, M.wind);
+        b.st = 'fly'; b.fl = { ph: 'rise', t: 0, n, i: 0, bombT: 0, sx: b.x, sz: b.z, sy: b.yaw, used: [] };
+        this.junkouNext(b.fl, b.x, b.z, M.wind);
         this.ev('unlock', {});
         break;
       }
       case 'zouen': break;
     }
   }
-  junkouZ() { const t = this.pickTarget() || this.allies[0]; return clamp(t.z, 5, DATA.STAGE.plazaZ1 - 4); }
-  junkouPath(dir, z, warn) { const W = DATA.STAGE.plazaHalfW + 4; return this.hz({ kind: 'path', x: -dir * W, z, yaw: dir > 0 ? Math.PI / 2 : -Math.PI / 2, len: W * 2, w: DATA.BMOVES.junkou.contactR * 2, warn, keep: DATA.BMOVES.junkou.cross, act: 0, pw: 0, stat: 'str', fx: 'junkou', display: 1 }); }
+  /** 大巡行の飛ぶ範囲（広場の外周。入口のゲート側だけは広場の中の手前まで） */
+  junkouBox() { const ST = DATA.STAGE, M = DATA.BMOVES.junkou; return { X: ST.plazaHalfW + M.outer, Z0: M.frontZ, Z1: ST.plazaZ1 + M.outer }; }
+  /** 点(px,pz)を向きyawで通る直線が飛ぶ範囲を横切る区間 */
+  junkouChord(px, pz, yaw) {
+    const B = this.junkouBox(), fx = Math.sin(yaw), fz = Math.cos(yaw);
+    let t0 = -1e9, t1 = 1e9;
+    if (Math.abs(fx) > 1e-6) { const a = (-B.X - px) / fx, c = (B.X - px) / fx; t0 = Math.max(t0, Math.min(a, c)); t1 = Math.min(t1, Math.max(a, c)); }
+    if (Math.abs(fz) > 1e-6) { const a = (B.Z0 - pz) / fz, c = (B.Z1 - pz) / fz; t0 = Math.max(t0, Math.min(a, c)); t1 = Math.min(t1, Math.max(a, c)); }
+    return { x0: px + fx * t0, z0: pz + fz * t0, x1: px + fx * t1, z1: pz + fz * t1, len: t1 - t0 };
+  }
+  /** 外周を一周する長さの上での位置（横断の合間に外周に沿って回り込むため） */
+  junkouPerim(x, z) {
+    const B = this.junkouBox(), w = 2 * B.X, h = B.Z1 - B.Z0;
+    const d = [Math.abs(z - B.Z0), Math.abs(x - B.X), Math.abs(z - B.Z1), Math.abs(x + B.X)], e = d.indexOf(Math.min(...d));
+    return e === 0 ? clamp(x + B.X, 0, w) : e === 1 ? w + clamp(z - B.Z0, 0, h) : e === 2 ? w + h + clamp(B.X - x, 0, w) : 2 * w + h + clamp(B.Z1 - z, 0, h);
+  }
+  junkouAt(s) {
+    const B = this.junkouBox(), w = 2 * B.X, h = B.Z1 - B.Z0, P = 2 * (w + h); s = ((s % P) + P) % P;
+    if (s < w) return [s - B.X, B.Z0]; s -= w; if (s < h) return [B.X, B.Z0 + s]; s -= h; if (s < w) return [B.X - s, B.Z1]; s -= w; return [-B.X, B.Z1 - s];
+  }
+  /** 次の横断を決める：狙った味方を通る線を、前回と違う向き（横・斜め・縦…）から選ぶ */
+  junkouNext(f, fromX, fromZ, minWarn) {
+    const M = DATA.BMOVES.junkou, ST = DATA.STAGE, hw = ST.plazaHalfW;
+    const t = this.pickTarget() || this.allies[0];
+    const px = clamp(t.x, -hw + 2.5, hw - 2.5), pz = clamp(t.z, 2.5, ST.plazaZ1 - 2.5);
+    const onRim = f.ph !== 'rise';
+    const B = this.junkouBox(), P = 2 * (2 * B.X + B.Z1 - B.Z0), s0 = onRim ? this.junkouPerim(fromX, fromZ) : 0;
+    const cands = []; let sum = 0;
+    for (let k = 0; k < 12; k++) {
+      const ori = k / 12 * Math.PI + (this.rng.next() - 0.5) * 0.18; // 線の向き（0〜180度）
+      if (f.used.some(u => Math.abs(angN(2 * (ori - u))) / 2 < M.minTurn)) continue;
+      const c = this.junkouChord(px, pz, ori); if (c.len < M.minLen) continue;
+      for (const dir of [0, 1]) {
+        const sx = dir ? c.x1 : c.x0, sz = dir ? c.z1 : c.z0, ex = dir ? c.x0 : c.x1, ez = dir ? c.z0 : c.z1;
+        let travel, ds = 0;
+        if (onRim) { ds = this.junkouPerim(sx, sz) - s0; ds = ((ds % P) + P) % P; if (ds > P / 2) ds -= P; travel = Math.abs(ds); } else travel = dist2(fromX, fromZ, sx, sz);
+        const w = 1 / (1 + Math.pow(travel / 9, 2));
+        cands.push({ sx, sz, ex, ez, ori, yaw: yawTo(ex - sx, ez - sz), len: c.len, ds, travel, w }); sum += w;
+      }
+    }
+    let pick = cands[0];
+    if (!pick) { const c = this.junkouChord(px, pz, Math.PI / 2), r = fromX > 0; pick = { sx: r ? c.x1 : c.x0, sz: r ? c.z1 : c.z0, ex: r ? c.x0 : c.x1, ez: r ? c.z0 : c.z1, ori: Math.PI / 2, len: c.len, ds: 0, travel: 0 }; pick.yaw = yawTo(pick.ex - pick.sx, pick.ez - pick.sz); }
+    else { let r = this.rng.next() * sum; for (const c of cands) { r -= c.w; if (r <= 0) { pick = c; break; } } }
+    f.used.push(pick.ori); if (f.used.length > 2) f.used.shift();
+    Object.assign(f, { sx0: pick.sx, sz0: pick.sz, ex: pick.ex, ez: pick.ez, yaw: pick.yaw, len: pick.len, crossT: pick.len / M.speed, gx: fromX, gz: fromZ, gs: s0, gds: pick.ds, onRim });
+    f.gapT = Math.max(minWarn, pick.travel / M.rimSpeed);
+    f.pathH = this.hz({ kind: 'path', x: pick.sx, z: pick.sz, yaw: pick.yaw, len: pick.len, w: M.contactR * 2, warn: f.gapT, keep: f.crossT, act: 0, pw: 0, stat: 'str', fx: 'junkou', display: 1 });
+  }
   bossMoveTick(b, dt) {
     const M = DATA.BMOVES[b.mv], t = b.t;
     const actT = M.act || (b.mv === 'zouen' ? 0.05 : 0.12);
@@ -870,31 +919,45 @@ class Sim {
     else if (b.st === 'rec' && t >= M.rec) { b.st = 'idle'; b.mv = null; b.t = 0; b.gap = DATA.BOSS.gapMin + this.rng.next() * (DATA.BOSS.gapMax - DATA.BOSS.gapMin); }
   }
   bossFlyTick(b, dt) {
-    const M = DATA.BMOVES.junkou, f = b.fl, W = DATA.STAGE.plazaHalfW + 4; f.t += dt;
+    const M = DATA.BMOVES.junkou, f = b.fl, ST = DATA.STAGE, hw = ST.plazaHalfW; f.t += dt;
+    const turnTo = (yaw, k) => { b.yaw += angDiff(b.yaw, yaw) * Math.min(1, k); };
     if (f.ph === 'rise') {
+      const k = Math.min(1, f.t / f.gapT), e = k * k * (3 - 2 * k);
       b.y = Math.min(2.6, f.t / M.wind * 2.6);
-      const tx = -f.dir * W; b.x += (tx - f.sx) * dt / M.wind; b.z += (f.z - f.sz) * dt / M.wind; b.yaw = f.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
-      if (f.t >= M.wind) { f.ph = 'cross'; f.t = 0; f.hit = {}; b.x = -f.dir * W; b.z = f.z; this.ev('cross', { i: f.i }); }
+      b.x = f.sx + (f.sx0 - f.sx) * e; b.z = f.sz + (f.sz0 - f.sz) * e; turnTo(f.yaw, dt * 5);
+      if (f.t >= f.gapT) { f.ph = 'cross'; f.t = 0; f.hit = {}; b.x = f.sx0; b.z = f.sz0; b.y = 2.6; b.yaw = f.yaw; this.ev('cross', { i: f.i }); }
     } else if (f.ph === 'cross') {
-      b.x = -f.dir * W + f.dir * 2 * W * Math.min(1, f.t / M.cross); b.y = 2.6; b.yaw = f.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+      const fx = Math.sin(f.yaw), fz = Math.cos(f.yaw), d = Math.min(f.len, f.t * M.speed);
+      b.x = f.sx0 + fx * d; b.z = f.sz0 + fz * d; b.y = 2.6; b.yaw = f.yaw;
       for (const o of this.allies) {
         if (o.st !== 'ok' || f.hit[o.slot]) continue;
-        if (Math.abs(o.z - b.z) <= M.contactR + DATA.MOB.allyR && Math.abs(o.x - b.x) <= M.contactLen + DATA.MOB.allyR) { f.hit[o.slot] = 1; this.dealToAlly(o, M.pw, 'str', b, { knock: 6, kx: 0, kz: o.z >= b.z ? 1 : -1, src: b }); }
+        const dx = o.x - b.x, dz = o.z - b.z, along = dx * fx + dz * fz, side = dx * fz - dz * fx;
+        if (Math.abs(side) <= M.contactR + DATA.MOB.allyR && Math.abs(along) <= M.contactLen + DATA.MOB.allyR) { f.hit[o.slot] = 1; const sg = side >= 0 ? 1 : -1; this.dealToAlly(o, M.pw, 'str', b, { knock: 6, kx: fz * sg, kz: -fx * sg, src: b }); }
       }
       f.bombT -= dt;
-      if (f.bombT <= 0 && Math.abs(b.x) < DATA.STAGE.plazaHalfW - 1) { f.bombT = M.bombEvery; this.hz({ kind: 'circle', x: b.x, z: clamp(b.z + (this.rng.next() * 2 - 1) * 4.5, 1.5, DATA.STAGE.plazaZ1 - 1.5), yaw: 0, r: M.bombR, warn: M.bombFall, act: 0.12, pw: M.bombPw, stat: 'yo', fx: 'bomb', knock: 3 }); }
-      if (f.t >= M.cross) {
+      if (f.bombT <= 0 && Math.abs(b.x) < hw - 0.5 && b.z > 0.5 && b.z < ST.plazaZ1 - 0.5) {
+        f.bombT = M.bombEvery; const off = (this.rng.next() * 2 - 1) * M.bombSpread;
+        this.hz({ kind: 'circle', x: clamp(b.x + fz * off, -hw + 1.5, hw - 1.5), z: clamp(b.z - fx * off, 1.5, ST.plazaZ1 - 1.5), yaw: 0, r: M.bombR, warn: M.bombFall, act: 0.12, pw: M.bombPw, stat: 'yo', fx: 'bomb', knock: 3 });
+      }
+      if (d >= f.len) {
         f.i++;
-        if (f.i >= f.n) { f.ph = 'land'; f.t = 0; f.lx = clamp(b.x * 0.3, -8, 8); f.lz = 17; f.ox = b.x; f.oz = b.z; this.hz({ kind: 'circle', x: f.lx, z: f.lz, yaw: 0, r: M.landR, warn: 0.6, act: 0.12, pw: 70, stat: 'str', fx: 'land', knock: 5 }); }
-        else { f.ph = 'gap'; f.t = 0; f.dir *= -1; f.z = this.junkouZ(); f.pathH = this.junkouPath(f.dir, f.z, M.gap); }
+        if (f.i >= f.n) {
+          f.ph = 'land'; f.t = 0; f.ox = b.x; f.oz = b.z;
+          const cz = ST.plazaZ1 / 2; f.lx = clamp(b.x * 0.45, -hw + 3.5, hw - 3.5); f.lz = clamp(cz + (b.z - cz) * 0.45, 5, ST.plazaZ1 - 4);
+          this.hz({ kind: 'circle', x: f.lx, z: f.lz, yaw: 0, r: M.landR, warn: 0.6, act: 0.12, pw: 70, stat: 'str', fx: 'land', knock: 5 });
+        } else { f.ph = 'gap'; f.t = 0; this.junkouNext(f, b.x, b.z, M.gap); }
       }
     } else if (f.ph === 'gap') {
-      b.y = 2.6; b.z += (f.z - b.z) * Math.min(1, dt * 6);
-      if (f.t >= M.gap) { f.ph = 'cross'; f.t = 0; f.hit = {}; b.z = f.z; this.ev('cross', { i: f.i }); }
+      // 外周に沿って次の入り口へ回り込む
+      const k = Math.min(1, f.t / f.gapT), e = k * k * (3 - 2 * k);
+      const [x, z] = this.junkouAt(f.gs + f.gds * e); b.x = x; b.z = z; b.y = 2.6;
+      if (k < 0.75) { const [x2, z2] = this.junkouAt(f.gs + f.gds * Math.min(1, e + 0.05)); if (Math.hypot(x2 - x, z2 - z) > 0.01) turnTo(yawTo(x2 - x, z2 - z), dt * 8); } else turnTo(f.yaw, dt * 8);
+      if (f.t >= f.gapT) { f.ph = 'cross'; f.t = 0; f.hit = {}; b.x = f.sx0; b.z = f.sz0; b.yaw = f.yaw; this.ev('cross', { i: f.i }); }
     } else if (f.ph === 'land') {
       const k = Math.min(1, f.t / 0.6);
       b.x = f.ox + (f.lx - f.ox) * k; b.z = f.oz + (f.lz - f.oz) * k; b.y = 2.6 * (1 - k * k);
-      b.yaw += clamp(angDiff(b.yaw, Math.PI), -3 * dt, 3 * dt);
+      const t = this.allies[b.target], want = t && t.st === 'ok' ? yawTo(t.x - b.x, t.z - b.z) : Math.PI;
+      b.yaw += clamp(angDiff(b.yaw, want), -4 * dt, 4 * dt);
       if (f.t >= 0.6) { b.y = 0; b.st = 'rec'; b.t = 0; b.fl = null; this.ev('land', { x: b.x, z: b.z }); for (const a of this.allies) { const r = this.clampPos(a.x, a.z, a.x, a.z, 0.35); a.x = r[0]; a.z = r[1]; } }
     }
   }
@@ -952,7 +1015,7 @@ class Sim {
       if (inside) return h;
     }
     const b = this.boss;
-    if (b && b.st === 'fly' && b.fl && (b.fl.ph === 'cross' || b.fl.ph === 'gap') && Math.abs(z - b.fl.z) < DATA.BMOVES.junkou.contactR + margin) return { kind: 'path', warn: 0, t: 0 };
+    if (b && b.st === 'fly' && b.fl && b.fl.ph !== 'land' && b.fl.len) { const f = b.fl; if (inLine(x, z, f.sx0, f.sz0, f.yaw, f.len, DATA.BMOVES.junkou.contactR, margin)) return { kind: 'path', warn: 0, t: 0, x: f.sx0, z: f.sz0, yaw: f.yaw, len: f.len, w: DATA.BMOVES.junkou.contactR * 2 }; }
     return null;
   }
   aiDecide(a, out, push) {

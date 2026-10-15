@@ -76,13 +76,13 @@ const SIM = {
   foodHeal: p('パッシブ', 'ブリキドンの食べ物の回復量', 0.10, 'ratio(最大HP)', 'proto', 21, '30秒ごとの生成は資料'),
   foodPeriod: p('パッシブ', 'ブリキドンの食べ物生成周期', 30, 'seconds', 'doc', 21),
   hitStagger: p('被弾', '重い攻撃でのけぞる時間', 0.45, 'seconds', 'proto'),
+  aiMul: p('AI', 'AIが動かすキャラの能力', 0.9, 'ratio', 'proto', null, 'ちから・ようりょく・まもり・体力・移動速度をすべて90%にする（操作を交代すると元に戻る）'),
 };
 
 /* ---------------- 難易度・ボス ---------------- */
+// むずかしさは1つだけ。旧「超」の強さを「通常」とし、体力は旧「超」(32000)の約70%
 const DIFF = {
-  normal: { nm: '通常', str: p('ボス', '通常：ちから', 240, 'points', 'doc', 13), yo: p('ボス', '通常：ようりょく', 270, 'points', 'doc', 13), def: p('ボス', '通常：まもり', 108, 'points', 'doc', 13, '通常/超/極の対応はドロップ素材資料[14]との照合（公式公表値ではない）'), hp: p('ボス', '通常：体力', 20000, 'points', 'proto', null, '数値は画面に出さない', true), mobHp: 300 },
-  hard: { nm: '超', str: p('ボス', '超：ちから', 440, 'points', 'doc', 13), yo: p('ボス', '超：ようりょく', 500, 'points', 'doc', 13), def: p('ボス', '超：まもり', 141, 'points', 'doc', 13), hp: p('ボス', '超：体力', 32000, 'points', 'proto', null, '', true), mobHp: 480 },
-  extreme: { nm: '極', str: p('ボス', '極：ちから', 1100, 'points', 'doc', 13), yo: p('ボス', '極：ようりょく', 1280, 'points', 'doc', 13), def: p('ボス', '極：まもり', 169, 'points', 'doc', 13), hp: p('ボス', '極：体力', 48000, 'points', 'proto', null, '', true), mobHp: 720 },
+  normal: { nm: '通常', str: p('ボス', 'ちから', 440, 'points', 'doc', 13), yo: p('ボス', 'ようりょく', 500, 'points', 'doc', 13), def: p('ボス', 'まもり', 141, 'points', 'doc', 13), hp: p('ボス', '体力', 22400, 'points', 'proto', null, '旧「超」32000の70%。数値は画面に出さない', true), mobHp: 480 },
 };
 const BOSS = {
   nm: 'トバトーバン',
@@ -107,7 +107,7 @@ const BMOVES = {
   otoshi: { nm: '提灯おとし', wind: p('ボス技', '提灯おとし：予兆', 1.0, 's', 'proto'), act: 0.12, rec: p('ボス技', '提灯おとし：後隙', 0.65, 's', 'proto'), cd: p('ボス技', '提灯おとし：再使用制限', 9, 's', 'proto'), pw: p('ボス技', '提灯おとし：仮威力', 70, 'power', 'proto'), stat: 'yo', r: 2.3 },
   kousen: { nm: '招福看板光線', wind: p('ボス技', '看板光線：予兆', 0.85, 's', 'proto'), act: p('ボス技', '看板光線：照射期間', 1.2, 's', 'proto'), iv: p('ボス技', '看板光線：同一対象への間隔', 0.30, 's', 'proto'), max: p('ボス技', '看板光線：最大ヒット', 4, 'hits', 'proto'), rec: p('ボス技', '看板光線：後隙', 0.8, 's', 'proto'), cd: p('ボス技', '看板光線：再使用制限', 10, 's', 'proto'), pw: p('ボス技', '看板光線：仮威力', 70, 'power', 'proto'), stat: 'yo', len: 24, w: 2.8 },
   harite: { nm: '商売繁盛張り手', wind: p('ボス技', '張り手：予兆', 0.45, 's', 'proto'), act: p('ボス技', '張り手：判定', 0.15, 's', 'proto'), rec: p('ボス技', '張り手：後隙', 0.9, 's', 'proto'), cd: p('ボス技', '張り手：再使用制限', 5, 's', 'proto'), pw: p('ボス技', '張り手：仮威力', 140, 'power', 'proto'), stat: 'str', start: 1.0, len: p('ボス技', '張り手：届く長さ', 3.4, 'm', 'proto', null, '手のひらと衝撃波が届く範囲'), w: 2.6 },
-  junkou: { nm: '千住大巡行', wind: p('ボス技', '大巡行：予兆', 1.1, 's', 'proto'), cross: p('ボス技', '大巡行：1回の横断', 1.2, 's', 'proto'), gap: p('ボス技', '大巡行：横断の間', 0.6, 's', 'proto'), n1: p('ボス技', '大巡行：前半の横断回数', 1, 'count', 'proto'), n2: p('ボス技', '大巡行：終盤の横断回数', 3, 'count', 'doc', 6, '1往復半＝計3横断'), rec: p('ボス技', '大巡行：最終着地後の後隙', 1.5, 's', 'proto'), cd: p('ボス技', '大巡行：再使用制限', 22, 's', 'proto'), pw: p('ボス技', '大巡行：接触の仮威力', 140, 'power', 'proto'), bombPw: p('ボス技', '大巡行：落下提灯の仮威力', 70, 'power', 'proto'), bombR: 2.0, bombFall: 0.9, bombEvery: 0.24, contactR: p('ボス技', '大巡行：体の当たり幅（片側）', 1.45, 'm', 'proto', null, '低く水平に飛ぶ体と同じ幅'), contactLen: 2.4, landR: 2.6, stat: 'str' },
+  junkou: { nm: '千住大巡行', wind: p('ボス技', '大巡行：予兆', 1.1, 's', 'proto'), speed: p('ボス技', '大巡行：飛ぶ速さ', 27, 'm/s', 'proto', null, '横断1回はおよそ0.8〜1.4秒'), gap: p('ボス技', '大巡行：横断の間（最短の予兆）', 0.6, 's', 'proto', null, '外周を大きく回り込むときは長くなる'), rimSpeed: 38, n1: p('ボス技', '大巡行：前半の横断回数', 1, 'count', 'proto'), n2: p('ボス技', '大巡行：終盤の横断回数', 3, 'count', 'doc', 6, '計3回。横・斜め・縦など毎回ちがう向きから飛んでくる'), minTurn: p('ボス技', '大巡行：前の2回と変える向きの最小差', 0.55, 'rad', 'proto', null, '約31度'), minLen: 20, outer: 3.5, frontZ: 0.8, rec: p('ボス技', '大巡行：最終着地後の後隙', 1.5, 's', 'proto'), cd: p('ボス技', '大巡行：再使用制限', 22, 's', 'proto'), pw: p('ボス技', '大巡行：接触の仮威力', 140, 'power', 'proto'), bombPw: p('ボス技', '大巡行：落下提灯の仮威力', 70, 'power', 'proto'), bombR: 2.0, bombFall: 0.9, bombEvery: 0.24, bombSpread: 3.4, contactR: p('ボス技', '大巡行：体の当たり幅（片側）', 1.45, 'm', 'proto', null, '低く水平に飛ぶ体と同じ幅'), contactLen: 2.4, landR: 2.6, stat: 'str' },
   zouen: { nm: '呼び込み札小僧', wind: p('ボス技', '増援：予兆', 0.8, 's', 'proto'), rec: p('ボス技', '増援：後隙', 0.5, 's', 'proto'), cd: p('ボス技', '増援：再使用制限', 25, 's', 'proto'), max: p('ボス技', '増援：同時存在上限', 2, 'count', 'doc', 6) },
 };
 const MOB = {
@@ -222,11 +222,11 @@ const ITEM_IDS = Object.keys(ITEMS);
 const STAGE = {
   streetHalfW: p('舞台', '探索用の通りの幅（両側のアーケード歩道を含む）', 18.8, 'm', 'proto', 11, '中央の歩行者路は約12.8m。車は入らない。写真をもとに架空に再構成') / 2,
   streetZ0: -66, streetZ1: 0,
-  plazaHalfW: p('舞台', '祭り広場（幅）', 40, 'm', 'proto') / 2,
-  plazaZ1: p('舞台', '祭り広場（奥行き）', 32, 'm', 'proto'),
+  plazaHalfW: p('舞台', '祭り広場（幅）', 28, 'm', 'proto', null, '初版の40mから30%小さくした') / 2,
+  plazaZ1: p('舞台', '祭り広場（奥行き）', 22.4, 'm', 'proto', null, '初版の32mから30%小さくした'),
   pillarX: 6.4, pillarStep: 5,
-  lanterns: [[-15.5, 5], [15.5, 5], [-15.5, 27], [15.5, 27]],
-  bossSpawn: [0, 19],
+  lanterns: [[-10.8, 3.6], [10.8, 3.6], [-10.8, 18.8], [10.8, 18.8]],
+  bossSpawn: [0, 13.3],
   waves: [[[-3, -44], [3, -46]], [[-5, -24], [0, -22], [5, -25]]],
 };
 const CAM = {

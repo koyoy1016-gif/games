@@ -7,7 +7,7 @@ const SET = Object.assign({ land: true, rotDir: 'left', ui: 100, mirror: false, 
 const PUBLIC_URL = 'https://koyoy1016-gif.github.io/games/tobatoban/';
 const G = {
   mode: 'boot', session: null, v: null, T: 0, party: STORE.get('party', DATA.DEFAULT_PARTY.slice()), swap: STORE.get('swap', [false, false, false, false]),
-  items: STORE.get('items', ['onigiri', 'ramune']), diff: STORE.get('diff', 'normal'), selSlot: 0, focus: null, thumbs: {}, netMode: null, roomCap: null,
+  items: STORE.get('items', ['onigiri', 'ramune']), diff: 'normal', selSlot: 0, focus: null, thumbs: {}, netMode: null, roomCap: null,
   lock: null, back: 'title', coop: false, nick: STORE.get('nick', ''), lagBoss: 1, lagMe: 1, spTotals: {}, resultShown: false, rotateDismissed: false, firstRun: !STORE.get('played', false),
 };
 if (!G.party.every(id => DATA.CHI[id])) G.party = DATA.DEFAULT_PARTY.slice();
@@ -117,7 +117,6 @@ function bindMenus() {
   $('#btnCoopBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
   $('#btnHow').onclick = () => openSub('how', 'title');
   $('#btnSet').onclick = () => openSub('settings', 'title');
-  $('#btnData').onclick = () => { renderData(); openSub('data', 'title'); };
   $('#btnHost').onclick = () => startHost();
   $('#btnJoin').onclick = () => startJoin();
   $('#btnTeamBack').onclick = () => { AUDIO.sfx('back'); if (G.coop) goTitle(); else show('title'); };
@@ -171,7 +170,7 @@ function applySettings() {
 /* ---------- 編成・ロビー ---------- */
 function openTeam() {
   G.coop = false; $('#teamEyebrow').textContent = '編成（ソロ：1体を操作＋AI3体）'; $('#teamTitle').textContent = '4体を選ぶ';
-  $('#lobCode').hidden = true; $('#lobStatus').hidden = true; $('#diffRow').hidden = false; $('#btnGo').disabled = false; $('#btnGo').textContent = '出撃する';
+  $('#lobCode').hidden = true; $('#lobStatus').hidden = true; $('#btnGo').disabled = false; $('#btnGo').textContent = '出撃する';
   G.focus = G.party[G.selSlot]; renderTeam(); show('team');
 }
 function openLobby() {
@@ -228,15 +227,6 @@ function renderTeam() {
     b.onclick = () => { AUDIO.sfx('ui'); if (on) { if (G.items.length > 1) G.items = G.items.filter(x => x !== id); } else { G.items.push(id); if (G.items.length > 2) G.items.shift(); } if (G.items.length < 2) G.items.push(DATA.ITEM_IDS.find(x => !G.items.includes(x))); STORE.set('items', G.items); sendMine(); renderTeam(); };
     it.appendChild(b);
   }
-  // 難易度
-  const dd = $('#diffs'); dd.textContent = '';
-  const canDiff = !coop || (S && S.kind === 'host');
-  const curDiff = coop && S && S.kind === 'client' && lob ? lob.diff : G.diff;
-  for (const [k, nm, d] of [['normal', '通常（おすすめ）', '初めての人に'], ['hard', '超', '攻撃が重い'], ['extreme', '極', '一撃が致命的']]) {
-    const b = el('button', 'chip' + (curDiff === k ? ' on' : ''), nm); b.type = 'button'; b.title = d; b.disabled = !canDiff;
-    b.onclick = () => { G.diff = k; STORE.set('diff', k); if (S && S.kind === 'host') { S.lobby.diff = k; S.dirtyLobby = true; } AUDIO.sfx('ui'); renderTeam(); };
-    dd.appendChild(b);
-  }
   if (coop && S) {
     $('#lobCode').textContent = ''; const cb = el('div', 'code-big', S.code); $('#lobCode').appendChild(cb);
     const st = $('#lobStatus');
@@ -272,44 +262,6 @@ function sendMine() {
   const S = G.session; if (!G.coop || !S) return;
   const o = { nick: G.nick || 'もののけ', ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2) };
   if (S.kind === 'host') S.setMine(o); else S.hello(o);
-}
-/** 体格比の確認：同じ奥行き・直立で並べ、正投影で描く（新作の設計値 1：5 の確認用） */
-function scaleImage() {
-  if (G.scaleImg) return G.scaleImg;
-  try {
-    const W = 520, H = 300, r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(W, H, false);
-    const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xffffff, 0x554466, 1.6)); const dl = new THREE.DirectionalLight(0xffffff, 1.2); dl.position.set(2, 3, 4); sc.add(dl);
-    const k = GFX.makeChar(DATA.CHI.kogemaru); k.root.position.set(-3.2, 0, 0); k.root.rotation.y = 0.3; sc.add(k.root);
-    GFX.animChar(k, { x: -3.2, z: 0, yaw: 0.3, st: 'ok', act: '', actT: 0, slot: 0 }, 0, 0, {});
-    const b = GFX.makeBoss(); b.root.position.set(1.2, 0, 0); b.root.rotation.y = -0.35; sc.add(b.root);
-    GFX.animBoss(b, { x: 1.2, z: 0, y: 0, yaw: -0.35, st: 'idle', t: 0, phase: 1 }, 0, 0, { stageT: 9 });
-    const cam = new THREE.OrthographicCamera(-5.2, 5.2, 5.6, -0.4, 0.1, 50); cam.position.set(0, 0, 20); cam.lookAt(0, 0, 0);
-    r.render(sc, cam);
-    const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); g.fillStyle = '#2b2760'; g.fillRect(0, 0, W, H); g.drawImage(r.domElement, 0, 0);
-    const y = u => H - (u + 0.4) / 6.0 * H; g.strokeStyle = 'rgba(255,230,140,.85)'; g.setLineDash([6, 5]); g.lineWidth = 2;
-    for (const u of [0, 1, 5]) { g.beginPath(); g.moveTo(0, y(u)); g.lineTo(W, y(u)); g.stroke(); }
-    g.setLineDash([]); g.fillStyle = '#fff6e6'; g.font = '900 14px ' + GFX.FONT_UI; g.fillText('基準味方 1.0', 8, y(1) - 6); g.fillText('トバトーバン 5.0（新作の設計値）', 8, y(5) - 6); g.fillText('地面', 8, y(0) - 6);
-    r.dispose(); if (r.forceContextLoss) r.forceContextLoss();
-    G.scaleImg = c.toDataURL('image/png');
-  } catch (e) { console.warn(e); }
-  return G.scaleImg;
-}
-function renderData() {
-  const box = $('#dataTable'); box.textContent = '';
-  const fig = el('figure'); fig.style.margin = '0 0 10px'; const im = el('img'); im.src = scaleImage() || ''; im.alt = '基準味方とトバトーバンを同じ奥行きに並べた体格比の確認図'; im.style.cssText = 'width:100%;max-width:520px;border-radius:10px;display:block'; const cap = el('figcaption', 'small', '体格比の確認：同じ奥行き・直立・正投影。原作モデルの実測ではなく、この作品の設計値（基準味方1：ボス5）です。'); fig.append(im, cap); box.appendChild(fig);
-  $('#dataProfile').textContent = ''; const pr = el('span', 'chip on', 'プロファイル：' + DATA.PROFILE); $('#dataProfile').appendChild(pr); $('#dataProfile').appendChild(el('span', 'chip', 'reference_verified：未達（測定項目が残っています）'));
-  const t = el('table', 'dtable'); const th = el('tr'); for (const h of ['項目', '値', '単位', '状態', '出典・注記']) th.appendChild(el('th', '', h)); t.appendChild(th);
-  let grp = '';
-  const order = []; for (const r of DATA.REG) if (!order.includes(r.group)) order.push(r.group);
-  const rows = order.flatMap(g0 => DATA.REG.filter(r => r.group === g0));
-  for (const r of rows) {
-    if (r.group !== grp) { grp = r.group; const tr = el('tr'); const td = el('td', 'grp', grp); td.colSpan = 5; tr.appendChild(td); t.appendChild(tr); }
-    const tr = el('tr'); tr.appendChild(el('td', '', r.label)); tr.appendChild(el('td', '', r.hidden ? '（非表示の調整値）' : String(Math.round(r.v * 1000) / 1000 || r.v))); tr.appendChild(el('td', '', r.unit));
-    const s = el('td'); s.appendChild(el('span', 'badge b-' + r.status, DATA.STATUS_LABEL[r.status])); tr.appendChild(s);
-    const n = el('td'); if (r.src) { const a = el('a', '', `[${r.src}]`); a.href = DATA.REFS[r.src]; a.target = '_blank'; a.rel = 'noopener'; n.appendChild(a); n.appendChild(document.createTextNode(' ')); } if (r.notes) n.appendChild(document.createTextNode(r.notes)); tr.appendChild(n);
-    t.appendChild(tr);
-  }
-  box.appendChild(t);
 }
 
 /* ---------- 協力プレイの開始 ---------- */
@@ -599,7 +551,7 @@ function updateHud(v, dt) {
   $('#bossbox').hidden = !showBoss;
   if (showBoss) {
     const b = v.boss; setBar($('#bossFill'), b.hpR); G.lagBoss = G.lagBoss > b.hpR ? Math.max(b.hpR, G.lagBoss - dt * 0.15) : b.hpR; setBar($('#bossLag'), G.lagBoss);
-    $('#bossDf').textContent = DATA.DIFF[v.diff].nm; $('#bossPh').hidden = b.phase !== 2;
+    $('#bossPh').hidden = b.phase !== 2;
     $('#bossSt').textContent = b.st === 'down' ? 'ダウン中' : b.stun ? '麻痺' : b.st === 'fly' ? '飛行中' : b.defDown ? '守り↓' : '';
   }
   // 自分
@@ -691,15 +643,15 @@ function drawMap(v) {
   const big = $('#map').classList.contains('big');
   const me = v.allies[G.my];
   const inPlaza = v.stage !== 'street';
-  const view = inPlaza ? { x0: -22, x1: 22, z0: -6, z1: 34 } : { x0: -12, x1: 12, z0: Math.min(-36, me.z - 18), z1: Math.min(6, me.z + 22) };
-  if (big) Object.assign(view, { x0: -22, x1: 22, z0: -66, z1: 34 });
+  const ST = DATA.STAGE, PW = ST.plazaHalfW, PZ = ST.plazaZ1, FB = DATA.BMOVES.junkou.outer;
+  const view = inPlaza ? { x0: -PW - FB - 0.5, x1: PW + FB + 0.5, z0: -3, z1: PZ + FB + 0.5 } : { x0: -12, x1: 12, z0: Math.min(-36, me.z - 18), z1: Math.min(6, me.z + 22) };
+  if (big) Object.assign(view, { x0: -PW - 4, x1: PW + 4, z0: -66, z1: PZ + 6 });
   const sc = Math.min(W / (view.x1 - view.x0), H / (view.z1 - view.z0));
   const ox = W / 2, oz = H / 2, cxw = (view.x0 + view.x1) / 2, czw = (view.z0 + view.z1) / 2;
   const P = (x, z) => [ox - (x - cxw) * sc, oz - (z - czw) * sc];
   g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, W, H);
   g.fillStyle = '#5b5d70'; let [a1, b1] = P(9.4, 0), [a2, b2] = P(-9.4, -66); g.fillRect(Math.min(a1, a2), Math.min(b1, b2), Math.abs(a2 - a1), Math.abs(b2 - b1));
-  g.fillStyle = '#7b6f66'; [a1, b1] = P(20, 32); [a2, b2] = P(-20, 0); g.fillRect(Math.min(a1, a2), Math.min(b1, b2), Math.abs(a2 - a1), Math.abs(b2 - b1));
-  g.fillStyle = 'rgba(0,0,0,.55)'; [a1, b1] = P(30, 46); [a2, b2] = P(-30, 34); g.fillRect(Math.min(a1, a2), Math.min(b1, b2), Math.abs(a2 - a1), Math.abs(b2 - b1));
+  g.fillStyle = '#7b6f66'; [a1, b1] = P(PW, PZ); [a2, b2] = P(-PW, 0); g.fillRect(Math.min(a1, a2), Math.min(b1, b2), Math.abs(a2 - a1), Math.abs(b2 - b1));
   if (v.barrier !== 'none') { g.strokeStyle = v.barrier === 'plaza' ? '#d9c08a' : '#ff6a4a'; g.lineWidth = 3; [a1, b1] = P(9.4, 0); [a2, b2] = P(-9.4, 0); g.beginPath(); g.moveTo(a1, b1); g.lineTo(a2, b2); g.stroke(); }
   if (v.stage === 'street' && v.barrier === 'none') { const [dx, dz] = P(0, 3); g.fillStyle = '#ffe27a'; g.fillRect(dx - 6, dz - 9, 12, 14); g.fillStyle = '#5b3a1a'; g.fillRect(dx - 3, dz - 4, 6, 9); }
   const fs = Math.max(10, Math.round(W / 9));
@@ -729,11 +681,11 @@ function showResult(v) {
   const S = G.session, win = v.result && v.result.win;
   $('#resEyebrow').textContent = win ? '勝利' : '敗北'; $('#resTitle').textContent = win ? 'トバトーバンを鎮めた！' : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
   const kv = $('#resKv'); kv.textContent = '';
-  for (const [k, val] of [['むずかしさ', DATA.DIFF[v.diff].nm], ['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : '協力プレイ']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
+  for (const [k, val] of [['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : '協力プレイ']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
   const grid = $('#resGrid'); grid.textContent = '';
   const stats = S.sim ? S.sim.allies.map(a => a.stats) : null;
   v.allies.forEach((a, i) => { const c = el('div', 'res-c'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const im = el('img'); im.src = G.thumbs[a.ch] || ''; im.alt = ''; c.append(pn, im, el('b', '', DATA.CHI[a.ch].nm)); if (stats) { c.appendChild(el('span', '', `与えたダメージ ${stats[i].dmg}`)); c.appendChild(el('span', '', `救助 ${stats[i].revives}・必殺 ${stats[i].specials}`)); } c.appendChild(el('span', 'small', a.st === 'ok' ? '元気' : a.st === 'down' ? '気絶' : '昇天')); grid.appendChild(c); });
-  const rw = { normal: '看板のかけら', hard: '金の提灯芯', extreme: '千住の大札' }[v.diff];
+  const rw = '金の提灯芯';
   $('#resReward').textContent = win ? `獲得：${rw} ×${v.result.time < 240 ? 3 : v.result.time < 480 ? 2 : 1}（育成は今後の拡張で使う予定です）` : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
   const host = S.kind !== 'client';
   $('#btnRetry').hidden = !host; $('#btnReteam').hidden = !host && G.coop;
