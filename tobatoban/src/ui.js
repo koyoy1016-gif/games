@@ -113,7 +113,7 @@ async function detectNet() {
 function bindMenus() {
   const unlock = () => { AUDIO.init(); AUDIO.setVol(SET.bgm / 100, SET.sfx / 100); if (G.mode === 'title') AUDIO.bgm('title'); };
   document.addEventListener('pointerdown', unlock, { once: false, passive: true });
-  $('#btnSolo').onclick = () => { AUDIO.sfx('ok'); G.coop = false; openSortie(); };
+  $('#btnSolo').onclick = () => { AUDIO.sfx('ok'); G.coop = false; openTeam('title'); }; // 出動：まずキャラ選択 → 次にステージ選択
   $('#btnCoop').onclick = () => { AUDIO.sfx('ok'); $('#nick').value = G.nick; show('coop'); };
   $('#btnCoopBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
   $('#btnHow').onclick = () => openSub('how', 'title');
@@ -121,8 +121,8 @@ function bindMenus() {
   $('#btnHost').onclick = () => startHost();
   $('#btnJoin').onclick = () => startJoin();
   $('#btnTeamBack').onclick = () => { AUDIO.sfx('back'); if (G.coop) goTitle(); else { persistPrefs(); show(G.teamBack || 'title'); } };
-  $('#btnGo').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session && G.session.kind === 'host') { const S = G.session; S.lobby.diff = G.diff; if (!stageOpen(S.lobby.stage)) S.lobby.stage = 'senju'; S.startGame({ bid: newBid() }); enterGame(); } } else { persistPrefs(); openSortie(); } };
-  $('#btnStageBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
+  $('#btnGo').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session && G.session.kind === 'host') { const S = G.session; S.lobby.diff = G.diff; if (!stageOpen(S.lobby.stage)) S.lobby.stage = 'senju'; S.startGame({ bid: newBid() }); enterGame(); } } else { persistPrefs(); if (G.teamBack === 'prep') openPrep(); else if (G.teamBack === 'akiba') openAkibaWalkPrep(); else openSortie(); } };
+  $('#btnStageBack').onclick = () => { AUDIO.sfx('back'); openTeam('title'); }; // ステージ選択から戻ると、キャラ選択へ
   bindHub();
   $('#btnResume').onclick = () => resume();
   $('#btnPSet').onclick = () => openSub('settings', 'pause');
@@ -132,7 +132,7 @@ function bindMenus() {
   $('#btnSkip').onclick = () => { const s = G.session; if (s && s.sim && s.sim.stage === 'intro' && s.kind === 'solo') s.sim.stageT = s.sim.introLen(); resume(); };
   $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else if (G.nextPrep) { leaveBattle(); openPrep(); } else startSolo(G.stageId || 'senju'); };
   $('#btnReteam').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') G.session.backToLobby(); openLobby(); } else { leaveBattle(); openTeam('stage'); } };
-  $('#btnResGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop && G.session) goTitle(); else leaveBattle(); openGacha('title'); };
+  $('#btnResGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop && G.session) goTitle(); else leaveBattle(); openGacha(); };
   $('#btnResTitle').onclick = () => { AUDIO.sfx('back'); goTitle(); };
   $('#btnLostOk').onclick = () => goTitle();
   $('#rotateX').onclick = () => { G.rotateDismissed = true; $('#rotateHint').hidden = true; layoutHud(); };
@@ -175,8 +175,8 @@ function applySettings() {
 
 /* ---------- 編成・ロビー ---------- */
 function openTeam(back) {
-  G.coop = false; G.teamMode = 'solo'; G.teamBack = back || 'title'; $('#teamEyebrow').textContent = '編成（1体を操作＋AI3体）'; $('#teamTitle').textContent = '4体を選ぶ';
-  $('#lobCode').hidden = true; $('#lobStatus').hidden = true; $('#btnGo').disabled = false; $('#btnGo').textContent = '出動へ'; $('#btnRecommend').hidden = false; $('#itemsBox').hidden = false;
+  G.coop = false; G.teamMode = 'solo'; G.teamBack = back || 'title'; $('#teamEyebrow').textContent = back === 'title' ? '出動 ① キャラ選択（P1を操作＋AI3体）' : '編成（P1を操作＋AI3体）'; $('#teamTitle').textContent = '4体を選ぶ';
+  $('#lobCode').hidden = true; $('#lobStatus').hidden = true; $('#btnGo').disabled = false; $('#btnGo').textContent = back === 'prep' ? '上野の準備へ ▶' : back === 'akiba' ? '秋葉原へ向かう ▶' : 'ステージ選択へ ▶'; $('#btnRecommend').hidden = false; $('#itemsBox').hidden = false;
   G.focus = G.party[G.selSlot]; renderTeam(); show('team');
 }
 function openLobby() {
@@ -244,7 +244,10 @@ async function loginOk(save, msg) {
   const hadPending = G.pending.length > 0;
   if (hadPending) { for (const op of G.pending) SAVE.apply(save, op); G.pending = []; }
   updateAcctBar(); AUDIO.sfx('ok');
-  const back = G.loginBack || 'title'; show(back); if (back === 'gacha') openGacha(G.gcBack || 'title');
+  // 一回限りの遷移予約を先に取り出して消す（ガチャ→ログイン→ガチャ…の循環を残さない）
+  const target = G.afterLoginTarget || null, back0 = G.loginBack || 'title'; G.afterLoginTarget = null; G.loginBack = 'title';
+  const back = target === 'gacha' ? 'title' : back0;
+  if (target === 'gacha') openGacha(); else show(back);
   if (hadPending) { const ok = await persist(); extra = ok ? '。ログイン前の戦いの記録もセーブしました' : '。ログイン前の戦いの記録はセーブできませんでした'; if (G.run) G.lastAuto = ok ? `ID ${save.id} にセーブしました` : 'セーブできませんでした'; }
   if (back === 'result') refreshResSave();
   mtoast(msg + extra, 2800);
@@ -274,7 +277,7 @@ function runOp(v, fin) {
   const op = { kills: {}, fin: null };
   for (const i of slots) { const a = v.allies[i]; if (!a) continue; const k = Math.max(0, (a.kills || 0) - G.run.applied[i]); if (k) { op.kills[a.ch] = (op.kills[a.ch] || 0) + k; G.run.applied[i] += k; } }
   if (fin) {
-    const rateOf = i => { if (!sim) return 1; const a = sim.allies[i], T = sim.actT || 0; return DATA.REWARD.rate(T > 0 ? a.humT / T : (a.ctrlAI ? 0 : 1)); };
+    const main = G.coop ? G.my : 0, rateOf = i => DATA.REWARD.rate(i === main); // 出動時に決まった枠で固定（途中の操作交代で変えない）
     op.fin = { bid: v.bid || (G.run.bid), stage: v.stageId || 'senju', win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0, H: v.H || 1, slots: slots.filter(i => v.allies[i]).map(i => ({ ch: v.allies[i].ch, rate: rateOf(i) })) };
   }
   return op;
@@ -335,7 +338,7 @@ function bindAccount() {
     if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); G.restoreConfirm = r.confirm ? key : null; return; }
     G.restoreConfirm = null; $('#lgCode').value = ''; loginOk(r.save, r.msg);
   };
-  $('#btnGuest').onclick = () => { AUDIO.sfx('back'); const b = G.loginBack || 'title'; if (b === 'gacha') openGacha(G.gcBack); else show(b); };
+  $('#btnGuest').onclick = () => { AUDIO.sfx('back'); const t = G.afterLoginTarget, b = G.loginBack || 'title'; G.afterLoginTarget = null; G.loginBack = 'title'; if (t === 'gacha') openGacha(); else show(b === 'gacha' ? 'title' : b); }; // 取消：予約を消して戻る（ログインをもう一度開かない）
   $('#btnDoneOk').onclick = () => { const s = G.acct; showDone(false); setRegMode(false); if (s) loginOk(s, `ID ${s.id} でログインしました。全員Lv.1からスタート`); };
   for (const id of ['#lgId', '#lgPw', '#lgPw2']) $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); (G.regMode ? $('#btnRegister') : $('#btnLogin')).click(); } });
   $('#btnAcSave').onclick = async () => { await doSave('account'); renderAccount(); };
@@ -383,7 +386,7 @@ function startSolo(stageId) {
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
   S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
   const carry = G.stageId === 'ueno' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
-  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
+  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch), eq: eqOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {
@@ -624,12 +627,15 @@ function onEvent(e, v) {
     case 'board': notice(`${DATA.JOBAN.stations[e.st]}：ホームから部下が${e.n}体乗ってくる！`, 'warn', 2200); break;
     case 'jev': if (e.id && e.id.startsWith('mid_')) notice(`前の車両に潜んでいた部下${e.n}体が出てくる！`, 'warn', 2200); break;
     case 'arriveSt': if (e.st < 4) notice(`${DATA.JOBAN.stations[e.st]}に到着`, 'info', 1500); break;
-    case 'sleepWarn': banner('ヨシノシンのHPが半分に近い', '半分になる前に接近して必殺を準備しよう', 2600); break;
-    case 'sleep': banner('30分睡眠チャージ！', '10秒以内に4体合計3,000ダメージを与えろ！', 2000); break;
-    case 'sleepEnd': if (e.ok) banner('阻止成功！', `ヨシノシンがダウン（${e.dmg.toLocaleString()} / 3,000）`, 2400); else banner('阻止失敗…', `ヨシノシンが全回復した（${e.dmg.toLocaleString()} / 3,000）。また半分で同じ判定`, 2800); break;
+    case 'sleepWarn': banner(`もうすぐ30分睡眠チャージ（${['75%', '50%', '25%'][e.i]}）`, `接近して必殺・重玉を準備しよう（10秒で${e.need.toLocaleString()}）`, 2600); break;
+    case 'sleep': banner(`30分睡眠チャージ！（${e.i + 1}/3）`, `10秒以内に4体合計${e.need.toLocaleString()}ダメージを与えろ！`, 2000); break;
+    case 'sleepEnd': if (e.ok) banner(`阻止成功！（${e.i + 1}/3）`, `ヨシノシンがダウン（${e.dmg.toLocaleString()} / ${e.need.toLocaleString()}）`, 2400); else banner('阻止失敗…', `ヨシノシンがHP30,000まで全回復（${e.dmg.toLocaleString()} / ${e.need.toLocaleString()}）。3つの段階をやり直し`, 2800); break;
     case 'barrier': if (e.on) notice('完全指揮バリア！ 射撃部下のビームを本体へ2回誘導して壊そう', 'boss', 3200); else if (e.broken) notice('バリアを破壊！ ヨシノシンがよろめいた', 'sp', 1800); else notice('バリアが消えた', 'info', 1200); break;
     case 'bhit': if (e.n < 2) notice(`バリアに命中 ${e.n}/2`, 'sp', 1300); break;
-    case 'summon': notice(`追加動員：部下${e.n}体が奥から来る`, 'warn', 1800); break;
+    case 'waveWarn': notice(`包囲動員：部下${e.n}体が広場の入口から来る！`, 'warn', 1800); break;
+    case 'tengaiWave': if (e.n === 1) notice('天蓋乱射・三十六光！ 番号の順に光が落ちる', 'boss', 1800); break;
+    case 'gate': notice(e.n >= 3 ? '居酒屋通りの部下をすべて倒した！' : `暖簾の結界が開いた（${e.n}/3）。奥へ進もう`, 'info', 2000); break;
+    case 'holdUeno': notice('上野進入待ち：車内の敵を倒すと上野に到着', 'warn', 2600); break;
     case 'heal': if (e.v > 0) dmgNum(e.x, 1.2, e.z, '+' + e.v, 'heal'); break;
     case 'down': notice(`P${e.slot + 1}が気絶した${e.slot === me ? '…' : '（まわりの円に入って4秒で救助）'}`, 'warn', 2200); if (e.slot === me && G.session.kind === 'solo') setTimeout(() => notice('仲間のカードを押すと操作を交代できます', 'info', 2600), 900); break;
     case 'ascend': notice(`P${e.slot + 1}が昇天した（この戦闘では戻らない）`, 'warn', 2400); break;
@@ -701,13 +707,14 @@ function updateHud(v, dt) {
   $('#bossbox').hidden = !showBoss;
   const ue = v.stageId === 'ueno', U = v.U;
   $('#ueInfo').hidden = !(ue && showBoss);
+  $('#bossbox').classList.toggle('ueno', ue);
   if (showBoss && !jb) {
     const b = v.boss; setBar($('#bossFill'), b.hpR); G.lagBoss = G.lagBoss > b.hpR ? Math.max(b.hpR, G.lagBoss - dt * 0.15) : b.hpR; setBar($('#bossLag'), G.lagBoss);
     $('#bossPh').hidden = b.phase !== 2 || ue;
     $('#bossNm').textContent = ue ? 'ヨシノシン' : 'トバトーバン';
-    $('#bossSt').textContent = b.st === 'sleep' ? '睡眠中・被ダメージ×2' : b.st === 'down' ? 'ダウン中' : b.stun ? (ue ? 'よろめき' : '麻痺') : b.st === 'fly' ? '飛行中' : ue && U && U.sleepNear ? '半分で睡眠チャージ' : b.defDown ? '守り↓' : '';
+    $('#bossSt').textContent = b.st === 'sleep' ? '睡眠中・被ダメージ×2.25' : ue && U && U.pend >= 0 ? '睡眠準備' : b.st === 'down' ? 'ダウン中' : b.stun ? (ue ? 'よろめき' : '麻痺') : b.st === 'fly' ? '飛行中' : ue && U && U.sleepNear ? '睡眠チャージが近い' : b.defDown ? '守り↓' : '';
     if (ue && U) {
-      $('#ueMin').textContent = `部下 ${U.alive}/40`;
+      $('#ueMin').textContent = `部下 ${U.alive}/100${U.waveWait ? `（待機${U.waveWait}）` : ''}・増援まで${Math.ceil(U.waveIn)}秒`;
       const bb = $('#ueBar'); bb.hidden = !U.barrier; if (U.barrier) { bb.textContent = `バリア ${U.bhits}/2・${Math.max(0, Math.ceil(DATA.UENO.moves.barrier.max - U.barrierT))}秒`; bb.classList.toggle('hit', U.bhits >= 1); }
       $('#ueLv').textContent = U.barrier ? '' : `Lv${U.lv} 与×${U.lvOut.toFixed(2)}/被×${U.lvIn.toFixed(2)}`;
     }
@@ -715,7 +722,7 @@ function updateHud(v, dt) {
   // 上野：睡眠チェックの10秒と合計ダメージ
   const sb = $('#sleepBox'), sleepOn = ue && U && U.sleep && v.stage === 'boss';
   sb.hidden = !sleepOn;
-  if (sleepOn) { const S = DATA.UENO.moves.sleep, left = Math.max(0, S.dur - U.sleepT); $('#slTime').textContent = left.toFixed(1); setBar($('#slTimeFill'), left / S.dur); $('#slDmg').textContent = Math.min(99999, U.sleepDmg).toLocaleString(); setBar($('#slDmgFill'), U.sleepDmg / S.need); sb.classList.toggle('ok', U.sleepDmg >= S.need); }
+  if (sleepOn) { const S = DATA.UENO.moves.sleep, need = U.need || 1, left = Math.max(0, S.dur - U.sleepT); $('#slMsg').textContent = `10秒以内に4体合計${need.toLocaleString()}ダメージを与えろ！`; $('#slNeed').textContent = need.toLocaleString(); $('#slStage').textContent = `（${U.stage + 1}/3）`; $('#slTime').textContent = left.toFixed(1); setBar($('#slTimeFill'), left / S.dur); $('#slDmg').textContent = Math.min(99999, U.sleepDmg).toLocaleString(); setBar($('#slDmgFill'), U.sleepDmg / need); sb.classList.toggle('ok', U.sleepDmg >= need); }
   // 自分
   const lowHp = me.hpR < 0.3 && me.st === 'ok';
   $('#mebox').classList.toggle('low', lowHp); $('#meWarn').hidden = !lowHp;

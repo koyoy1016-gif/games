@@ -4,6 +4,7 @@
    ===================================================================== */
 const ACC = () => G.acct || G.guest;
 const lvOf = id => SAVE.lvOf(ACC(), id);
+const eqOf = id => { const a = ACC(), c = a && a.chars[id]; return c && c.eq ? c.eq.slice(0, SAVE.eqSlots(a)) : []; };
 const ownsCh = id => SAVE.owns(ACC(), id);
 const newBid = () => 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36); // 戦闘ID（報酬を一度だけにする）
 const RANK_I = { S: 0, A: 1, B: 2, C: 3, D: 4 }, CH_I = Object.fromEntries(DATA.CHARS.map((c, i) => [c.id, i]));
@@ -16,12 +17,26 @@ function fixParty() {
 }
 G.sessClear = {};
 const cleared = id => !!((ACC() && ACC().clear && ACC().clear[id] > 0) || G.sessClear[id]);
-/** ステージの解放：電車はトバトーバン初勝利、ヨシノシンは電車の初クリアで */
-const stageOpen = id => id === 'senju' || (id === 'joban' && cleared('senju')) || (id === 'ueno' && (cleared('joban') || !!(ACC() && ACC().uenoOpen)));
+/** ステージの解放：電車＝トバトーバン初勝利、居酒屋通り＝電車の初クリア、ヨシノシン＝通りの初クリア（旧版で解放済みならそのまま）、秋葉原＝ヨシノシン初勝利、駅前広場＝ホーム初勝利 */
+const stageOpen = id => {
+  const a = ACC() || {};
+  switch (id) {
+    case 'senju': return true;
+    case 'joban': return cleared('senju');
+    case 'ueno_street': return cleared('joban');
+    case 'ueno': return cleared('ueno_street') || !!a.uenoOpen;
+    case 'akiba_platform': return cleared('ueno') || !!a.akibaOpen;
+    case 'akiba_plaza': return cleared('akiba_platform');
+  }
+  return false;
+};
 const STAGES = [
   { id: 'senju', ch: 0, cls: 's1', ic: '🏮', no: '北千住編', nm: '商店街と祭り広場', en: 'トバトーバン（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。', rec: 1, lock: '' },
-  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.events.reduce((s, e) => s + e.n, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車からの部下、途中駅と区間の途中で増える部下を全員倒すと上野に着く。', rec: 20, lock: 'トバトーバンを1回倒すと解放' },
-  { id: 'ueno', ch: 1, cls: 's3', ic: '🎌', no: '上野編', nm: '上野駅前 ヨシノシン', en: 'ヨシノシン（部下を戦わせる指揮官）＋部下36体', d: '駅前の広場で、部下を人形のように操る指揮官と戦う。HP半分の「30分睡眠チャージ」は10秒で3,000ダメージ与えて止めよう。', rec: 40, lock: '電車を1回クリアすると解放' },
+  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.events.reduce((s, e) => s + e.n, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車側と3号車側の両方から部下が来る。全員倒すと上野に着く。', rec: 20, lock: 'トバトーバンを1回倒すと解放' },
+  { id: 'ueno_street', ch: 1, cls: 's2', ic: '🏮', no: '上野編', nm: '上野の居酒屋通り', en: 'ヨシノシンの部下 30体（3地点×10体）', d: '改札を抜け、暖簾と提灯の並ぶ飲み屋街を進む。各地点の10体を倒すと先へ進める。', rec: 20, lock: '電車を1回クリアすると解放' },
+  { id: 'ueno', ch: 1, cls: 's3', ic: '🎌', no: '上野編', nm: '上野駅前 ヨシノシン', en: 'ヨシノシン（HP30,000の指揮官）＋部下36体〜', d: '駅前の広場で、部下を人形のように操る巨大な指揮官と戦う。HP75%・50%・25%の「30分睡眠チャージ」を10秒で止めよう。', rec: 40, lock: '居酒屋通りを1回クリアすると解放' },
+  { id: 'akiba_platform', ch: 2, cls: 's2', ic: '🚉', no: '秋葉原編', nm: '秋葉原駅ホーム', en: 'オガ・カエ（各HP4,000）', d: '閉鎖されたホームで2人と戦う前哨戦。前方の攻撃をよけて背後へ回ろう。', rec: 60, lock: 'ヨシノシンを1回倒すと解放' },
+  { id: 'akiba_plaza', ch: 2, cls: 's3', ic: '⭐', no: '秋葉原編', nm: '秋葉原駅前広場', en: '星・中（各HP8,000）＋オガ・カエ', d: '星と中は、片方を倒してから15秒以内にもう片方も倒さないと復活する。2〜4人で結ぶ図形の攻撃に注意。', rec: 60, lock: '秋葉原駅ホームを1回クリアすると解放' },
 ];
 const avgLv = ids => Math.floor(ids.reduce((s, id) => s + lvOf(id), 0) / Math.max(1, ids.length));
 const roleIc = id => DATA.ROLES[id] ? DATA.ROLES[id].ic + DATA.ROLES[id].short : '';
@@ -38,7 +53,7 @@ function renderSortie() {
     if (s.rec > 1) top.appendChild(el('span', 'rec', `推奨Lv${s.rec}`));
     const body = el('div', 'sc-body'); body.append(el('span', 'en', '敵：' + s.en), el('span', '', s.d));
     const pl = avgLv(G.party); if (s.rec > 1) body.appendChild(el('span', 'small', `いまの編成の平均Lv ${pl}${pl < s.rec ? '（低くても挑戦できます）' : ''}`));
-    if (s.id === 'ueno') { const P = pl, o = Math.min(1.25, Math.max(0.75, 1 + 0.02 * (P - 40))), i = Math.min(1.2, Math.max(0.8, 1 - 0.015 * (P - 40))); body.appendChild(el('span', 'small', `上野だけのLv補正：与えるダメージ×${o.toFixed(2)}・受けるダメージ×${i.toFixed(2)}`)); }
+    if (s.id === 'ueno' || s.id.startsWith('akiba')) { const k = DATA.lvAdjust(s.id === 'ueno' ? 'ueno' : 'akiba', pl); body.appendChild(el('span', 'small', `${s.id === 'ueno' ? '上野ボス' : '秋葉原'}だけのLv補正：与えるダメージ×${k.out.toFixed(2)}・受けるダメージ×${k.in.toFixed(2)}`)); }
     if (cleared(s.id)) body.appendChild(el('span', 'clr', 'クリア済み'));
     if (open) body.appendChild(el('span', 'go', '出動する ▶'));
     b.append(top, body);
@@ -122,7 +137,7 @@ function renderTeam() {
     const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; b.appendChild(im);
     b.appendChild(el('span', 'nm', own || zk ? c.nm : '？？？'));
     const mt = el('span', 'meta'); mt.appendChild(rankBadge(c.rank)); if (own) mt.appendChild(el('span', 'lv', 'Lv.' + rec.lv)); mt.appendChild(el('span', 'role', roleIc(c.roleId))); const e = el('span', 'el', c.el); e.style.background = DATA.ELEM_COL[c.el] || '#6a8ab0'; mt.appendChild(e); b.appendChild(mt);
-    if (own) { const pr = DATA.GROWTH.progress(c.rank, rec.exp), xp = el('span', 'xp'); const xi = el('i'); xi.style.width = Math.round(pr.r * 100) + '%'; xp.appendChild(xi); b.appendChild(xp); if (!rec.seen) b.appendChild(el('span', 'new', 'NEW')); }
+    if (own) { const pr = DATA.GROWTH.progress(c.rank, rec.exp), xp = el('span', 'xp'); const xi = el('i'); xi.style.width = Math.round(pr.r * 100) + '%'; xp.appendChild(xi); b.appendChild(xp); if (!rec.seen) b.appendChild(el('span', 'new', 'NEW')); const eqs = eqOf(c.id); if (eqs.length) b.appendChild(el('span', 'eqi', eqs.map(e => DATA.EQUIP_I[e].ic).join(''))); }
     if (own && !zk) { const used = el('span', 'used'); (coop ? [mySel] : G.party).forEach((id, i) => { if (id === c.id) { const p = el('span', 'pn', 'P' + (coop ? myLobbySlot() + 1 : i + 1)); p.style.background = pcol(coop ? myLobbySlot() : i); used.appendChild(p); } }); b.appendChild(used); }
     const dt = el('span', 'det', '詳細'); dt.onclick = ev => { ev.stopPropagation(); AUDIO.sfx('ui'); G.focus = c.id; if (rec && !rec.seen) rec.seen = 1; renderTeam(); }; b.appendChild(dt);
     b.onclick = () => {
@@ -170,10 +185,11 @@ function renderDetail() {
   if (!own) d.appendChild(el('p', 'small', c.gacha ? '未所持：通常ガチャで入手できます（Lv1・EXP0で加入）' : '未所持'));
   if (c.rank === 'D' && c.isNew) d.appendChild(el('p', 'small', '通常ガチャ対象外／初期仲間'));
   // 能力（いまのLv・人が操作／AIのとき）とEXP
-  const s = DATA.GROWTH.stats(c, lv), ai = DATA.GROWTH.aiStats(s), st = el('div', 'dt-stats');
-  st.append(el('span', ''), el('b', '', `Lv${lv}`), el('span', 'ai', 'AIのとき'), el('span', 'ai', 'Lv99'));
-  for (const [l, k, i] of [['HP', 'hp', 0], ['ちから', 'str', 1], ['ようりょく', 'yo', 2], ['まもり', 'def', 3]]) st.append(el('span', '', l), el('b', '', String(s[k])), el('span', 'ai', String(ai[k])), el('span', 'ai', String(c.cap[i])));
+  const s0 = DATA.GROWTH.stats(c, lv), eq = own ? eqOf(c.id) : [], s = DATA.GROWTH.withEquip(s0, eq), ai = DATA.GROWTH.aiStats(s), st = el('div', 'dt-stats eq');
+  st.append(el('span', ''), el('b', '', `Lv${lv}`), el('b', '', eq.length ? '装備後' : '装備なし'), el('span', 'ai', 'AIのとき'), el('span', 'ai', 'Lv99'));
+  for (const [l, k, i] of [['HP', 'hp', 0], ['ちから', 'str', 1], ['ようりょく', 'yo', 2], ['まもり', 'def', 3]]) st.append(el('span', '', l), el('span', '', String(s0[k])), el('b', s[k] > s0[k] ? 'up' : '', String(s[k])), el('span', 'ai', String(ai[k])), el('span', 'ai', String(c.cap[i])));
   d.appendChild(st);
+  if (own && G.teamMode !== 'zukan') d.appendChild(equipBox(c.id));
   if (own) { const pr = DATA.GROWTH.progress(c.rank, rec.exp); d.appendChild(el('p', 'small', pr.need == null ? '次のレベル：上限（Lv99）' : `次のLvまで ${pr.need - pr.in} EXP（${pr.in} / ${pr.need}）　累積 ${rec.exp}`)); }
   const tg = el('div', 'dt-tags'); for (const t of c.tags || []) tg.appendChild(el('span', '', t)); d.appendChild(tg);
   const slotI = G.coop ? 0 : G.selSlot, sw = G.swap[slotI] && G.party[slotI] === c.id;
@@ -190,6 +206,23 @@ function renderDetail() {
     b.onclick = () => { G.swap[slotI] = !G.swap[slotI]; STORE.set('swap', G.swap); sendMine(); AUDIO.sfx('ui'); renderTeam(); };
     d.appendChild(b);
   } else if (own) { const b = el('button', 'chip', G.coop ? 'このキャラにする' : `P${slotI + 1}の枠に入れる`); b.type = 'button'; b.onclick = () => { const card = [...document.querySelectorAll('#cards .card')].find(x => x.querySelector('.nm') && x.querySelector('.nm').textContent === c.nm); if (card) card.click(); }; d.appendChild(b); }
+}
+/** 装備（枠1・枠2）：変更前→変更後が見えるように。付け替えは拠点・戦闘前・次編成の画面だけ */
+function equipBox(id) {
+  const a = ACC(), n = SAVE.eqSlots(a), cur = (a.chars[id].eq || []).slice(0, n), box = el('div', 'eq-box');
+  box.appendChild(el('b', '', '装備'));
+  for (let i = 0; i < 2; i++) {
+    const row = el('div', 'eq-row'); row.appendChild(el('span', 'small', `枠${i + 1}`));
+    if (i >= n) { row.appendChild(el('span', 'small', '🔒 電車をクリアすると使えます')); box.appendChild(row); continue; }
+    const sel = el('select'); sel.setAttribute('aria-label', `装備枠${i + 1}`);
+    const none = el('option', '', '（なし）'); none.value = ''; sel.appendChild(none);
+    for (const e of DATA.EQUIP) { const o = el('option', '', `${e.ic} ${e.nm}：${e.statLabel}＋${e.pct}%`); o.value = e.id; if (cur.some((x, j) => j !== i && x === e.id)) o.disabled = true; sel.appendChild(o); }
+    sel.value = cur[i] || '';
+    sel.onchange = () => { const r = SAVE.setEquip(a, id, i, sel.value || null); if (!r.ok) { mtoast(r.msg, 2400); sel.value = cur[i] || ''; return; } AUDIO.sfx('ui'); if (G.acct) persist(); renderTeam(); };
+    row.appendChild(sel); box.appendChild(row);
+  }
+  box.appendChild(el('span', 'small', '同じ能力の増加は足し算（例：ちから＋40%と＋50%で1.90倍）。装備でLvの表示は変わりません。'));
+  return box;
 }
 function skillDesc(s) {
   const m = { charge: `${s.nm}：長押しでため、離して発動（基礎威力${s.pw}）`, dodge: '回避：押した方向へすばやく移動（一瞬無敵）', dot: `${s.nm}：当てた敵に${s.dur}秒の継続ダメージ`, retreat: `${s.nm}：攻撃しながら後ろへ下がる（威力${s.pw}）`, stealth: `${s.nm}：${s.dur}秒狙われにくくなる`, parry: `${s.nm}：構えて攻撃を受けると反撃`, heavy: `${s.nm}：ためて重い一撃（威力${s.pw}）`, trap: `${s.nm}：足元に麻痺のワナ`, protect: `${s.nm}：周りの味方を一瞬無敵にする`, guard: `${s.nm}：押している間ダメージを減らす${s.reflect ? '・一部を跳ね返す' : ''}`, taunt: `${s.nm}：敵を引きつける一撃（威力${s.pw}）`, mine: `${s.nm}：足元に地雷（威力${s.pw}・味方も巻き込む・1人1個・再使用${s.cd}秒）`, heal: `${s.nm}：ためるほど回復量アップ（基礎${s.pw}）`, healRing: `${s.nm}：ためるほど範囲が広がる回復（基礎${s.pw}）` };
@@ -209,7 +242,7 @@ function renderResExp(res) {
   if (res.dup) { box.appendChild(el('div', 'res-tix', 'この戦いの報酬は受け取り済みです')); return; }
   for (const x of res.exp) {
     const d = el('div', 'ex'), im = el('img'); im.src = G.thumbs[x.ch] || ''; im.alt = ''; d.appendChild(im);
-    const t = el('span'); t.append(el('span', '', DATA.CHI[x.ch].nm + ' '), el('b', '', `+${x.add.toLocaleString()} EXP`), el('span', 'small', x.ai ? '（AI 80%）' : '')); d.appendChild(t);
+    const t = el('span'); t.append(el('span', '', DATA.CHI[x.ch].nm + ' '), el('b', '', `+${x.add.toLocaleString()} EXP`), el('span', 'small', x.ai ? '（AI 80%）' : G.coop ? '（人間100%）' : '（P1 100%）')); d.appendChild(t);
     if (x.lv1 > x.lv0) d.appendChild(el('span', 'up', `Lv${x.lv0}→${x.lv1}`)); else d.appendChild(el('span', 'small', `Lv${x.lv1}`));
     box.appendChild(d);
   }
@@ -223,7 +256,8 @@ function bindHub() {
   $('#btnGacha').onclick = () => { AUDIO.sfx('ok'); openGacha('title'); };
   $('#btnLgGacha').onclick = () => { AUDIO.sfx('ok'); openGacha('login'); };
   $('#btnLgSet').onclick = () => openSub('settings', 'login');
-  $('#btnStageTeam').onclick = () => { AUDIO.sfx('ok'); openTeam('stage'); };
+  $('#btnEquip').onclick = () => { AUDIO.sfx('ok'); openTeam('title'); mtoast('キャラを選ぶと、右の詳細で装備を付け替えられます', 3000); };
+  $('#btnStageHub').onclick = () => { AUDIO.sfx('back'); show('title'); };
   document.querySelectorAll('#chTabs .tab').forEach(t => t.onclick = () => { AUDIO.sfx('ui'); G.chTab = +t.dataset.ch; renderSortie(); });
   $('#btnPrepGo').onclick = () => { AUDIO.sfx('ok'); startSolo('ueno'); };
   $('#btnPrepTeam').onclick = () => { AUDIO.sfx('ok'); G.carry = null; openTeam('prep'); };

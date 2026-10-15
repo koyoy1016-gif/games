@@ -166,8 +166,22 @@ with sync_playwright() as p:
             ev("() => [__tb.G.mode, document.getElementById('resExp') ? document.getElementById('resExp').innerText.replace(/\\n/g,' | ') : '']", 'result'), shot(pre + '93_result'),
         ]
         results.append(run(p, W, H, 'ueno', steps))
+    if SCEN in ('gachabug', 'gachabugport'):
+        # ガチャから戻れるか：ログイン画面→ガチャ→戻る、タイトル→ガチャ→戻る（2回）、見本の途中で戻る、ログインして引く→取消
+        vis = "() => [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',')"
+        back_rect = "() => { const r = document.getElementById('btnGcBack').getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.bottom), innerWidth, innerHeight, document.getElementById('gacha').scrollHeight, document.getElementById('gacha').clientHeight]; }"
+        click = lambda sel: ev("() => { document.querySelector('%s').click(); return 1; }" % sel)
+        W, H = (390, 844) if SCEN == 'gachabugport' else (844, 390)
+        results.append(run(p, W, H, 'gachabug', [
+            ev(vis, 's0'), click('#btnLgGacha'), wait(0.6), ev(vis, 's1_gacha'), ev(back_rect, 'back_rect'), shot('g01_gacha'),
+            click('#btnGcBack'), wait(0.3), ev(vis, 's2_after_back'), shot('g02_after_back'),
+            click('#btnLgGacha'), wait(0.6), ev(vis, 's3_gacha_again'), shot('g03_gacha_again'), click('#btnGcDraw'), wait(0.4), ev(vis, 's4_login_from_draw'), shot('g04_login'),
+            click('#btnGuest'), wait(0.4), ev(vis, 's5_after_cancel'), shot('g05_after_cancel'), click('#btnGcBack'), wait(0.3), ev(vis, 's6'),
+            click('#btnGuest'), wait(0.3), ev(vis, 's7_title'), click('#btnGacha'), wait(0.6), ev(vis, 's8_gacha_from_hub'), click('#btnGcSample'), wait(1.0), click('#btnGcBack'), wait(0.3), ev(vis, 's9_back_mid_anim'),
+            click('#btnGacha'), wait(0.8), ev(vis, 's10_gacha3'), ev("() => [!!__tb.GC.r, __tb.GC.run, !!__tb.GC.sc]", "gc_state"), shot('g10_gacha3'), click('#btnGcSample'), wait(4.0), shot('g11_sample'), click('#btnGcBack'), wait(0.3), ev(vis, 's12'),
+        ]))
     if SCEN in ('hub',):
-        # 四人でバスターズ：ログイン画面のガチャ入口→演出見本→拠点→編成（絞り込み・詳細）→図鑑→出動（章タブ）→北千住で勝つ→結果のEXP
+        # BIGバスターズ：ログイン画面のガチャ入口→演出見本→拠点→編成（絞り込み・詳細）→図鑑→出動（章タブ）→北千住で勝つ→結果のEXP
         vis = "() => [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',')"
         click = lambda sel: ev("() => { document.querySelector('%s').click(); return 1; }" % sel)
         results.append(run(p, 844, 390, 'hub', [

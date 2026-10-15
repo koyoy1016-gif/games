@@ -34,10 +34,16 @@ ok(s.wins.tobatoban === 1 && s.tickets === 0, 'トバトーバン1勝ではチ�
 SAVE.apply(s, solo(false, 'senju', 'b2')); ok(s.wins.tobatoban === 1 && s.chars.kogemaru.exp === 12500, '敗北は2,500・チケットの進捗は進まない');
 SAVE.apply(s, solo(true, 'senju', 'b3')); const op4 = solo(true, 'senju', 'b4'); SAVE.apply(s, op4);
 ok(s.wins.tobatoban === 3 && s.tickets === 1 && op4.res.ticket === 1, `トバトーバン3勝でチケット1枚（${s.tickets}枚）`);
-SAVE.apply(s, solo(true, 'joban', 'b5')); ok(s.tickets === 1 && s.uenoOpen && s.clear.joban === 1, '電車クリアはチケットに数えず、上野のボスが解放される');
-SAVE.apply(s, solo(true, 'ueno', 'b6')); SAVE.apply(s, solo(true, 'ueno', 'b7')); ok(s.wins.yoshinoshin === 2 && s.tickets === 2, 'ヨシノシン2勝でチケット1枚');
+ok(SAVE.eqSlots(s) === 1 && SAVE.setEquip(s, 'kogemaru', 0, 'bracer_gold').ok && !SAVE.setEquip(s, 'kogemaru', 1, 'charm_gold').ok, '電車クリア前の装備は1枠');
+const op5 = solo(true, 'joban', 'b5'); SAVE.apply(s, op5); ok(s.tickets === 1 && !s.uenoOpen && s.clear.joban === 1 && op5.res.unlocked === 'ueno_street', '電車クリアはチケットに数えず、居酒屋通りが解放される（ボスはまだ）');
+ok(SAVE.eqSlots(s) === 2 && SAVE.setEquip(s, 'kogemaru', 1, 'bracer_purple').ok && !SAVE.setEquip(s, 'kogemaru', 1, 'bracer_gold').ok, '電車クリア後は2枠（同じ系統の別段階はOK・同じIDの二重は不可）');
+{ const st = DATA.GROWTH.withEquip(DATA.GROWTH.stats(DATA.CHI.kagetsubame, 60), ['bracer_gold', 'charm_gold']), hp2 = DATA.GROWTH.withEquip(DATA.GROWTH.stats(DATA.CHI.kagetsubame, 60), ['magatama_gold']);
+  ok(st.hp === 798 && st.str === 309 && st.yo === 125 && st.def === 214 && hp2.hp === 1596, `Lv60カゲツバメ＋ちから50%＋まもり50%＝HP${st.hp}・ちから${st.str}・ようりょく${st.yo}・まもり${st.def}、HP+100%＝${hp2.hp}`);
+  const s2 = DATA.GROWTH.withEquip({ hp: 100, str: 100, yo: 100, def: 100 }, ['bracer_purple', 'bracer_gold']); ok(s2.str === 190, `同じ能力は足し算（+40%と+50%で×1.90＝${s2.str}）`); }
+const op5b = solo(true, 'ueno_street', 'b5b'); SAVE.apply(s, op5b); ok(s.uenoOpen && op5b.res.unlocked === 'ueno' && s.chars.kogemaru.exp - 10000 * 3 - 2500 - 20000 === 12000, '居酒屋通りの勝利（EXP12,000）で上野のボスが解放される');
+SAVE.apply(s, solo(true, 'ueno', 'b6')); SAVE.apply(s, solo(true, 'ueno', 'b7')); ok(s.wins.yoshinoshin === 2 && s.tickets === 2 && s.akibaOpen, 'ヨシノシン2勝でチケット1枚・秋葉原編が解放される');
 const op8 = solo(true, 'senju', 'b8'); op8.fin.retreat = true; const e0 = s.chars.kogemaru.exp; SAVE.apply(s, op8); ok(s.chars.kogemaru.exp === e0 && s.wins.tobatoban === 3, '撤退は報酬なし');
-const coop = { kills: {}, fin: { bid: 'c1', stage: 'senju', win: true, H: 4, slots: [{ ch: 'momiji', rate: 1 }] } }; const m0 = s.chars.momiji.exp; SAVE.apply(s, coop); ok(s.chars.momiji.exp - m0 === 13000, '4人で勝つと操作キャラ13,000');
+const coop = { kills: {}, fin: { bid: 'c1', stage: 'senju', win: true, H: 4, slots: [{ ch: 'momiji', rate: 1 }] } }; const m0 = s.chars.momiji.exp; SAVE.apply(s, coop); ok(s.chars.momiji.exp - m0 === 10000, '4人で勝っても人間は100%＝10,000（人数ボーナスは廃止）');
 // ガチャ
 ok(SAVE.gachaPool(s).length === 40, 'ガチャ対象は未所持の40体（Dは出ない）');
 const r0 = SAVE.gachaRates(s); ok(Math.abs(r0.C - 0.35) < 1e-9 && Math.abs(r0.B - 0.35) < 1e-9 && Math.abs(r0.A - 0.22) < 1e-9 && Math.abs(r0.S - 0.08) < 1e-9, `最初の割合 C${(r0.C * 100).toFixed(0)}・B${(r0.B * 100).toFixed(0)}・A${(r0.A * 100).toFixed(0)}・S${(r0.S * 100).toFixed(0)}%`);
@@ -55,10 +61,10 @@ ok(n1.wins.tobatoban === 2 && n1.tickets === 0, '旧セーブの勝ちは進捗�
 n1.chars.new_d_01.exp = 5000; const n2 = SAVE.normalize(JSON.parse(JSON.stringify(n1)));
 ok(n2.chars.new_d_01.exp === 5000 && JSON.stringify(SAVE.normalize(JSON.parse(JSON.stringify(n2))).chars) === JSON.stringify(n2.chars), '2回移行しても増えも減りもしない（育てた追加DをLv1に戻さない）');
 ok(SAVE.write(s), '書き込める');
-const s2 = SAVE.login(1, 'neko22').save; ok(s2.tickets === s.tickets && Object.keys(s2.chars).length === 60 && s2.chars.kogemaru.exp === s.chars.kogemaru.exp, '閉じて開き直しても続きが残る');
+const s2 = SAVE.login(1, 'neko22').save; ok(s2.tickets === s.tickets && Object.keys(s2.chars).length === 60 && s2.chars.kogemaru.exp === s.chars.kogemaru.exp && s2.chars.kogemaru.eq.join() === 'bracer_gold,bracer_purple', '閉じて開き直しても続きが残る（装備も）');
 // 引き継ぎコード
 const code = SAVE.encode(s2); console.log('   code length', code.length);
-const d = SAVE.decode(code); ok(d.ok && d.save.id === 1 && d.save.chars.kogemaru.exp === s2.chars.kogemaru.exp && Object.keys(d.save.chars).length === 60 && d.save.tickets === s2.tickets && d.save.wins.yoshinoshin === 2, '引き継ぎコードを読み戻せる（所持・EXP・チケット・勝ち数）');
+const d = SAVE.decode(code); ok(d.ok && d.save.id === 1 && d.save.chars.kogemaru.exp === s2.chars.kogemaru.exp && Object.keys(d.save.chars).length === 60 && d.save.tickets === s2.tickets && d.save.wins.yoshinoshin === 2 && d.save.chars.kogemaru.eq.join() === 'bracer_gold,bracer_purple' && d.save.akibaOpen && d.save.clear.ueno_street === 1, '引き継ぎコードを読み戻せる（所持・EXP・チケット・勝ち数・装備・解放）');
 ok(SAVE.decode(code.toLowerCase().replace(/-/g, ' ')).ok, '小文字・区切りなしでも読める');
 const bad = code.slice(0, 5) + (code[5] === 'A' ? 'B' : 'A') + code.slice(6); ok(!SAVE.decode(bad).ok, '1文字まちがえるとはじく');
 const OLD = '056Q-NND7-E82G-6A00-1800-1ZR4'; // 第1版の形式（ID 77・出撃5・勝利3・撃破40）

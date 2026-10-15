@@ -4,7 +4,7 @@
    ・既存10体は data.js の技・モーションをそのまま使い、ランク・役割・タグ・Lv99能力だけを足す
    ・追加50体は10系統の技（赤猫団／白犬隊にある戦い方の種類）から作る。技名・係数は本作の調整案
    ===================================================================== */
-const GAME = { title: '四人でバスターズ', chapters: ['北千住編', '上野編'], boss2: 'ヨシノシン', minion: 'ヨシノシンの部下' };
+const GAME = { title: 'BIGバスターズ', chapters: ['北千住編', '上野編', '秋葉原編'], boss2: 'ヨシノシン', minion: 'ヨシノシンの部下' };
 const RANKS = ['S', 'A', 'B', 'C', 'D'];
 const RANK_INFO = {
   S: { col: '#d4a514', ic: '👑', nm: 'S' }, A: { col: '#8e44c4', ic: '★', nm: 'A' }, B: { col: '#2f6fd0', ic: '◆', nm: 'B' },
@@ -37,19 +37,33 @@ const GROWTH = (() => {
   function progress(rank, exp) { const L = levelOf(rank, exp); if (L >= LV_MAX) return { L, in: 0, need: null, r: 1 }; const a = EXP_CUM[rank], i = exp - a[L], n = a[L + 1] - a[L]; return { L, in: i, need: n, r: i / n }; }
   /** EXPを足す（負・あふれを防ぐ。Lv99では上限の累積に止める） */
   const addExp = (rank, exp, add) => Math.max(0, Math.min(EXP_CUM[rank][LV_MAX], Math.floor((+exp || 0) + Math.max(0, Math.floor(+add || 0)))));
-  return { LV_MAX, stats, aiStats, cum, levelOf, toNext, progress, addExp, statAt };
+  /** 装備の反映：同じ能力の増加％は足し算して、基礎×(100＋合計％)÷100 を一度だけ切り捨て（HPを守りから計算し直さない） */
+  function withEquip(st, eq) {
+    const add = { hp: 0, str: 0, yo: 0, def: 0 };
+    for (const id of eq || []) { const e = EQUIP_I[id]; if (e) add[e.stat] += e.pct; }
+    return { hp: Math.floor(st.hp * (100 + add.hp) / 100), str: Math.floor(st.str * (100 + add.str) / 100), yo: Math.floor(st.yo * (100 + add.yo) / 100), def: Math.floor(st.def * (100 + add.def) / 100) };
+  }
+  return { LV_MAX, stats, aiStats, cum, levelOf, toNext, progress, addExp, statAt, withEquip };
 })();
+/** 装備12種（4系統×青・紫・金）。購入・抽選なし。電車クリア前は1枠、クリア後は2枠。同じIDは2つ付けられない */
+const EQUIP = [
+  ['bracer', '剛力の腕輪', 'str', 'ちから', [30, 40, 50], '💪'],
+  ['bell', '霊光の鈴', 'yo', 'ようりょく', [30, 40, 50], '🔔'],
+  ['charm', '守護のお守り', 'def', 'まもり', [30, 40, 50], '🛡'],
+  ['magatama', '命結びの勾玉', 'hp', '最大HP', [40, 50, 100], '🟢'],
+].flatMap(([k, nm, stat, sl, pcts, ic]) => ['blue', 'purple', 'gold'].map((tier, i) => ({ id: `${k}_${tier}`, line: k, nm: `${nm}（${['青', '紫', '金'][i]}）`, short: nm, stat, statLabel: sl, pct: pcts[i], tier, ic, col: ['#3a7bd5', '#8e44ad', '#d4a017'][i] })));
+const EQUIP_I = Object.fromEntries(EQUIP.map(e => [e.id, e]));
 
 /* ---------------- 報酬（各キャラに配る。4等分ではない） ---------------- */
 const REWARD = {
-  base: { senju: { win: 10000, loss: 2500 }, joban: { win: 20000, loss: 5000 }, ueno: { win: 50000, loss: 7000 } },
-  human: 1.0, ai: 0.8, reserve: 0, coopPer: 0.1, coopCap: 0.3,
-  /** 協力倍率（10倍した整数）：1人10、2人11、3人12、4人以上13 */
-  coop10: H => 10 + Math.min(3, Math.max(0, (H | 0) - 1)),
-  /** 操作率：ずっと人が操作＝1.0、ずっとAI＝0.8。途中で替えたら有効時間の割合 */
-  rate: humanFrac => 0.8 + 0.2 * Math.max(0, Math.min(1, +humanFrac || 0)),
-  /** 最終EXP＝floor(基本×協力倍率×操作率) */
-  exp(stage, win, H, rate) { const e = this.base[stage]; if (!e) return 0; const base = win ? e.win : e.loss; return Math.floor(base * this.coop10(H) * Math.round(rate * 1000) / 10000 + 1e-6); },
+  base: { senju: { win: 10000, loss: 2500 }, joban: { win: 20000, loss: 5000 }, ueno_street: { win: 12000, loss: 3000 }, ueno: { win: 50000, loss: 7000 }, akiba_platform: { win: 20000, loss: 5000 }, akiba_plaza: { win: 70000, loss: 10000 } },
+  human: 1.0, ai: 0.8, reserve: 0,
+  /** 協力人数の上乗せは廃止（いつも1倍） */
+  coop10: () => 10,
+  /** 固定率：ソロは出動時のメイン（P1）枠100%・ほかの3枠80%。マルチは参加した人間全員100%・AI補充枠80%。途中の操作交代で変えない */
+  rate: isMain => isMain ? 1.0 : 0.8,
+  /** 最終EXP＝floor(基本×固定枠率) */
+  exp(stage, win, H, rate) { const e = this.base[stage]; if (!e) return 0; const base = win ? e.win : e.loss; return Math.floor(base * Math.round((rate == null ? 1 : rate) * 100) / 100 + 1e-6); },
 };
 /** 勝利チケット：トバトーバン3勝ごと・ヨシノシン2勝ごとに1枚。電車・敗北・部下撃破では進まない */
 const TICKET = { senju: { key: 'tobatoban', per: 3 }, ueno: { key: 'yoshinoshin', per: 2 } };
@@ -152,4 +166,10 @@ for (const m of ROSTER_EXIST) {
 const CHAR_IDS = DATA.CHARS.map(c => c.id);
 const NEW_D_IDS = ROSTER_NEW.filter(n => n.rank === 'D').map(n => n.id);
 const GACHA_IDS = ROSTER_NEW.filter(n => n.gacha).map(n => n.id);
-Object.assign(DATA, { GAME, RANKS, RANK_INFO, ROLES, ROLE_IDS, GROWTH, REWARD, TICKET, GACHA, CHAR_IDS, NEW_D_IDS, GACHA_IDS, EXP_CUM });
+/** 上野ボス（推奨Lv40）・秋葉原（推奨Lv60）だけのLv補正。P＝出動開始時の4体の平均Lv（切り捨て）。途中の操作交代では変えない */
+function lvAdjust(kind, P) {
+  const R = kind === 'akiba' ? { rec: 60, upO: 0.015, hiO: 1.30, upI: 0.01, loI: 0.75 } : { rec: 40, upO: 0.02, hiO: 1.25, upI: 0.015, loI: 0.80 };
+  if (P < R.rec) return { out: Math.max(0.10, Math.pow(0.95, R.rec - P)), in: Math.min(4.0, Math.pow(1.04, R.rec - P)) };
+  return { out: Math.min(R.hiO, 1 + R.upO * (P - R.rec)), in: Math.max(R.loI, 1 - R.upI * (P - R.rec)) };
+}
+Object.assign(DATA, { lvAdjust, EQUIP, EQUIP_I, GAME, RANKS, RANK_INFO, ROLES, ROLE_IDS, GROWTH, REWARD, TICKET, GACHA, CHAR_IDS, NEW_D_IDS, GACHA_IDS, EXP_CUM });

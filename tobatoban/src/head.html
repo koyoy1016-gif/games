@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#1b1838">
-<title>四人でバスターズ</title>
+<title>BIGバスターズ</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,6 +138,10 @@ a{color:var(--shu)}
 .card .meta{display:flex;gap:3px;align-items:center;flex-wrap:wrap;justify-content:center}.card .lv{font-size:10px}
 .slot .lv{font-size:10px}
 .detail .hd .lv{font-size:12px}
+.card .eqi{position:absolute;left:3px;bottom:16px;font-size:10px;line-height:1}
+.dt-stats.eq{grid-template-columns:auto repeat(4,minmax(0,1fr))!important}.dt-stats .up{color:#1f8a4c}
+.eq-box{display:flex;flex-direction:column;gap:5px;background:#f6f0ff;border:2px solid #b8a8e0;border-radius:10px;padding:6px 8px}
+.eq-row{display:flex;align-items:center;gap:6px}.eq-row select{flex:1;min-width:0;color:var(--ink);font:900 12.5px var(--f-body);border:2px solid var(--ink);border-radius:8px;padding:4px;min-height:38px}
 .pcard .lv{font-size:10px;background:rgba(255,255,255,.16);padding:0 4px;flex:none}
 .res-c .lv{align-self:center}
 .card.cur{border-color:var(--ink);box-shadow:0 0 0 2px var(--gold)}
@@ -220,6 +224,8 @@ a{color:var(--shu)}
 .hpbar i{position:absolute;inset:0 auto 0 0;border-radius:5px}
 .hpbar i.lag{background:#ffd9b0;transition:width .5s .4s}
 .hpbar i.fill{background:linear-gradient(#ef7a74,#cb4b46 55%,#8f2a26);transition:width .1s}
+.hpbar .qm{display:none;position:absolute;top:-2px;bottom:-2px;width:3px;background:#9ad0ff;box-shadow:0 0 4px #9ad0ff}
+.bossbox.ueno .hpbar .qm{display:block}.bossbox.ueno .hpbar .third{display:none}
 .hpbar .third{position:absolute;top:0;bottom:0;left:33.3%;width:2px;background:rgba(255,255,255,.55)}
 .party{display:flex;flex-direction:column;gap:4px}
 .party.row{flex-direction:row;gap:8px}
@@ -343,7 +349,7 @@ a{color:var(--shu)}
 .lob-slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 @container app (max-width:520px){.lob-slots{grid-template-columns:repeat(2,1fr)}}
 
-/* ---- 拠点・編成・ガチャ（四人でバスターズ） ---- */
+/* ---- 拠点・編成・ガチャ（BIGバスターズ） ---- */
 .tix{display:inline-block;min-width:1.6em;border-radius:9px;background:var(--shu);color:#fff;font-size:12px;padding:0 6px;margin-left:4px}
 .lg-sub .btn{flex:1 1 120px}
 .party-sum{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;font-weight:900;align-items:center}
@@ -398,10 +404,12 @@ a{color:var(--shu)}
 .res-tix{grid-column:1/-1;font-weight:900;background:#fff4c8;border:2px solid var(--gold);border-radius:10px;padding:6px 10px}
 .gacha-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:12px}
 @container app (max-width:640px){.gacha-grid{grid-template-columns:1fr}}
-.gc-stage{position:relative;border-radius:14px;overflow:hidden;background:#241c3a;border:2.5px solid var(--ink);aspect-ratio:4/3}
+.gc-stage{position:relative;border-radius:14px;overflow:hidden;background:#241c3a;border:2.5px solid var(--ink);aspect-ratio:4/3;max-height:min(56vh,420px);margin:0 auto;width:100%}
+@container app (max-height:520px){.gc-stage{max-height:240px;aspect-ratio:auto;height:240px}}
 .gc-stage canvas{width:100%;height:100%;display:block}
 .gc-skip{position:absolute;right:8px;bottom:8px}
-.gc-res{position:absolute;left:8px;right:8px;top:8px;background:rgba(255,246,230,.94);border:2.5px solid var(--ink);border-radius:12px;padding:6px 10px;display:flex;flex-direction:column;gap:2px}
+.gc-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+.gc-res{position:static;background:#fff6e6;border:2.5px solid var(--ink);border-radius:12px;padding:6px 10px;display:flex;flex-direction:column;gap:2px}
 .gc-res .hd{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .gc-res .hd b{font-family:var(--f-disp);font-weight:400;font-size:20px}
 .gc-tix{display:flex;flex-direction:column;align-items:center;background:#fff;border:2.5px solid var(--gold);border-radius:12px;padding:2px 12px}
@@ -429,17 +437,18 @@ a{color:var(--shu)}
   <div class="panel">
     <div class="titlebar">
       <div>
-        <div class="eyebrow">北千住編・上野編</div>
-        <h1>四人で<br><span class="em">バスターズ</span></h1>
+        <div class="eyebrow">北千住編・上野編・秋葉原編</div>
+        <h1>BIG<br><span class="em">バスターズ</span></h1>
       </div>
       <div class="lantern-badge">拠点</div>
     </div>
-    <p class="lead">北千住の商店街にトバトーバン、常磐線の先の上野にはヨシノシン。小さなもののけ4体で力を合わせて鎮めよう。</p>
+    <p class="lead">北千住の商店街にトバトーバン、常磐線の先の上野にはヨシノシン、そして秋葉原には星と中。小さなもののけ4体で力を合わせて鎮めよう。</p>
     <div class="menu-list">
       <div class="acct-bar span" id="acctBar"><span class="who" id="acctWho">ログインしていません<small>セーブするにはログイン</small></span><button class="chip" id="btnTSave" type="button" hidden>セーブ</button><button class="chip" id="btnAcct" type="button">ログイン</button></div>
-      <button class="btn main span" id="btnSolo">出動（ひとり＋AIの仲間3体）</button>
+      <button class="btn main span" id="btnSolo">出動（キャラ選択→ステージ選択）</button>
       <button class="btn gold span" id="btnCoop">協力プレイ（2〜4人）</button>
       <button class="btn" id="btnTeam">編成</button>
+      <button class="btn" id="btnEquip">装備</button>
       <button class="btn" id="btnGacha">ガチャ <span class="tix" id="tTix"></span></button>
       <button class="btn" id="btnZukan">図鑑</button>
       <button class="btn" id="btnHow">遊び方</button>
@@ -507,11 +516,11 @@ a{color:var(--shu)}
 <!-- 出動（章タブ・ステージ） -->
 <section class="screen" id="stage" hidden>
   <div class="panel wide">
-    <div class="eyebrow">出動</div><h2>どこへ行く？</h2>
-    <div class="tabs" id="chTabs"><button class="tab on" data-ch="0" type="button">北千住編</button><button class="tab" data-ch="1" type="button">上野編</button></div>
+    <div class="eyebrow">出動 ② ステージ選択</div><h2>どこへ行く？</h2>
+    <div class="tabs" id="chTabs"><button class="tab on" data-ch="0" type="button">北千住編</button><button class="tab" data-ch="1" type="button">上野編</button><button class="tab" data-ch="2" type="button">秋葉原編</button></div>
     <div class="stages" id="stages"></div>
     <div class="sortie-party" id="sortieParty"></div>
-    <div class="row"><button class="btn ghost" id="btnStageBack" type="button">拠点へ</button><button class="btn" id="btnStageTeam" type="button">編成</button></div>
+    <div class="row"><button class="btn ghost" id="btnStageBack" type="button">◀ キャラ選択へ戻る</button><button class="btn ghost" id="btnStageHub" type="button">拠点へ</button></div>
   </div>
 </section>
 
@@ -534,10 +543,9 @@ a{color:var(--shu)}
       <div class="gc-tix"><b id="gcTix">0</b><span>チケット</span></div>
     </div>
     <div class="gacha-grid">
-      <div class="gc-stage"><canvas id="gcCanvas" width="640" height="480"></canvas><div class="gc-res" id="gcRes" hidden></div><button class="chip gc-skip" id="gcSkip" type="button" hidden>スキップ</button></div>
+      <div class="gc-main"><div class="gc-stage"><canvas id="gcCanvas" width="640" height="480"></canvas><button class="chip gc-skip" id="gcSkip" type="button" hidden>スキップ</button></div><div class="gc-res" id="gcRes" hidden></div></div>
       <div class="gc-side">
         <div class="gc-prog" id="gcProg"></div>
-        <div class="gc-rates" id="gcRates"></div>
         <p class="small" id="gcNote">トバトーバンに3勝、ヨシノシンに2勝するごとにチケット1枚。チケットは貯めておけます（自動では回しません）。</p>
         <div class="row" id="gcBtns">
           <button class="btn main" id="btnGcDraw" type="button">1回まわす（1枚）</button>
@@ -549,7 +557,7 @@ a{color:var(--shu)}
           <button class="btn" id="btnGcLook" type="button">このキャラを見る</button>
           <button class="btn gold" id="btnGcAgain" type="button">続けて引く</button>
         </div>
-        <div class="row"><button class="btn ghost" id="btnGcBack" type="button">戻る</button></div>
+        <div class="row"><button class="btn ghost" id="btnGcBack" type="button">閉じる（タイトルへ）</button></div>
       </div>
     </div>
   </div>
@@ -700,7 +708,7 @@ a{color:var(--shu)}
 <!-- HUD -->
 <div id="hud" hidden>
   <div id="touch"></div>
-  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span><span class="qm" style="left:25%"></span><span class="qm" style="left:50%"></span><span class="qm" style="left:75%"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
   <div class="hb party" id="party"></div>
   <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
   <div class="hb" id="map"><canvas id="mapc"></canvas></div>
@@ -726,7 +734,7 @@ a{color:var(--shu)}
 </div>
 <div id="cutin"><img id="cutImg" alt=""><div><small id="cutWho" style="display:block;font-size:11px;font-weight:900"></small><b id="cutNm"></b></div></div>
 <div id="banner"></div>
-<div id="sleepBox" hidden><div class="sl-t">💤 30分睡眠チャージ</div><div class="sl-m">10秒以内に4体合計3,000ダメージを与えろ！</div><div class="sl-row"><span>残り <b id="slTime">10.0</b>秒</span><div class="sl-bar"><i id="slTimeFill"></i></div></div><div class="sl-row"><span><b id="slDmg">0</b> / 3,000</span><div class="sl-bar dmg"><i id="slDmgFill"></i></div></div><div class="sl-x">隙だらけ・与ダメージ×2</div></div>
+<div id="sleepBox" hidden><div class="sl-t">💤 30分睡眠チャージ<span id="slStage"></span></div><div class="sl-m" id="slMsg">10秒以内に4体合計ダメージを与えろ！</div><div class="sl-row"><span>残り <b id="slTime">10.0</b>秒</span><div class="sl-bar"><i id="slTimeFill"></i></div></div><div class="sl-row"><span><b id="slDmg">0</b> / <span id="slNeed">0</span></span><div class="sl-bar dmg"><i id="slDmgFill"></i></div></div><div class="sl-x">隙だらけ・与ダメージ×2.25</div></div>
 <div id="fade"></div>
 <div id="bossCard"><div class="s">付喪神</div><div class="n">トバトーバン</div><div class="d">古い大看板と祭りの台座が、宵の広場で目を覚ました</div></div>
 <div id="rotateHint" hidden>📱↻ 横画面のほうが見やすく遊べます<button id="rotateX">とじる</button></div>

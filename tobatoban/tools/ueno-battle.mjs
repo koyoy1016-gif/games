@@ -3,7 +3,7 @@
 //   既定は P1 を「人が操作」扱い（能力100%）・他3体はAI（能力90%）。--all-ai で4体ともAI能力
 import fs from 'fs'; import vm from 'vm'; import path from 'path'; import { fileURLToPath } from 'url';
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
-const src = ['data.js', 'roster_data.js', 'roster.js', 'sim.js', 'joban.js', 'ueno.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+const src = ['data.js', 'roster_data.js', 'roster.js', 'sim.js', 'joban.js', 'street.js', 'ueno.js', 'akiba.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console, Math, Set, Map, JSON, Object, Array, Number, String, Date });
 vm.runInContext(src + ';globalThis.__={DATA,SIMLIB}', ctx);
 const { DATA, SIMLIB } = ctx.__;
@@ -22,10 +22,10 @@ for (let i = 0; i < 60 * 60 * 20; i++) {
     if (e.type === 'hurt') hurt++; if (e.type === 'down') downs++;
     if (e.type === 'bossmove') st.moves[e.mv] = (st.moves[e.mv] || 0) + 1;
     if (e.type === 'sleep') { st.sleep++; log.push(`t=${s.t.toFixed(0)} 睡眠チャージ開始（余剰${e.carry}）`); }
-    if (e.type === 'sleepEnd') { if (e.ok) st.sleepOk++; st.sleepDmg.push(e.dmg); log.push(`t=${s.t.toFixed(0)} 睡眠チェック ${e.ok ? '成功' : '失敗'} ${e.dmg}/3000`); }
+    if (e.type === 'sleepEnd') { if (e.ok) st.sleepOk++; st.sleepDmg.push(e.dmg); log.push(`t=${s.t.toFixed(0)} 睡眠チェック${e.i + 1} ${e.ok ? '成功' : '失敗'} ${e.dmg}/${e.need}`); }
     if (e.type === 'barrier') { if (e.on) st.barrier++; if (e.broken) st.barrierBroken++; log.push(`t=${s.t.toFixed(0)} バリア ${e.on ? '開始' : e.broken ? '破壊' : '時間切れ'}`); }
-    if (e.type === 'bossmove' && e.mv === 'throw20') { st.throws++; log.push(`t=${s.t.toFixed(0)} 部下丸投げ二十連（HP${Math.round(s.boss.hp / s.boss.maxHp * 100)}%・生存${s.uenoAlive()}）`); }
-    if (e.type === 'summon') st.summon++;
+    if (e.type === 'bossmove' && e.mv === 'throw50') { st.throws++; log.push(`t=${s.t.toFixed(0)} 部下丸投げ二十連（HP${Math.round(s.boss.hp / s.boss.maxHp * 100)}%・生存${s.uenoAlive()}）`); }
+    if (e.type === 'waveWarn') st.summon++;
   }
   const alive = s.uenoAlive(); maxAlive = Math.max(maxAlive, alive);
   const atk = s.mobs.filter(m => m.st === 'ok' && m.act); maxAtk = Math.max(maxAtk, atk.length); maxBeamAtk = Math.max(maxBeamAtk, atk.filter(m => m.typ === 'beam').length);

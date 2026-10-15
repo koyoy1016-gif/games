@@ -496,7 +496,7 @@ const R = (() => {
       case 'barrier': A(e.on ? 'protect' : e.broken ? 'crit' : 'ui', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); if (e.broken && v.boss) burst('add', 40, { x: v.boss.x, y: 1.8, z: v.boss.z, spd: 6, life: 0.6, s0: 0.5, s1: 0.05, c: 0x9ad0ff }); break;
       case 'warpIn': burst('add', 26, { x: e.x, y: 1.5, z: e.z, spd: 3, life: 0.5, s0: 0.45, s1: 0.05, c: 0xb89aff }); A('whoosh', e.x, e.z); break;
       case 'yLand': burst('norm', 6, { x: e.x, y: 0.2, z: e.z, spd: 1.5, life: 0.4, s0: 0.3, s1: 0.6, c: 0xd8d0e8, a: 0.6 }); break;
-      case 'summon': A('summon'); break;
+      case 'waveWarn': A('summon'); break;
       case 'sleep': A('bossDown'); break;
       case 'sleepEnd': A(e.ok ? 'allLit' : 'lanternFail'); if (!e.ok && v.boss) burst('add', 40, { x: v.boss.x, y: 1.5, z: v.boss.z, spd: 3, up: 2, life: 1.0, s0: 0.4, s1: 0.05, c: 0x8aff9a }); break;
       case 'ySpawn': burst('norm', 8, { x: e.x, y: 0.6, z: e.z, spd: 1.2, life: 0.5, s0: 0.35, s1: 0.7, c: 0xb8a8ff, a: 0.55 }); break;

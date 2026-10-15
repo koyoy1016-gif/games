@@ -17,9 +17,9 @@ const BST = ['intro', 'idle', 'walk', 'wind', 'act', 'rec', 'fly', 'down', 'stun
 const BST_I = Object.fromEntries(BST.map((k, i) => [k, i]));
 const BMV = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'zouen', 'reiko', 'shosho', 'stamp', 'shosha', 'warp', 'summon', 'barrier', 'throw20', 'sleep', 'cmd'];
 const BMV_I = Object.fromEntries(BMV.map((k, i) => [k, i]));
-const HZ = ['fan2', 'fan', 'line', 'circle', 'rect', 'path'];
+const HZ = ['fan2', 'fan', 'line', 'circle', 'rect', 'path', 'poly', 'seg'];
 const HZ_I = Object.fromEntries(HZ.map((k, i) => [k, i]));
-const PJ = ['star', 'can', 'focus', 'fire', 'mark', 'leaf', 'fuda', 'lantern', 'pshot', 'bean', 'orb', 'reiko'];
+const PJ = ['star', 'can', 'focus', 'fire', 'mark', 'leaf', 'fuda', 'lantern', 'pshot', 'bean', 'orb', 'reiko', 'gun', 'hoshi', 'mizu'];
 const PJ_I = Object.fromEntries(PJ.map((k, i) => [k, i]));
 
 function inFan(px, pz, ox, oz, yaw, r0, r1, half, tr) {
@@ -52,7 +52,7 @@ class Sim {
     this.diffKey = D.DIFF[o.diff] ? o.diff : 'normal'; this.diff = D.DIFF[this.diffKey]; // むずかしさは「通常」の1つだけ
     this.nextId = 1; this.evId = 0; this.events = []; this.mlog = [];
     this.bid = String(o.bid || ''); // 戦闘ID（報酬を一度だけにする）
-    this.stageId = ['joban', 'ueno'].includes(o.stageId) ? o.stageId : 'senju'; // senju＝北千住（トバトーバン）、joban＝常磐線（ヨシノシンの部下）、ueno＝上野駅前（ヨシノシン）
+    this.stageId = ['joban', 'ueno', 'ueno_street', 'akiba_platform', 'akiba_plaza'].includes(o.stageId) ? o.stageId : 'senju'; // senju＝北千住（トバトーバン）、joban＝常磐線（ヨシノシンの部下）、ueno＝上野駅前（ヨシノシン）
     this.stage = o.test ? 'boss' : 'street'; this.stageT = 0; this.timeLeft = D.SIM.timeLimit;
     this.allies = o.party.map((pp, i) => this.makeAlly(pp, i));
     this.inputs = this.allies.map(() => Sim.emptyInput());
@@ -60,9 +60,11 @@ class Sim {
     this.lanterns = D.STAGE.lanterns.map(([x, z], i) => ({ i, x, z, lit: false }));
     this.lanternT = 0; this.lanternCool = 0; this.lanternOrder = 0; this.candyT = D.SIM.candyPeriod;
     this.wave = 0; this.waveSpawned = false; this.barrier = 'street'; this.introWait = false; this.result = null;
-    this.test = !!o.test;
+    this.test = !!o.test; this.orbs = []; this.orbEff = 0; this.orbN = 0;
     if (this.stageId === 'joban') this.initJoban(o);
     else if (this.stageId === 'ueno') this.initUeno(o);
+    else if (this.stageId === 'ueno_street') this.initStreet(o);
+    else if (this.stageId.startsWith('akiba')) this.initAkiba(o);
     else if (o.test) this.spawnBoss(true);
     else this.spawnWave(0);
   }
@@ -72,9 +74,9 @@ class Sim {
 
   makeAlly(pp, slot) {
     const c = DATA.CHI[pp.ch] || DATA.CHI.kogemaru, sw = !!pp.swap;
-    const lv = Math.max(1, Math.min(DATA.GROWTH.LV_MAX, pp.lv | 0 || 1)), base = DATA.GROWTH.stats(c, lv); // レベルの能力（Lv99の60〜65%から伸びる）
+    const lv = Math.max(1, Math.min(DATA.GROWTH.LV_MAX, pp.lv | 0 || 1)), base = DATA.GROWTH.withEquip(DATA.GROWTH.stats(c, lv), (pp.eq || []).slice(0, 2)); // レベルの能力（Lv99の60〜65%から伸びる）→ 装備の増加を一度だけ（AIの90%はこのあと）
     const sx = [-1.6, 1.6, -0.5, 0.5][slot], sz = [-60, -60, -61.6, -61.6][slot];
-    const items = (pp.items || ['onigiri', 'ramune']).slice(0, 2).map(id => ({ id, n: DATA.SIM.itemStart }));
+    const items = (pp.items || ['onigiri', 'ramune']).slice(0, 2).map((id, i, arr) => DATA.ITEMS[id] ? id : 'onigiri').map((id, i, arr) => (id === 'starburst_gun' && arr.indexOf(id) !== i) ? (arr.includes('onigiri') ? 'ramune' : 'onigiri') : id).map(id => ({ id, n: DATA.ITEMS[id].one ? 1 : DATA.SIM.itemStart })); // 銃は1人1丁・1発（両方の枠に入れても2発にならない）
     const a = {
       id: 'a' + slot, slot, ch: c.id, c, x: sx, z: sz, px: sx, pz: sz, yaw: 0, hp: base.hp, maxHp: base.hp, st: 'ok', downT: 0, base, stt: base, _ai: false, bl: [], dl: [], regen: null, humT: 0,
       act: null, slots: { X: sw ? c.Y : c.X, Y: sw ? c.X : c.Y }, cd: { X: 0, Y: 0 }, cdMax: { X: 1, Y: 1 }, g: { X: 1, Y: 1 }, gLock: { X: false, Y: false },
@@ -108,6 +110,7 @@ class Sim {
     for (const m of this.mobs) this.updateMob(m, dt);
     this.mobs = this.mobs.filter(m => m.st !== 'gone');
     this.updateRevive(dt);
+    this.updateOrbs(dt);
     this.updateProjs(dt); this.updateHazards(dt); this.updateTraps(dt); this.updateCandy(dt); this.updatePickups(dt); this.updateLanterns(dt);
     this.updateStage(dt);
     this.cleanupEvents();
@@ -220,6 +223,8 @@ class Sim {
   clampPos(ox, oz, nx, nz, rad) {
     if (this.stageId === 'joban') return this.clampTrain(ox, oz, nx, nz, rad);
     if (this.stageId === 'ueno') return this.clampUeno(ox, oz, nx, nz, rad);
+    if (this.stageId === 'ueno_street') return this.clampStreet(ox, oz, nx, nz, rad);
+    if (this.stageId.startsWith('akiba')) return this.clampAkiba(ox, oz, nx, nz, rad);
     const ST = DATA.STAGE, hw = ST.streetHalfW - rad, pw = ST.plazaHalfW - rad;
     if (nz < 0) {
       if (Math.abs(nx) > hw) { if (oz >= 0 && Math.abs(ox) > hw) nz = 0; else nx = clamp(nx, -hw, hw); }
@@ -253,7 +258,8 @@ class Sim {
       if (code === 'B+' || code === 'B-') { if (code === 'B+') this.bPress(a); else { a.rev = null; a.lan = null; } continue; }
       if (a.st !== 'ok') continue;
       if (code === 'A' && a.act && a.act.k === 'combo') { this.pressA(a, inp); continue; }
-      if (code === 'SP') { this.pressSP(a, inp); continue; } // 必殺は通常の行動を中断して出せる（新作の仮仕様）
+      if (code === 'SP') { this.pressSP(a, inp); continue; }
+      if (code === 'O+') { this.pressOrb(a, inp); continue; } // 重玉：通常必殺とは別のボタン // 必殺は通常の行動を中断して出せる（新作の仮仕様）
       if (a.act) { a.buf = { code, t: this.t }; continue; }
       this.press(a, inp, code);
     }
@@ -354,6 +360,17 @@ class Sim {
     if (sk.kind === 'charge') this.faceForAttack(a, inp);
     a.act = { k: 'release', slot: k, t: 0, sk, ratio, done: 0, healT: inp.healT, lock: inp.lock, log: a.act.log };
     this.setCd(a, k, sk.kind === 'charge' ? (sk.cd || DATA.CHARGE.cd) : sk.cd);
+  }
+  /** 重玉：拾った1個を使って強化必殺を1回（妖気は使わない。効果量だけ2倍） */
+  pressOrb(a, inp) {
+    if (!a.orb || a.st !== 'ok') return;
+    if (a.act && (a.act.k === 'sp' || a.act.k === 'stagger')) return;
+    a.orb = 0; a.rev = null; a.lan = null;
+    this.faceForAttack(a, inp);
+    const S = DATA.SPECIALS[a.c.sp];
+    a.act = { k: 'sp', t: 0, S, n: 0, done: 0, ox: a.x, oz: a.z, oyaw: a.yaw, heavy: true, log: this.logStart(a, '重玉・' + a.c.spNm) };
+    a.stats.specials++;
+    this.ev('sp', { slot: a.slot, nm: '重玉・' + a.c.spNm, ch: a.c.id, heavy: 1 });
   }
   pressSP(a, inp) {
     if (a.sp < 100 || a.st !== 'ok') return;
@@ -559,7 +576,8 @@ class Sim {
     if (a.c.passive === 'stealthCrit' && this.undetected(a)) crit = true;
     const cm = crit ? (a.c.passive === 'critPower' ? P.critPower : S.critMul) : 1;
     const extra = (this.lvOut || 1) * (this.enemyDmgMul ? this.enemyDmgMul(e) : 1); // 上野だけ：平均Lvの補正・睡眠中の隙
-    const dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm * extra));
+    let dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm * extra * (opt && opt.heavy ? 1 : 1)));
+    if (this.capEnemyDmg) dmg = this.capEnemyDmg(e, dmg); // 上野：HP段階ロック（未判定の睡眠しきい値より下へは進めない。0もあり）
     e.hp -= dmg; a.threat += dmg; a.stats.dmg += dmg;
     if (this.afterEnemyHit) this.afterEnemyHit(e, dmg, a, kind);
     if (log) { log.hits.push(+this.t.toFixed(3)); log.dmg.push(dmg); log.def = Math.round(def); log.buff = (state !== 1 ? '×' + state.toFixed(2) : '') + (crit ? ' 会心' : '') + (elem !== 1 ? ' 属性×' + elem : ''); }
@@ -600,15 +618,74 @@ class Sim {
     }
     return dmg;
   }
+  /** 固定ダメージ（閃光銃800）：能力・属性・会心・装備・Lv補正・睡眠・重玉の倍率は掛けない。無敵・バリア・HP段階ロックは守る。残りHPより多くは適用しない */
+  dealFixed(a, e, v, hit) {
+    if (e === this.boss && !this.bossHittable()) return 0;
+    if (e.st && e.st !== 'ok' && e !== this.boss) return 0;
+    if (e.inv > 0 || (this.uenoBlock && this.uenoBlock(e, a))) return 0;
+    if (this.capEnemyDmg) v = this.capEnemyDmg(e, v);
+    v = Math.max(0, Math.min(v, Math.ceil(e.hp)));
+    e.hp -= v; a.stats.dmg += v; a.threat += v;
+    if (this.afterEnemyHit) this.afterEnemyHit(e, v, a, 'gun');
+    this.ev('dmg', { v, crit: 0, x: hit ? hit.x : e.x, z: hit ? hit.z : e.z, y: e === this.boss ? 2.4 : 0.8, src: a.slot, kind: 'gun', el: 0 });
+    if (e.hp <= 0) { e.hp = 0; if (e === this.boss) this.bossDie(); else this.mobDie(e, a); }
+    return v;
+  }
   reflectTo(o, src, v) {
     if (src === this.boss && !this.bossHittable()) return;
     if (this.uenoBlock && this.uenoBlock(src, o)) return;
+    if (this.capEnemyDmg) v = this.capEnemyDmg(src, v);
     src.hp -= v; o.stats.dmg += v; this.ev('dmg', { v, crit: 0, x: src.x, z: src.z, y: src === this.boss ? 2.4 : 0.8, src: o.slot, kind: 'reflect', el: 0 });
     if (src.hp <= 0) { src.hp = 0; if (src === this.boss) this.bossDie(); else this.mobDie(src, o); }
   }
+  /* ---------- 重玉：有効戦闘50秒ごとに1つ。壁で反射しながら転がり、10秒で消える ---------- */
+  orbClockOn() {
+    if (!(this.stage === 'street' || this.stage === 'boss' || this.stage === 'train')) return false;
+    if (this.stageId === 'ueno' && this.U && (this.U.sleep || (this.boss && this.boss.st === 'down'))) return false; // 睡眠・成功後ダウンは周期だけ止める
+    if (this.akibaPaused && this.akibaPaused()) return false;
+    return true;
+  }
+  orbSpot() {
+    const alive = this.allies.filter(o => o.st === 'ok');
+    for (let k = 0; k < 30; k++) {
+      const o = alive.length ? alive[(this.rng.next() * alive.length) | 0] : this.allies[0], a = this.rng.next() * TAU, r = this.rng.range(2.5, 7);
+      const x = o.x + Math.sin(a) * r, z = o.z + Math.cos(a) * r, c = this.clampPos(x, z, x, z, 0.4);
+      if (Math.abs(c[0] - x) < 0.02 && Math.abs(c[1] - z) < 0.02) return [x, z];
+    }
+    const o = alive[0] || this.allies[0]; return this.clampPos(o.x, o.z, o.x, o.z + 1, 0.4);
+  }
+  updateOrbs(dt) {
+    const O = DATA.SIM.orb, live = this.stage === 'street' || this.stage === 'boss' || this.stage === 'train';
+    if (this.orbClockOn()) { this.orbEff += dt; while (this.orbEff >= (this.orbN + 1) * O.every) { this.orbN++; const [x, z] = this.orbSpot(), a = this.rng.next() * TAU; this.orbs.push({ id: this.id(), x, z, vx: Math.sin(a) * O.spd, vz: Math.cos(a) * O.spd, life: O.life }); this.ev('orb', { x, z }); } }
+    if (!live) { this.orbs = []; return; }
+    for (const ob of this.orbs) {
+      ob.life -= dt; // 見えている球の寿命は睡眠中も進む
+      let rest = dt;
+      while (rest > 1e-6) { // 細かく分けて動かし、壁を抜けない。当たったら v'=v−2(v·n)n
+        const h = Math.min(rest, 0.08 / O.spd); rest -= h;
+        const nx = ob.x + ob.vx * h, nz = ob.z + ob.vz * h, c = this.clampPos(ob.x, ob.z, nx, nz, O.r);
+        const ex = nx - c[0], ez = nz - c[1], el = Math.hypot(ex, ez);
+        if (el > 1e-4) { const n0 = ex / el, n1 = ez / el, d = ob.vx * n0 + ob.vz * n1; if (d > 0) { ob.vx -= 2 * d * n0; ob.vz -= 2 * d * n1; } ob.x = c[0] - n0 * 0.01; ob.z = c[1] - n1 * 0.01; }
+        else { ob.x = nx; ob.z = nz; }
+      }
+      // 取得：生きていて重玉を持っていないキャラ。同時なら人が操作するキャラ→番号の順
+      const cand = this.allies.filter(a => a.st === 'ok' && !a.orb && dist2(a.x, a.z, ob.x, ob.z) <= O.r + 0.4).sort((p, q) => (p.ctrlAI ? 1 : 0) - (q.ctrlAI ? 1 : 0) || p.slot - q.slot);
+      if (cand.length) { cand[0].orb = 1; ob.life = 0; this.ev('orbGet', { slot: cand[0].slot, x: ob.x, z: ob.z }); }
+    }
+    this.orbs = this.orbs.filter(ob => ob.life > 0);
+  }
+  /** AIが重玉を使う場面（ふだん）：3体以上を巻き込める／ボスが動けない／回復型は2人以上が減っているとき */
+  aiOrbNow(a) {
+    const S = DATA.SPECIALS[a.c.sp], b = this.boss;
+    if (S.type === 'heal' || S.type === 'field') return this.allies.filter(o => o.st === 'ok' && o.hp / o.maxHp < 0.55).length >= 2;
+    if (this.stageId === 'ueno' && this.U) { const near = b && this.bossHittable() && this.gapTo(a.x, a.z, b).g < 5; if (this.U.sleep || (b && b.st === 'down')) return near || S.type === 'buff' || S.type === 'debuff'; }
+    if (b && this.bossHittable() && (b.st === 'down' || b.st === 'stun') && this.gapTo(a.x, a.z, b).g < 4) return true;
+    if (this.akibaOrbNow) { const r = this.akibaOrbNow(a, S); if (r != null) return r; }
+    return this.enemiesAlive().filter(e => this.gapTo(a.x, a.z, e).g < 3).length >= 3;
+  }
   checkWipe() { if (this.allies.every(o => o.st !== 'ok')) this.finish(false, 'wipe'); }
   runSpecial(a, A, inp, dt) {
-    const S = A.S, t = A.t;
+    const S = A.S, t = A.t, K = A.heavy ? 2 : 1, up = m => A.heavy ? 1 + 2 * (m - 1) : m, down = m => A.heavy ? Math.max(0.40, 1 - 2 * (1 - m)) : m; // 重玉：効果量だけ2倍（ヒット数・時間・射程は同じ）
     a.inv = Math.max(a.inv, dt * 1.01); // 発動承認〜動作終了まで本人のみ無敵（仮設定）
     if (S.type === 'multi') {
       while (A.n < S.n && t >= S.prep + A.n * S.iv) {
@@ -616,33 +693,33 @@ class Sim {
         let hits = 0;
         for (const e of this.enemiesAlive()) {
           const inside = S.shape === 'fan' ? this.hitFan(e, a.x, a.z, a.yaw, 0, S.range, S.arc) : this.hitLine(e, a.x, a.z, a.yaw, S.len, S.w / 2);
-          if (inside) { this.dealToEnemy(a, e, S.pw, S.stat || (a.c.id === 'akaneten' || a.c.id === 'kemuridama' ? 'yo' : 'str'), 'sp', A.log, inside); hits++; if (S.defDown) { this.addDebuff(e, 'def', S.defDown, S.defDownT, a.slot + ':sp'); this.ev('defdown', { x: e.x, z: e.z }); } }
+          if (inside) { this.dealToEnemy(a, e, S.pw * K, S.stat || (a.c.id === 'akaneten' || a.c.id === 'kemuridama' ? 'yo' : 'str'), 'sp', A.log, inside); hits++; if (S.defDown) { this.addDebuff(e, 'def', down(S.defDown), S.defDownT, a.slot + ':sp'); this.ev('defdown', { x: e.x, z: e.z }); } }
         }
         this.ev('sphit', { slot: a.slot, n: A.n, ch: a.c.id, x: a.x, z: a.z, yaw: a.yaw, hit: hits });
       }
       if (t >= S.prep + (S.n - 1) * S.iv + S.tail) this.endAct(a);
     } else if (S.type === 'buff') {
-      if (!A.done && t >= S.prep) { A.done = 1; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= S.r) for (const k of (S.stats || ['str'])) this.addBuff(o, k, S.mul, S.dur, a.slot + ':sp'); this.ev('spfx', { slot: a.slot, k: 'buff', x: a.x, z: a.z }); }
+      if (!A.done && t >= S.prep) { A.done = 1; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= S.r) for (const k of (S.stats || ['str'])) this.addBuff(o, k, up(S.mul), S.dur, a.slot + ':sp'); this.ev('spfx', { slot: a.slot, k: 'buff', x: a.x, z: a.z }); }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'guardup') {
-      if (!A.done && t >= S.prep) { A.done = 1; this.addBuff(a, 'def', S.mul, S.dur, a.slot + ':sp'); a.buffs.taunt = S.dur; a.threat += S.threat; this.ev('spfx', { slot: a.slot, k: 'guardup', x: a.x, z: a.z }); }
+      if (!A.done && t >= S.prep) { A.done = 1; this.addBuff(a, 'def', up(S.mul), S.dur, a.slot + ':sp'); a.buffs.taunt = S.dur; a.threat += S.threat; this.ev('spfx', { slot: a.slot, k: 'guardup', x: a.x, z: a.z }); }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'heal') {
       if (!A.done && t >= S.prep) {
-        A.done = 1; const v = Math.round(S.pw * this.stat(a, 'yo') / 100), inR = o => !S.r || dist2(a.x, a.z, o.x, o.z) <= S.r;
+        A.done = 1; const v = Math.round(S.pw * K * this.stat(a, 'yo') / 100), inR = o => !S.r || dist2(a.x, a.z, o.x, o.z) <= S.r;
         if (S.revive !== false) for (const o of this.allies) { if (o.st === 'down') this.revive(o, S.revHp, a); } // 追加50体の回復必殺は蘇生しない
         for (const o of this.allies) if (o.st === 'ok' && inR(o)) { this.healAlly(o, v, a); if (S.cleanse) this.cleanse(o); }
         this.ev('spfx', { slot: a.slot, k: 'heal', x: a.x, z: a.z });
       }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'debuff') { // 敵の能力低下（眠らせない・行動を止めない）
-      if (!A.done && t >= S.prep) { A.done = 1; for (const e of this.enemiesAlive()) if (this.hitCircle(e, a.x, a.z, S.r)) for (const k of S.stats) this.addDebuff(e, k, S.mul, S.dur, a.slot + ':sp'); this.ev('aura', { slot: a.slot, x: a.x, z: a.z, r: S.r, side: 0, st: 'all', sp: 1 }); }
+      if (!A.done && t >= S.prep) { A.done = 1; for (const e of this.enemiesAlive()) if (this.hitCircle(e, a.x, a.z, S.r)) for (const k of S.stats) this.addDebuff(e, k, down(S.mul), S.dur, a.slot + ':sp'); this.ev('aura', { slot: a.slot, x: a.x, z: a.z, r: S.r, side: 0, st: 'all', sp: 1 }); }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'protect') { // 周りの味方を短く無敵（壁やバリアは作らない）
-      if (!A.done && t >= S.prep) { A.done = 1; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= S.r) o.inv = Math.max(o.inv, S.inv); this.ev('protect', { slot: a.slot, x: a.x, z: a.z, r: S.r }); }
+      if (!A.done && t >= S.prep) { A.done = 1; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= S.r) o.inv = Math.max(o.inv, A.heavy ? Math.min(2, S.inv * 2) : S.inv); this.ev('protect', { slot: a.slot, x: a.x, z: a.z, r: S.r }); }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'field') { // 地面の回復陣：1秒ごとに回復。同じ術者の陣は1つ
-      if (!A.done && t >= S.prep) { A.done = 1; this.traps = this.traps.filter(tr => !(tr.kind === 'field' && tr.owner === a.slot)); this.traps.push({ id: this.id(), kind: 'field', owner: a.slot, x: a.x, z: a.z, t: 0, arm: 0, life: S.n + 0.2, next: 1, n: S.n, v: Math.round(S.pw * this.stat(a, 'yo') / 100), sk: S }); this.ev('ring', { slot: a.slot, x: a.x, z: a.z, r: S.r, k: 'field' }); }
+      if (!A.done && t >= S.prep) { A.done = 1; this.traps = this.traps.filter(tr => !(tr.kind === 'field' && tr.owner === a.slot)); this.traps.push({ id: this.id(), kind: 'field', owner: a.slot, x: a.x, z: a.z, t: 0, arm: 0, life: S.n + 0.2, next: 1, n: S.n, v: Math.round(S.pw * K * this.stat(a, 'yo') / 100), sk: S }); this.ev('ring', { slot: a.slot, x: a.x, z: a.z, r: S.r, k: 'field' }); }
       if (t >= S.end) this.endAct(a);
     }
   }
@@ -653,6 +730,12 @@ class Sim {
     else if (A.it === 'ramune') { a.stam = DATA.SIM.stamMax; a.tired = false; a.buffs.ramune = I.dur; }
     else if (A.it === 'shibireFuda') this.placeTrap(a, 'para', DATA.SKILLS.shibire);
     else if (A.it === 'kemuriDama') { a.buffs.stealth = I.dur; a.threat *= 0.2; }
+    else if (A.it === 'starburst_gun') { // 注目中の敵（なければ正面）へ1発。追尾・貫通・爆発なし
+      const tg = a.lockId ? this.findTarget(a.lockId) : null; if (tg) { const { q } = this.gapTo(a.x, a.z, tg); a.yaw = yawTo(q.x - a.x, q.z - a.z); }
+      const fx = Math.sin(a.yaw), fz = Math.cos(a.yaw);
+      this.projs.push({ id: this.id(), kind: 'gun', team: 'ally', owner: a.slot, x: a.x + fx * 0.5, y: 0.8, z: a.z + fz * 0.5, vx: fx * I.speed, vz: fz * I.speed, life: I.range / I.speed, r: I.r, fixed: I.dmg, hit: new Set(), yaw: a.yaw });
+      this.ev('gun', { slot: a.slot, x: a.x, z: a.z, yaw: a.yaw });
+    }
     this.ev('item', { slot: a.slot, it: A.it, x: a.x, z: a.z });
   }
 
@@ -684,6 +767,7 @@ class Sim {
           const h = this.hitCircle(e, p.x, p.z, p.r);
           if (h) {
             p.hit.add(e.id);
+            if (p.fixed) { this.dealFixed(a, e, p.fixed, h); p.life = 0; break; } // 閃光銃：最初に当たった1体だけ
             if (p.kind === 'mark') { const D0 = e.dots || (e.dots = []), old = D0.find(d => d.src === p.owner); if (old) { old.left = p.ex.dur; old.pw = p.ex.pw; } else D0.push({ src: p.owner, left: p.ex.dur, next: p.ex.tick, pw: p.ex.pw, stat: p.ex.stat }); this.ev('mark', { x: e.x, z: e.z }); this.spForHit(a, 'skill', p.log); p.life = 0; break; } // 同じ術者は重ねずに更新
             if (p.ex && p.ex.blast) { this.blast(a, p.x, p.z, p.ex.blast, p.pw, p.stat, p.hk, p.log); p.life = 0; break; }
             this.dealToEnemy(a, e, p.pw, p.stat, p.hk, p.log, h); this.spForHit(a, p.hk, p.log);
@@ -693,6 +777,7 @@ class Sim {
           }
         }
         if (p.life <= 0 && p.ex && p.ex.blast && !p.hit.size) this.blast(a, p.x, p.z, p.ex.blast, p.pw, p.stat, p.hk, p.log);
+        if (p.fixed && p.life > 0) { const b0 = this.boss; if (b0) this.boss = null; const c = this.clampPos(p.x - p.vx * dt, p.z - p.vz * dt, p.x, p.z, p.r); this.boss = b0; if (Math.abs(c[0] - p.x) > 0.02 || Math.abs(c[1] - p.z) > 0.02) { p.life = 0; this.ev('phit', { x: c[0], z: c[1], k: 'gun' }); } } // 壁で止まる（敵の体は壁ではない）
       } else {
         for (const o of this.allies) {
           if (o.st !== 'ok' || p.hit.has(o.id)) continue;
@@ -766,6 +851,7 @@ class Sim {
     for (let k = 0; k < 12; k++) {
       let x, z;
       if (this.stage === 'train') { const J = DATA.JOBAN; x = this.rng.range(-J.halfW + 0.5, J.halfW - 0.5); z = this.rng.range(J.zMin + 1, J.zMax - 1); if (Math.abs(z) < J.gwHalf + 0.6) continue; }
+      else if (this.candySpot && this.stageId !== 'senju' && this.stageId !== 'ueno') { const q = this.candySpot(); x = q[0]; z = q[1]; }
       else if (this.stage === 'street') { x = this.rng.range(-7, 7); z = this.rng.range(ST.streetZ0 + 4, -3); }
       else { x = this.rng.range(-ST.plazaHalfW + 1.5, ST.plazaHalfW - 1.5); z = this.rng.range(1.5, ST.plazaZ1 - 1.5); }
       const r = this.clampPos(x, z, x, z, 0.3);
@@ -815,10 +901,12 @@ class Sim {
     for (const [x, z] of W) this.spawnMob(x, z, true);
     this.wave = i; this.waveSpawned = true;
   }
-  introLen() { return this.stageId === 'joban' ? DATA.JOBAN.introT : this.stageId === 'ueno' ? DATA.UENO.introT : DATA.BOSS.introT; }
+  introLen() { return this.stageId === 'joban' ? DATA.JOBAN.introT : this.stageId === 'ueno' ? DATA.UENO.introT : this.stageId === 'ueno_street' ? DATA.STREET.introT : this.stageId.startsWith('akiba') ? DATA.AKIBA.introT[this.stageId] : DATA.BOSS.introT; }
   updateStage(dt) {
     if (this.stageId === 'joban') { this.updateJoban(dt); return; }
     if (this.stageId === 'ueno') { this.updateUenoStage(dt); return; }
+    if (this.stageId === 'ueno_street') { this.updateStreet(dt); return; }
+    if (this.stageId.startsWith('akiba')) { this.updateAkibaStage(dt); return; }
     if (this.stage === 'street') {
       const alive = this.mobs.filter(m => m.st === 'ok').length;
       if (alive === 0) {
@@ -916,6 +1004,7 @@ class Sim {
   hz(o) { const h = Object.assign({ id: this.id(), t: 0, hits: {}, src: 'boss', max: 1, iv: 99, act: 0.12 }, o); this.hazards.push(h); return h; }
   updateBoss(dt) {
     if (this.stageId === 'ueno') return this.updateUenoBoss(dt);
+    if (this.stageId.startsWith('akiba')) return;
     const b = this.boss, M = DATA.BMOVES;
     b.t += dt;
     for (const k in b.cds) if (b.cds[k] > 0) b.cds[k] -= dt;
@@ -1160,6 +1249,10 @@ class Sim {
     const ai = a.ai, b = this.boss, role = a.c.ai;
     ai.stay = false; ai.wantA = false; ai.holdB = false;
     out.healT = null;
+    // 重玉：睡眠中・ダウン中・双子の15秒など大事な場面で使う（何もいない所で自動発動しない）
+    if (a.orb && this.free(a) && this.aiOrbNow && this.aiOrbNow(a)) { const tg = this.aiEnemy(a); if (tg) out.lock = tg.id; push('O+'); return; }
+    // 閃光銃：睡眠阻止などで足りないとき
+    if (this.aiGunNow && this.free(a)) { const gi = a.items.findIndex(it => it.id === 'starburst_gun' && it.n > 0); if (gi >= 0) { const tg = this.aiGunNow(a); if (tg) { out.lock = tg.id; a.lockId = tg.id; push('I' + gi); return; } } }
     // 1) 危険範囲から逃げる（反応に少し遅れを持たせる）
     const danger = this.inDanger(a.x, a.z, 0.5, 1.2);
     if (danger && (danger.t >= ai.react || danger.kind === 'path')) {
@@ -1179,6 +1272,11 @@ class Sim {
     // 1.5) 置かれたボム・地雷から離れる（味方の爆発にも巻き込まれるため）
     for (const tr of this.traps) if ((tr.kind === 'bomb' || (tr.kind === 'mine' && tr.owner !== a.slot)) && dist2(a.x, a.z, tr.x, tr.z) < tr.sk.r + 0.6) {
       const dx = a.x - tr.x, dz = a.z - tr.z, l = Math.hypot(dx, dz) || 1, p = this.clampPos(a.x, a.z, tr.x + dx / l * (tr.sk.r + 1.2), tr.z + dz / l * (tr.sk.r + 1.2), 0.4); ai.tx = p[0]; ai.tz = p[1]; return;
+    }
+    // 1.7) 重玉を拾いにいく（人が2m以内にいる球は奪わない）
+    if (!a.orb && this.orbs.length) {
+      const ob = this.orbs.filter(o => dist2(a.x, a.z, o.x, o.z) < 8 && !this.allies.some(h => !h.ctrlAI && h.st === 'ok' && !h.orb && dist2(h.x, h.z, o.x, o.z) < 2) && !this.inDanger(o.x, o.z, 0.5, 1.2)).sort((p, q) => dist2(a.x, a.z, p.x, p.z) - dist2(a.x, a.z, q.x, q.z))[0];
+      if (ob) { ai.tx = ob.x + ob.vx * 0.3; ai.tz = ob.z + ob.vz * 0.3; return; }
     }
     // 2) 気絶した仲間の救助
     const down = this.allies.filter(o => o.st === 'down');

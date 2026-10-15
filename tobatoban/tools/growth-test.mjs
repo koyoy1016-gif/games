@@ -26,10 +26,10 @@ ok(k1.hp === 534 && k1.str === 145 && k1.yo === 40 && k1.def === 81 && k50.hp ==
 const ai = D.GROWTH.aiStats(k1); ok(ai.hp === 480 && ai.str === 130 && ai.def === 72, `AIは各能力×0.9の切り捨て（${JSON.stringify(ai)}）`);
 const R = D.REWARD;
 ok(R.exp('senju', true, 1, 1) === 10000 && R.exp('senju', true, 1, 0.8) === 8000, 'ソロでトバトーバン勝利：操作10,000・AI 8,000');
-ok(R.exp('senju', true, 4, 1) === 13000 && R.exp('ueno', true, 4, 1) === 65000, '4人で勝利：トバトーバン13,000・ヨシノシン65,000');
-ok(R.exp('senju', true, 2, 1) === 11000 && R.exp('senju', true, 2, 0.8) === 8800, '2人＋AI2体：操作11,000・AI 8,800');
+ok(R.exp('senju', true, 4, 1) === 10000 && R.exp('ueno', true, 4, 1) === 50000, '4人で勝利しても人間は100%（トバトーバン10,000・ヨシノシン50,000。人数の上乗せなし）');
+ok(R.exp('ueno', true, 2, 1) === 50000 && R.exp('ueno', true, 2, 0.8) === 40000 && R.exp('joban', true, 1, 0.8) === 16000, '2人＋AI2体：人間50,000・AI 40,000／電車のAI枠16,000');
 ok(R.exp('senju', false, 1, 1) === 2500 && R.exp('joban', true, 1, 1) === 20000 && R.exp('joban', false, 1, 1) === 5000 && R.exp('ueno', false, 1, 1) === 7000, '敗北・電車の報酬');
-ok(R.rate(0) === 0.8 && R.rate(1) === 1 && Math.abs(R.rate(0.5) - 0.9) < 1e-9, '途中で切り替えた操作率 0.8＋0.2×操作時間の割合');
+ok(R.rate(false) === 0.8 && R.rate(true) === 1 && R.exp('ueno_street', true, 1, 1) === 12000 && R.exp('ueno_street', false, 1, 0.8) === 2400 && R.exp('akiba_platform', true, 1, 1) === 20000 && R.exp('akiba_plaza', true, 1, 1) === 70000 && R.exp('akiba_plaza', false, 1, 1) === 10000, '固定率（メイン100%・ほか80%）と、通り・秋葉原の報酬');
 ok(D.GROWTH.levelOf('D', 10000) === 11 && D.GROWTH.levelOf('B', 10000) === 10 && D.GROWTH.levelOf('A', 10000) === 9 && D.GROWTH.levelOf('S', 10000) === 8, '初勝利10,000でD/C Lv11・B Lv10・A Lv9・S Lv8');
 ok(D.GROWTH.addExp('S', D.GROWTH.cum('S', 99) - 5, 999999) === D.GROWTH.cum('S', 99), 'Lv99を超えた分は上限に止める');
 ok(D.GACHA_IDS.length === 40 && D.NEW_D_IDS.length === 10 && D.GACHA_IDS.every(id => D.CHI[id].rank !== 'D'), 'ガチャ対象はC〜Sの40体、追加Dの10体は初期仲間');

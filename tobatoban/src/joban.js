@@ -7,11 +7,11 @@
    ===================================================================== */
 (() => {
   const P = Sim.prototype;
-  const TYPES = ['melee', 'beam', 'guard'];
+  const TYPES = ['sword', 'punch', 'beam'];
 
   /** 最大剰余法：n体を割合で分け、合計をnにぴったり合わせる（同点は 近接→ビーム→防御 の順） */
   function mixCounts(n, mix, keys) {
-    keys = keys || TYPES;
+    keys = keys || Object.keys(mix);
     const raw = keys.map(k => n * (mix[k] || 0)), out = raw.map(Math.floor);
     let rest = n - out.reduce((s, v) => s + v, 0);
     const order = keys.map((k, i) => i).sort((a, b) => (raw[b] - out[b]) - (raw[a] - out[a]) || a - b);
@@ -24,7 +24,7 @@
     this.stage = o.test ? 'train' : 'intro'; this.barrier = 'none';
     const J = DATA.JOBAN;
     this.kills = 0; this.total = J.events.reduce((s, e) => s + e.n, 0);
-    this.fired = {}; this.grpKills = {}; this.grpN = {}; this.phase = 0; this.queue = []; this.spawnT = 0;
+    this.fired = {}; this.grpKills = {}; this.grpN = {}; this.phase = 0; this.queue = []; this.spawnT = { front: 0, rear: 0 }; this.sideT = { front: -99, rear: -99 };
     this.ycfg = { types: J.types, rights: J.rights };
     this.tr = { at: 0, ph: 'stop', d: 0, v: 0, t: 0, doors: 0 }; // 北千住で停車中（演出の間）
     const pos = [[-0.6, -4.2], [0.6, -4.2], [-0.6, -5.8], [0.6, -5.8]]; // 3号車の前寄り・前向き
@@ -46,7 +46,7 @@
   P.startTrain = function () {
     this.stage = 'train'; this.stageT = 0; this.introWait = false;
     const tr = this.tr; tr.ph = 'run'; tr.at = 0; tr.d = 0; tr.v = 0; tr.t = 0; tr.doors = 0;
-    this.fireEvent('p1');
+    this.fireEvent('board');
     this.ev('stage', { k: 'train' });
   };
 
@@ -55,13 +55,18 @@
     if (this.fired[id]) return false;
     const J = DATA.JOBAN, E = J.events.find(e => e.id === id); if (!E) return false;
     this.fired[id] = this.t || 1e-6; this.grpN[id] = E.n; this.grpKills[id] = 0;
-    const cnt = mixCounts(E.n, J.mix), list = [];
-    for (const k of TYPES) for (let i = 0; i < cnt[k]; i++) list.push(k);
-    for (let i = list.length - 1; i > 0; i--) { const j = (this.rng.next() * (i + 1)) | 0; [list[i], list[j]] = [list[j], list[i]]; } // 種類を混ぜる
-    if (E.from === 'in') { for (const typ of list) this.spawnYoshi(this.rng.range(-1.1, 1.1), this.rng.range(9, 19), id, 'in', typ); }
-    else for (const typ of list) this.queue.push({ grp: id, from: E.from, typ });
-    if (id[0] === 'p') this.phase = +id[1];
-    this.ev('jev', { id, n: E.n, from: E.from, st: E.from === 'door' ? +E.at.split(':')[1] : -1 });
+    // 前（1号車側）と後ろ（3号車側）それぞれで、剣・パンチ・ビームを最大剰余法でおおむね均等に
+    const list = [];
+    for (const [side, n] of [['front', E.front], ['rear', E.back]]) {
+      const cnt = mixCounts(n, J.mix, TYPES), part = [];
+      for (const k of TYPES) for (let i = 0; i < cnt[k]; i++) part.push(k);
+      for (let i = part.length - 1; i > 0; i--) { const j = (this.rng.next() * (i + 1)) | 0; [part[i], part[j]] = [part[j], part[i]]; } // 種類を混ぜる
+      for (const typ of part) list.push({ side, typ });
+    }
+    if (E.at === 'start') { // 乗車直後：すでに車内にいる（2号車の前寄り・3号車の後ろ寄り。味方の周り2mは空ける）
+      for (const q of list) { const z = q.side === 'front' ? this.rng.range(6, 19.5) : this.rng.range(-19.5, -8.5); this.spawnYoshi(this.rng.range(-1.1, 1.1), z, id, 'in', q.typ); }
+    } else for (const q of list) this.queue.push({ grp: id, side: q.side, typ: q.typ });
+    this.ev('jev', { id, n: E.n, front: E.front, back: E.back, st: E.at.startsWith('st:') ? +E.at.split(':')[1] : -1 });
     return true;
   };
 
@@ -69,13 +74,13 @@
     const J = DATA.JOBAN;
     if (this.stage === 'intro') { if (this.introWait) return; if (this.stageT >= J.introT) this.startTrain(); return; }
     if (this.stage === 'train' || this.stage === 'arrive') this.updateTrainMotion(dt);
-    if (this.stage === 'train') { this.updateSpawns(dt); this.checkPhases(); }
+    if (this.stage === 'train') this.updateSpawns(dt);
     if (this.stage === 'arrive' && this.stageT >= J.arriveT) this.finish(true, 'ueno');
   };
   /** 上野に着ける条件：全イベント発生済み・待機列0・生存0 */
   P.jobanCleared = function () { return DATA.JOBAN.events.every(e => this.fired[e.id]) && !this.queue.length && !this.mobs.some(m => m.st === 'ok'); };
   /** 車内にいる数・待っている数（表示用） */
-  P.jobanCounts = function () { return { alive: this.mobs.filter(m => m.st === 'ok').length, wait: this.queue.length }; };
+  P.jobanCounts = function () { return { alive: this.mobs.filter(m => m.st === 'ok').length, wait: this.queue.length, wf: this.queue.filter(q => q.side === 'front').length, wr: this.queue.filter(q => q.side === 'rear').length }; };
 
   /** 電車の動き：加速→走行→ブレーキで駅に止まる。日暮里→上野は、部下が残っている間は上野の手前を走り続ける */
   P.updateTrainMotion = function (dt) {
@@ -89,10 +94,13 @@
     }
     const L = J.segLen[tr.at];
     // 区間中央：走行距離が50%を越えたら一度だけ（フレームが飛んでも、50%に居続けても一度）
-    if (tr.at >= 1 && tr.at <= 3 && tr.d >= L * J.midFrac) this.fireEvent('mid_' + tr.at);
-    const hold = tr.at === 3 && !this.jobanCleared();
+    if (tr.at >= 0 && tr.at <= 3 && tr.d >= L * J.midFrac) this.fireEvent('mid_' + tr.at);
     const rem = L - tr.d, brakeD = tr.v * tr.v / (2 * J.acc);
-    if (hold) { tr.v = Math.min(J.vmax, tr.v + J.acc * dt); tr.d = Math.min(tr.d + tr.v * dt, L - J.vmax * J.vmax / (2 * J.acc) - 60); if (tr.d >= L * J.midFrac) this.fireEvent('mid_3'); return; }
+    // 上野の手前で敵が残っていたら「上野進入待ち」：信号待ちとして止まる（追加の敵は出さない）
+    if (tr.at === 3 && !this.jobanCleared() && rem <= 120 + brakeD + 0.3) {
+      const stopRem = Math.max(0, rem - 120); tr.v = stopRem > 0.05 ? Math.max(0, Math.min(tr.v, Math.sqrt(2 * J.acc * stopRem))) : 0; tr.d += tr.v * dt; if (!tr.hold) { tr.hold = 1; this.ev('holdUeno', {}); } return;
+    }
+    tr.hold = 0;
     if (rem <= brakeD + 0.3) { tr.v = Math.max(0.7, Math.sqrt(Math.max(0, 2 * J.acc * rem))); tr.d += tr.v * dt; }
     else { tr.v = Math.min(J.vmax, tr.v + J.acc * dt); tr.d += tr.v * dt; }
     if (L - tr.d <= 0.05) {
@@ -102,45 +110,40 @@
     }
   };
 
-  /** 途中駅：ホーム側のドアから乗ってくる（南千住15体・三河島15体・日暮里25体） */
+  /** 途中駅：前後の車両へホームから乗り、そこからこの車両へ流れ込む（南千住30体・三河島30体・日暮里40体） */
   P.boardAt = function (st) {
     const id = DATA.JOBAN.events.find(e => e.at === 'st:' + st).id;
     if (this.fireEvent(id)) this.ev('board', { st, n: this.grpN[id] });
   };
-  /** 初期3波：第1波10体をすべて倒すと15体、その15体を倒すと20体（駅・区間中央の撃破は数えない） */
-  P.checkPhases = function () {
-    if (this.fired.p1 && !this.fired.p2 && this.grpKills.p1 >= this.grpN.p1) { this.fireEvent('p2'); this.ev('wave', { n: 2, cnt: this.grpN.p2 }); }
-    else if (this.fired.p2 && !this.fired.p3 && this.grpKills.p2 >= this.grpN.p2) { this.fireEvent('p3'); this.ev('wave', { n: 3, cnt: this.grpN.p3 }); }
-  };
-  /** 待っている部下を、車内が混みすぎない範囲（同時20体）で少しずつ出す */
+  /** 待っている部下を、車内が混みすぎない範囲（同時40体）で前後それぞれから少しずつ出す（外側のドアからは乗せない） */
   P.updateSpawns = function (dt) {
-    const J = DATA.JOBAN; this.spawnT -= dt;
-    if (this.spawnT > 0 || !this.queue.length) return;
-    if (this.mobs.filter(m => m.st === 'ok').length >= J.maxActive) return;
-    // 駅で乗ってくる分はドアが開いている間に優先して出す
-    let qi = this.queue.findIndex(q => q.from === 'door');
-    if (qi >= 0 && this.tr.doors !== 1) { for (const q of this.queue) if (q.from === 'door') q.from = 'front'; qi = -1; } // 乗り切れなかった分は乗車済みとして前の車両で待つ
-    if (qi < 0) qi = this.queue.findIndex(q => q.from === 'front');
-    if (qi < 0) qi = 0;
-    const q = this.queue.splice(qi, 1)[0];
-    if (q.from === 'door') { const z = J.carDoors[(this.rng.next() * J.carDoors.length) | 0]; this.spawnYoshi(-J.halfW + 0.3, z + this.rng.range(-0.4, 0.4), q.grp, 'door', q.typ); this.spawnT = 0.3; }
-    else { this.spawnYoshi(this.rng.range(-1.0, 1.0), J.frontZ, q.grp, 'front', q.typ); this.spawnT = 0.24; }
+    const J = DATA.JOBAN;
+    for (const side of ['front', 'rear']) {
+      this.spawnT[side] -= dt;
+      if (this.spawnT[side] > 0) continue;
+      const qi = this.queue.findIndex(q => q.side === side); if (qi < 0) continue;
+      if (this.mobs.filter(m => m.st === 'ok').length >= J.maxActive) return;
+      const q = this.queue.splice(qi, 1)[0];
+      this.spawnYoshi(this.rng.range(-1.0, 1.0), side === 'front' ? J.frontZ : J.backZ, q.grp, side, q.typ);
+      this.spawnT[side] = 0.24; this.sideT[side] = this.t;
+    }
   };
 
   /* ---------- ヨシノシンの部下（電車・上野で共通） ---------- */
   P.spawnYoshi = function (x, z, grp, from, typ) {
     const rng = this.rng, cfg = this.ycfg, T = cfg.types[typ] || cfg.types.melee;
-    const wpn = T.wpn || (typ === 'beam' ? 'beam' : typ === 'guard' ? 'shield' : (rng.next() < 0.5 ? 'sword' : 'fist'));
-    const m = { id: 'm' + this.id(), kind: 'yoshi', typ, T, wpn, grp, from, x, z, yaw: from === 'door' ? Math.PI / 2 : Math.PI, hp: T.hp, maxHp: T.hp, def: T.def, str: T.str, yo: T.yo, r: T.r || DATA.JOBAN.r, st: 'ok', t: 0, para: 0, defDown: 0, dots: [], dl: [],
+    const wpn = T.wpn || (typ === 'beam' ? 'beam' : typ === 'guard' ? 'shield' : (rng.next() < 0.5 ? 'sword' : 'fist')); // 型から武器を決める（剣とパンチを取り違えない）
+    const m = { id: 'm' + this.id(), kind: 'yoshi', typ, T, wpn, grp, from, x, z, yaw: from === 'door' ? Math.PI / 2 : from === 'rear' ? 0 : Math.PI, hp: T.hp, maxHp: T.hp, def: T.def, str: T.str, yo: T.yo, r: T.r || DATA.JOBAN.r, st: 'ok', t: 0, para: 0, defDown: 0, dots: [], dl: [],
       spd: T.spd * rng.range(0.97, 1.03), cd: 0.6 + rng.next() * 1.2, act: null, tgt: -1, retT: 0, enterT: from === 'in' ? 0.7 : from === 'drop' ? 0 : 0.55, wind: 0, moving: 0, fireT: 99, strafe: rng.next() < 0.5 ? 1 : -1, gT: 0, gCd: 0, scale: T.scale || 1 };
     this.mobs.push(m); this.ev('ySpawn', { x, z, from });
     return m;
   };
   /** 動いてよい場面か（電車：走行中の戦い／上野：ボス戦・睡眠中は止まる） */
-  P.yoshiLive = function () { return this.stageId === 'ueno' ? this.uenoMinionsLive() : this.stage === 'train'; };
+  P.yoshiLive = function (m) { return this.stageId === 'ueno' ? this.uenoMinionsLive() : this.stageId === 'ueno_street' ? this.streetLive(m) : this.stage === 'train'; };
   /** 攻撃権：同時に攻撃を始められるのは 近接・防御で最大4体、ビームで最大1体（上野は2体） */
   P.yoshiCanAttack = function (m) {
     const R = this.ycfg.rights, beam = m.typ === 'beam'; let n = 0, all = 0;
+    if (beam && this.U && this.U.tengai) return false; // 天蓋乱射の間は射撃を遅らせて逃げ道を残す
     for (const o of this.mobs) if (o !== m && o.kind === 'yoshi' && o.act && o.st === 'ok') { all++; if ((o.typ === 'beam') === beam) n++; }
     if (R.all != null && all >= R.all) return false;
     return n < (beam ? R.beam : R.melee);
@@ -150,13 +153,13 @@
   P.updateYoshi = function (m, dt) {
     const J = DATA.JOBAN, W = J.wpn[m.wpn === 'shield' ? 'shield' : m.wpn], T = m.T;
     m.wind = m.act && m.act.t < m.act.w ? 1 : 0; m.moving = 0;
-    if (!this.yoshiLive()) return;
+    if (!this.yoshiLive(m)) return;
     if (m.para > 0) { m.para -= dt; m.act = null; return; }
     m.cd -= dt; m.gCd -= dt; if (m.gT > 0) m.gT -= dt;
     if (m.act) { m.act.t += dt; if (m.act.t >= m.act.end) m.act = null; else return; }
     if (m.enterT > 0) { // 乗り込む／前の車両から入ってくる
       m.enterT -= dt; const s = m.spd * 0.8 * dt;
-      const nx = m.from === 'door' ? m.x + s : m.x, nz = m.from === 'front' ? m.z - s : m.from === 'back' ? m.z - s : m.z;
+      const nx = m.from === 'door' ? m.x + s : m.from === 'side' ? m.x + (m.inX || 0) * s : m.x, nz = m.from === 'front' || m.from === 'back' || (m.from === 'side' && !m.inX) ? m.z - s : m.from === 'rear' ? m.z + s : m.z;
       const c = this.clampPos(m.x, m.z, nx, nz, m.r); m.x = c[0]; m.z = c[1]; m.moving = 1; return;
     }
     m.retT -= dt;

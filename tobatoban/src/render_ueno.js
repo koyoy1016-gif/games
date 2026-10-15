@@ -143,11 +143,12 @@
         case 'reiko': aR = k === 1 ? -1.2 : -1.6; aRz = k === 1 ? 0.4 : -0.2; glow = k === 1 ? 0.6 + Math.sin(T * 30) * 0.3 : 0.3; break; // 札を胸元へ寄せて放つ
         case 'shosho': sp = k === 1 ? 0.35 : 0.9; aR = aL = k === 1 ? -2.6 : k === 2 ? -0.9 : -0.6; aLz = 0; aRz = 0; shrink = k === 1 ? 0.9 : 1; break; // 肩を縮めて両腕を打ち下ろす
         case 'stamp': kneeR = k === 1 ? -1.4 * Math.min(1, t / 1.2) : 0; sp = k === 1 ? 0.3 : 0.6; aR = -1.0; aL = -1.0; aRz = -0.6; aLz = 0.6; break; // 肩と右膝を上げて踏み下ろす
+        case 'tengai': aR = aL = -2.9; aRz = 0.3; aLz = -0.3; glow = 1.0 + Math.sin(T * 14) * 0.3; lean = -0.25; break; // 札を空へ広げる
         case 'shosha': aR = -2.9; aRz = 0.1; glow = 0.8 + Math.sin(T * 20) * 0.3; lean = -0.15; break; // 札を空へ
         case 'warp': shrink = k === 1 ? 1 - Math.min(0.4, t / 0.7 * 0.4) : 1; glow = 0.6; break;
-        case 'summon': case 'cmd': aR = -1.3 + Math.sin(T * 8) * 0.5; aRz = -0.5; glow = 0.4; break; // 号令
+        case 'cmd': aR = -1.3 + Math.sin(T * 8) * 0.5; aRz = -0.5; glow = 0.4; break; // 号令
         case 'barrier': aR = aL = -1.4; aRz = -0.9; aLz = 0.9; glow = 0.8; break;
-        case 'throw20': m.dolls.visible = st !== 'rec'; aL = -1.2; aLz = 0.5; aR = k === 2 ? -2.2 + Math.abs(Math.sin(T * 17)) * 2.0 : -0.8; break; // 抱えた人形をぽいぽい投げる
+        case 'throw50': m.dolls.visible = st !== 'rec'; aL = -1.2; aLz = 0.5; aR = k === 2 ? -2.2 + Math.abs(Math.sin(T * 17)) * 2.0 : -0.8; break; // 抱えた人形をぽいぽい投げる
       }
     } else if (st === 'sleep') { sp = 0.15; lean = -0.35; headZ = 0.45; aR = 0.1; aL = 0.1; m.lidL.visible = true; bodyY = 1.1; } // もたれて眠る
     else if (st === 'down' || st === 'stun') { sp = 1.0; headZ = 0.5; aR = aL = 0.3; bodyY = st === 'down' ? 0.85 : 1.2; }

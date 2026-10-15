@@ -39,6 +39,7 @@ const PROFILE = 'prototype_playable';
 
 /* ---------------- シミュレーション全体 ---------------- */
 const SIM = {
+  orb: p('重玉', '出現（有効戦闘の間隔）・寿命・半径・速さ', { every: 50, life: 10, r: 0.28, spd: 4 }, 's/s/m/m/s', 'spec', null, '壁で反射する無害な球。拾うと強化必殺1回'),
   hz: p('全体', '固定シミュレーション周期', 60, 'Hz', 'proto', null, '原作が60fpsだったという意味ではない。描画fpsとは分離'),
   timeLimit: p('全体', 'ミッション制限時間', 20 * 60, 'seconds', 'proto'),
   walk: p('移動', '歩行速度', 4.0, 'm/s', 'proto', null, '原作の速度ではない'),
@@ -222,6 +223,7 @@ const ITEMS = {
   ramune: { nm: '元気ラムネ', desc: 'スタミナ満タン＋10秒減らない', dur: 10, use: 0.4, icon: '🥤' },
   shibireFuda: { nm: 'しびれ札', desc: '足元に麻痺のワナ', use: 0.4, icon: '📜' },
   kemuriDama: { nm: '煙玉', desc: '6秒間狙われにくい', dur: 6, use: 0.3, icon: '💨' },
+  starburst_gun: { nm: '閃光銃800', desc: '1戦闘1発。最初に当たった敵1体へ固定800ダメージ（倍率なし・壁で止まる）', use: 0.8, icon: '🔫', dmg: p('アイテム', '閃光銃800の固定ダメージ', 800, 'points', 'spec', null, '能力・属性・会心・装備・Lv補正・睡眠・重玉の倍率は掛けない'), range: 16, speed: 24, r: 0.18, one: true },
 };
 const ITEM_IDS = Object.keys(ITEMS);
 
@@ -248,28 +250,27 @@ const JOBAN = {
   segLen: p('常磐線', '駅と駅の間（ゲーム内の距離）', [800, 700, 700, 900], 'm', 'proto', null, '北千住→南千住→三河島→日暮里→上野'),
   vmax: p('常磐線', '電車の最高速度', 24, 'm/s', 'proto'), acc: 2.0,
   stopT: p('常磐線', '途中駅の停車時間', 8, 's', 'proto'),
-  // 9つのイベント（合計135体）。初期3波は撃破で、駅は停車してドアが開いたら、区間中央は走行距離50%の通過で、それぞれ一度だけ
+  // 8つのイベント（合計235体）。乗車時は車内に、区間の途中は走行距離50%の通過で、駅は停車してドアが開いたら、それぞれ一度だけ。1号車側（前）と3号車側（後ろ）へ分ける
   events: [
-    { id: 'p1', n: 10, at: 'start', from: 'in', nm: '第1波' },
-    { id: 'p2', n: 15, at: 'kill:p1', from: 'front', nm: '第2波' },
-    { id: 'p3', n: 20, at: 'kill:p2', from: 'front', nm: '第3波' },
-    { id: 'station_minami', n: 15, at: 'st:1', from: 'door', nm: '南千住' },
-    { id: 'mid_1', n: 10, at: 'mid:1', from: 'front', nm: '南千住→三河島の途中' },
-    { id: 'station_mikawa', n: 15, at: 'st:2', from: 'door', nm: '三河島' },
-    { id: 'mid_2', n: 15, at: 'mid:2', from: 'front', nm: '三河島→日暮里の途中' },
-    { id: 'station_nippori', n: 25, at: 'st:3', from: 'door', nm: '日暮里' },
-    { id: 'mid_3', n: 10, at: 'mid:3', from: 'front', nm: '日暮里→上野の途中' },
+    { id: 'board', n: 30, at: 'start', front: 15, back: 15, nm: '乗車直後（車内）' },
+    { id: 'mid_0', n: 20, at: 'mid:0', front: 10, back: 10, nm: '北千住→南千住の途中' },
+    { id: 'station_minami', n: 30, at: 'st:1', front: 15, back: 15, nm: '南千住' },
+    { id: 'mid_1', n: 30, at: 'mid:1', front: 15, back: 15, nm: '南千住→三河島の途中' },
+    { id: 'station_mikawa', n: 30, at: 'st:2', front: 15, back: 15, nm: '三河島' },
+    { id: 'mid_2', n: 35, at: 'mid:2', front: 18, back: 17, nm: '三河島→日暮里の途中' },
+    { id: 'station_nippori', n: 40, at: 'st:3', front: 20, back: 20, nm: '日暮里' },
+    { id: 'mid_3', n: 20, at: 'mid:3', front: 10, back: 10, nm: '日暮里→上野の途中' },
   ],
   midFrac: p('常磐線', '区間中央イベントの位置（区間走行距離の割合）', 0.5, 'ratio', 'spec', null, '残り時間ではなく走行距離50%の通過で一度だけ'),
-  mix: p('ヨシノシンの部下', '各イベント内の内訳（近接・ビーム・防御）', { melee: 0.6, beam: 0.25, guard: 0.15 }, 'ratio', 'spec', null, '整数は最大剰余法で指定人数に合わせる'),
+  mix: p('ヨシノシンの部下', '各イベント内の内訳（剣・パンチ・ビーム）', { sword: 1 / 3, punch: 1 / 3, beam: 1 / 3 }, 'ratio', 'spec', null, 'おおむね均等。整数は最大剰余法で指定人数に合わせる'),
   types: {
-    melee: { nm: '近接', hp: 110, str: 120, yo: 80, def: 45, spd: 2.6, pw: 60, stat: 'str', warn: 0.65, period: 3.2 },
-    beam: { nm: 'ビーム', hp: 85, str: 60, yo: 150, def: 35, spd: 2.4, pw: 70, stat: 'yo', warn: 1.1, period: 4.5 },
-    guard: { nm: '防御', hp: 160, str: 135, yo: 80, def: 70, spd: 2.3, pw: 60, stat: 'str', warn: 0.8, period: 4.0, gMul: 0.7, gMax: 2, gCd: 5 },
+    sword: { nm: '剣', wpn: 'sword', hp: 200, str: 192, yo: 209, def: 45, spd: 2.6, pw: 60, stat: 'str', warn: 0.70, period: 3.2 },
+    punch: { nm: 'パンチ', wpn: 'fist', hp: 200, str: 192, yo: 209, def: 45, spd: 2.6, pw: 71, stat: 'str', warn: 0.65, period: 3.5 },
+    beam: { nm: 'ビーム', wpn: 'beam', hp: 200, str: 192, yo: 209, def: 45, spd: 2.4, pw: 80, stat: 'yo', warn: 1.20, period: 5.0 },
   },
-  rights: p('ヨシノシンの部下', '同時に攻撃を始められる数（近接・防御／ビーム）', { melee: 4, beam: 1 }, '体', 'spec', null, '20体全員が動き、攻撃する権利だけを交代する'),
+  rights: p('ヨシノシンの部下', '同時に攻撃を始められる数（剣・パンチ／ビーム）', { melee: 4, beam: 2 }, '体', 'spec', null, '全員が動き、攻撃する権利だけを交代する'),
   r: 0.38,
-  maxActive: p('ヨシノシンの部下', '同時に車内にいる最大数', 20, '体', 'spec', null, '多いときは1号車で待ち、空いた分だけ出てくる'),
+  maxActive: p('ヨシノシンの部下', '同時に車内にいる最大数', 40, '体', 'spec', null, '多いときは前後の車両で待ち、空いた分だけその側から出てくる'), backZ: -20.3,
   wpn: {
     sword: { nm: '剣', reach: 1.6, wind: 0.65, act: 0.12, rec: 0.75, cd: [3.2, 4.2], r: 1.75, half: 0.6, knock: 2 },
     fist: { nm: '拳', reach: 1.2, wind: 0.5, act: 0.1, rec: 0.55, cd: [2.8, 3.6], len: 1.5, w: 1.0, knock: 3.5 },
@@ -279,6 +280,15 @@ const JOBAN = {
   introT: p('常磐線', '始まりの演出（トバトーバンが倒れる→乗車→発車）', 12, 's', 'proto'), arriveT: 6,
   dropRate: 0.06,
 };
+/* ---------------- 上野編：居酒屋通り（電車の部下の1.25倍・30体） ---------------- */
+// 座標：x＝左右（±4.6）、z＝奥行き（改札側 z=0 → 奥 z=64）。3地点に10体ずつ。地点を片付けると次の暖簾の結界が開く
+const STREET = {
+  nm: '上野の居酒屋通り', halfX: 4.6, zMax: 64, start: [[-1.0, 3.2], [1.0, 3.2], [-0.4, 2.0], [0.4, 2.0]],
+  groups: p('居酒屋通り', '部下を置く3地点（奥行きz）', [16, 33, 50], 'm', 'proto'), gates: [24, 41, 58],
+  mul: p('居酒屋通り', '電車の部下に対する倍率（HP・ちから・ようりょくだけ）', 1.25, '倍', 'spec', null, '技の威力・周期・まもり・移動はそのまま'),
+  n: 30, per: 10,
+  introT: p('居酒屋通り', '始まりの演出（ホーム→改札→通りへ）', 5, 's', 'proto'),
+};
 /* ---------------- 上野編：上野駅前の広場・指揮官ヨシノシン ---------------- */
 // 座標：x＝左右（±17）、z＝奥行き（入口 z=0 → 奥 z=28）。味方は z≈4、部下は z12〜18、本体は z≈23
 const U_H = 1.45; // 電車の部下モデルの身長（m）。上野の部下はこれを縮めて 0.8〜0.95m にする
@@ -286,32 +296,32 @@ const UENO = {
   nm: '上野駅前', boss: 'ヨシノシン', minion: 'ヨシノシンの部下（妖怪人形）',
   halfX: p('上野', '戦闘領域の横幅', 34, 'm', 'spec', null, 'x=±17') / 2, zMax: p('上野', '戦闘領域の奥行き', 28, 'm', 'spec', null, '入口 z=0'),
   start: [[-1.5, 4.2], [1.5, 4.2], [-0.5, 3.0], [0.5, 3.0]], bossSpawn: [0, 23], center: [0, 14],
-  bossR: 1.0, bossH: p('ヨシノシン', '身長', 3.2, 'm', 'spec', null, '約5頭身・コゲマル1mの3.2倍'),
-  hp: p('ヨシノシン', '体力', 26000, 'points', 'spec'), str: p('ヨシノシン', 'ちから', 400, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 450, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 135, 'points', 'spec'),
+  bossScale: p('ヨシノシン', 'モデルの拡大率（基準3.2m）', 1.85, '倍', 'spec', null, '本体だけ。部下・技の判定半径は拡大しない'), bossR: p('ヨシノシン', '足元の被弾判定の半径', 1.5, 'm', 'proto', null, '足元に届けば当たる'), bossH: p('ヨシノシン', '身長', 5.92, 'm', 'spec', null, '3.2m×1.85・約5頭身'),
+  hp: p('ヨシノシン', '体力', 30000, 'points', 'spec'), str: p('ヨシノシン', 'ちから', 600, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 650, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 182, 'points', 'spec'),
   introT: p('上野', '登場の演出（指を鳴らす→部下が走り出す）', 3.2, 's', 'spec', null, '最初の予告より前に攻撃しない'),
   minGap: p('ヨシノシン', '直接攻撃どうしの開始間隔（最低）', 3.0, 's', 'spec'),
   rec: 40,
-  lvOut: { k: 0.02, lo: 0.75, hi: 1.25 }, lvIn: { k: 0.015, lo: 0.80, hi: 1.20 },
-  minions: {
-    melee: { nm: '通常近接', hp: 100, str: 100, yo: 80, def: 40, pw: 40, stat: 'str', warn: 0.65, period: 3.2, spd: 2.6, scale: 0.85 / U_H, r: 0.32 },
-    guard: { nm: '防御', hp: 160, str: 110, yo: 80, def: 70, pw: 45, stat: 'str', warn: 0.8, period: 4.0, spd: 2.3, scale: 0.95 / U_H, r: 0.34, gMul: 0.7, gMax: 2, gCd: 5 },
-    beam: { nm: '射撃', hp: 80, str: 60, yo: 260, def: 30, pw: 90, stat: 'yo', warn: 1.2, period: 5.0, spd: 2.4, scale: 0.85 / U_H, r: 0.32, len: 13 },
-    thrown: { nm: '投げられる部下', hp: 75, str: 95, yo: 80, def: 35, pw: 35, stat: 'str', warn: 0.65, period: 3.5, spd: 2.6, scale: 0.8 / U_H, r: 0.3 },
+  minions: { // 電車の部下の型別データから HP・ちから・ようりょくだけ×0.85（四捨五入）。技の威力・周期はそのまま
+    sword: { nm: '剣', wpn: 'sword', hp: 170, str: 163, yo: 178, def: 45, pw: 60, stat: 'str', warn: 0.70, period: 3.2, spd: 2.6, scale: 0.85 / U_H, r: 0.32 },
+    punch: { nm: 'パンチ', wpn: 'fist', hp: 170, str: 163, yo: 178, def: 45, pw: 71, stat: 'str', warn: 0.65, period: 3.5, spd: 2.6, scale: 0.9 / U_H, r: 0.33 },
+    beam: { nm: 'ビーム', wpn: 'beam', hp: 170, str: 163, yo: 178, def: 45, pw: 80, stat: 'yo', warn: 1.20, period: 5.0, spd: 2.4, scale: 0.85 / U_H, r: 0.32, len: 13 },
   },
-  init: p('上野', '最初の部下（近接・防御・射撃）', { melee: 24, guard: 8, beam: 4 }, '体', 'spec', null, '36体が同時に前進する'),
-  cap: p('上野', '部下の生存上限', 40, '体', 'spec'),
-  rights: p('上野', '同時に攻撃を始められる部下', { melee: 4, beam: 2, all: 6 }, '体', 'spec', null, '近接・防御4体＋射撃2体＝6体'),
+  init: p('上野', '最初の部下（ビーム・剣・パンチ）', { beam: 22, sword: 7, punch: 7 }, '体', 'spec', null, '36体が同時に前進する'),
+  cap: p('上野', '部下の生存上限（予約を含む）', 100, '体', 'spec'),
+  rights: p('上野', '同時に攻撃を始められる部下', { melee: 4, beam: 6, all: 10 }, '体', 'spec', null, '剣・パンチ4体＋ビーム6体＝10体'),
+  wave: p('上野', '包囲動員（有効戦闘30秒ごと）', { every: 30, n: 15, mix: { beam: 9, sword: 3, punch: 3 }, warn: 1 }, '体', 'spec', null, '4つの外周入口へ4/4/4/3'),
   moves: {
-    reiko: { nm: '采配三連霊光', pw: 22, stat: 'yo', n: 3, spread: 0.32, speed: 9, warn: 0.65, rec: 0.7, cd: 6, r: 0.35, range: 13 },
-    shosho: { nm: '指令連掌', pw: 110, stat: 'str', warn: 0.7, lockT: 0.25, act: 0.15, rec: 1.0, cd: 10, len: 3.4, w: 2.6, near: 3.6 },
-    stamp: { nm: '一斉決裁スタンプ', pw: 100, stat: 'str', r: 4.5, warn: 1.6, act: 0.2, rec: 1.2, cd: 18 },
-    shosha: { nm: '号令四連照射', pw: 65, stat: 'yo', warn: 1.3, act: 0.35, rec: 1.0, cd: 12, r: 1.35, gap: 3.0, iv: 0.9 },
+    reiko: { nm: '采配三連霊光', pw: 22, stat: 'yo', n: 3, spread: 0.32, speed: 9, warn: 0.65, rec: 0.7, cd: 6, r: 0.60, range: 13 },
+    shosho: { nm: '指令連掌', pw: 110, stat: 'str', warn: 0.7, lockT: 0.25, act: 0.15, rec: 1.0, cd: 10, len: 4.2, w: 3.0, near: 4.4 },
+    stamp: { nm: '一斉決裁スタンプ', pw: 100, stat: 'str', r: 5.0, warn: 1.6, act: 0.2, rec: 1.2, cd: 18 },
+    shosha: { nm: '号令四連照射', pw: 65, stat: 'yo', warn: 1.3, act: 0.35, rec: 1.0, cd: 8, r: 1.35, gap: 3.0, iv: 0.9 },
+    tengai: { nm: '天蓋乱射・三十六光', pw: 45, stat: 'yo', r: 1.15, per: 12, track: 4, waves: [1.4, 3.4, 5.4], act: 0.35, rec: 1.0, cd: 14 },
     warp: { nm: '後方指揮ワープ', warn: 0.7, act: 0.25, rec: 0.5, cd: 10 },
-    summon: { nm: '追加動員', n: 6, warn: 1.5, cd: 30, at: 8 },
     barrier: { nm: '完全指揮バリア', warn: 0.8, hits: 2, max: 8, cd: 35, stagger: 1.2 },
-    throw20: { nm: '部下丸投げ二十連', n: 20, iv: 0.18, land: 1.1, warn: 1.5, rec: 1.5, r: 0.65, pw: 12, stat: 'yo', maxHits: 2, at: [0.75, 0.25], calm: 1.0 },
-    sleep: { nm: '30分睡眠チャージ', at: 0.5, warnAt: 0.55, dur: 10, need: 3000, mul: 2.0, down: 4 },
+    throw50: { nm: '部下丸投げ五十連', n: 50, mix: { beam: 30, sword: 10, punch: 10 }, iv: 0.12, land: 1.1, warn: 1.5, rec: 1.5, r: 0.65, pw: 12, stat: 'yo', maxHits: 2, at: [0.75, 0.25], calm: 1.0, alive: 50 },
+    sleep: { nm: '30分睡眠チャージ', stages: [{ at: 22500, need: 2500, pre: 24000 }, { at: 15000, need: 3500, pre: 16500 }, { at: 7500, need: 4000, pre: 9000 }], dur: 10, mul: 2.25, down: 4 },
   },
+  pick: p('ヨシノシン', '直接攻撃の選び方（ビーム系・霊光・スタンプ）', { beams: 0.7, reiko: 0.2, stamp: 0.1 }, 'ratio', 'spec', null, '近距離の連掌は別の反応'),
 };
 const CAM = {
   camera_pitch_deg: p('カメラ', 'camera_pitch_deg（俯角）', 44, 'deg', 'proto', null, '35〜55度で調整。ボスが遠いときは最大8度浅くする'),
@@ -331,4 +341,5 @@ const NET = {
 };
 p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 10, 'Apple 44pt / Android 48dp の目安より大きく');
 
-const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, UENO, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };
+const AKIBA = { introT: { akiba_platform: 3, akiba_plaza: 3 } };
+const DATA = { AKIBA, REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, STREET, UENO, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };

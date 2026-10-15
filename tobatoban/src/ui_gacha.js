@@ -7,14 +7,21 @@
    ===================================================================== */
 const GC = { r: null, sc: null, cam: null, run: false, ph: 'idle', t: 0, res: null, sample: false, fx: [], last: 0 };
 function gcAcc() { return G.acct; }
-function openGacha(back) {
-  G.gcBack = back || G.gcBack || 'title'; G.mode = G.mode === 'play' ? G.mode : 'title';
-  show('gacha'); gcInit(); gcReset(); renderGachaInfo();
+/** ガチャを開く。閉じる先はいつもタイトル（古い戻り先を残さない） */
+function openGacha() {
+  G.mode = G.mode === 'play' ? G.mode : 'title';
+  show('gacha'); $('#gacha').scrollTop = 0; gcInit(); gcReset(); renderGachaInfo();
   // 前回、演出の途中で閉じた抽選があれば、保存済みの結果をもう一度見せる（引き直さない）
   const pend = STORE.get('gcPending', null), a = gcAcc();
   if (pend && a && pend.id === a.id) { const done = a.gacha.log.find(g => g.req === pend.req && g.id); STORE.set('gcPending', null); if (done) { mtoast('前回の結果を表示します（もう一度は引きません）', 2600); gcPlay(done, false); } }
 }
-function closeGacha() { GC.run = false; if (GC.r) { GC.r.dispose(); if (GC.r.forceContextLoss) GC.r.forceContextLoss(); GC.r = null; } GC.sc = null; show(G.gcBack === 'login' ? 'login' : G.gcBack || 'title'); if (G.gcBack === 'title') updateAcctBar(); }
+/** 閉じる：描画ループとWebGLを終わらせ、キャンバスを新しくしてタイトルへ（次に開くとき新しく作れるように） */
+function closeGacha(to) {
+  GC.run = false; GC.ph = 'idle'; GC.busy = false;
+  if (GC.r) { try { GC.r.dispose(); if (GC.r.forceContextLoss) GC.r.forceContextLoss(); } catch (e) { } GC.r = null; const old = $('#gcCanvas'), cv = old.cloneNode(false); old.replaceWith(cv); }
+  GC.sc = null; GC.cap = null; GC.chr = null; GC.fx = []; GC.tx = null; GC.sparkT = null; GC.w = GC.h = 0;
+  show(to || 'title'); updateAcctBar();
+}
 function renderGachaInfo() {
   const a = gcAcc(), sim = a || G.guest;
   $('#gcTix').textContent = a ? String(a.tickets) : '−';
@@ -22,10 +29,8 @@ function renderGachaInfo() {
   for (const [nm, w, per] of [['トバトーバン', sim.wins.tobatoban, 3], ['ヨシノシン', sim.wins.yoshinoshin, 2]]) {
     const d = el('div', 'pg'); d.append(el('span', '', nm)); const pp = el('span', 'pips'); for (let i = 0; i < per; i++) pp.appendChild(el('i', i < w % per ? 'on' : '')); d.append(pp, el('span', 'small', `${w % per}/${per}勝で1枚`)); pg.appendChild(d);
   }
-  const rt = $('#gcRates'); rt.textContent = ''; const rates = SAVE.gachaRates(a || G.guest);
-  for (const k of ['C', 'B', 'A', 'S']) { const d = el('div'); d.style.background = DATA.RANK_INFO[k].col; d.append(el('b', '', `${(rates[k] * 100).toFixed(rates[k] > 0 && rates[k] < 0.1 ? 1 : 0)}%`), el('span', '', `${DATA.RANK_INFO[k].ic}${k}`)); rt.appendChild(d); }
   const pool = SAVE.gachaPool(a || G.guest).length, done = pool === 0;
-  $('#gcNote').textContent = (a ? '' : 'ログインすると、チケットを使って引けます（いまは説明と演出見本だけ）。') + `トバトーバン3勝・ヨシノシン2勝ごとにチケット1枚。チケットは貯められます。未入手 ${pool} / 40体（Dランクは初期仲間なので出ません）。割合は、まだ持っていないキャラだけで計算した今の値です。`;
+  $('#gcNote').textContent = (a ? '' : 'ログインすると、チケットを使って引けます（いまは説明と演出見本だけ）。') + `トバトーバン3勝・ヨシノシン2勝ごとにチケット1枚。チケットは貯められます。まだ持っていない仲間から1体が出ます（未入手 ${pool} / 40体）。`;
   const dr = $('#btnGcDraw'); dr.hidden = done; dr.textContent = !a ? 'ログインして引く' : '1回まわす（1枚）'; dr.disabled = !!a && (a.tickets < 1 || GC.busy);
   const ex = $('#gcEx'); ex.hidden = !(done && a); ex.textContent = '';
   if (done && a) { // 全40体を入手したら、1枚を選んだキャラのEXP10,000と交換
@@ -69,8 +74,8 @@ function capsuleTex(rk) {
   GC.tx = GC.tx || {}; if (GC.tx[rk]) return GC.tx[rk];
   const col = '#' + DATA.GACHA.col[rk].toString(16).padStart(6, '0');
   return (GC.tx[rk] = GFX.tex(256, 128, (g, w, h) => {
-    g.fillStyle = col; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `bold 54px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle';
-    for (let i = 0; i < 4; i++) { const x = 32 + i * 64; g.fillText(rk, x, 44); g.font = `bold 30px ${GFX.FONT_UI}`; g.fillText(DATA.RANK_INFO[rk].ic, x, 98); g.font = `bold 54px ${GFX.FONT_UI}`; }
+    g.fillStyle = col; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,.28)'; // 文字・王冠は印字しない（色だけ）
+    for (let i = 0; i < 8; i++) { g.beginPath(); g.arc(16 + i * 32, 64 + (i % 2 ? 22 : -22), 9, 0, 7); g.fill(); }
   }));
 }
 function makeCapsule(rk) {
@@ -171,7 +176,7 @@ function gcShowResult(res, sample) {
 }
 async function gcDraw() {
   const a = gcAcc();
-  if (!a) { AUDIO.sfx('ui'); G.gcBack = G.gcBack || 'title'; openLogin('gacha', 'ログインすると、チケットを使ってガチャを引けます'); return; }
+  if (!a) { AUDIO.sfx('ui'); closeGacha('login'); openLogin('title', 'ログインすると、チケットを使ってガチャを引けます'); G.afterLoginTarget = 'gacha'; return; } // 一回限りの予約
   if (GC.busy) return;
   if (a.tickets < 1) { mtoast('チケットがありません（トバトーバン3勝・ヨシノシン2勝ごとに1枚）', 2600); return; }
   GC.busy = true; $('#btnGcDraw').disabled = true;

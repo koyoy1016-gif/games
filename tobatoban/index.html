@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#1b1838">
-<title>四人でバスターズ</title>
+<title>BIGバスターズ</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,6 +138,10 @@ a{color:var(--shu)}
 .card .meta{display:flex;gap:3px;align-items:center;flex-wrap:wrap;justify-content:center}.card .lv{font-size:10px}
 .slot .lv{font-size:10px}
 .detail .hd .lv{font-size:12px}
+.card .eqi{position:absolute;left:3px;bottom:16px;font-size:10px;line-height:1}
+.dt-stats.eq{grid-template-columns:auto repeat(4,minmax(0,1fr))!important}.dt-stats .up{color:#1f8a4c}
+.eq-box{display:flex;flex-direction:column;gap:5px;background:#f6f0ff;border:2px solid #b8a8e0;border-radius:10px;padding:6px 8px}
+.eq-row{display:flex;align-items:center;gap:6px}.eq-row select{flex:1;min-width:0;color:var(--ink);font:900 12.5px var(--f-body);border:2px solid var(--ink);border-radius:8px;padding:4px;min-height:38px}
 .pcard .lv{font-size:10px;background:rgba(255,255,255,.16);padding:0 4px;flex:none}
 .res-c .lv{align-self:center}
 .card.cur{border-color:var(--ink);box-shadow:0 0 0 2px var(--gold)}
@@ -220,6 +224,8 @@ a{color:var(--shu)}
 .hpbar i{position:absolute;inset:0 auto 0 0;border-radius:5px}
 .hpbar i.lag{background:#ffd9b0;transition:width .5s .4s}
 .hpbar i.fill{background:linear-gradient(#ef7a74,#cb4b46 55%,#8f2a26);transition:width .1s}
+.hpbar .qm{display:none;position:absolute;top:-2px;bottom:-2px;width:3px;background:#9ad0ff;box-shadow:0 0 4px #9ad0ff}
+.bossbox.ueno .hpbar .qm{display:block}.bossbox.ueno .hpbar .third{display:none}
 .hpbar .third{position:absolute;top:0;bottom:0;left:33.3%;width:2px;background:rgba(255,255,255,.55)}
 .party{display:flex;flex-direction:column;gap:4px}
 .party.row{flex-direction:row;gap:8px}
@@ -343,7 +349,7 @@ a{color:var(--shu)}
 .lob-slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 @container app (max-width:520px){.lob-slots{grid-template-columns:repeat(2,1fr)}}
 
-/* ---- 拠点・編成・ガチャ（四人でバスターズ） ---- */
+/* ---- 拠点・編成・ガチャ（BIGバスターズ） ---- */
 .tix{display:inline-block;min-width:1.6em;border-radius:9px;background:var(--shu);color:#fff;font-size:12px;padding:0 6px;margin-left:4px}
 .lg-sub .btn{flex:1 1 120px}
 .party-sum{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;font-weight:900;align-items:center}
@@ -398,10 +404,12 @@ a{color:var(--shu)}
 .res-tix{grid-column:1/-1;font-weight:900;background:#fff4c8;border:2px solid var(--gold);border-radius:10px;padding:6px 10px}
 .gacha-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:12px}
 @container app (max-width:640px){.gacha-grid{grid-template-columns:1fr}}
-.gc-stage{position:relative;border-radius:14px;overflow:hidden;background:#241c3a;border:2.5px solid var(--ink);aspect-ratio:4/3}
+.gc-stage{position:relative;border-radius:14px;overflow:hidden;background:#241c3a;border:2.5px solid var(--ink);aspect-ratio:4/3;max-height:min(56vh,420px);margin:0 auto;width:100%}
+@container app (max-height:520px){.gc-stage{max-height:240px;aspect-ratio:auto;height:240px}}
 .gc-stage canvas{width:100%;height:100%;display:block}
 .gc-skip{position:absolute;right:8px;bottom:8px}
-.gc-res{position:absolute;left:8px;right:8px;top:8px;background:rgba(255,246,230,.94);border:2.5px solid var(--ink);border-radius:12px;padding:6px 10px;display:flex;flex-direction:column;gap:2px}
+.gc-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+.gc-res{position:static;background:#fff6e6;border:2.5px solid var(--ink);border-radius:12px;padding:6px 10px;display:flex;flex-direction:column;gap:2px}
 .gc-res .hd{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .gc-res .hd b{font-family:var(--f-disp);font-weight:400;font-size:20px}
 .gc-tix{display:flex;flex-direction:column;align-items:center;background:#fff;border:2.5px solid var(--gold);border-radius:12px;padding:2px 12px}
@@ -429,17 +437,18 @@ a{color:var(--shu)}
   <div class="panel">
     <div class="titlebar">
       <div>
-        <div class="eyebrow">北千住編・上野編</div>
-        <h1>四人で<br><span class="em">バスターズ</span></h1>
+        <div class="eyebrow">北千住編・上野編・秋葉原編</div>
+        <h1>BIG<br><span class="em">バスターズ</span></h1>
       </div>
       <div class="lantern-badge">拠点</div>
     </div>
-    <p class="lead">北千住の商店街にトバトーバン、常磐線の先の上野にはヨシノシン。小さなもののけ4体で力を合わせて鎮めよう。</p>
+    <p class="lead">北千住の商店街にトバトーバン、常磐線の先の上野にはヨシノシン、そして秋葉原には星と中。小さなもののけ4体で力を合わせて鎮めよう。</p>
     <div class="menu-list">
       <div class="acct-bar span" id="acctBar"><span class="who" id="acctWho">ログインしていません<small>セーブするにはログイン</small></span><button class="chip" id="btnTSave" type="button" hidden>セーブ</button><button class="chip" id="btnAcct" type="button">ログイン</button></div>
-      <button class="btn main span" id="btnSolo">出動（ひとり＋AIの仲間3体）</button>
+      <button class="btn main span" id="btnSolo">出動（キャラ選択→ステージ選択）</button>
       <button class="btn gold span" id="btnCoop">協力プレイ（2〜4人）</button>
       <button class="btn" id="btnTeam">編成</button>
+      <button class="btn" id="btnEquip">装備</button>
       <button class="btn" id="btnGacha">ガチャ <span class="tix" id="tTix"></span></button>
       <button class="btn" id="btnZukan">図鑑</button>
       <button class="btn" id="btnHow">遊び方</button>
@@ -507,11 +516,11 @@ a{color:var(--shu)}
 <!-- 出動（章タブ・ステージ） -->
 <section class="screen" id="stage" hidden>
   <div class="panel wide">
-    <div class="eyebrow">出動</div><h2>どこへ行く？</h2>
-    <div class="tabs" id="chTabs"><button class="tab on" data-ch="0" type="button">北千住編</button><button class="tab" data-ch="1" type="button">上野編</button></div>
+    <div class="eyebrow">出動 ② ステージ選択</div><h2>どこへ行く？</h2>
+    <div class="tabs" id="chTabs"><button class="tab on" data-ch="0" type="button">北千住編</button><button class="tab" data-ch="1" type="button">上野編</button><button class="tab" data-ch="2" type="button">秋葉原編</button></div>
     <div class="stages" id="stages"></div>
     <div class="sortie-party" id="sortieParty"></div>
-    <div class="row"><button class="btn ghost" id="btnStageBack" type="button">拠点へ</button><button class="btn" id="btnStageTeam" type="button">編成</button></div>
+    <div class="row"><button class="btn ghost" id="btnStageBack" type="button">◀ キャラ選択へ戻る</button><button class="btn ghost" id="btnStageHub" type="button">拠点へ</button></div>
   </div>
 </section>
 
@@ -534,10 +543,9 @@ a{color:var(--shu)}
       <div class="gc-tix"><b id="gcTix">0</b><span>チケット</span></div>
     </div>
     <div class="gacha-grid">
-      <div class="gc-stage"><canvas id="gcCanvas" width="640" height="480"></canvas><div class="gc-res" id="gcRes" hidden></div><button class="chip gc-skip" id="gcSkip" type="button" hidden>スキップ</button></div>
+      <div class="gc-main"><div class="gc-stage"><canvas id="gcCanvas" width="640" height="480"></canvas><button class="chip gc-skip" id="gcSkip" type="button" hidden>スキップ</button></div><div class="gc-res" id="gcRes" hidden></div></div>
       <div class="gc-side">
         <div class="gc-prog" id="gcProg"></div>
-        <div class="gc-rates" id="gcRates"></div>
         <p class="small" id="gcNote">トバトーバンに3勝、ヨシノシンに2勝するごとにチケット1枚。チケットは貯めておけます（自動では回しません）。</p>
         <div class="row" id="gcBtns">
           <button class="btn main" id="btnGcDraw" type="button">1回まわす（1枚）</button>
@@ -549,7 +557,7 @@ a{color:var(--shu)}
           <button class="btn" id="btnGcLook" type="button">このキャラを見る</button>
           <button class="btn gold" id="btnGcAgain" type="button">続けて引く</button>
         </div>
-        <div class="row"><button class="btn ghost" id="btnGcBack" type="button">戻る</button></div>
+        <div class="row"><button class="btn ghost" id="btnGcBack" type="button">閉じる（タイトルへ）</button></div>
       </div>
     </div>
   </div>
@@ -700,7 +708,7 @@ a{color:var(--shu)}
 <!-- HUD -->
 <div id="hud" hidden>
   <div id="touch"></div>
-  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span><span class="qm" style="left:25%"></span><span class="qm" style="left:50%"></span><span class="qm" style="left:75%"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
   <div class="hb party" id="party"></div>
   <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
   <div class="hb" id="map"><canvas id="mapc"></canvas></div>
@@ -726,7 +734,7 @@ a{color:var(--shu)}
 </div>
 <div id="cutin"><img id="cutImg" alt=""><div><small id="cutWho" style="display:block;font-size:11px;font-weight:900"></small><b id="cutNm"></b></div></div>
 <div id="banner"></div>
-<div id="sleepBox" hidden><div class="sl-t">💤 30分睡眠チャージ</div><div class="sl-m">10秒以内に4体合計3,000ダメージを与えろ！</div><div class="sl-row"><span>残り <b id="slTime">10.0</b>秒</span><div class="sl-bar"><i id="slTimeFill"></i></div></div><div class="sl-row"><span><b id="slDmg">0</b> / 3,000</span><div class="sl-bar dmg"><i id="slDmgFill"></i></div></div><div class="sl-x">隙だらけ・与ダメージ×2</div></div>
+<div id="sleepBox" hidden><div class="sl-t">💤 30分睡眠チャージ<span id="slStage"></span></div><div class="sl-m" id="slMsg">10秒以内に4体合計ダメージを与えろ！</div><div class="sl-row"><span>残り <b id="slTime">10.0</b>秒</span><div class="sl-bar"><i id="slTimeFill"></i></div></div><div class="sl-row"><span><b id="slDmg">0</b> / <span id="slNeed">0</span></span><div class="sl-bar dmg"><i id="slDmgFill"></i></div></div><div class="sl-x">隙だらけ・与ダメージ×2.25</div></div>
 <div id="fade"></div>
 <div id="bossCard"><div class="s">付喪神</div><div class="n">トバトーバン</div><div class="d">古い大看板と祭りの台座が、宵の広場で目を覚ました</div></div>
 <div id="rotateHint" hidden>📱↻ 横画面のほうが見やすく遊べます<button id="rotateX">とじる</button></div>
@@ -776,6 +784,7 @@ const PROFILE = 'prototype_playable';
 
 /* ---------------- シミュレーション全体 ---------------- */
 const SIM = {
+  orb: p('重玉', '出現（有効戦闘の間隔）・寿命・半径・速さ', { every: 50, life: 10, r: 0.28, spd: 4 }, 's/s/m/m/s', 'spec', null, '壁で反射する無害な球。拾うと強化必殺1回'),
   hz: p('全体', '固定シミュレーション周期', 60, 'Hz', 'proto', null, '原作が60fpsだったという意味ではない。描画fpsとは分離'),
   timeLimit: p('全体', 'ミッション制限時間', 20 * 60, 'seconds', 'proto'),
   walk: p('移動', '歩行速度', 4.0, 'm/s', 'proto', null, '原作の速度ではない'),
@@ -959,6 +968,7 @@ const ITEMS = {
   ramune: { nm: '元気ラムネ', desc: 'スタミナ満タン＋10秒減らない', dur: 10, use: 0.4, icon: '🥤' },
   shibireFuda: { nm: 'しびれ札', desc: '足元に麻痺のワナ', use: 0.4, icon: '📜' },
   kemuriDama: { nm: '煙玉', desc: '6秒間狙われにくい', dur: 6, use: 0.3, icon: '💨' },
+  starburst_gun: { nm: '閃光銃800', desc: '1戦闘1発。最初に当たった敵1体へ固定800ダメージ（倍率なし・壁で止まる）', use: 0.8, icon: '🔫', dmg: p('アイテム', '閃光銃800の固定ダメージ', 800, 'points', 'spec', null, '能力・属性・会心・装備・Lv補正・睡眠・重玉の倍率は掛けない'), range: 16, speed: 24, r: 0.18, one: true },
 };
 const ITEM_IDS = Object.keys(ITEMS);
 
@@ -985,28 +995,27 @@ const JOBAN = {
   segLen: p('常磐線', '駅と駅の間（ゲーム内の距離）', [800, 700, 700, 900], 'm', 'proto', null, '北千住→南千住→三河島→日暮里→上野'),
   vmax: p('常磐線', '電車の最高速度', 24, 'm/s', 'proto'), acc: 2.0,
   stopT: p('常磐線', '途中駅の停車時間', 8, 's', 'proto'),
-  // 9つのイベント（合計135体）。初期3波は撃破で、駅は停車してドアが開いたら、区間中央は走行距離50%の通過で、それぞれ一度だけ
+  // 8つのイベント（合計235体）。乗車時は車内に、区間の途中は走行距離50%の通過で、駅は停車してドアが開いたら、それぞれ一度だけ。1号車側（前）と3号車側（後ろ）へ分ける
   events: [
-    { id: 'p1', n: 10, at: 'start', from: 'in', nm: '第1波' },
-    { id: 'p2', n: 15, at: 'kill:p1', from: 'front', nm: '第2波' },
-    { id: 'p3', n: 20, at: 'kill:p2', from: 'front', nm: '第3波' },
-    { id: 'station_minami', n: 15, at: 'st:1', from: 'door', nm: '南千住' },
-    { id: 'mid_1', n: 10, at: 'mid:1', from: 'front', nm: '南千住→三河島の途中' },
-    { id: 'station_mikawa', n: 15, at: 'st:2', from: 'door', nm: '三河島' },
-    { id: 'mid_2', n: 15, at: 'mid:2', from: 'front', nm: '三河島→日暮里の途中' },
-    { id: 'station_nippori', n: 25, at: 'st:3', from: 'door', nm: '日暮里' },
-    { id: 'mid_3', n: 10, at: 'mid:3', from: 'front', nm: '日暮里→上野の途中' },
+    { id: 'board', n: 30, at: 'start', front: 15, back: 15, nm: '乗車直後（車内）' },
+    { id: 'mid_0', n: 20, at: 'mid:0', front: 10, back: 10, nm: '北千住→南千住の途中' },
+    { id: 'station_minami', n: 30, at: 'st:1', front: 15, back: 15, nm: '南千住' },
+    { id: 'mid_1', n: 30, at: 'mid:1', front: 15, back: 15, nm: '南千住→三河島の途中' },
+    { id: 'station_mikawa', n: 30, at: 'st:2', front: 15, back: 15, nm: '三河島' },
+    { id: 'mid_2', n: 35, at: 'mid:2', front: 18, back: 17, nm: '三河島→日暮里の途中' },
+    { id: 'station_nippori', n: 40, at: 'st:3', front: 20, back: 20, nm: '日暮里' },
+    { id: 'mid_3', n: 20, at: 'mid:3', front: 10, back: 10, nm: '日暮里→上野の途中' },
   ],
   midFrac: p('常磐線', '区間中央イベントの位置（区間走行距離の割合）', 0.5, 'ratio', 'spec', null, '残り時間ではなく走行距離50%の通過で一度だけ'),
-  mix: p('ヨシノシンの部下', '各イベント内の内訳（近接・ビーム・防御）', { melee: 0.6, beam: 0.25, guard: 0.15 }, 'ratio', 'spec', null, '整数は最大剰余法で指定人数に合わせる'),
+  mix: p('ヨシノシンの部下', '各イベント内の内訳（剣・パンチ・ビーム）', { sword: 1 / 3, punch: 1 / 3, beam: 1 / 3 }, 'ratio', 'spec', null, 'おおむね均等。整数は最大剰余法で指定人数に合わせる'),
   types: {
-    melee: { nm: '近接', hp: 110, str: 120, yo: 80, def: 45, spd: 2.6, pw: 60, stat: 'str', warn: 0.65, period: 3.2 },
-    beam: { nm: 'ビーム', hp: 85, str: 60, yo: 150, def: 35, spd: 2.4, pw: 70, stat: 'yo', warn: 1.1, period: 4.5 },
-    guard: { nm: '防御', hp: 160, str: 135, yo: 80, def: 70, spd: 2.3, pw: 60, stat: 'str', warn: 0.8, period: 4.0, gMul: 0.7, gMax: 2, gCd: 5 },
+    sword: { nm: '剣', wpn: 'sword', hp: 200, str: 192, yo: 209, def: 45, spd: 2.6, pw: 60, stat: 'str', warn: 0.70, period: 3.2 },
+    punch: { nm: 'パンチ', wpn: 'fist', hp: 200, str: 192, yo: 209, def: 45, spd: 2.6, pw: 71, stat: 'str', warn: 0.65, period: 3.5 },
+    beam: { nm: 'ビーム', wpn: 'beam', hp: 200, str: 192, yo: 209, def: 45, spd: 2.4, pw: 80, stat: 'yo', warn: 1.20, period: 5.0 },
   },
-  rights: p('ヨシノシンの部下', '同時に攻撃を始められる数（近接・防御／ビーム）', { melee: 4, beam: 1 }, '体', 'spec', null, '20体全員が動き、攻撃する権利だけを交代する'),
+  rights: p('ヨシノシンの部下', '同時に攻撃を始められる数（剣・パンチ／ビーム）', { melee: 4, beam: 2 }, '体', 'spec', null, '全員が動き、攻撃する権利だけを交代する'),
   r: 0.38,
-  maxActive: p('ヨシノシンの部下', '同時に車内にいる最大数', 20, '体', 'spec', null, '多いときは1号車で待ち、空いた分だけ出てくる'),
+  maxActive: p('ヨシノシンの部下', '同時に車内にいる最大数', 40, '体', 'spec', null, '多いときは前後の車両で待ち、空いた分だけその側から出てくる'), backZ: -20.3,
   wpn: {
     sword: { nm: '剣', reach: 1.6, wind: 0.65, act: 0.12, rec: 0.75, cd: [3.2, 4.2], r: 1.75, half: 0.6, knock: 2 },
     fist: { nm: '拳', reach: 1.2, wind: 0.5, act: 0.1, rec: 0.55, cd: [2.8, 3.6], len: 1.5, w: 1.0, knock: 3.5 },
@@ -1016,6 +1025,15 @@ const JOBAN = {
   introT: p('常磐線', '始まりの演出（トバトーバンが倒れる→乗車→発車）', 12, 's', 'proto'), arriveT: 6,
   dropRate: 0.06,
 };
+/* ---------------- 上野編：居酒屋通り（電車の部下の1.25倍・30体） ---------------- */
+// 座標：x＝左右（±4.6）、z＝奥行き（改札側 z=0 → 奥 z=64）。3地点に10体ずつ。地点を片付けると次の暖簾の結界が開く
+const STREET = {
+  nm: '上野の居酒屋通り', halfX: 4.6, zMax: 64, start: [[-1.0, 3.2], [1.0, 3.2], [-0.4, 2.0], [0.4, 2.0]],
+  groups: p('居酒屋通り', '部下を置く3地点（奥行きz）', [16, 33, 50], 'm', 'proto'), gates: [24, 41, 58],
+  mul: p('居酒屋通り', '電車の部下に対する倍率（HP・ちから・ようりょくだけ）', 1.25, '倍', 'spec', null, '技の威力・周期・まもり・移動はそのまま'),
+  n: 30, per: 10,
+  introT: p('居酒屋通り', '始まりの演出（ホーム→改札→通りへ）', 5, 's', 'proto'),
+};
 /* ---------------- 上野編：上野駅前の広場・指揮官ヨシノシン ---------------- */
 // 座標：x＝左右（±17）、z＝奥行き（入口 z=0 → 奥 z=28）。味方は z≈4、部下は z12〜18、本体は z≈23
 const U_H = 1.45; // 電車の部下モデルの身長（m）。上野の部下はこれを縮めて 0.8〜0.95m にする
@@ -1023,32 +1041,32 @@ const UENO = {
   nm: '上野駅前', boss: 'ヨシノシン', minion: 'ヨシノシンの部下（妖怪人形）',
   halfX: p('上野', '戦闘領域の横幅', 34, 'm', 'spec', null, 'x=±17') / 2, zMax: p('上野', '戦闘領域の奥行き', 28, 'm', 'spec', null, '入口 z=0'),
   start: [[-1.5, 4.2], [1.5, 4.2], [-0.5, 3.0], [0.5, 3.0]], bossSpawn: [0, 23], center: [0, 14],
-  bossR: 1.0, bossH: p('ヨシノシン', '身長', 3.2, 'm', 'spec', null, '約5頭身・コゲマル1mの3.2倍'),
-  hp: p('ヨシノシン', '体力', 26000, 'points', 'spec'), str: p('ヨシノシン', 'ちから', 400, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 450, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 135, 'points', 'spec'),
+  bossScale: p('ヨシノシン', 'モデルの拡大率（基準3.2m）', 1.85, '倍', 'spec', null, '本体だけ。部下・技の判定半径は拡大しない'), bossR: p('ヨシノシン', '足元の被弾判定の半径', 1.5, 'm', 'proto', null, '足元に届けば当たる'), bossH: p('ヨシノシン', '身長', 5.92, 'm', 'spec', null, '3.2m×1.85・約5頭身'),
+  hp: p('ヨシノシン', '体力', 30000, 'points', 'spec'), str: p('ヨシノシン', 'ちから', 600, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 650, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 182, 'points', 'spec'),
   introT: p('上野', '登場の演出（指を鳴らす→部下が走り出す）', 3.2, 's', 'spec', null, '最初の予告より前に攻撃しない'),
   minGap: p('ヨシノシン', '直接攻撃どうしの開始間隔（最低）', 3.0, 's', 'spec'),
   rec: 40,
-  lvOut: { k: 0.02, lo: 0.75, hi: 1.25 }, lvIn: { k: 0.015, lo: 0.80, hi: 1.20 },
-  minions: {
-    melee: { nm: '通常近接', hp: 100, str: 100, yo: 80, def: 40, pw: 40, stat: 'str', warn: 0.65, period: 3.2, spd: 2.6, scale: 0.85 / U_H, r: 0.32 },
-    guard: { nm: '防御', hp: 160, str: 110, yo: 80, def: 70, pw: 45, stat: 'str', warn: 0.8, period: 4.0, spd: 2.3, scale: 0.95 / U_H, r: 0.34, gMul: 0.7, gMax: 2, gCd: 5 },
-    beam: { nm: '射撃', hp: 80, str: 60, yo: 260, def: 30, pw: 90, stat: 'yo', warn: 1.2, period: 5.0, spd: 2.4, scale: 0.85 / U_H, r: 0.32, len: 13 },
-    thrown: { nm: '投げられる部下', hp: 75, str: 95, yo: 80, def: 35, pw: 35, stat: 'str', warn: 0.65, period: 3.5, spd: 2.6, scale: 0.8 / U_H, r: 0.3 },
+  minions: { // 電車の部下の型別データから HP・ちから・ようりょくだけ×0.85（四捨五入）。技の威力・周期はそのまま
+    sword: { nm: '剣', wpn: 'sword', hp: 170, str: 163, yo: 178, def: 45, pw: 60, stat: 'str', warn: 0.70, period: 3.2, spd: 2.6, scale: 0.85 / U_H, r: 0.32 },
+    punch: { nm: 'パンチ', wpn: 'fist', hp: 170, str: 163, yo: 178, def: 45, pw: 71, stat: 'str', warn: 0.65, period: 3.5, spd: 2.6, scale: 0.9 / U_H, r: 0.33 },
+    beam: { nm: 'ビーム', wpn: 'beam', hp: 170, str: 163, yo: 178, def: 45, pw: 80, stat: 'yo', warn: 1.20, period: 5.0, spd: 2.4, scale: 0.85 / U_H, r: 0.32, len: 13 },
   },
-  init: p('上野', '最初の部下（近接・防御・射撃）', { melee: 24, guard: 8, beam: 4 }, '体', 'spec', null, '36体が同時に前進する'),
-  cap: p('上野', '部下の生存上限', 40, '体', 'spec'),
-  rights: p('上野', '同時に攻撃を始められる部下', { melee: 4, beam: 2, all: 6 }, '体', 'spec', null, '近接・防御4体＋射撃2体＝6体'),
+  init: p('上野', '最初の部下（ビーム・剣・パンチ）', { beam: 22, sword: 7, punch: 7 }, '体', 'spec', null, '36体が同時に前進する'),
+  cap: p('上野', '部下の生存上限（予約を含む）', 100, '体', 'spec'),
+  rights: p('上野', '同時に攻撃を始められる部下', { melee: 4, beam: 6, all: 10 }, '体', 'spec', null, '剣・パンチ4体＋ビーム6体＝10体'),
+  wave: p('上野', '包囲動員（有効戦闘30秒ごと）', { every: 30, n: 15, mix: { beam: 9, sword: 3, punch: 3 }, warn: 1 }, '体', 'spec', null, '4つの外周入口へ4/4/4/3'),
   moves: {
-    reiko: { nm: '采配三連霊光', pw: 22, stat: 'yo', n: 3, spread: 0.32, speed: 9, warn: 0.65, rec: 0.7, cd: 6, r: 0.35, range: 13 },
-    shosho: { nm: '指令連掌', pw: 110, stat: 'str', warn: 0.7, lockT: 0.25, act: 0.15, rec: 1.0, cd: 10, len: 3.4, w: 2.6, near: 3.6 },
-    stamp: { nm: '一斉決裁スタンプ', pw: 100, stat: 'str', r: 4.5, warn: 1.6, act: 0.2, rec: 1.2, cd: 18 },
-    shosha: { nm: '号令四連照射', pw: 65, stat: 'yo', warn: 1.3, act: 0.35, rec: 1.0, cd: 12, r: 1.35, gap: 3.0, iv: 0.9 },
+    reiko: { nm: '采配三連霊光', pw: 22, stat: 'yo', n: 3, spread: 0.32, speed: 9, warn: 0.65, rec: 0.7, cd: 6, r: 0.60, range: 13 },
+    shosho: { nm: '指令連掌', pw: 110, stat: 'str', warn: 0.7, lockT: 0.25, act: 0.15, rec: 1.0, cd: 10, len: 4.2, w: 3.0, near: 4.4 },
+    stamp: { nm: '一斉決裁スタンプ', pw: 100, stat: 'str', r: 5.0, warn: 1.6, act: 0.2, rec: 1.2, cd: 18 },
+    shosha: { nm: '号令四連照射', pw: 65, stat: 'yo', warn: 1.3, act: 0.35, rec: 1.0, cd: 8, r: 1.35, gap: 3.0, iv: 0.9 },
+    tengai: { nm: '天蓋乱射・三十六光', pw: 45, stat: 'yo', r: 1.15, per: 12, track: 4, waves: [1.4, 3.4, 5.4], act: 0.35, rec: 1.0, cd: 14 },
     warp: { nm: '後方指揮ワープ', warn: 0.7, act: 0.25, rec: 0.5, cd: 10 },
-    summon: { nm: '追加動員', n: 6, warn: 1.5, cd: 30, at: 8 },
     barrier: { nm: '完全指揮バリア', warn: 0.8, hits: 2, max: 8, cd: 35, stagger: 1.2 },
-    throw20: { nm: '部下丸投げ二十連', n: 20, iv: 0.18, land: 1.1, warn: 1.5, rec: 1.5, r: 0.65, pw: 12, stat: 'yo', maxHits: 2, at: [0.75, 0.25], calm: 1.0 },
-    sleep: { nm: '30分睡眠チャージ', at: 0.5, warnAt: 0.55, dur: 10, need: 3000, mul: 2.0, down: 4 },
+    throw50: { nm: '部下丸投げ五十連', n: 50, mix: { beam: 30, sword: 10, punch: 10 }, iv: 0.12, land: 1.1, warn: 1.5, rec: 1.5, r: 0.65, pw: 12, stat: 'yo', maxHits: 2, at: [0.75, 0.25], calm: 1.0, alive: 50 },
+    sleep: { nm: '30分睡眠チャージ', stages: [{ at: 22500, need: 2500, pre: 24000 }, { at: 15000, need: 3500, pre: 16500 }, { at: 7500, need: 4000, pre: 9000 }], dur: 10, mul: 2.25, down: 4 },
   },
+  pick: p('ヨシノシン', '直接攻撃の選び方（ビーム系・霊光・スタンプ）', { beams: 0.7, reiko: 0.2, stamp: 0.1 }, 'ratio', 'spec', null, '近距離の連掌は別の反応'),
 };
 const CAM = {
   camera_pitch_deg: p('カメラ', 'camera_pitch_deg（俯角）', 44, 'deg', 'proto', null, '35〜55度で調整。ボスが遠いときは最大8度浅くする'),
@@ -1068,7 +1086,8 @@ const NET = {
 };
 p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 10, 'Apple 44pt / Android 48dp の目安より大きく');
 
-const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, UENO, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };
+const AKIBA = { introT: { akiba_platform: 3, akiba_plaza: 3 } };
+const DATA = { AKIBA, REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, STREET, UENO, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };
 
 /* ===== roster_data.js ===== */
 /* roster_data.js — tools/gen-roster.py が設定データ（data/nightwatch-v2-game-data.json）から作る。手で直さない */
@@ -1135,7 +1154,7 @@ const EXP_CUM = {"D":[0,0,787,1609,2468,3365,4304,5284,6308,7379,8498,9667,10888
    ・既存10体は data.js の技・モーションをそのまま使い、ランク・役割・タグ・Lv99能力だけを足す
    ・追加50体は10系統の技（赤猫団／白犬隊にある戦い方の種類）から作る。技名・係数は本作の調整案
    ===================================================================== */
-const GAME = { title: '四人でバスターズ', chapters: ['北千住編', '上野編'], boss2: 'ヨシノシン', minion: 'ヨシノシンの部下' };
+const GAME = { title: 'BIGバスターズ', chapters: ['北千住編', '上野編', '秋葉原編'], boss2: 'ヨシノシン', minion: 'ヨシノシンの部下' };
 const RANKS = ['S', 'A', 'B', 'C', 'D'];
 const RANK_INFO = {
   S: { col: '#d4a514', ic: '👑', nm: 'S' }, A: { col: '#8e44c4', ic: '★', nm: 'A' }, B: { col: '#2f6fd0', ic: '◆', nm: 'B' },
@@ -1168,19 +1187,33 @@ const GROWTH = (() => {
   function progress(rank, exp) { const L = levelOf(rank, exp); if (L >= LV_MAX) return { L, in: 0, need: null, r: 1 }; const a = EXP_CUM[rank], i = exp - a[L], n = a[L + 1] - a[L]; return { L, in: i, need: n, r: i / n }; }
   /** EXPを足す（負・あふれを防ぐ。Lv99では上限の累積に止める） */
   const addExp = (rank, exp, add) => Math.max(0, Math.min(EXP_CUM[rank][LV_MAX], Math.floor((+exp || 0) + Math.max(0, Math.floor(+add || 0)))));
-  return { LV_MAX, stats, aiStats, cum, levelOf, toNext, progress, addExp, statAt };
+  /** 装備の反映：同じ能力の増加％は足し算して、基礎×(100＋合計％)÷100 を一度だけ切り捨て（HPを守りから計算し直さない） */
+  function withEquip(st, eq) {
+    const add = { hp: 0, str: 0, yo: 0, def: 0 };
+    for (const id of eq || []) { const e = EQUIP_I[id]; if (e) add[e.stat] += e.pct; }
+    return { hp: Math.floor(st.hp * (100 + add.hp) / 100), str: Math.floor(st.str * (100 + add.str) / 100), yo: Math.floor(st.yo * (100 + add.yo) / 100), def: Math.floor(st.def * (100 + add.def) / 100) };
+  }
+  return { LV_MAX, stats, aiStats, cum, levelOf, toNext, progress, addExp, statAt, withEquip };
 })();
+/** 装備12種（4系統×青・紫・金）。購入・抽選なし。電車クリア前は1枠、クリア後は2枠。同じIDは2つ付けられない */
+const EQUIP = [
+  ['bracer', '剛力の腕輪', 'str', 'ちから', [30, 40, 50], '💪'],
+  ['bell', '霊光の鈴', 'yo', 'ようりょく', [30, 40, 50], '🔔'],
+  ['charm', '守護のお守り', 'def', 'まもり', [30, 40, 50], '🛡'],
+  ['magatama', '命結びの勾玉', 'hp', '最大HP', [40, 50, 100], '🟢'],
+].flatMap(([k, nm, stat, sl, pcts, ic]) => ['blue', 'purple', 'gold'].map((tier, i) => ({ id: `${k}_${tier}`, line: k, nm: `${nm}（${['青', '紫', '金'][i]}）`, short: nm, stat, statLabel: sl, pct: pcts[i], tier, ic, col: ['#3a7bd5', '#8e44ad', '#d4a017'][i] })));
+const EQUIP_I = Object.fromEntries(EQUIP.map(e => [e.id, e]));
 
 /* ---------------- 報酬（各キャラに配る。4等分ではない） ---------------- */
 const REWARD = {
-  base: { senju: { win: 10000, loss: 2500 }, joban: { win: 20000, loss: 5000 }, ueno: { win: 50000, loss: 7000 } },
-  human: 1.0, ai: 0.8, reserve: 0, coopPer: 0.1, coopCap: 0.3,
-  /** 協力倍率（10倍した整数）：1人10、2人11、3人12、4人以上13 */
-  coop10: H => 10 + Math.min(3, Math.max(0, (H | 0) - 1)),
-  /** 操作率：ずっと人が操作＝1.0、ずっとAI＝0.8。途中で替えたら有効時間の割合 */
-  rate: humanFrac => 0.8 + 0.2 * Math.max(0, Math.min(1, +humanFrac || 0)),
-  /** 最終EXP＝floor(基本×協力倍率×操作率) */
-  exp(stage, win, H, rate) { const e = this.base[stage]; if (!e) return 0; const base = win ? e.win : e.loss; return Math.floor(base * this.coop10(H) * Math.round(rate * 1000) / 10000 + 1e-6); },
+  base: { senju: { win: 10000, loss: 2500 }, joban: { win: 20000, loss: 5000 }, ueno_street: { win: 12000, loss: 3000 }, ueno: { win: 50000, loss: 7000 }, akiba_platform: { win: 20000, loss: 5000 }, akiba_plaza: { win: 70000, loss: 10000 } },
+  human: 1.0, ai: 0.8, reserve: 0,
+  /** 協力人数の上乗せは廃止（いつも1倍） */
+  coop10: () => 10,
+  /** 固定率：ソロは出動時のメイン（P1）枠100%・ほかの3枠80%。マルチは参加した人間全員100%・AI補充枠80%。途中の操作交代で変えない */
+  rate: isMain => isMain ? 1.0 : 0.8,
+  /** 最終EXP＝floor(基本×固定枠率) */
+  exp(stage, win, H, rate) { const e = this.base[stage]; if (!e) return 0; const base = win ? e.win : e.loss; return Math.floor(base * Math.round((rate == null ? 1 : rate) * 100) / 100 + 1e-6); },
 };
 /** 勝利チケット：トバトーバン3勝ごと・ヨシノシン2勝ごとに1枚。電車・敗北・部下撃破では進まない */
 const TICKET = { senju: { key: 'tobatoban', per: 3 }, ueno: { key: 'yoshinoshin', per: 2 } };
@@ -1283,7 +1316,13 @@ for (const m of ROSTER_EXIST) {
 const CHAR_IDS = DATA.CHARS.map(c => c.id);
 const NEW_D_IDS = ROSTER_NEW.filter(n => n.rank === 'D').map(n => n.id);
 const GACHA_IDS = ROSTER_NEW.filter(n => n.gacha).map(n => n.id);
-Object.assign(DATA, { GAME, RANKS, RANK_INFO, ROLES, ROLE_IDS, GROWTH, REWARD, TICKET, GACHA, CHAR_IDS, NEW_D_IDS, GACHA_IDS, EXP_CUM });
+/** 上野ボス（推奨Lv40）・秋葉原（推奨Lv60）だけのLv補正。P＝出動開始時の4体の平均Lv（切り捨て）。途中の操作交代では変えない */
+function lvAdjust(kind, P) {
+  const R = kind === 'akiba' ? { rec: 60, upO: 0.015, hiO: 1.30, upI: 0.01, loI: 0.75 } : { rec: 40, upO: 0.02, hiO: 1.25, upI: 0.015, loI: 0.80 };
+  if (P < R.rec) return { out: Math.max(0.10, Math.pow(0.95, R.rec - P)), in: Math.min(4.0, Math.pow(1.04, R.rec - P)) };
+  return { out: Math.min(R.hiO, 1 + R.upO * (P - R.rec)), in: Math.max(R.loI, 1 - R.upI * (P - R.rec)) };
+}
+Object.assign(DATA, { lvAdjust, EQUIP, EQUIP_I, GAME, RANKS, RANK_INFO, ROLES, ROLE_IDS, GROWTH, REWARD, TICKET, GACHA, CHAR_IDS, NEW_D_IDS, GACHA_IDS, EXP_CUM });
 
 /* ===== save.js ===== */
 /* =====================================================================
@@ -1294,7 +1333,7 @@ Object.assign(DATA, { GAME, RANKS, RANK_INFO, ROLES, ROLE_IDS, GROWTH, REWARD, T
    IDは1〜10000。アカウントを作った順に自動で決まる（いまはこの端末の中での順番）。
    ===================================================================== */
 const SAVE = (() => {
-  const ID_MIN = 1, ID_MAX = 10000, VER = 3, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 6, PW_MAX = 32; // Firebase のパスワードは6文字以上
+  const ID_MIN = 1, ID_MAX = 10000, VER = 4, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 6, PW_MAX = 32; // Firebase のパスワードは6文字以上
   // 以前の形式（ID 1001〜）のセーブはいったん消す（1回だけ）
   (function migrate() {
     try {
@@ -1318,17 +1357,17 @@ const SAVE = (() => {
   const parseId = s => { const t = String(s || '').replace(/[^0-9０-９]/g, '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)); return t ? parseInt(t, 10) : NaN; };
   function checkPw(pw) { if (typeof pw !== 'string' || pw.length < PW_MIN) return `パスワードは${PW_MIN}文字以上にしてください`; if (pw.length > PW_MAX) return `パスワードは${PW_MAX}文字までです`; if (/\s/.test(pw)) return 'パスワードに空白は使えません'; return null; }
   function storageOk() { try { const k = KEY + '_t'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return true; } catch (e) { return false; } }
-  /* ---------- v3：所持・累積EXP・チケット・ガチャ（四人でバスターズ） ---------- */
-  const STAGES = ['senju', 'joban', 'ueno']; // クリアした回数をステージごとに持つ
+  /* ---------- v3：所持・累積EXP・チケット・ガチャ（BIGバスターズ） ---------- */
+  const STAGES = ['senju', 'joban', 'ueno_street', 'ueno', 'akiba_platform', 'akiba_plaza']; // クリアした回数をステージごとに持つ
   const INIT_IDS = () => DATA.CHARS.filter(c => !c.isNew).map(c => c.id); // 既存10体（いつも所持）
-  const charRec = (got, seen) => ({ lv: 1, exp: 0, got: got || 0, seen: seen ? 1 : 0, b: 0, w: 0, k: 0 });
+  const charRec = (got, seen) => ({ lv: 1, exp: 0, got: got || 0, seen: seen ? 1 : 0, b: 0, w: 0, k: 0, eq: [] });
   function freshChars(now) { const o = {}; for (const id of INIT_IDS()) o[id] = charRec(0, 1); for (const id of DATA.NEW_D_IDS) o[id] = charRec(now, 0); return o; }
   function freshClear() { const o = {}; for (const k of STAGES) o[k] = 0; return o; }
   const freshPrefs = () => ({ sort: 'level_desc', rank: [], role: [], tags: [], q: '', newOnly: false });
   function fresh(id, pw) {
     const now = Date.now();
     return { v: VER, id, pw, created: now, saved: 0, chars: freshChars(now), rec: { b: 0, w: 0, mobs: 0, best: 0 }, clear: freshClear(),
-      wins: { tobatoban: 0, yoshinoshin: 0 }, tickets: 0, uenoOpen: false, rewarded: [], gacha: { log: [] }, prefs: freshPrefs(), party: null, swap: null, items: null, nick: '', mig: { d: 1, exp3: 1 } };
+      wins: { tobatoban: 0, yoshinoshin: 0 }, tickets: 0, uenoOpen: false, akibaOpen: false, walkSeen: false, rewarded: [], gacha: { log: [] }, prefs: freshPrefs(), party: null, swap: null, items: null, nick: '', mig: { d: 1, exp3: 1, v5: 1 } };
   }
   const int = (v, lo) => Math.max(lo || 0, Math.floor(+v || 0));
   /** 古い形式（Lvだけの記録・ステージ1つの頃）からの移行。何度通しても増えも減りもしない */
@@ -1342,7 +1381,8 @@ const SAVE = (() => {
     if (!s.wins) o.wins.tobatoban = o.clear.senju; // 進捗は残す（過去の勝ちにチケットをまとめて配り直さない）
     o.wins.tobatoban = int(o.wins.tobatoban); o.wins.yoshinoshin = int(o.wins.yoshinoshin);
     o.rewarded = Array.isArray(s.rewarded) ? s.rewarded.slice(-40) : []; o.gacha = { log: Array.isArray(s.gacha && s.gacha.log) ? s.gacha.log.slice(-30) : [] };
-    o.uenoOpen = !!s.uenoOpen || o.clear.joban > 0;
+    o.uenoOpen = !!s.uenoOpen || o.clear.ueno_street > 0 || o.clear.ueno > 0; // 旧版でボスを解放済みならそのまま（新規は通りのクリアで解放）
+    o.akibaOpen = !!s.akibaOpen || o.clear.ueno > 0; o.walkSeen = !!s.walkSeen; mig.v5 = 1;
     // キャラ：既存10体は必ず所持。追加Dの10体は一度だけ配る（もう持っていれば Lv1 に戻さない）
     const ch = {}; const src = s.chars || {};
     for (const id of INIT_IDS()) ch[id] = Object.assign(charRec(0, 1), src[id] || {});
@@ -1353,11 +1393,24 @@ const SAVE = (() => {
       for (const k of ['b', 'w', 'k', 'got']) x[k] = int(x[k]); x.seen = x.seen ? 1 : 0;
       x.exp = Math.max(int(x.exp), DATA.GROWTH.cum(c.rank, int(x.lv, 1))); // Lvだけの旧セーブは、そのLvの累積EXPにする（下げない）
       x.exp = Math.min(x.exp, DATA.GROWTH.cum(c.rank, 99)); x.lv = DATA.GROWTH.levelOf(c.rank, x.exp);
+      x.eq = (Array.isArray(x.eq) ? x.eq : []).filter((e, i, a) => DATA.EQUIP_I[e] && a.indexOf(e) === i); // 存在しない・重複の装備は外す
     }
     o.chars = ch; mig.exp3 = 1; o.mig = mig; o.v = VER;
+    const n = eqSlots(o); for (const id in ch) if (ch[id].eq.length > n) ch[id].eq = ch[id].eq.slice(0, n);
     return o;
   }
   const owns = (s, id) => !!(s && s.chars && s.chars[id]);
+  /** 装備枠：電車を一度クリア（または上野ボス解放・勝利の記録あり）で2枠、それまでは1枠 */
+  const eqSlots = s => s && ((s.clear && (s.clear.joban > 0 || s.clear.ueno > 0)) || s.uenoOpen) ? 2 : 1;
+  /** 装備を付ける／外す（同じIDの二重は不可・枠の数まで） */
+  function setEquip(s, ch, slot, id) {
+    const c = s && s.chars[ch]; if (!c) return { ok: false, msg: '持っていないキャラです' };
+    const n = eqSlots(s); if (slot >= n) return { ok: false, msg: '2つ目の枠は電車をクリアすると使えます' };
+    const eq = (c.eq || []).slice(0, n); while (eq.length < n) eq.push(null);
+    if (id && !DATA.EQUIP_I[id]) return { ok: false, msg: 'その装備はありません' };
+    if (id && eq.some((e, i) => i !== slot && e === id)) return { ok: false, msg: '同じ装備は2つ付けられません（別の段階なら同じ系統も付けられます）' };
+    eq[slot] = id || null; c.eq = eq.filter(Boolean); return { ok: true };
+  }
   const lvOf = (s, id) => (s && s.chars[id] ? s.chars[id].lv : 1);
   function load(id) { try { const j = localStorage.getItem(KEY + id); return j ? normalize(JSON.parse(j)) : null; } catch (e) { return null; } }
   function write(s) { try { s.saved = Date.now(); localStorage.setItem(KEY + s.id, JSON.stringify(s)); return true; } catch (e) { return false; } }
@@ -1410,7 +1463,10 @@ const SAVE = (() => {
     }
     const T = DATA.TICKET[st];
     if (f.win && T) { const w0 = s.wins[T.key] | 0, w1 = w0 + 1; s.wins[T.key] = w1; const add = Math.floor(w1 / T.per) - Math.floor(w0 / T.per); s.tickets += add; res.ticket = add; }
-    if (f.win && st === 'joban' && !s.uenoOpen) { s.uenoOpen = true; res.unlocked = 'ueno'; }
+    if (f.win && st === 'joban' && s.clear.joban === 1) res.unlocked = 'ueno_street'; // 電車の初クリア：居酒屋通りと装備2枠
+    if (f.win && st === 'ueno_street' && !s.uenoOpen) { s.uenoOpen = true; res.unlocked = 'ueno'; }
+    if (f.win && st === 'ueno' && !s.akibaOpen) { s.akibaOpen = true; res.unlocked = 'akiba_platform'; }
+    if (f.win && st === 'akiba_platform' && s.clear.akiba_platform === 1) res.unlocked = 'akiba_plaza';
     if (f.bid) { s.rewarded.push(f.bid); if (s.rewarded.length > 40) s.rewarded = s.rewarded.slice(-40); }
     op.res = res;
     return s;
@@ -1453,11 +1509,11 @@ const SAVE = (() => {
     const ph = parseInt(s.pw, 16) >>> 0; b.push(ph >>> 24, (ph >>> 16) & 255, (ph >>> 8) & 255, ph & 255);
     vi(s.rec.b); vi(s.rec.w); vi(s.rec.mobs); vi(s.rec.best);
     vi(STAGES.length); for (const k of STAGES) vi(s.clear[k] || 0);
-    vi(s.wins.tobatoban); vi(s.wins.yoshinoshin); vi(s.tickets); vi(s.uenoOpen ? 1 : 0);
+    vi(s.wins.tobatoban); vi(s.wins.yoshinoshin); vi(s.tickets); vi((s.uenoOpen ? 1 : 0) | (s.akibaOpen ? 2 : 0) | (s.walkSeen ? 4 : 0));
     const n = DATA.CHARS.length; vi(n);
     const own = DATA.CHARS.map(c => !!s.chars[c.id]);
     for (let i = 0; i < n; i += 8) { let m = 0; for (let j = 0; j < 8 && i + j < n; j++) if (own[i + j]) m |= 1 << j; b.push(m); }
-    DATA.CHARS.forEach((c, i) => { if (!own[i]) return; const x = s.chars[c.id]; vi(x.exp); vi(x.b); vi(x.w); vi(x.k); vi(Math.floor((x.got || 0) / 1000)); });
+    DATA.CHARS.forEach((c, i) => { if (!own[i]) return; const x = s.chars[c.id]; vi(x.exp); vi(x.b); vi(x.w); vi(x.k); vi(Math.floor((x.got || 0) / 1000)); const eq = (x.eq || []).filter(e => DATA.EQUIP_I[e]); vi(eq.length); for (const e of eq) vi(DATA.EQUIP.indexOf(DATA.EQUIP_I[e])); });
     const sum = cyrb53(String.fromCharCode.apply(null, b), 77) & 0xffff; b.push(sum >>> 8, sum & 255);
     let bits = '', out = ''; for (const v of b) bits += v.toString(2).padStart(8, '0');
     while (bits.length % 5) bits += '0';
@@ -1476,13 +1532,13 @@ const SAVE = (() => {
       try {
         let p = 0; const u8 = () => { if (p >= body.length) throw 0; return body[p++]; };
         const vi = () => { let n = 0, m = 1, v; do { v = u8(); n += (v & 127) * m; m *= 128; } while (v & 128); return n; };
-        const ver = u8(); if (ver !== 1 && ver !== 2 && ver !== VER) return { ok: false, msg: 'このコードはこの版では読めません' };
+        const ver = u8(); if (ver < 1 || ver > VER) return { ok: false, msg: 'このコードはこの版では読めません' };
         const id = vi(); const pw = ((u8() << 24 >>> 0) + (u8() << 16) + (u8() << 8) + u8()).toString(16).padStart(8, '0');
         const s = fresh(id, pw); s.rec.b = vi(); s.rec.w = vi(); s.rec.mobs = vi(); s.rec.best = vi();
-        if (ver >= 2) { const m = vi(); for (let i = 0; i < m; i++) { const c = vi(); if (STAGES[i]) s.clear[STAGES[i]] = c; } } else delete s.clear; // 古いコードは勝ち数から
-        if (ver >= 3) { s.wins = { tobatoban: vi(), yoshinoshin: vi() }; s.tickets = vi(); s.uenoOpen = !!vi(); } else { delete s.wins; s.mig = {}; } // 古いコードは移行（追加Dを一度配る）
+        if (ver >= 2) { const ST = ver >= 4 ? STAGES : ['senju', 'joban', 'ueno'], m = vi(); for (let i = 0; i < m; i++) { const c = vi(); if (ST[i]) s.clear[ST[i]] = c; } } else delete s.clear; // 古いコードは勝ち数から
+        if (ver >= 3) { s.wins = { tobatoban: vi(), yoshinoshin: vi() }; s.tickets = vi(); const fl = vi(); s.uenoOpen = !!(fl & 1); s.akibaOpen = !!(fl & 2); s.walkSeen = !!(fl & 4); } else { delete s.wins; s.mig = {}; } // 古いコードは移行（追加Dを一度配る）
         const n = vi(), mask = []; for (let i = 0; i < n; i += 8) { const m = u8(); for (let j = 0; j < 8 && i + j < n; j++) mask.push(!!(m & (1 << j))); }
-        if (ver >= 3) { s.chars = {}; for (let i = 0; i < n; i++) { if (!mask[i]) continue; const x = { exp: vi(), b: vi(), w: vi(), k: vi(), got: vi() * 1000, seen: 1, lv: 1 }; const c = DATA.CHARS[i]; if (c) s.chars[c.id] = x; } }
+        if (ver >= 3) { s.chars = {}; for (let i = 0; i < n; i++) { if (!mask[i]) continue; const x = { exp: vi(), b: vi(), w: vi(), k: vi(), got: vi() * 1000, seen: 1, lv: 1, eq: [] }; if (ver >= 4) { const ne = vi(); for (let q = 0; q < ne; q++) { const e = DATA.EQUIP[vi()]; if (e) x.eq.push(e.id); } } const c = DATA.CHARS[i]; if (c) s.chars[c.id] = x; } }
         else for (let i = 0; i < n; i++) { if (!mask[i]) continue; const x = { lv: vi(), exp: vi(), b: vi(), w: vi(), k: vi(), seen: 1 }; const c = DATA.CHARS[i]; if (c) s.chars[c.id] = x; }
         if (p !== body.length) continue;
         return { ok: true, save: normalize(s) };
@@ -1504,7 +1560,7 @@ const SAVE = (() => {
     try { if (id >= nextId()) localStorage.setItem(NEXT, String(id + 1)); } catch (e) { }
     return { ok: true, save: s, msg: `ID ${id} の続きを引き継ぎました` };
   }
-  return { VER, ID_MIN, ID_MAX, PW_MIN, PW_MAX, STAGES, pwHash, validId, parseId, checkPw, storageOk, fresh, normalize, load, write, nextId, register, login, apply, owns, lvOf, gachaPool, gachaRates, gachaDraw, gachaExchange, encode, decode, restore };
+  return { VER, ID_MIN, ID_MAX, PW_MIN, PW_MAX, STAGES, eqSlots, setEquip, pwHash, validId, parseId, checkPw, storageOk, fresh, normalize, load, write, nextId, register, login, apply, owns, lvOf, gachaPool, gachaRates, gachaDraw, gachaExchange, encode, decode, restore };
 })();
 
 /* ===== cloud.js ===== */
@@ -1641,9 +1697,9 @@ const BST = ['intro', 'idle', 'walk', 'wind', 'act', 'rec', 'fly', 'down', 'stun
 const BST_I = Object.fromEntries(BST.map((k, i) => [k, i]));
 const BMV = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'zouen', 'reiko', 'shosho', 'stamp', 'shosha', 'warp', 'summon', 'barrier', 'throw20', 'sleep', 'cmd'];
 const BMV_I = Object.fromEntries(BMV.map((k, i) => [k, i]));
-const HZ = ['fan2', 'fan', 'line', 'circle', 'rect', 'path'];
+const HZ = ['fan2', 'fan', 'line', 'circle', 'rect', 'path', 'poly', 'seg'];
 const HZ_I = Object.fromEntries(HZ.map((k, i) => [k, i]));
-const PJ = ['star', 'can', 'focus', 'fire', 'mark', 'leaf', 'fuda', 'lantern', 'pshot', 'bean', 'orb', 'reiko'];
+const PJ = ['star', 'can', 'focus', 'fire', 'mark', 'leaf', 'fuda', 'lantern', 'pshot', 'bean', 'orb', 'reiko', 'gun', 'hoshi', 'mizu'];
 const PJ_I = Object.fromEntries(PJ.map((k, i) => [k, i]));
 
 function inFan(px, pz, ox, oz, yaw, r0, r1, half, tr) {
@@ -1676,7 +1732,7 @@ class Sim {
     this.diffKey = D.DIFF[o.diff] ? o.diff : 'normal'; this.diff = D.DIFF[this.diffKey]; // むずかしさは「通常」の1つだけ
     this.nextId = 1; this.evId = 0; this.events = []; this.mlog = [];
     this.bid = String(o.bid || ''); // 戦闘ID（報酬を一度だけにする）
-    this.stageId = ['joban', 'ueno'].includes(o.stageId) ? o.stageId : 'senju'; // senju＝北千住（トバトーバン）、joban＝常磐線（ヨシノシンの部下）、ueno＝上野駅前（ヨシノシン）
+    this.stageId = ['joban', 'ueno', 'ueno_street', 'akiba_platform', 'akiba_plaza'].includes(o.stageId) ? o.stageId : 'senju'; // senju＝北千住（トバトーバン）、joban＝常磐線（ヨシノシンの部下）、ueno＝上野駅前（ヨシノシン）
     this.stage = o.test ? 'boss' : 'street'; this.stageT = 0; this.timeLeft = D.SIM.timeLimit;
     this.allies = o.party.map((pp, i) => this.makeAlly(pp, i));
     this.inputs = this.allies.map(() => Sim.emptyInput());
@@ -1684,9 +1740,11 @@ class Sim {
     this.lanterns = D.STAGE.lanterns.map(([x, z], i) => ({ i, x, z, lit: false }));
     this.lanternT = 0; this.lanternCool = 0; this.lanternOrder = 0; this.candyT = D.SIM.candyPeriod;
     this.wave = 0; this.waveSpawned = false; this.barrier = 'street'; this.introWait = false; this.result = null;
-    this.test = !!o.test;
+    this.test = !!o.test; this.orbs = []; this.orbEff = 0; this.orbN = 0;
     if (this.stageId === 'joban') this.initJoban(o);
     else if (this.stageId === 'ueno') this.initUeno(o);
+    else if (this.stageId === 'ueno_street') this.initStreet(o);
+    else if (this.stageId.startsWith('akiba')) this.initAkiba(o);
     else if (o.test) this.spawnBoss(true);
     else this.spawnWave(0);
   }
@@ -1696,9 +1754,9 @@ class Sim {
 
   makeAlly(pp, slot) {
     const c = DATA.CHI[pp.ch] || DATA.CHI.kogemaru, sw = !!pp.swap;
-    const lv = Math.max(1, Math.min(DATA.GROWTH.LV_MAX, pp.lv | 0 || 1)), base = DATA.GROWTH.stats(c, lv); // レベルの能力（Lv99の60〜65%から伸びる）
+    const lv = Math.max(1, Math.min(DATA.GROWTH.LV_MAX, pp.lv | 0 || 1)), base = DATA.GROWTH.withEquip(DATA.GROWTH.stats(c, lv), (pp.eq || []).slice(0, 2)); // レベルの能力（Lv99の60〜65%から伸びる）→ 装備の増加を一度だけ（AIの90%はこのあと）
     const sx = [-1.6, 1.6, -0.5, 0.5][slot], sz = [-60, -60, -61.6, -61.6][slot];
-    const items = (pp.items || ['onigiri', 'ramune']).slice(0, 2).map(id => ({ id, n: DATA.SIM.itemStart }));
+    const items = (pp.items || ['onigiri', 'ramune']).slice(0, 2).map((id, i, arr) => DATA.ITEMS[id] ? id : 'onigiri').map((id, i, arr) => (id === 'starburst_gun' && arr.indexOf(id) !== i) ? (arr.includes('onigiri') ? 'ramune' : 'onigiri') : id).map(id => ({ id, n: DATA.ITEMS[id].one ? 1 : DATA.SIM.itemStart })); // 銃は1人1丁・1発（両方の枠に入れても2発にならない）
     const a = {
       id: 'a' + slot, slot, ch: c.id, c, x: sx, z: sz, px: sx, pz: sz, yaw: 0, hp: base.hp, maxHp: base.hp, st: 'ok', downT: 0, base, stt: base, _ai: false, bl: [], dl: [], regen: null, humT: 0,
       act: null, slots: { X: sw ? c.Y : c.X, Y: sw ? c.X : c.Y }, cd: { X: 0, Y: 0 }, cdMax: { X: 1, Y: 1 }, g: { X: 1, Y: 1 }, gLock: { X: false, Y: false },
@@ -1732,6 +1790,7 @@ class Sim {
     for (const m of this.mobs) this.updateMob(m, dt);
     this.mobs = this.mobs.filter(m => m.st !== 'gone');
     this.updateRevive(dt);
+    this.updateOrbs(dt);
     this.updateProjs(dt); this.updateHazards(dt); this.updateTraps(dt); this.updateCandy(dt); this.updatePickups(dt); this.updateLanterns(dt);
     this.updateStage(dt);
     this.cleanupEvents();
@@ -1844,6 +1903,8 @@ class Sim {
   clampPos(ox, oz, nx, nz, rad) {
     if (this.stageId === 'joban') return this.clampTrain(ox, oz, nx, nz, rad);
     if (this.stageId === 'ueno') return this.clampUeno(ox, oz, nx, nz, rad);
+    if (this.stageId === 'ueno_street') return this.clampStreet(ox, oz, nx, nz, rad);
+    if (this.stageId.startsWith('akiba')) return this.clampAkiba(ox, oz, nx, nz, rad);
     const ST = DATA.STAGE, hw = ST.streetHalfW - rad, pw = ST.plazaHalfW - rad;
     if (nz < 0) {
       if (Math.abs(nx) > hw) { if (oz >= 0 && Math.abs(ox) > hw) nz = 0; else nx = clamp(nx, -hw, hw); }
@@ -1877,7 +1938,8 @@ class Sim {
       if (code === 'B+' || code === 'B-') { if (code === 'B+') this.bPress(a); else { a.rev = null; a.lan = null; } continue; }
       if (a.st !== 'ok') continue;
       if (code === 'A' && a.act && a.act.k === 'combo') { this.pressA(a, inp); continue; }
-      if (code === 'SP') { this.pressSP(a, inp); continue; } // 必殺は通常の行動を中断して出せる（新作の仮仕様）
+      if (code === 'SP') { this.pressSP(a, inp); continue; }
+      if (code === 'O+') { this.pressOrb(a, inp); continue; } // 重玉：通常必殺とは別のボタン // 必殺は通常の行動を中断して出せる（新作の仮仕様）
       if (a.act) { a.buf = { code, t: this.t }; continue; }
       this.press(a, inp, code);
     }
@@ -1978,6 +2040,17 @@ class Sim {
     if (sk.kind === 'charge') this.faceForAttack(a, inp);
     a.act = { k: 'release', slot: k, t: 0, sk, ratio, done: 0, healT: inp.healT, lock: inp.lock, log: a.act.log };
     this.setCd(a, k, sk.kind === 'charge' ? (sk.cd || DATA.CHARGE.cd) : sk.cd);
+  }
+  /** 重玉：拾った1個を使って強化必殺を1回（妖気は使わない。効果量だけ2倍） */
+  pressOrb(a, inp) {
+    if (!a.orb || a.st !== 'ok') return;
+    if (a.act && (a.act.k === 'sp' || a.act.k === 'stagger')) return;
+    a.orb = 0; a.rev = null; a.lan = null;
+    this.faceForAttack(a, inp);
+    const S = DATA.SPECIALS[a.c.sp];
+    a.act = { k: 'sp', t: 0, S, n: 0, done: 0, ox: a.x, oz: a.z, oyaw: a.yaw, heavy: true, log: this.logStart(a, '重玉・' + a.c.spNm) };
+    a.stats.specials++;
+    this.ev('sp', { slot: a.slot, nm: '重玉・' + a.c.spNm, ch: a.c.id, heavy: 1 });
   }
   pressSP(a, inp) {
     if (a.sp < 100 || a.st !== 'ok') return;
@@ -2183,7 +2256,8 @@ class Sim {
     if (a.c.passive === 'stealthCrit' && this.undetected(a)) crit = true;
     const cm = crit ? (a.c.passive === 'critPower' ? P.critPower : S.critMul) : 1;
     const extra = (this.lvOut || 1) * (this.enemyDmgMul ? this.enemyDmgMul(e) : 1); // 上野だけ：平均Lvの補正・睡眠中の隙
-    const dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm * extra));
+    let dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm * extra * (opt && opt.heavy ? 1 : 1)));
+    if (this.capEnemyDmg) dmg = this.capEnemyDmg(e, dmg); // 上野：HP段階ロック（未判定の睡眠しきい値より下へは進めない。0もあり）
     e.hp -= dmg; a.threat += dmg; a.stats.dmg += dmg;
     if (this.afterEnemyHit) this.afterEnemyHit(e, dmg, a, kind);
     if (log) { log.hits.push(+this.t.toFixed(3)); log.dmg.push(dmg); log.def = Math.round(def); log.buff = (state !== 1 ? '×' + state.toFixed(2) : '') + (crit ? ' 会心' : '') + (elem !== 1 ? ' 属性×' + elem : ''); }
@@ -2224,15 +2298,74 @@ class Sim {
     }
     return dmg;
   }
+  /** 固定ダメージ（閃光銃800）：能力・属性・会心・装備・Lv補正・睡眠・重玉の倍率は掛けない。無敵・バリア・HP段階ロックは守る。残りHPより多くは適用しない */
+  dealFixed(a, e, v, hit) {
+    if (e === this.boss && !this.bossHittable()) return 0;
+    if (e.st && e.st !== 'ok' && e !== this.boss) return 0;
+    if (e.inv > 0 || (this.uenoBlock && this.uenoBlock(e, a))) return 0;
+    if (this.capEnemyDmg) v = this.capEnemyDmg(e, v);
+    v = Math.max(0, Math.min(v, Math.ceil(e.hp)));
+    e.hp -= v; a.stats.dmg += v; a.threat += v;
+    if (this.afterEnemyHit) this.afterEnemyHit(e, v, a, 'gun');
+    this.ev('dmg', { v, crit: 0, x: hit ? hit.x : e.x, z: hit ? hit.z : e.z, y: e === this.boss ? 2.4 : 0.8, src: a.slot, kind: 'gun', el: 0 });
+    if (e.hp <= 0) { e.hp = 0; if (e === this.boss) this.bossDie(); else this.mobDie(e, a); }
+    return v;
+  }
   reflectTo(o, src, v) {
     if (src === this.boss && !this.bossHittable()) return;
     if (this.uenoBlock && this.uenoBlock(src, o)) return;
+    if (this.capEnemyDmg) v = this.capEnemyDmg(src, v);
     src.hp -= v; o.stats.dmg += v; this.ev('dmg', { v, crit: 0, x: src.x, z: src.z, y: src === this.boss ? 2.4 : 0.8, src: o.slot, kind: 'reflect', el: 0 });
     if (src.hp <= 0) { src.hp = 0; if (src === this.boss) this.bossDie(); else this.mobDie(src, o); }
   }
+  /* ---------- 重玉：有効戦闘50秒ごとに1つ。壁で反射しながら転がり、10秒で消える ---------- */
+  orbClockOn() {
+    if (!(this.stage === 'street' || this.stage === 'boss' || this.stage === 'train')) return false;
+    if (this.stageId === 'ueno' && this.U && (this.U.sleep || (this.boss && this.boss.st === 'down'))) return false; // 睡眠・成功後ダウンは周期だけ止める
+    if (this.akibaPaused && this.akibaPaused()) return false;
+    return true;
+  }
+  orbSpot() {
+    const alive = this.allies.filter(o => o.st === 'ok');
+    for (let k = 0; k < 30; k++) {
+      const o = alive.length ? alive[(this.rng.next() * alive.length) | 0] : this.allies[0], a = this.rng.next() * TAU, r = this.rng.range(2.5, 7);
+      const x = o.x + Math.sin(a) * r, z = o.z + Math.cos(a) * r, c = this.clampPos(x, z, x, z, 0.4);
+      if (Math.abs(c[0] - x) < 0.02 && Math.abs(c[1] - z) < 0.02) return [x, z];
+    }
+    const o = alive[0] || this.allies[0]; return this.clampPos(o.x, o.z, o.x, o.z + 1, 0.4);
+  }
+  updateOrbs(dt) {
+    const O = DATA.SIM.orb, live = this.stage === 'street' || this.stage === 'boss' || this.stage === 'train';
+    if (this.orbClockOn()) { this.orbEff += dt; while (this.orbEff >= (this.orbN + 1) * O.every) { this.orbN++; const [x, z] = this.orbSpot(), a = this.rng.next() * TAU; this.orbs.push({ id: this.id(), x, z, vx: Math.sin(a) * O.spd, vz: Math.cos(a) * O.spd, life: O.life }); this.ev('orb', { x, z }); } }
+    if (!live) { this.orbs = []; return; }
+    for (const ob of this.orbs) {
+      ob.life -= dt; // 見えている球の寿命は睡眠中も進む
+      let rest = dt;
+      while (rest > 1e-6) { // 細かく分けて動かし、壁を抜けない。当たったら v'=v−2(v·n)n
+        const h = Math.min(rest, 0.08 / O.spd); rest -= h;
+        const nx = ob.x + ob.vx * h, nz = ob.z + ob.vz * h, c = this.clampPos(ob.x, ob.z, nx, nz, O.r);
+        const ex = nx - c[0], ez = nz - c[1], el = Math.hypot(ex, ez);
+        if (el > 1e-4) { const n0 = ex / el, n1 = ez / el, d = ob.vx * n0 + ob.vz * n1; if (d > 0) { ob.vx -= 2 * d * n0; ob.vz -= 2 * d * n1; } ob.x = c[0] - n0 * 0.01; ob.z = c[1] - n1 * 0.01; }
+        else { ob.x = nx; ob.z = nz; }
+      }
+      // 取得：生きていて重玉を持っていないキャラ。同時なら人が操作するキャラ→番号の順
+      const cand = this.allies.filter(a => a.st === 'ok' && !a.orb && dist2(a.x, a.z, ob.x, ob.z) <= O.r + 0.4).sort((p, q) => (p.ctrlAI ? 1 : 0) - (q.ctrlAI ? 1 : 0) || p.slot - q.slot);
+      if (cand.length) { cand[0].orb = 1; ob.life = 0; this.ev('orbGet', { slot: cand[0].slot, x: ob.x, z: ob.z }); }
+    }
+    this.orbs = this.orbs.filter(ob => ob.life > 0);
+  }
+  /** AIが重玉を使う場面（ふだん）：3体以上を巻き込める／ボスが動けない／回復型は2人以上が減っているとき */
+  aiOrbNow(a) {
+    const S = DATA.SPECIALS[a.c.sp], b = this.boss;
+    if (S.type === 'heal' || S.type === 'field') return this.allies.filter(o => o.st === 'ok' && o.hp / o.maxHp < 0.55).length >= 2;
+    if (this.stageId === 'ueno' && this.U) { const near = b && this.bossHittable() && this.gapTo(a.x, a.z, b).g < 5; if (this.U.sleep || (b && b.st === 'down')) return near || S.type === 'buff' || S.type === 'debuff'; }
+    if (b && this.bossHittable() && (b.st === 'down' || b.st === 'stun') && this.gapTo(a.x, a.z, b).g < 4) return true;
+    if (this.akibaOrbNow) { const r = this.akibaOrbNow(a, S); if (r != null) return r; }
+    return this.enemiesAlive().filter(e => this.gapTo(a.x, a.z, e).g < 3).length >= 3;
+  }
   checkWipe() { if (this.allies.every(o => o.st !== 'ok')) this.finish(false, 'wipe'); }
   runSpecial(a, A, inp, dt) {
-    const S = A.S, t = A.t;
+    const S = A.S, t = A.t, K = A.heavy ? 2 : 1, up = m => A.heavy ? 1 + 2 * (m - 1) : m, down = m => A.heavy ? Math.max(0.40, 1 - 2 * (1 - m)) : m; // 重玉：効果量だけ2倍（ヒット数・時間・射程は同じ）
     a.inv = Math.max(a.inv, dt * 1.01); // 発動承認〜動作終了まで本人のみ無敵（仮設定）
     if (S.type === 'multi') {
       while (A.n < S.n && t >= S.prep + A.n * S.iv) {
@@ -2240,33 +2373,33 @@ class Sim {
         let hits = 0;
         for (const e of this.enemiesAlive()) {
           const inside = S.shape === 'fan' ? this.hitFan(e, a.x, a.z, a.yaw, 0, S.range, S.arc) : this.hitLine(e, a.x, a.z, a.yaw, S.len, S.w / 2);
-          if (inside) { this.dealToEnemy(a, e, S.pw, S.stat || (a.c.id === 'akaneten' || a.c.id === 'kemuridama' ? 'yo' : 'str'), 'sp', A.log, inside); hits++; if (S.defDown) { this.addDebuff(e, 'def', S.defDown, S.defDownT, a.slot + ':sp'); this.ev('defdown', { x: e.x, z: e.z }); } }
+          if (inside) { this.dealToEnemy(a, e, S.pw * K, S.stat || (a.c.id === 'akaneten' || a.c.id === 'kemuridama' ? 'yo' : 'str'), 'sp', A.log, inside); hits++; if (S.defDown) { this.addDebuff(e, 'def', down(S.defDown), S.defDownT, a.slot + ':sp'); this.ev('defdown', { x: e.x, z: e.z }); } }
         }
         this.ev('sphit', { slot: a.slot, n: A.n, ch: a.c.id, x: a.x, z: a.z, yaw: a.yaw, hit: hits });
       }
       if (t >= S.prep + (S.n - 1) * S.iv + S.tail) this.endAct(a);
     } else if (S.type === 'buff') {
-      if (!A.done && t >= S.prep) { A.done = 1; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= S.r) for (const k of (S.stats || ['str'])) this.addBuff(o, k, S.mul, S.dur, a.slot + ':sp'); this.ev('spfx', { slot: a.slot, k: 'buff', x: a.x, z: a.z }); }
+      if (!A.done && t >= S.prep) { A.done = 1; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= S.r) for (const k of (S.stats || ['str'])) this.addBuff(o, k, up(S.mul), S.dur, a.slot + ':sp'); this.ev('spfx', { slot: a.slot, k: 'buff', x: a.x, z: a.z }); }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'guardup') {
-      if (!A.done && t >= S.prep) { A.done = 1; this.addBuff(a, 'def', S.mul, S.dur, a.slot + ':sp'); a.buffs.taunt = S.dur; a.threat += S.threat; this.ev('spfx', { slot: a.slot, k: 'guardup', x: a.x, z: a.z }); }
+      if (!A.done && t >= S.prep) { A.done = 1; this.addBuff(a, 'def', up(S.mul), S.dur, a.slot + ':sp'); a.buffs.taunt = S.dur; a.threat += S.threat; this.ev('spfx', { slot: a.slot, k: 'guardup', x: a.x, z: a.z }); }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'heal') {
       if (!A.done && t >= S.prep) {
-        A.done = 1; const v = Math.round(S.pw * this.stat(a, 'yo') / 100), inR = o => !S.r || dist2(a.x, a.z, o.x, o.z) <= S.r;
+        A.done = 1; const v = Math.round(S.pw * K * this.stat(a, 'yo') / 100), inR = o => !S.r || dist2(a.x, a.z, o.x, o.z) <= S.r;
         if (S.revive !== false) for (const o of this.allies) { if (o.st === 'down') this.revive(o, S.revHp, a); } // 追加50体の回復必殺は蘇生しない
         for (const o of this.allies) if (o.st === 'ok' && inR(o)) { this.healAlly(o, v, a); if (S.cleanse) this.cleanse(o); }
         this.ev('spfx', { slot: a.slot, k: 'heal', x: a.x, z: a.z });
       }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'debuff') { // 敵の能力低下（眠らせない・行動を止めない）
-      if (!A.done && t >= S.prep) { A.done = 1; for (const e of this.enemiesAlive()) if (this.hitCircle(e, a.x, a.z, S.r)) for (const k of S.stats) this.addDebuff(e, k, S.mul, S.dur, a.slot + ':sp'); this.ev('aura', { slot: a.slot, x: a.x, z: a.z, r: S.r, side: 0, st: 'all', sp: 1 }); }
+      if (!A.done && t >= S.prep) { A.done = 1; for (const e of this.enemiesAlive()) if (this.hitCircle(e, a.x, a.z, S.r)) for (const k of S.stats) this.addDebuff(e, k, down(S.mul), S.dur, a.slot + ':sp'); this.ev('aura', { slot: a.slot, x: a.x, z: a.z, r: S.r, side: 0, st: 'all', sp: 1 }); }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'protect') { // 周りの味方を短く無敵（壁やバリアは作らない）
-      if (!A.done && t >= S.prep) { A.done = 1; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= S.r) o.inv = Math.max(o.inv, S.inv); this.ev('protect', { slot: a.slot, x: a.x, z: a.z, r: S.r }); }
+      if (!A.done && t >= S.prep) { A.done = 1; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= S.r) o.inv = Math.max(o.inv, A.heavy ? Math.min(2, S.inv * 2) : S.inv); this.ev('protect', { slot: a.slot, x: a.x, z: a.z, r: S.r }); }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'field') { // 地面の回復陣：1秒ごとに回復。同じ術者の陣は1つ
-      if (!A.done && t >= S.prep) { A.done = 1; this.traps = this.traps.filter(tr => !(tr.kind === 'field' && tr.owner === a.slot)); this.traps.push({ id: this.id(), kind: 'field', owner: a.slot, x: a.x, z: a.z, t: 0, arm: 0, life: S.n + 0.2, next: 1, n: S.n, v: Math.round(S.pw * this.stat(a, 'yo') / 100), sk: S }); this.ev('ring', { slot: a.slot, x: a.x, z: a.z, r: S.r, k: 'field' }); }
+      if (!A.done && t >= S.prep) { A.done = 1; this.traps = this.traps.filter(tr => !(tr.kind === 'field' && tr.owner === a.slot)); this.traps.push({ id: this.id(), kind: 'field', owner: a.slot, x: a.x, z: a.z, t: 0, arm: 0, life: S.n + 0.2, next: 1, n: S.n, v: Math.round(S.pw * K * this.stat(a, 'yo') / 100), sk: S }); this.ev('ring', { slot: a.slot, x: a.x, z: a.z, r: S.r, k: 'field' }); }
       if (t >= S.end) this.endAct(a);
     }
   }
@@ -2277,6 +2410,12 @@ class Sim {
     else if (A.it === 'ramune') { a.stam = DATA.SIM.stamMax; a.tired = false; a.buffs.ramune = I.dur; }
     else if (A.it === 'shibireFuda') this.placeTrap(a, 'para', DATA.SKILLS.shibire);
     else if (A.it === 'kemuriDama') { a.buffs.stealth = I.dur; a.threat *= 0.2; }
+    else if (A.it === 'starburst_gun') { // 注目中の敵（なければ正面）へ1発。追尾・貫通・爆発なし
+      const tg = a.lockId ? this.findTarget(a.lockId) : null; if (tg) { const { q } = this.gapTo(a.x, a.z, tg); a.yaw = yawTo(q.x - a.x, q.z - a.z); }
+      const fx = Math.sin(a.yaw), fz = Math.cos(a.yaw);
+      this.projs.push({ id: this.id(), kind: 'gun', team: 'ally', owner: a.slot, x: a.x + fx * 0.5, y: 0.8, z: a.z + fz * 0.5, vx: fx * I.speed, vz: fz * I.speed, life: I.range / I.speed, r: I.r, fixed: I.dmg, hit: new Set(), yaw: a.yaw });
+      this.ev('gun', { slot: a.slot, x: a.x, z: a.z, yaw: a.yaw });
+    }
     this.ev('item', { slot: a.slot, it: A.it, x: a.x, z: a.z });
   }
 
@@ -2308,6 +2447,7 @@ class Sim {
           const h = this.hitCircle(e, p.x, p.z, p.r);
           if (h) {
             p.hit.add(e.id);
+            if (p.fixed) { this.dealFixed(a, e, p.fixed, h); p.life = 0; break; } // 閃光銃：最初に当たった1体だけ
             if (p.kind === 'mark') { const D0 = e.dots || (e.dots = []), old = D0.find(d => d.src === p.owner); if (old) { old.left = p.ex.dur; old.pw = p.ex.pw; } else D0.push({ src: p.owner, left: p.ex.dur, next: p.ex.tick, pw: p.ex.pw, stat: p.ex.stat }); this.ev('mark', { x: e.x, z: e.z }); this.spForHit(a, 'skill', p.log); p.life = 0; break; } // 同じ術者は重ねずに更新
             if (p.ex && p.ex.blast) { this.blast(a, p.x, p.z, p.ex.blast, p.pw, p.stat, p.hk, p.log); p.life = 0; break; }
             this.dealToEnemy(a, e, p.pw, p.stat, p.hk, p.log, h); this.spForHit(a, p.hk, p.log);
@@ -2317,6 +2457,7 @@ class Sim {
           }
         }
         if (p.life <= 0 && p.ex && p.ex.blast && !p.hit.size) this.blast(a, p.x, p.z, p.ex.blast, p.pw, p.stat, p.hk, p.log);
+        if (p.fixed && p.life > 0) { const b0 = this.boss; if (b0) this.boss = null; const c = this.clampPos(p.x - p.vx * dt, p.z - p.vz * dt, p.x, p.z, p.r); this.boss = b0; if (Math.abs(c[0] - p.x) > 0.02 || Math.abs(c[1] - p.z) > 0.02) { p.life = 0; this.ev('phit', { x: c[0], z: c[1], k: 'gun' }); } } // 壁で止まる（敵の体は壁ではない）
       } else {
         for (const o of this.allies) {
           if (o.st !== 'ok' || p.hit.has(o.id)) continue;
@@ -2390,6 +2531,7 @@ class Sim {
     for (let k = 0; k < 12; k++) {
       let x, z;
       if (this.stage === 'train') { const J = DATA.JOBAN; x = this.rng.range(-J.halfW + 0.5, J.halfW - 0.5); z = this.rng.range(J.zMin + 1, J.zMax - 1); if (Math.abs(z) < J.gwHalf + 0.6) continue; }
+      else if (this.candySpot && this.stageId !== 'senju' && this.stageId !== 'ueno') { const q = this.candySpot(); x = q[0]; z = q[1]; }
       else if (this.stage === 'street') { x = this.rng.range(-7, 7); z = this.rng.range(ST.streetZ0 + 4, -3); }
       else { x = this.rng.range(-ST.plazaHalfW + 1.5, ST.plazaHalfW - 1.5); z = this.rng.range(1.5, ST.plazaZ1 - 1.5); }
       const r = this.clampPos(x, z, x, z, 0.3);
@@ -2439,10 +2581,12 @@ class Sim {
     for (const [x, z] of W) this.spawnMob(x, z, true);
     this.wave = i; this.waveSpawned = true;
   }
-  introLen() { return this.stageId === 'joban' ? DATA.JOBAN.introT : this.stageId === 'ueno' ? DATA.UENO.introT : DATA.BOSS.introT; }
+  introLen() { return this.stageId === 'joban' ? DATA.JOBAN.introT : this.stageId === 'ueno' ? DATA.UENO.introT : this.stageId === 'ueno_street' ? DATA.STREET.introT : this.stageId.startsWith('akiba') ? DATA.AKIBA.introT[this.stageId] : DATA.BOSS.introT; }
   updateStage(dt) {
     if (this.stageId === 'joban') { this.updateJoban(dt); return; }
     if (this.stageId === 'ueno') { this.updateUenoStage(dt); return; }
+    if (this.stageId === 'ueno_street') { this.updateStreet(dt); return; }
+    if (this.stageId.startsWith('akiba')) { this.updateAkibaStage(dt); return; }
     if (this.stage === 'street') {
       const alive = this.mobs.filter(m => m.st === 'ok').length;
       if (alive === 0) {
@@ -2540,6 +2684,7 @@ class Sim {
   hz(o) { const h = Object.assign({ id: this.id(), t: 0, hits: {}, src: 'boss', max: 1, iv: 99, act: 0.12 }, o); this.hazards.push(h); return h; }
   updateBoss(dt) {
     if (this.stageId === 'ueno') return this.updateUenoBoss(dt);
+    if (this.stageId.startsWith('akiba')) return;
     const b = this.boss, M = DATA.BMOVES;
     b.t += dt;
     for (const k in b.cds) if (b.cds[k] > 0) b.cds[k] -= dt;
@@ -2784,6 +2929,10 @@ class Sim {
     const ai = a.ai, b = this.boss, role = a.c.ai;
     ai.stay = false; ai.wantA = false; ai.holdB = false;
     out.healT = null;
+    // 重玉：睡眠中・ダウン中・双子の15秒など大事な場面で使う（何もいない所で自動発動しない）
+    if (a.orb && this.free(a) && this.aiOrbNow && this.aiOrbNow(a)) { const tg = this.aiEnemy(a); if (tg) out.lock = tg.id; push('O+'); return; }
+    // 閃光銃：睡眠阻止などで足りないとき
+    if (this.aiGunNow && this.free(a)) { const gi = a.items.findIndex(it => it.id === 'starburst_gun' && it.n > 0); if (gi >= 0) { const tg = this.aiGunNow(a); if (tg) { out.lock = tg.id; a.lockId = tg.id; push('I' + gi); return; } } }
     // 1) 危険範囲から逃げる（反応に少し遅れを持たせる）
     const danger = this.inDanger(a.x, a.z, 0.5, 1.2);
     if (danger && (danger.t >= ai.react || danger.kind === 'path')) {
@@ -2803,6 +2952,11 @@ class Sim {
     // 1.5) 置かれたボム・地雷から離れる（味方の爆発にも巻き込まれるため）
     for (const tr of this.traps) if ((tr.kind === 'bomb' || (tr.kind === 'mine' && tr.owner !== a.slot)) && dist2(a.x, a.z, tr.x, tr.z) < tr.sk.r + 0.6) {
       const dx = a.x - tr.x, dz = a.z - tr.z, l = Math.hypot(dx, dz) || 1, p = this.clampPos(a.x, a.z, tr.x + dx / l * (tr.sk.r + 1.2), tr.z + dz / l * (tr.sk.r + 1.2), 0.4); ai.tx = p[0]; ai.tz = p[1]; return;
+    }
+    // 1.7) 重玉を拾いにいく（人が2m以内にいる球は奪わない）
+    if (!a.orb && this.orbs.length) {
+      const ob = this.orbs.filter(o => dist2(a.x, a.z, o.x, o.z) < 8 && !this.allies.some(h => !h.ctrlAI && h.st === 'ok' && !h.orb && dist2(h.x, h.z, o.x, o.z) < 2) && !this.inDanger(o.x, o.z, 0.5, 1.2)).sort((p, q) => dist2(a.x, a.z, p.x, p.z) - dist2(a.x, a.z, q.x, q.z))[0];
+      if (ob) { ai.tx = ob.x + ob.vx * 0.3; ai.tz = ob.z + ob.vz * 0.3; return; }
     }
     // 2) 気絶した仲間の救助
     const down = this.allies.filter(o => o.st === 'down');
@@ -2958,11 +3112,11 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
    ===================================================================== */
 (() => {
   const P = Sim.prototype;
-  const TYPES = ['melee', 'beam', 'guard'];
+  const TYPES = ['sword', 'punch', 'beam'];
 
   /** 最大剰余法：n体を割合で分け、合計をnにぴったり合わせる（同点は 近接→ビーム→防御 の順） */
   function mixCounts(n, mix, keys) {
-    keys = keys || TYPES;
+    keys = keys || Object.keys(mix);
     const raw = keys.map(k => n * (mix[k] || 0)), out = raw.map(Math.floor);
     let rest = n - out.reduce((s, v) => s + v, 0);
     const order = keys.map((k, i) => i).sort((a, b) => (raw[b] - out[b]) - (raw[a] - out[a]) || a - b);
@@ -2975,7 +3129,7 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     this.stage = o.test ? 'train' : 'intro'; this.barrier = 'none';
     const J = DATA.JOBAN;
     this.kills = 0; this.total = J.events.reduce((s, e) => s + e.n, 0);
-    this.fired = {}; this.grpKills = {}; this.grpN = {}; this.phase = 0; this.queue = []; this.spawnT = 0;
+    this.fired = {}; this.grpKills = {}; this.grpN = {}; this.phase = 0; this.queue = []; this.spawnT = { front: 0, rear: 0 }; this.sideT = { front: -99, rear: -99 };
     this.ycfg = { types: J.types, rights: J.rights };
     this.tr = { at: 0, ph: 'stop', d: 0, v: 0, t: 0, doors: 0 }; // 北千住で停車中（演出の間）
     const pos = [[-0.6, -4.2], [0.6, -4.2], [-0.6, -5.8], [0.6, -5.8]]; // 3号車の前寄り・前向き
@@ -2997,7 +3151,7 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   P.startTrain = function () {
     this.stage = 'train'; this.stageT = 0; this.introWait = false;
     const tr = this.tr; tr.ph = 'run'; tr.at = 0; tr.d = 0; tr.v = 0; tr.t = 0; tr.doors = 0;
-    this.fireEvent('p1');
+    this.fireEvent('board');
     this.ev('stage', { k: 'train' });
   };
 
@@ -3006,13 +3160,18 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     if (this.fired[id]) return false;
     const J = DATA.JOBAN, E = J.events.find(e => e.id === id); if (!E) return false;
     this.fired[id] = this.t || 1e-6; this.grpN[id] = E.n; this.grpKills[id] = 0;
-    const cnt = mixCounts(E.n, J.mix), list = [];
-    for (const k of TYPES) for (let i = 0; i < cnt[k]; i++) list.push(k);
-    for (let i = list.length - 1; i > 0; i--) { const j = (this.rng.next() * (i + 1)) | 0; [list[i], list[j]] = [list[j], list[i]]; } // 種類を混ぜる
-    if (E.from === 'in') { for (const typ of list) this.spawnYoshi(this.rng.range(-1.1, 1.1), this.rng.range(9, 19), id, 'in', typ); }
-    else for (const typ of list) this.queue.push({ grp: id, from: E.from, typ });
-    if (id[0] === 'p') this.phase = +id[1];
-    this.ev('jev', { id, n: E.n, from: E.from, st: E.from === 'door' ? +E.at.split(':')[1] : -1 });
+    // 前（1号車側）と後ろ（3号車側）それぞれで、剣・パンチ・ビームを最大剰余法でおおむね均等に
+    const list = [];
+    for (const [side, n] of [['front', E.front], ['rear', E.back]]) {
+      const cnt = mixCounts(n, J.mix, TYPES), part = [];
+      for (const k of TYPES) for (let i = 0; i < cnt[k]; i++) part.push(k);
+      for (let i = part.length - 1; i > 0; i--) { const j = (this.rng.next() * (i + 1)) | 0; [part[i], part[j]] = [part[j], part[i]]; } // 種類を混ぜる
+      for (const typ of part) list.push({ side, typ });
+    }
+    if (E.at === 'start') { // 乗車直後：すでに車内にいる（2号車の前寄り・3号車の後ろ寄り。味方の周り2mは空ける）
+      for (const q of list) { const z = q.side === 'front' ? this.rng.range(6, 19.5) : this.rng.range(-19.5, -8.5); this.spawnYoshi(this.rng.range(-1.1, 1.1), z, id, 'in', q.typ); }
+    } else for (const q of list) this.queue.push({ grp: id, side: q.side, typ: q.typ });
+    this.ev('jev', { id, n: E.n, front: E.front, back: E.back, st: E.at.startsWith('st:') ? +E.at.split(':')[1] : -1 });
     return true;
   };
 
@@ -3020,13 +3179,13 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     const J = DATA.JOBAN;
     if (this.stage === 'intro') { if (this.introWait) return; if (this.stageT >= J.introT) this.startTrain(); return; }
     if (this.stage === 'train' || this.stage === 'arrive') this.updateTrainMotion(dt);
-    if (this.stage === 'train') { this.updateSpawns(dt); this.checkPhases(); }
+    if (this.stage === 'train') this.updateSpawns(dt);
     if (this.stage === 'arrive' && this.stageT >= J.arriveT) this.finish(true, 'ueno');
   };
   /** 上野に着ける条件：全イベント発生済み・待機列0・生存0 */
   P.jobanCleared = function () { return DATA.JOBAN.events.every(e => this.fired[e.id]) && !this.queue.length && !this.mobs.some(m => m.st === 'ok'); };
   /** 車内にいる数・待っている数（表示用） */
-  P.jobanCounts = function () { return { alive: this.mobs.filter(m => m.st === 'ok').length, wait: this.queue.length }; };
+  P.jobanCounts = function () { return { alive: this.mobs.filter(m => m.st === 'ok').length, wait: this.queue.length, wf: this.queue.filter(q => q.side === 'front').length, wr: this.queue.filter(q => q.side === 'rear').length }; };
 
   /** 電車の動き：加速→走行→ブレーキで駅に止まる。日暮里→上野は、部下が残っている間は上野の手前を走り続ける */
   P.updateTrainMotion = function (dt) {
@@ -3040,10 +3199,13 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     }
     const L = J.segLen[tr.at];
     // 区間中央：走行距離が50%を越えたら一度だけ（フレームが飛んでも、50%に居続けても一度）
-    if (tr.at >= 1 && tr.at <= 3 && tr.d >= L * J.midFrac) this.fireEvent('mid_' + tr.at);
-    const hold = tr.at === 3 && !this.jobanCleared();
+    if (tr.at >= 0 && tr.at <= 3 && tr.d >= L * J.midFrac) this.fireEvent('mid_' + tr.at);
     const rem = L - tr.d, brakeD = tr.v * tr.v / (2 * J.acc);
-    if (hold) { tr.v = Math.min(J.vmax, tr.v + J.acc * dt); tr.d = Math.min(tr.d + tr.v * dt, L - J.vmax * J.vmax / (2 * J.acc) - 60); if (tr.d >= L * J.midFrac) this.fireEvent('mid_3'); return; }
+    // 上野の手前で敵が残っていたら「上野進入待ち」：信号待ちとして止まる（追加の敵は出さない）
+    if (tr.at === 3 && !this.jobanCleared() && rem <= 120 + brakeD + 0.3) {
+      const stopRem = Math.max(0, rem - 120); tr.v = stopRem > 0.05 ? Math.max(0, Math.min(tr.v, Math.sqrt(2 * J.acc * stopRem))) : 0; tr.d += tr.v * dt; if (!tr.hold) { tr.hold = 1; this.ev('holdUeno', {}); } return;
+    }
+    tr.hold = 0;
     if (rem <= brakeD + 0.3) { tr.v = Math.max(0.7, Math.sqrt(Math.max(0, 2 * J.acc * rem))); tr.d += tr.v * dt; }
     else { tr.v = Math.min(J.vmax, tr.v + J.acc * dt); tr.d += tr.v * dt; }
     if (L - tr.d <= 0.05) {
@@ -3053,45 +3215,40 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     }
   };
 
-  /** 途中駅：ホーム側のドアから乗ってくる（南千住15体・三河島15体・日暮里25体） */
+  /** 途中駅：前後の車両へホームから乗り、そこからこの車両へ流れ込む（南千住30体・三河島30体・日暮里40体） */
   P.boardAt = function (st) {
     const id = DATA.JOBAN.events.find(e => e.at === 'st:' + st).id;
     if (this.fireEvent(id)) this.ev('board', { st, n: this.grpN[id] });
   };
-  /** 初期3波：第1波10体をすべて倒すと15体、その15体を倒すと20体（駅・区間中央の撃破は数えない） */
-  P.checkPhases = function () {
-    if (this.fired.p1 && !this.fired.p2 && this.grpKills.p1 >= this.grpN.p1) { this.fireEvent('p2'); this.ev('wave', { n: 2, cnt: this.grpN.p2 }); }
-    else if (this.fired.p2 && !this.fired.p3 && this.grpKills.p2 >= this.grpN.p2) { this.fireEvent('p3'); this.ev('wave', { n: 3, cnt: this.grpN.p3 }); }
-  };
-  /** 待っている部下を、車内が混みすぎない範囲（同時20体）で少しずつ出す */
+  /** 待っている部下を、車内が混みすぎない範囲（同時40体）で前後それぞれから少しずつ出す（外側のドアからは乗せない） */
   P.updateSpawns = function (dt) {
-    const J = DATA.JOBAN; this.spawnT -= dt;
-    if (this.spawnT > 0 || !this.queue.length) return;
-    if (this.mobs.filter(m => m.st === 'ok').length >= J.maxActive) return;
-    // 駅で乗ってくる分はドアが開いている間に優先して出す
-    let qi = this.queue.findIndex(q => q.from === 'door');
-    if (qi >= 0 && this.tr.doors !== 1) { for (const q of this.queue) if (q.from === 'door') q.from = 'front'; qi = -1; } // 乗り切れなかった分は乗車済みとして前の車両で待つ
-    if (qi < 0) qi = this.queue.findIndex(q => q.from === 'front');
-    if (qi < 0) qi = 0;
-    const q = this.queue.splice(qi, 1)[0];
-    if (q.from === 'door') { const z = J.carDoors[(this.rng.next() * J.carDoors.length) | 0]; this.spawnYoshi(-J.halfW + 0.3, z + this.rng.range(-0.4, 0.4), q.grp, 'door', q.typ); this.spawnT = 0.3; }
-    else { this.spawnYoshi(this.rng.range(-1.0, 1.0), J.frontZ, q.grp, 'front', q.typ); this.spawnT = 0.24; }
+    const J = DATA.JOBAN;
+    for (const side of ['front', 'rear']) {
+      this.spawnT[side] -= dt;
+      if (this.spawnT[side] > 0) continue;
+      const qi = this.queue.findIndex(q => q.side === side); if (qi < 0) continue;
+      if (this.mobs.filter(m => m.st === 'ok').length >= J.maxActive) return;
+      const q = this.queue.splice(qi, 1)[0];
+      this.spawnYoshi(this.rng.range(-1.0, 1.0), side === 'front' ? J.frontZ : J.backZ, q.grp, side, q.typ);
+      this.spawnT[side] = 0.24; this.sideT[side] = this.t;
+    }
   };
 
   /* ---------- ヨシノシンの部下（電車・上野で共通） ---------- */
   P.spawnYoshi = function (x, z, grp, from, typ) {
     const rng = this.rng, cfg = this.ycfg, T = cfg.types[typ] || cfg.types.melee;
-    const wpn = T.wpn || (typ === 'beam' ? 'beam' : typ === 'guard' ? 'shield' : (rng.next() < 0.5 ? 'sword' : 'fist'));
-    const m = { id: 'm' + this.id(), kind: 'yoshi', typ, T, wpn, grp, from, x, z, yaw: from === 'door' ? Math.PI / 2 : Math.PI, hp: T.hp, maxHp: T.hp, def: T.def, str: T.str, yo: T.yo, r: T.r || DATA.JOBAN.r, st: 'ok', t: 0, para: 0, defDown: 0, dots: [], dl: [],
+    const wpn = T.wpn || (typ === 'beam' ? 'beam' : typ === 'guard' ? 'shield' : (rng.next() < 0.5 ? 'sword' : 'fist')); // 型から武器を決める（剣とパンチを取り違えない）
+    const m = { id: 'm' + this.id(), kind: 'yoshi', typ, T, wpn, grp, from, x, z, yaw: from === 'door' ? Math.PI / 2 : from === 'rear' ? 0 : Math.PI, hp: T.hp, maxHp: T.hp, def: T.def, str: T.str, yo: T.yo, r: T.r || DATA.JOBAN.r, st: 'ok', t: 0, para: 0, defDown: 0, dots: [], dl: [],
       spd: T.spd * rng.range(0.97, 1.03), cd: 0.6 + rng.next() * 1.2, act: null, tgt: -1, retT: 0, enterT: from === 'in' ? 0.7 : from === 'drop' ? 0 : 0.55, wind: 0, moving: 0, fireT: 99, strafe: rng.next() < 0.5 ? 1 : -1, gT: 0, gCd: 0, scale: T.scale || 1 };
     this.mobs.push(m); this.ev('ySpawn', { x, z, from });
     return m;
   };
   /** 動いてよい場面か（電車：走行中の戦い／上野：ボス戦・睡眠中は止まる） */
-  P.yoshiLive = function () { return this.stageId === 'ueno' ? this.uenoMinionsLive() : this.stage === 'train'; };
+  P.yoshiLive = function (m) { return this.stageId === 'ueno' ? this.uenoMinionsLive() : this.stageId === 'ueno_street' ? this.streetLive(m) : this.stage === 'train'; };
   /** 攻撃権：同時に攻撃を始められるのは 近接・防御で最大4体、ビームで最大1体（上野は2体） */
   P.yoshiCanAttack = function (m) {
     const R = this.ycfg.rights, beam = m.typ === 'beam'; let n = 0, all = 0;
+    if (beam && this.U && this.U.tengai) return false; // 天蓋乱射の間は射撃を遅らせて逃げ道を残す
     for (const o of this.mobs) if (o !== m && o.kind === 'yoshi' && o.act && o.st === 'ok') { all++; if ((o.typ === 'beam') === beam) n++; }
     if (R.all != null && all >= R.all) return false;
     return n < (beam ? R.beam : R.melee);
@@ -3101,13 +3258,13 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   P.updateYoshi = function (m, dt) {
     const J = DATA.JOBAN, W = J.wpn[m.wpn === 'shield' ? 'shield' : m.wpn], T = m.T;
     m.wind = m.act && m.act.t < m.act.w ? 1 : 0; m.moving = 0;
-    if (!this.yoshiLive()) return;
+    if (!this.yoshiLive(m)) return;
     if (m.para > 0) { m.para -= dt; m.act = null; return; }
     m.cd -= dt; m.gCd -= dt; if (m.gT > 0) m.gT -= dt;
     if (m.act) { m.act.t += dt; if (m.act.t >= m.act.end) m.act = null; else return; }
     if (m.enterT > 0) { // 乗り込む／前の車両から入ってくる
       m.enterT -= dt; const s = m.spd * 0.8 * dt;
-      const nx = m.from === 'door' ? m.x + s : m.x, nz = m.from === 'front' ? m.z - s : m.from === 'back' ? m.z - s : m.z;
+      const nx = m.from === 'door' ? m.x + s : m.from === 'side' ? m.x + (m.inX || 0) * s : m.x, nz = m.from === 'front' || m.from === 'back' || (m.from === 'side' && !m.inX) ? m.z - s : m.from === 'rear' ? m.z + s : m.z;
       const c = this.clampPos(m.x, m.z, nx, nz, m.r); m.x = c[0]; m.z = c[1]; m.moving = 1; return;
     }
     m.retT -= dt;
@@ -3178,12 +3335,66 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   };
 })();
 
+/* ===== street.js ===== */
+/* =====================================================================
+   street.js — 上野編「居酒屋通り」：電車の部下の1.25倍（HP・ちから・ようりょくだけ）を30体
+   流れ：intro（ホーム→改札→通りへ・数秒）→ street（3地点×10体。地点を片付けると次の暖簾の結界が開く）→ won（ボスへのチェックポイント）
+   ===================================================================== */
+(() => {
+  const P = Sim.prototype;
+  const S = () => DATA.STREET;
+  P.initStreet = function (o) {
+    const D = S(), J = DATA.JOBAN;
+    this.stage = o.test ? 'street' : 'intro'; this.barrier = 'none'; this.lanterns = [];
+    this.kills = 0; this.total = D.n; this.queue = null; this.grpKills = {}; this.grpN = {};
+    this.ycfg = { types: {}, rights: J.rights };
+    for (const k in J.types) { const T = J.types[k]; this.ycfg.types[k] = Object.assign({}, T, { hp: Math.round(T.hp * D.mul), str: Math.round(T.str * D.mul), yo: Math.round(T.yo * D.mul) }); } // まもり・移動・技の威力はそのまま
+    this.gate = 0; // 開いている結界の数（0：最初の地点だけ戦える）
+    for (const a of this.allies) { const q = D.start[a.slot]; a.x = a.px = q[0]; a.z = a.pz = q[1]; a.yaw = 0; a.ai.tx = a.x; a.ai.tz = a.z + 1; }
+    // 剣10・パンチ10・ビーム10を、10体ずつ3地点へ（各地点の内訳も最大剰余法でおおむね均等）
+    const all = []; for (const k of ['sword', 'punch', 'beam']) for (let i = 0; i < 10; i++) all.push(k);
+    for (let g = 0; g < 3; g++) {
+      const part = []; for (let i = 0; i < 10; i++) part.push(all[(i * 3 + g) % 30]);
+      const id = 'g' + g; this.grpN[id] = 10; this.grpKills[id] = 0;
+      part.forEach((typ, i) => { const row = i % 3, col = Math.floor(i / 3); const m = this.spawnYoshi(-3 + row * 3 + this.rng.range(-0.4, 0.4), D.groups[g] - 1.5 + col * 1.2 + this.rng.range(-0.3, 0.3), id, 'in', typ); m.enterT = 0; m.yaw = Math.PI; m.cd = 0.5 + this.rng.next() * 1.5; m.grpI = g; });
+    }
+  };
+  /** 通りの壁と、まだ開いていない暖簾の結界 */
+  P.clampStreet = function (ox, oz, nx, nz, rad) {
+    const D = S(); nx = clamp(nx, -D.halfX + rad, D.halfX - rad); nz = clamp(nz, 0.3 + rad, D.zMax - rad);
+    const g = this.gate < 3 ? D.gates[this.gate] : 1e9; if (nz > g - rad) nz = g - rad;
+    return [nx, nz];
+  };
+  /** その地点の部下は、手前の結界が開いてから動き出す */
+  P.streetLive = function (m) { return this.stage === 'street' && (m == null || m.grpI == null || m.grpI <= this.gate); };
+  P.updateStreet = function (dt) {
+    const D = S();
+    if (this.stage === 'intro') { if (this.introWait) return; if (this.stageT >= D.introT) { this.stage = 'street'; this.stageT = 0; this.ev('stage', { k: 'streetGo' }); } return; }
+    if (this.stage !== 'street') return;
+    const g = this.gate;
+    if (g < 3 && this.grpKills['g' + g] >= 10) {
+      this.gate = g + 1; this.ev('gate', { n: this.gate });
+      if (this.gate >= 3) this.finish(true, 'street');
+    }
+  };
+  P.candySpot = function () {
+    if (this.stageId === 'ueno_street') { const D = S(), z1 = this.gate < 3 ? D.gates[this.gate] - 1 : D.zMax - 1; return [this.rng.range(-D.halfX + 1, D.halfX - 1), this.rng.range(2, z1)]; }
+    if (this.stageId.startsWith('akiba')) return this.akibaCandySpot();
+    return [0, 0];
+  };
+  P.streetSnap = function () { return [this.gate]; };
+})();
+
 /* ===== ueno.js ===== */
 /* =====================================================================
-   ueno.js — 上野編のボス戦：上野駅前の広場で指揮官ヨシノシンと部下（妖怪人形）と戦う
+   ueno.js — 上野編のボス戦：上野駅前の広場で指揮官ヨシノシン（5.92m）と部下（妖怪人形）と戦う
    sim.js の Sim に足す（ホストだけが動かす・three.js 非依存）。部下の動きは joban.js と共通。
    流れ：intro（指を鳴らす→36体が走り出す・約3秒）→ boss（本体＋部下）→ won / lost
-   優先順位：撃破 ＞ 未成功の睡眠チェック ＞ 予約済みの二十連 ＞ ふつうの行動
+   ・HP 22,500／15,000／7,500 で「30分睡眠チャージ」（10秒で 2,500／3,500／4,000）。成功するたびに4秒ダウン、失敗は全回復して3段階をやり直し
+   ・未判定のしきい値より下へは一撃でもHPを進めない（HP段階ロック）。余剰は持ち越さない
+   ・HP22,500と7,500を初めて下回ったら「部下丸投げ五十連」を予約（睡眠と成功後のダウンが終わってから）
+   ・有効戦闘30秒ごとに15体（包囲動員）。部下の生存は予約込みで100体まで
+   優先順位：撃破 ＞ 睡眠チェック ＞ 予約済みの五十連 ＞ ふつうの行動
    ===================================================================== */
 (() => {
   const P = Sim.prototype;
@@ -3194,25 +3405,23 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     this.stage = o.test ? 'boss' : 'intro'; this.barrier = 'none'; this.lanterns = [];
     this.kills = 0; this.total = 0; this.queue = null;
     this.ycfg = { types: D.minions, rights: D.rights };
-    // 平均Lv（出動開始時の4体・切り捨て）で決まる上野だけの補正。途中の操作交代では変えない
-    const Pl = Math.floor(this.allies.reduce((s, a) => s + a.lv, 0) / this.allies.length);
-    this.uenoLv = Pl;
-    this.lvOut = clamp(1 + D.lvOut.k * (Pl - D.rec), D.lvOut.lo, D.lvOut.hi);
-    this.lvIn = clamp(1 - D.lvIn.k * (Pl - D.rec), D.lvIn.lo, D.lvIn.hi);
-    this.U = { thrFlag: {}, thrQ: 0, thrUsed: 0, thr: null, sleepArmed: true, sleepPend: false, sleepCarry: 0, sleep: null, sleepDone: false, sleepWarn: false, barrier: null, cmdN: 0, shoshaI: 0, reserve: 0, lastSleep: null };
+    // 平均Lv（出動開始時の4体・切り捨て）で決まる上野ボスだけの補正。途中の操作交代では変えない
+    const Pl = Math.floor(this.allies.reduce((s, a) => s + a.lv, 0) / this.allies.length), k = DATA.lvAdjust('ueno', Pl);
+    this.uenoLv = Pl; this.lvOut = k.out; this.lvIn = k.in;
+    this.U = { cyc: 1, done: [0, 0, 0], pend: -1, sleep: null, pre: {}, thrFlag: {}, thrQ: 0, thrUsed: 0, thr: null, reserve: 0, barrier: null, cmdN: 0, shoshaI: 0, eff: 0, waveN: 0, waveQ: [], entI: 0, lastSleep: null, tengai: false };
     for (const a of this.allies) {
       const q = D.start[a.slot]; a.x = a.px = q[0]; a.z = a.pz = q[1]; a.yaw = 0; a.ai.tx = a.x; a.ai.tz = a.z + 1;
       a.sp = Math.max(a.sp, 50); // 妖気は最低50（高ければそのまま）
-      if (o.carry && o.carry[a.slot]) a.items.forEach((it, i) => { if (o.carry[a.slot][i] != null) it.n = o.carry[a.slot][i]; }); // 電車から続けるときは所持数を引き継ぐ
+      if (o.carry && o.carry[a.slot]) a.items.forEach((it, i) => { if (o.carry[a.slot][i] != null) it.n = o.carry[a.slot][i]; });
     }
     const [bx, bz] = D.bossSpawn;
     this.boss = { id: 'boss', kind: 'yoshinoshin', x: bx, z: bz, y: 0, yaw: Math.PI, hp: D.hp, maxHp: D.hp, str: D.str, yo: D.yo, def: D.def, st: o.test ? 'idle' : 'intro', mv: null, t: 0, gap: 1.2, phase: 1, cds: {}, target: 0, defDown: 0, paraImm: 0, dots: [], dl: [], fl: null, downT: 0, stunT: 0, lastAtk: -99, wantWarp: false, hz: null, home: [bx, bz] };
     if (o.test) this.boss.testIdle = !!o.idle;
-    // 最初の36体：6列に並び、開始と同時に全員が前進する（小分けのウェーブにしない）
-    const kinds = []; for (const k of ['melee', 'guard', 'beam']) for (let i = 0; i < D.init[k]; i++) kinds.push(k);
-    const front = kinds.filter(k => k !== 'beam'); for (let i = front.length - 1; i > 0; i--) { const j = (this.rng.next() * (i + 1)) | 0; [front[i], front[j]] = [front[j], front[i]]; }
-    const order = front.slice(0, 30).concat(kinds.filter(k => k === 'beam'), front.slice(30)); // 射撃は後ろの列
-    order.forEach((k, i) => { const row = Math.floor(i / 6), col = i % 6; this.spawnYoshi(-7.5 + col * 3 + (row % 2 ? 0.75 : -0.75), 12 + row * 1.2, 'init', 'in', k); });
+    // 最初の36体（ビーム22・剣7・パンチ7）：6列に並び、開始と同時に全員が前進する。ビームは後ろの列
+    const melee = []; for (let i = 0; i < D.init.sword; i++) melee.push('sword'); for (let i = 0; i < D.init.punch; i++) melee.push('punch');
+    for (let i = melee.length - 1; i > 0; i--) { const j = (this.rng.next() * (i + 1)) | 0; [melee[i], melee[j]] = [melee[j], melee[i]]; }
+    const order = melee.concat(Array(D.init.beam).fill('beam'));
+    order.forEach((k2, i) => { const row = Math.floor(i / 6), col = i % 6; this.spawnYoshi(-7.5 + col * 3 + (row % 2 ? 0.75 : -0.75), 12 + row * 1.2, 'init', 'in', k2); });
     for (const m of this.mobs) { m.enterT = 0; m.yaw = Math.PI; m.cd = 0.4 + this.rng.next() * 1.6; }
   };
 
@@ -3228,6 +3437,8 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   };
   P.uenoMinionsLive = function () { return this.stage === 'boss' && !this.U.sleep && this.boss && this.boss.st !== 'dead'; };
   P.uenoAlive = function () { let n = 0; for (const m of this.mobs) if (m.st === 'ok' || m.st === 'fly') n++; return n; };
+  /** 次の未判定の睡眠段階（0〜2）。すべて成功済みなら -1 */
+  P.sleepNext = function () { const d = this.U.done; for (let k = 0; k < 3; k++) if (!d[k]) return k; return -1; };
 
   P.updateUenoStage = function (dt) {
     if (this.stage === 'intro') {
@@ -3237,21 +3448,34 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     }
   };
 
-  /* ---------- 被ダメージ・バリア・HPのしきい値 ---------- */
+  /* ---------- 被ダメージ・バリア・HP段階ロック ---------- */
   /** バリア中の本体には通常ダメージが通らない */
   P.uenoBlock = function (e) { if (e !== this.boss || !this.U || !this.U.barrier) return false; this.ev('bblock', { x: e.x, z: e.z }); return true; };
-  /** 睡眠中の本体は被ダメージ×2（Lv補正とは別に一度だけ） */
+  /** 睡眠中の本体は被ダメージ×2.25（Lv補正・重玉とは別に一度だけ） */
   P.uenoDmgMul = function (e) { return e === this.boss && this.U && this.U.sleep ? U().moves.sleep.mul : 1; };
+  /** HP段階ロック：未判定のしきい値より下へは進めない（睡眠中は次の段階のしきい値で止める）。最後の段階のあとは0まで */
+  P.capEnemyDmg = function (e, dmg) {
+    if (this.stageId !== 'ueno' || e !== this.boss || !this.U) return dmg;
+    const S = U().moves.sleep.stages, Us = this.U;
+    let k = this.sleepNext(); if (Us.sleep) k = Us.sleep.i + 1 < 3 && !Us.done[Us.sleep.i + 1] ? Us.sleep.i + 1 : -1;
+    if (k < 0) return dmg;
+    const floor = S[k].at; if (e.hp <= floor) return 0;
+    return Math.min(dmg, e.hp - floor);
+  };
   P.uenoAfterHit = function (e, dmg) {
     const b = this.boss, Us = this.U; if (e !== b || !Us) return;
-    const M = U().moves, max = b.maxHp, hp = Math.max(0, b.hp), prev = hp + dmg;
-    if (Us.sleep) { Us.sleep.dmg += dmg; return; } // 実ダメージだけを数える（反射・味方への爆発・回復は入らない）
-    if (hp <= 0) return; // 撃破が優先
-    if (Us.sleepArmed && !Us.sleepDone && !Us.sleepWarn && prev > max * M.sleep.warnAt && hp <= max * M.sleep.warnAt && hp > max * M.sleep.at) { Us.sleepWarn = true; this.ev('sleepWarn', {}); }
-    if (Us.sleepArmed && !Us.sleepDone && prev > max * M.sleep.at && hp <= max * M.sleep.at) { // 半分を上からまたいだ：余剰だけを一度計上
-      Us.sleepArmed = false; Us.sleepPend = true; Us.sleepCarry = Math.round(max * M.sleep.at - hp); this.ev('sleepPend', {});
+    if (Us.sleep) { Us.sleep.dmg += dmg; return; } // 本体へ実際に適用したダメージだけを数える（反射・味方への爆発・回復・部下へのダメージは入らない）
+    this.uenoThresholds();
+  };
+  /** しきい値の確認：予告（24,000／16,500／9,000）・睡眠の開始待ち・五十連の予約（22,500と7,500を初めて下回ったとき） */
+  P.uenoThresholds = function () {
+    const b = this.boss, Us = this.U, M = U().moves, S = M.sleep.stages; if (!b || b.hp <= 0) return;
+    const k = this.sleepNext();
+    if (k >= 0 && !Us.sleep) {
+      if (b.hp <= S[k].pre && !Us.pre[Us.cyc + ':' + k]) { Us.pre[Us.cyc + ':' + k] = 1; this.ev('sleepWarn', { i: k, need: S[k].need }); }
+      if (b.hp <= S[k].at && Us.pend < 0) { Us.pend = k; this.ev('sleepPend', { i: k }); }
     }
-    for (const f of M.throw20.at) if (!Us.thrFlag[f] && prev > max * f && hp <= max * f) { Us.thrFlag[f] = 1; Us.thrQ++; } // 使用済みは全回復でも戻さない
+    for (const f of M.throw50.at) if (!Us.thrFlag[f] && b.hp < b.maxHp * f) { Us.thrFlag[f] = 1; Us.thrQ++; } // 全回復しても使用済みは戻さない
   };
 
   /** 射撃部下のビームが本体を通ったか（味方に当たって止まった場合は届かない） */
@@ -3262,7 +3486,7 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     const fx = Math.sin(h.yaw), fz = Math.cos(h.yaw), R = U().bossR;
     if (!inLine(b.x, b.z, h.x, h.z, h.yaw, h.len, h.w / 2, R)) return;
     const fb = (b.x - h.x) * fx + (b.z - h.z) * fz;
-    for (const o of this.allies) if (o.st === 'ok' && inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR) && (o.x - h.x) * fx + (o.z - h.z) * fz < fb && !(o.inv > 0)) return; // 手前の味方で止まった
+    for (const o of this.allies) if (o.st === 'ok' && inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR) && (o.x - h.x) * fx + (o.z - h.z) * fz < fb && !(o.inv > 0)) return;
     Us.barrier.seen[h.id] = 1; Us.barrier.hits++;
     this.ev('bhit', { n: Us.barrier.hits, x: b.x, z: b.z });
     if (Us.barrier.hits >= U().moves.barrier.hits) this.endBarrier(true);
@@ -3270,9 +3494,33 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   P.endBarrier = function (broken) {
     const Us = this.U, b = this.boss; if (!Us.barrier) return;
     Us.barrier = null; this.ev('barrier', { on: 0, broken: broken ? 1 : 0 });
-    if (broken && (b.st === 'idle' || b.st === 'walk' || b.st === 'rec' || b.st === 'act' || b.st === 'wind') && b.mv !== 'throw20') { this.clearBossHz(); b.st = 'stun'; b.stunT = U().moves.barrier.stagger; b.t = 0; b.mv = null; b.hz = null; }
+    if (broken && (b.st === 'idle' || b.st === 'walk' || b.st === 'rec' || b.st === 'act' || b.st === 'wind') && b.mv !== 'throw50' && b.mv !== 'tengai') { this.clearBossHz(); b.st = 'stun'; b.stunT = U().moves.barrier.stagger; b.t = 0; b.mv = null; b.hz = null; }
   };
   P.clearBossHz = function () { this.hazards = this.hazards.filter(h => h.src !== 'boss' || h.t > h.warn || h.keepOnCancel); };
+
+  /* ---------- 包囲動員：有効戦闘30秒ごとに15体（4つの外周入口から） ---------- */
+  const ENTS = [[-16.3, 13], [16.3, 13], [-9, 27.4], [9, 27.4]];
+  P.uenoWaves = function (dt) {
+    const Us = this.U, D = U(), W = D.wave, b = this.boss;
+    const running = this.stage === 'boss' && b && b.st !== 'sleep' && b.st !== 'down' && b.st !== 'dead' && b.st !== 'intro' && !Us.sleep;
+    if (running) Us.eff += dt; // 登場・睡眠・成功後ダウン・ポーズでは止まる
+    while (Us.eff >= (Us.waveN + 1) * W.every) { // 30/60/90…秒ごとに一度だけ予約（満員でも毎フレーム足さない）
+      Us.waveN++;
+      const kinds = []; for (const k in W.mix) for (let i = 0; i < W.mix[k]; i++) kinds.push(k);
+      const few = Us.entI++ % 4, per = [4, 4, 4, 4]; per[few] = 3; let ei = 0, c = 0;
+      for (const typ of kinds) { while (c >= per[ei]) { ei++; c = 0; } Us.waveQ.push({ typ, ent: ei, due: this.t + W.warn }); c++; }
+      this.ev('waveWarn', { n: W.n, ents: ENTS.map((e, i) => i) });
+    }
+    if (!running || !Us.waveQ.length) return;
+    for (let i = 0; i < Us.waveQ.length; i++) {
+      const q = Us.waveQ[i]; if (q.due > this.t) continue;
+      if (this.uenoAlive() + Us.reserve >= D.cap) break; // 予約込みで100体まで。入れない分は待機
+      let [x, z] = ENTS[q.ent]; x += this.rng.range(-1.2, 1.2) * (Math.abs(x) > 15 ? 0 : 1); z += this.rng.range(-1.2, 1.2) * (Math.abs(x) > 15 ? 1 : 0);
+      if (this.allies.some(o => o.st === 'ok' && dist2(o.x, o.z, x, z) < 2.2)) continue; // 味方の2m以内には出さない（次のフレームで）
+      const m = this.spawnYoshi(x, z, 'wave', 'side', q.typ); m.enterT = 0.5; m.inX = x > 15 ? -1 : x < -15 ? 1 : 0;
+      Us.waveQ.splice(i, 1); i--;
+    }
+  };
 
   /* ---------- ボスの行動 ---------- */
   P.uenoTarget = function () {
@@ -3287,29 +3535,31 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     for (const k in b.cds) if (b.cds[k] > 0) b.cds[k] -= dt;
     if (b.st === 'dead' || this.stage === 'won' || this.stage === 'lost') return;
     if (this.stage === 'intro') { b.st = 'intro'; return; }
+    this.uenoWaves(dt);
     if (Us.barrier) { Us.barrier.t += dt; if (Us.barrier.t >= M.barrier.max) this.endBarrier(false); } // 最大8秒で必ず解除
     // 睡眠チェック中
     if (b.st === 'sleep') {
-      const S = Us.sleep; S.t += dt;
-      if (S.dmg >= M.sleep.need) { // 成功：回復を中断して4秒ダウン。以後は眠らない
-        Us.sleep = null; Us.sleepDone = true; Us.lastSleep = { ok: 1, dmg: S.dmg }; b.st = 'down'; b.t = 0; b.downT = M.sleep.down; b.mv = null; this.ev('sleepEnd', { ok: 1, dmg: Math.round(S.dmg) }); this.ev('bossdown', {});
-      } else if (S.t >= M.sleep.dur) { // 失敗：最大HPまで戻り、また半分で同じ判定
-        Us.sleep = null; Us.sleepArmed = true; Us.sleepWarn = false; Us.lastSleep = { ok: 0, dmg: S.dmg }; b.hp = b.maxHp; b.st = 'idle'; b.t = 0; b.gap = 1.0; b.mv = null; this.ev('sleepEnd', { ok: 0, dmg: Math.round(S.dmg) });
+      const S = Us.sleep, st = M.sleep.stages[S.i]; S.t += dt;
+      if (S.dmg >= st.need) { // 成功：その段階だけ成功済みにして4秒ダウン
+        Us.done[S.i] = 1; Us.lastSleep = { ok: 1, i: S.i, dmg: S.dmg }; Us.sleep = null; b.st = 'down'; b.t = 0; b.downT = M.sleep.down; b.mv = null;
+        this.ev('sleepEnd', { ok: 1, i: S.i, need: st.need, dmg: Math.round(S.dmg), cyc: Us.cyc }); this.ev('bossdown', {});
+      } else if (S.t >= M.sleep.dur) { // 失敗：HP30,000へ全回復し、3段階すべてを未判定へ戻す
+        Us.lastSleep = { ok: 0, i: S.i, dmg: S.dmg }; Us.sleep = null; Us.done = [0, 0, 0]; Us.pend = -1; Us.cyc++; b.hp = b.maxHp; b.st = 'idle'; b.t = 0; b.gap = 1.0; b.mv = null;
+        this.ev('sleepEnd', { ok: 0, i: S.i, need: st.need, dmg: Math.round(S.dmg), cyc: Us.cyc });
       }
       return;
     }
-    if (b.st === 'down') { b.downT -= dt; if (b.downT <= 0) { b.st = 'idle'; b.t = 0; b.gap = 0.8; } return; }
+    if (b.st === 'down') { b.downT -= dt; if (b.downT <= 0) { b.st = 'idle'; b.t = 0; b.gap = 0.8; this.uenoThresholds(); } return; }
     if (b.st === 'stun') { b.stunT -= dt; if (b.stunT <= 0) { b.st = 'idle'; b.t = 0; b.gap = 0.6; } return; }
-    // 二十連の投げ（本体の状態とは別に進む）
-    if (Us.thr) this.updateThrow(dt);
-    // 睡眠の開始待ち：二十連の途中なら全員の着地を待ってから
-    if (Us.sleepPend && !Us.thr && !this.mobs.some(m => m.st === 'fly')) { this.startSleep(); return; }
-    if (Us.sleepPend && (b.st === 'idle' || b.st === 'walk')) return; // 待っている間は新しい大技・動員をしない
+    if (Us.thr) this.updateThrow(dt); // 五十連の投げ（本体の状態とは別に進む）
+    this.uenoThresholds();
+    // 睡眠の開始待ち：五十連の途中なら全員の着地を待ってから（着弾判定を消して開始）
+    if (Us.pend >= 0 && !Us.thr && !this.mobs.some(m => m.st === 'fly')) { this.startSleep(Us.pend); return; }
+    if (Us.pend >= 0 && (b.st === 'idle' || b.st === 'walk')) return; // 待っている間は新しい大技を始めない
     switch (b.st) {
       case 'idle': case 'walk': {
         const tg = this.uenoTarget();
-        if (tg) { const ty = yawTo(tg.x - b.x, tg.z - b.z); b.yaw += clamp(angDiff(b.yaw, ty), -2.2 * dt, 2.2 * dt); }
-        // 位置調整：部下の後ろ（奥）を保ち、追い回さない
+        if (tg) { const ty = yawTo(tg.x - b.x, tg.z - b.z); b.yaw += clamp(angDiff(b.yaw, ty), -2.0 * dt, 2.0 * dt); }
         if (b.home) { const dx = b.home[0] - b.x, dz = b.home[1] - b.z, d = Math.hypot(dx, dz); if (d > 0.3) { const s = Math.min(d, 1.6 * dt); b.x += dx / d * s; b.z += dz / d * s; b.st = 'walk'; } else b.st = 'idle'; }
         if (b.testIdle) return;
         b.gap -= dt; if (b.gap <= 0) this.uenoDecide();
@@ -3319,29 +3569,28 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     }
   };
 
-  /** 次の行動を決める：指揮・待機・位置調整 3 に対して 直接攻撃 2 くらい。直接攻撃の開始は3秒以上あける */
+  /** 次の行動：指揮・待機・位置調整 3 に対して 直接攻撃 2 くらい。直接攻撃の開始は3秒以上あける。ビーム系7割・霊光2割・スタンプ1割 */
   P.uenoDecide = function () {
     const b = this.boss, Us = this.U, D = U(), M = D.moves, alive = this.uenoAlive();
     const tg = this.uenoTarget(); if (!tg) { b.gap = 0.5; return; }
     const cd = k => !(b.cds[k] > 0), dT = dist2(b.x, b.z, tg.x, tg.z);
-    // 予約済みの二十連：生存が20体以下になったら必ず20体
-    if (Us.thrQ > 0 && !Us.thr && alive <= D.cap - M.throw20.n) return this.startMove('throw20');
+    // 予約済みの五十連：生存50体以下・予約込みで100体に収まるときに必ず50体
+    if (Us.thrQ > 0 && !Us.thr && alive <= M.throw50.alive && alive + M.throw50.n <= D.cap) return this.startMove('throw50');
     if (b.wantWarp && cd('warp')) return this.startMove('warp');
-    if (!Us.thrQ && alive <= M.summon.at && cd('summon') && alive + M.summon.n <= D.cap) return this.startMove('summon');
-    if (!Us.barrier && cd('barrier') && this.stageT > 18 && this.mobs.some(m => m.st === 'ok' && m.typ === 'beam') && this.rng.next() < 0.35) return this.startMove('barrier');
+    if (!Us.barrier && cd('barrier') && this.stageT > 18 && this.mobs.some(m => m.st === 'ok' && m.typ === 'beam') && this.rng.next() < 0.3) return this.startMove('barrier');
     const ready = this.t - b.lastAtk >= D.minGap;
     let near = null, nd = 1e9; for (const o of this.allies) if (o.st === 'ok') { const d = dist2(b.x, b.z, o.x, o.z); if (d < nd) { nd = d; near = o; } }
     if (ready && near && nd < M.shosho.near && cd('shosho')) return this.startMove('shosho', near); // 近づいた味方へ連掌（そのあと後方へワープ）
     if (ready && Us.cmdN <= 0) {
-      const c = [];
-      if (cd('reiko') && dT < M.reiko.range) c.push(['reiko', 3]);
-      if (cd('shosha')) c.push(['shosha', 2]);
-      if (cd('stamp') && this.allies.filter(o => o.st === 'ok' && dist2(o.x, o.z, D.center[0], D.center[1]) < M.stamp.r + 2.5).length >= 1) c.push(['stamp', 1.3]);
+      const W = D.pick, c = [];
+      const beams = []; if (cd('shosha')) beams.push('shosha'); if (cd('tengai') && !Us.thr) beams.push('tengai');
+      if (beams.length) c.push([beams[(this.rng.next() * beams.length) | 0], W.beams]);
+      if (cd('reiko') && dT < M.reiko.range) c.push(['reiko', W.reiko]);
+      if (cd('stamp') && !Us.thr) c.push(['stamp', W.stamp]);
       if (c.length) { let r = this.rng.next() * c.reduce((s, q) => s + q[1], 0); for (const [k, w] of c) { r -= w; if (r <= 0) return this.startMove(k, tg); } return this.startMove(c[0][0], tg); }
     }
-    // 指揮（部下へ号令）・待機・位置調整
     Us.cmdN--;
-    if (cd('warp') && dT < 2.6 && this.rng.next() < 0.5) return this.startMove('warp');
+    if (cd('warp') && dT < 3.2 && this.rng.next() < 0.5) return this.startMove('warp');
     const cx = this.allies.filter(o => o.st === 'ok').reduce((s, o, i, arr) => s + o.x / arr.length, 0);
     b.home = [clamp(cx * 0.6 + this.rng.range(-3, 3), -11, 11), clamp(this.rng.range(19, 24), 17, 25.5)];
     if (this.rng.next() < 0.5) return this.startMove('cmd');
@@ -3351,24 +3600,25 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   P.startMove = function (mv, tg) {
     const b = this.boss, D = U(), M = D.moves[mv] || { warn: 1.0 }, Us = this.U;
     b.mv = mv; b.t = 0; b.st = 'wind'; b.hz = null; b.ms = { tg: tg ? tg.slot : b.target, n: 0 };
-    if (['reiko', 'shosho', 'stamp', 'shosha'].includes(mv)) { b.lastAtk = this.t; Us.cmdN = 1 + (this.rng.next() < 0.5 ? 1 : 0); }
+    if (['reiko', 'shosho', 'stamp', 'shosha', 'tengai'].includes(mv)) { b.lastAtk = this.t; Us.cmdN = 1 + (this.rng.next() < 0.5 ? 1 : 0); }
     if (M.cd) b.cds[mv] = M.cd;
     const fx = Math.sin(b.yaw), fz = Math.cos(b.yaw);
-    if (mv === 'reiko') { // 3方向の光弾：準備中は3本の細い線で予告
+    if (mv === 'reiko') { // 3方向の太い光弾（判定半径0.60m）：準備中は3本の線で予告
       const t = this.allies[b.ms.tg]; if (t) b.yaw = yawTo(t.x - b.x, t.z - b.z);
-      for (let i = -1; i <= 1; i++) this.hz({ kind: 'line', x: b.x + Math.sin(b.yaw) * 0.9, z: b.z + Math.cos(b.yaw) * 0.9, yaw: b.yaw + i * M.spread, len: 9, w: 0.45, warn: M.warn, act: 0, src: 'boss', fx: 'reikoW' });
-    } else if (mv === 'shosho') { // 前半は向きを追い、最後の0.25秒は固定
-      b.hz = this.hz({ kind: 'rect', x: b.x + fx * 0.5, z: b.z + fz * 0.5, yaw: b.yaw, len: M.len, w: M.w, warn: M.warn, act: M.act, pw: M.pw, stat: M.stat, src: 'boss', knock: 5, fx: 'shosho' });
-    } else if (mv === 'stamp') { // 広場中央の到着印へワープしてから踏み下ろす
+      for (let i = -1; i <= 1; i++) this.hz({ kind: 'line', x: b.x + Math.sin(b.yaw) * 1.4, z: b.z + Math.cos(b.yaw) * 1.4, yaw: b.yaw + i * M.spread, len: 10, w: M.r * 2, warn: M.warn, act: 0, src: 'boss', fx: 'reikoW' });
+    } else if (mv === 'shosho') {
+      b.hz = this.hz({ kind: 'rect', x: b.x + fx * 0.8, z: b.z + fz * 0.8, yaw: b.yaw, len: M.len, w: M.w, warn: M.warn, act: M.act, pw: M.pw, stat: M.stat, src: 'boss', knock: 5, fx: 'shosho' });
+    } else if (mv === 'stamp') { // 広場中央の到着印へワープしてから踏み下ろす（半径5.0m）
       const [cx, cz] = D.center; b.ms.to = [cx, cz]; b.st = 'hidden';
       this.hz({ kind: 'circle', x: cx, z: cz, r: M.r, warn: M.warn, act: M.act, pw: M.pw, stat: M.stat, src: 'boss', knock: 6, fx: 'stamp' });
     } else if (mv === 'shosha') {
       const form = ['front4', 'surround4', 'track3'][Us.shoshaI++ % 3]; b.ms.form = form; b.ms.grp = { hits: {}, max: 1 };
       if (form !== 'track3') this.shoshaVolley(form);
-    } else if (mv === 'warp') {
+    } else if (mv === 'tengai') { Us.tengai = true; b.ms.wave = 0; }
+    else if (mv === 'warp') {
       const to = this.warpSpot(); b.ms.to = to;
-      this.hz({ kind: 'circle', x: to[0], z: to[1], r: 1.1, warn: M.warn + M.act, act: 0, src: 'boss', fx: 'warp' });
-    } else if (mv === 'throw20') { Us.thrQ--; Us.thrUsed++; Us.reserve = M.n; }
+      this.hz({ kind: 'circle', x: to[0], z: to[1], r: 1.6, warn: M.warn + M.act, act: 0, src: 'boss', fx: 'warp' });
+    } else if (mv === 'throw50') { Us.thrQ--; Us.thrUsed++; Us.reserve = M.n; } // 50体分の枠を先に確保
     this.ev('bossmove', { mv });
   };
   /** 号令四連照射：前方へ横並び4本／周囲4本（追跡3発は updateUenoMove で） */
@@ -3377,15 +3627,32 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     if (form === 'front4') {
       const yaw = t ? yawTo(t.x - b.x, t.z - b.z) : b.yaw, d = t ? clamp(dist2(b.x, b.z, t.x, t.z), 4, 9) : 6, cx = b.x + Math.sin(yaw) * d, cz = b.z + Math.cos(yaw) * d, px = Math.cos(yaw), pz = -Math.sin(yaw);
       for (const k of [-1.5, -0.5, 0.5, 1.5]) pts.push([cx + px * k * M.gap, cz + pz * k * M.gap]);
-    } else for (let k = 0; k < 4; k++) { const a = b.yaw + Math.PI / 4 + k * Math.PI / 2; pts.push([b.x + Math.sin(a) * 4.2, b.z + Math.cos(a) * 4.2]); }
+    } else for (let k = 0; k < 4; k++) { const a = b.yaw + Math.PI / 4 + k * Math.PI / 2; pts.push([b.x + Math.sin(a) * 4.6, b.z + Math.cos(a) * 4.6]); }
     for (const [x, z] of pts) { const c = this.clampUeno(x, z, x, z, 0.1); this.hz({ kind: 'circle', x: c[0], z: c[1], r: M.r, warn: M.warn, act: M.act, pw: M.pw, stat: M.stat, src: 'boss', fx: 'ubeam', grp: b.ms.grp }); }
+  };
+  /** 天蓋乱射・三十六光：12本×3波。1波につき4本は味方の位置を記録、8本は周囲へ散らす。各波で全員に逃げ場が残る配置だけを使う */
+  P.tengaiWave = function (wi) {
+    const b = this.boss, D = U(), M = D.moves.tengai, grp = { hits: {}, max: 1 }, alive = this.allies.filter(o => o.st === 'ok');
+    const reach = 3.6 * Math.max(0.1, M.waves[0] - 0.8); // 最も遅いAI（3.6m/s）が反応0.8秒のあとに動ける距離
+    let pts = null;
+    for (let tryN = 0; tryN < 12 && !pts; tryN++) {
+      const cand = [];
+      alive.forEach((o, i) => { if (cand.length < M.track) cand.push([o.x + this.rng.range(-0.3, 0.3), o.z + this.rng.range(-0.3, 0.3)]); }); // 発射前に位置を固定（吸い付かない）
+      while (cand.length < M.per) { const a = this.rng.next() * TAU, r = this.rng.range(2.5, 12); const x = clamp(b.x * 0.3 + Math.sin(a) * r, -D.halfX + 1, D.halfX - 1), z = clamp(14 + Math.cos(a) * r * 0.9, 2, D.zMax - 1); if (cand.every(q => dist2(q[0], q[1], x, z) > M.r * 1.7)) cand.push([x, z]); else if (this.rng.next() < 0.05) cand.push([x, z]); }
+      const covered = (x, z) => cand.some(q => dist2(q[0], q[1], x, z) <= M.r + DATA.MOB.allyR);
+      const safe = alive.every(o => { for (let r = 0.6; r <= reach; r += 0.45) for (let i = 0; i < 16; i++) { const a = i / 16 * TAU, x = o.x + Math.sin(a) * r, z = o.z + Math.cos(a) * r, c = this.clampUeno(x, z, x, z, 0.35); if (Math.abs(c[0] - x) < 0.05 && Math.abs(c[1] - z) < 0.05 && !covered(x, z)) return true; } return false; });
+      if (safe) pts = cand;
+    }
+    if (!pts) { pts = []; for (let i = 0; i < M.per; i++) pts.push([-13 + (i % 6) * 5.2, i < 6 ? 6 : 20]); } // 安全な固定配置
+    for (const [x, z] of pts) this.hz({ kind: 'circle', x, z, r: M.r, warn: M.waves[0], act: M.act, pw: M.pw, stat: M.stat, src: 'boss', fx: 'ubeam', grp, num: wi + 1 });
+    this.ev('tengaiWave', { n: wi + 1 });
   };
   /** ワープ先：奥の通行できる場所。入口や味方の真下には出ない */
   P.warpSpot = function () {
-    const b = this.boss, D = U();
+    const b = this.boss;
     for (let k = 0; k < 24; k++) {
       const x = this.rng.range(-11, 11), z = this.rng.range(19.5, 25);
-      if (this.allies.some(o => o.st !== 'gone' && dist2(o.x, o.z, x, z) < 4)) continue;
+      if (this.allies.some(o => o.st !== 'gone' && dist2(o.x, o.z, x, z) < 4.5)) continue;
       if (dist2(b.x, b.z, x, z) < 4) continue;
       return [x, z];
     }
@@ -3396,30 +3663,30 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     const b = this.boss, D = U(), mv = b.mv, M = D.moves[mv] || { warn: 1.0, rec: 0.6 }, Us = this.U, t = b.t;
     const toRec = () => { b.st = 'rec'; b.t = 0; };
     const done = () => { b.st = 'idle'; b.t = 0; b.mv = null; b.hz = null; b.gap = 0.5 + this.rng.next() * 0.6; };
-    if (b.st === 'rec') { if (t >= (M.rec != null ? M.rec : 0.5)) { if (mv === 'shosho') b.wantWarp = true; done(); } return; }
+    if (b.st === 'rec') { if (t >= (M.rec != null ? M.rec : 0.5)) { if (mv === 'shosho') b.wantWarp = true; if (mv === 'tengai') Us.tengai = false; done(); } return; }
     switch (mv) {
-      case 'cmd': if (t >= 1.3) done(); return; // 札を振って号令（攻撃はしない）
+      case 'cmd': if (t >= 1.3) done(); return;
       case 'reiko':
         if (b.st === 'wind' && t >= M.warn) {
-          for (let i = -1; i <= 1; i++) { const yaw = b.yaw + i * M.spread, fx = Math.sin(yaw), fz = Math.cos(yaw); this.projs.push({ id: this.id(), kind: 'reiko', team: 'enemy', x: b.x + fx * 0.9, y: 1.6, z: b.z + fz * 0.9, vx: fx * M.speed, vz: fz * M.speed, life: M.range / M.speed, r: M.r, pw: M.pw, stat: M.stat, src: b, srcEnt: b, hit: new Set(), yaw }); }
+          for (let i = -1; i <= 1; i++) { const yaw = b.yaw + i * M.spread, fx = Math.sin(yaw), fz = Math.cos(yaw); this.projs.push({ id: this.id(), kind: 'reiko', team: 'enemy', x: b.x + fx * 1.4, y: 2.4, z: b.z + fz * 1.4, vx: fx * M.speed, vz: fz * M.speed, life: M.range / M.speed, r: M.r, pw: M.pw, stat: M.stat, src: b, srcEnt: b, hit: new Set(), yaw }); }
           this.ev('bossfire', { mv }); toRec();
         } else if (b.st === 'wind') { const tg = this.allies[b.ms.tg]; if (tg && tg.st === 'ok') b.yaw += clamp(angDiff(b.yaw, yawTo(tg.x - b.x, tg.z - b.z)), -1.5 * dt, 1.5 * dt); }
         return;
       case 'shosho': {
         const tg = this.allies[b.ms.tg];
         if (b.st === 'wind') {
-          if (t < M.warn - M.lockT && tg && tg.st === 'ok') { b.yaw += clamp(angDiff(b.yaw, yawTo(tg.x - b.x, tg.z - b.z)), -4 * dt, 4 * dt); if (b.hz) { b.hz.yaw = b.yaw; b.hz.x = b.x + Math.sin(b.yaw) * 0.5; b.hz.z = b.z + Math.cos(b.yaw) * 0.5; } }
+          if (t < M.warn - M.lockT && tg && tg.st === 'ok') { b.yaw += clamp(angDiff(b.yaw, yawTo(tg.x - b.x, tg.z - b.z)), -4 * dt, 4 * dt); if (b.hz) { b.hz.yaw = b.yaw; b.hz.x = b.x + Math.sin(b.yaw) * 0.8; b.hz.z = b.z + Math.cos(b.yaw) * 0.8; } }
           if (t >= M.warn) { b.st = 'act'; b.t = 0; this.ev('bossfire', { mv }); }
         } else if (b.st === 'act' && t >= M.act) toRec();
         return;
       }
       case 'stamp':
         if (b.st === 'hidden' && t >= 0.3) { b.x = b.ms.to[0]; b.z = b.ms.to[1]; b.st = 'wind'; b.home = [b.x, b.z]; for (const a of this.allies) { const r = this.clampPos(a.x, a.z, a.x, a.z, 0.35); a.x = r[0]; a.z = r[1]; } this.ev('warpIn', { x: b.x, z: b.z }); }
-        if (b.st === 'wind') { b.y = Math.min(0.7, Math.max(0, (t - 0.4) / (M.warn - 0.4)) * 0.7); if (t >= M.warn) { b.y = 0; b.st = 'act'; b.t = 0; this.ev('bossfire', { mv }); } }
+        if (b.st === 'wind') { b.y = Math.min(0.9, Math.max(0, (t - 0.4) / (M.warn - 0.4)) * 0.9); if (t >= M.warn) { b.y = 0; b.st = 'act'; b.t = 0; this.ev('bossfire', { mv }); } }
         else if (b.st === 'act' && t >= M.act) { toRec(); b.home = [clamp(b.x, -10, 10), 22]; }
         return;
       case 'shosha':
-        if (b.ms.form === 'track3') { // 追跡3発：0.9秒ずつずらし、それぞれ1.3秒前に位置を固定
+        if (b.ms.form === 'track3') {
           if (b.st === 'wind' && t >= 0.4) { b.st = 'act'; b.t = 0; }
           if (b.st === 'act') {
             while (b.ms.n < 3 && b.t >= b.ms.n * M.iv) {
@@ -3434,78 +3701,80 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
           else if (b.st === 'act' && t >= M.act) toRec();
         }
         return;
+      case 'tengai': { // 1.40／3.40／5.40秒後に着弾。各波は1.40秒前に予告
+        if (b.st === 'wind') { b.st = 'act'; b.t = 0; }
+        const W = M.waves; while (b.ms.wave < 3 && b.t >= W[b.ms.wave] - W[0]) { this.tengaiWave(b.ms.wave); b.ms.wave++; }
+        if (b.t >= W[2] + M.act) toRec();
+        return;
+      }
       case 'warp':
         if (b.st === 'wind' && t >= M.warn) { b.st = 'hidden'; b.t = 0; }
         else if (b.st === 'hidden' && t >= M.act) { b.x = b.ms.to[0]; b.z = b.ms.to[1]; b.home = [b.x, b.z]; b.wantWarp = false; b.st = 'rec'; b.t = 0; this.ev('warpIn', { x: b.x, z: b.z }); }
         return;
-      case 'summon':
-        if (b.st === 'wind' && t >= M.warn) {
-          const n = Math.min(M.n, U().cap - this.uenoAlive());
-          for (let i = 0; i < n; i++) { const x = -7.5 + i * 3 + this.rng.range(-0.5, 0.5); this.spawnYoshi(x, D.zMax - 0.6, 'summon', 'back', i === 2 ? 'beam' : i === 4 ? 'guard' : 'melee'); }
-          this.ev('summon', { n }); b.st = 'rec'; b.t = 0;
-        }
-        return;
       case 'barrier':
         if (b.st === 'wind' && t >= M.warn) { Us.barrier = { t: 0, hits: 0, seen: {} }; this.ev('barrier', { on: 1 }); b.st = 'rec'; b.t = 0; }
         return;
-      case 'throw20':
-        if (b.st === 'wind' && t >= M.warn) { b.st = 'act'; b.t = 0; Us.thr = { i: 0, t: 0, grp: { hits: {}, max: M.maxHits }, pts: [] }; }
-        else if (b.st === 'act' && !Us.thr && t > 0.2) { b.st = 'rec'; b.t = 0; }
+      case 'throw50':
+        if (b.st === 'wind' && t >= M.warn) {
+          b.st = 'act'; b.t = 0;
+          const kinds = []; for (const k in M.mix) for (let i = 0; i < M.mix[k]; i++) kinds.push(k);
+          for (let i = kinds.length - 1; i > 0; i--) { const j = (this.rng.next() * (i + 1)) | 0; [kinds[i], kinds[j]] = [kinds[j], kinds[i]]; }
+          Us.thr = { i: 0, t: 0, grp: { hits: {}, max: M.maxHits }, pts: [], kinds };
+        } else if (b.st === 'act' && !Us.thr && t > 0.2) { b.st = 'rec'; b.t = 0; }
         return;
     }
-    if (t > 6) done(); // 念のため
+    if (t > 8) done(); // 念のため
   };
 
-  /** 部下丸投げ二十連：0.18秒ごとに1体、約1.1秒後に着地。着地点は散らし、入口と左右の退避帯を残す */
+  /** 部下丸投げ五十連：0.12秒ごとに1体（約5.9秒）、各1.1秒後に着地。着地点は散らし、入口と左右の退避帯を残す */
   P.updateThrow = function (dt) {
-    const b = this.boss, Us = this.U, M = U().moves.throw20, T = Us.thr;
+    const b = this.boss, Us = this.U, M = U().moves.throw50, T = Us.thr;
     T.t += dt;
     while (T.i < M.n && T.t >= T.i * M.iv) {
-      const pt = this.throwSpot(T.pts); T.pts.push(pt);
+      const pt = this.throwSpot(T.pts); T.pts.push(pt); if (T.pts.length > 12) T.pts.shift();
       this.hz({ kind: 'circle', x: pt[0], z: pt[1], r: M.r, warn: M.land, act: 0.1, pw: M.pw, stat: M.stat, src: 'boss', fx: 'throw', grp: T.grp, keepOnCancel: true });
-      const m = this.spawnYoshi(b.x, b.z, 'throw', 'drop', 'thrown');
-      m.st = 'fly'; m.fly = { t: 0, x0: b.x + Math.sin(b.yaw + 1.2) * 0.8, z0: b.z + Math.cos(b.yaw + 1.2) * 0.8, x1: pt[0], z1: pt[1] }; m.x = m.fly.x0; m.z = m.fly.z0; m.air = 2.2;
+      const m = this.spawnYoshi(b.x, b.z, 'throw', 'drop', T.kinds[T.i]);
+      m.st = 'fly'; m.fly = { t: 0, x0: b.x + Math.sin(b.yaw + 1.2) * 1.5, z0: b.z + Math.cos(b.yaw + 1.2) * 1.5, x1: pt[0], z1: pt[1] }; m.x = m.fly.x0; m.z = m.fly.z0; m.air = 3.8;
       T.i++; Us.reserve = Math.max(0, Us.reserve - 1);
-      this.ev('sfx', { s: 'gDrop', x: b.x, z: b.z });
+      if (T.i % 3 === 0) this.ev('sfx', { s: 'gDrop', x: b.x, z: b.z });
     }
-    if (T.i >= M.n) Us.thr = null;
+    if (T.i >= M.n) { Us.thr = null; Us.reserve = 0; }
   };
   P.throwSpot = function (prev) {
     const D = U(), alive = this.allies.filter(o => o.st === 'ok');
     for (let k = 0; k < 40; k++) {
       let x, z;
-      if (alive.length && this.rng.next() < 0.6) { const o = alive[(this.rng.next() * alive.length) | 0], a = this.rng.next() * TAU, r = this.rng.range(2.5, 6.5); x = o.x + Math.sin(a) * r; z = o.z + Math.cos(a) * r; }
+      if (alive.length && this.rng.next() < 0.5) { const o = alive[(this.rng.next() * alive.length) | 0], a = this.rng.next() * TAU, r = this.rng.range(2.5, 7); x = o.x + Math.sin(a) * r; z = o.z + Math.cos(a) * r; }
       else { x = this.rng.range(-12.5, 12.5); z = this.rng.range(4, 22); }
       if (Math.abs(x) > D.halfX - 3 || z < 3 || z > D.zMax - 2) continue; // 左右の退避帯と入口は空ける
-      if (dist2(x, z, this.boss.x, this.boss.z) < 2.2) continue;
-      if (prev.some(p => dist2(p[0], p[1], x, z) < 1.5)) continue; // 1点に重ねない
+      if (dist2(x, z, this.boss.x, this.boss.z) < 2.6) continue;
+      if (prev.some(p => dist2(p[0], p[1], x, z) < 1.4)) continue; // 1点に重ねない
       return [x, z];
     }
     return [this.rng.range(-10, 10), this.rng.range(6, 20)];
   };
-  /** 投げられた部下の飛行（放物線）。着地後1秒は攻撃しない */
   P.updateFly = function (m, dt) {
-    const F = m.fly, L = U().moves.throw20.land; F.t += dt; const k = Math.min(1, F.t / L);
-    m.x = F.x0 + (F.x1 - F.x0) * k; m.z = F.z0 + (F.z1 - F.z0) * k; m.air = 2.2 * (1 - k) + 3.2 * 4 * k * (1 - k) * 0.6;
-    if (k >= 1) { m.st = 'ok'; m.air = 0; m.fly = null; m.enterT = 0; m.cd = Math.max(m.cd, U().moves.throw20.calm + 0.2 + this.rng.next() * 0.8); this.ev('yLand', { x: m.x, z: m.z }); }
+    const F = m.fly, L = U().moves.throw50.land; F.t += dt; const k = Math.min(1, F.t / L);
+    m.x = F.x0 + (F.x1 - F.x0) * k; m.z = F.z0 + (F.z1 - F.z0) * k; m.air = 3.8 * (1 - k) + 3.6 * 4 * k * (1 - k) * 0.6;
+    if (k >= 1) { m.st = 'ok'; m.air = 0; m.fly = null; m.enterT = 0; m.cd = Math.max(m.cd, U().moves.throw50.calm + 0.2 + this.rng.next() * 0.8); this.ev('yLand', { x: m.x, z: m.z }); }
   };
 
-  /** 30分睡眠チャージ：10秒以内に4体合計3,000ダメージで阻止 */
-  P.startSleep = function () {
-    const b = this.boss, Us = this.U;
-    Us.sleepPend = false; this.endBarrier(false);
-    this.hazards = this.hazards.filter(h => h.src !== 'boss' && !(h.src === 'mob' && h.t < h.warn)); // 本体の予告と、部下のまだ出ていない攻撃を消す
+  /** 睡眠チャージ開始（段階i）：本体の予告・部下のまだ出ていない攻撃を消し、部下を止める */
+  P.startSleep = function (i) {
+    const b = this.boss, Us = this.U, st = U().moves.sleep.stages[i];
+    Us.pend = -1; this.endBarrier(false); Us.tengai = false;
+    this.hazards = this.hazards.filter(h => h.src !== 'boss' && !(h.src === 'mob' && h.t < h.warn));
     this.projs = this.projs.filter(p => p.team === 'ally');
     for (const m of this.mobs) if (m.kind === 'yoshi') m.act = null;
     b.st = 'sleep'; b.t = 0; b.mv = 'sleep'; b.y = 0; b.hz = null;
-    Us.sleep = { t: 0, dmg: Us.sleepCarry || 0 }; Us.sleepCarry = 0;
-    this.ev('sleep', { carry: Us.sleep.dmg });
+    Us.sleep = { i, t: 0, dmg: 0 }; // 開始前の余剰は持ち越さない
+    this.ev('sleep', { i, need: st.need, cyc: Us.cyc });
   };
 
-  /** 撃破：残った部下は命令を失って倒れる（飛行中も） */
+  /** 撃破：残った部下・待機の増援は命令を失って終わる */
   const bossDie0 = P.bossDie;
   P.bossDie = function () {
-    if (this.stageId === 'ueno') { for (const m of this.mobs) if (m.st === 'fly') { m.st = 'dying'; m.dieT = 0.6; } if (this.U) { this.U.sleep = null; this.U.barrier = null; this.U.thr = null; } }
+    if (this.stageId === 'ueno') { for (const m of this.mobs) if (m.st === 'fly') { m.st = 'dying'; m.dieT = 0.6; } if (this.U) { this.U.sleep = null; this.U.barrier = null; this.U.thr = null; this.U.waveQ = []; this.U.reserve = 0; } }
     return bossDie0.call(this);
   };
   P.uenoMinionDie = function () { };
@@ -3522,24 +3791,45 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
       if (ok.length) return ok.sort((p, q) => dist2(a.x, a.z, p.x, p.z) - dist2(a.x, a.z, q.x, q.z))[0];
       return null;
     }
-    if ((Us.sleepWarn || Us.sleepPend) && !Us.sleepDone && this.bossHittable() && dist2(a.x, a.z, b.x, b.z) > 5) return b; // 半分が近い：本体に寄っておく
+    if (Us.pend >= 0 && this.bossHittable()) return b;
+    const k = this.sleepNext();
+    if (k >= 0 && b && b.hp <= U().moves.sleep.stages[k].pre && this.bossHittable() && dist2(a.x, a.z, b.x, b.z) > 6) return b; // 次の段階が近い：本体に寄っておく
     return aiEnemy0.call(this, a);
   };
   const aiDecide0 = P.aiDecide;
   P.aiDecide = function (a, out, push) {
     if (this.stageId === 'ueno' && this.U.barrier && !this.inDanger(a.x, a.z, 0.5, 1.2)) { // 射撃部下にねらわれたら、本体を背にして立つ（ビームはかわす）
       const b = this.boss, m = this.mobs.find(q => q.st === 'ok' && q.typ === 'beam' && q.tgt === a.slot);
-      if (m && b) { const dx = b.x - m.x, dz = b.z - m.z, d = Math.hypot(dx, dz) || 1, k = clamp(d - 3.0, 3.5, 7); const p = this.clampPos(a.x, a.z, m.x + dx / d * k, m.z + dz / d * k, 0.4); a.ai.tx = p[0]; a.ai.tz = p[1]; a.ai.stay = dist2(a.x, a.z, p[0], p[1]) < 0.5; a.ai.wantA = false; out.healT = null; if (a.ai.stay) { a.ai.tx = a.x; a.ai.tz = a.z; } return; }
+      if (m && b) { const dx = b.x - m.x, dz = b.z - m.z, d = Math.hypot(dx, dz) || 1, k = clamp(d - 3.5, 3.5, 7); const p = this.clampPos(a.x, a.z, m.x + dx / d * k, m.z + dz / d * k, 0.4); a.ai.tx = p[0]; a.ai.tz = p[1]; a.ai.stay = dist2(a.x, a.z, p[0], p[1]) < 0.5; a.ai.wantA = false; out.healT = null; if (a.ai.stay) { a.ai.tx = a.x; a.ai.tz = a.z; } return; }
     }
     return aiDecide0.call(this, a, out, push);
   };
 
+  /** AIの閃光銃：睡眠阻止の残りが少なく、足りないとき（本体へ届く距離・正面に味方がいない） */
+  P.aiGunNow = function (a) {
+    if (this.stageId === 'ueno' && this.U && this.U.sleep) {
+      const Sx = this.U.sleep, need = U().moves.sleep.stages[Sx.i].need, b = this.boss;
+      if (Sx.dmg < need && Sx.t > U().moves.sleep.dur - 5 && b && this.gapTo(a.x, a.z, b).g < DATA.ITEMS.starburst_gun.range - 1) return b;
+    }
+    if (this.akibaGunNow) return this.akibaGunNow(a);
+    return null;
+  };
   /* ---------- スナップショット（上野だけの状態） ---------- */
   P.uenoSnap = function () {
-    const Us = this.U, r = v => Math.round(v * 10) / 10;
-    return [this.uenoAlive(), Us.barrier ? 1 : 0, Us.barrier ? Us.barrier.hits : 0, Us.sleep ? 1 : 0, Us.sleep ? r(Us.sleep.t) : 0, Us.sleep ? Math.round(Us.sleep.dmg) : 0, Us.sleepDone ? 1 : 0, Us.thrUsed, Math.round(this.lvOut * 100), Math.round(this.lvIn * 100), (Us.sleepWarn || Us.sleepPend) && !Us.sleepDone ? 1 : 0, Us.barrier ? r(Us.barrier.t) : 0, this.uenoLv, Us.thrQ];
+    const Us = this.U, r = v => Math.round(v * 10) / 10, S = U().moves.sleep.stages, k = Us.sleep ? Us.sleep.i : this.sleepNext(), W = U().wave;
+    return [this.uenoAlive(), Us.barrier ? 1 : 0, Us.barrier ? Us.barrier.hits : 0, Us.sleep ? 1 : 0, Us.sleep ? r(Us.sleep.t) : 0, Us.sleep ? Math.round(Us.sleep.dmg) : 0, k, k >= 0 ? S[k].need : 0, Us.done[0] | (Us.done[1] << 1) | (Us.done[2] << 2), Math.round(this.lvOut * 1000), Math.round(this.lvIn * 1000), k >= 0 && this.boss.hp <= S[k].pre ? 1 : 0, Us.barrier ? r(Us.barrier.t) : 0, this.uenoLv, Us.thrQ, r(Math.max(0, (Us.waveN + 1) * W.every - Us.eff)), Us.waveQ.length, Us.cyc, Us.pend];
   };
-  SIMLIB.uenoDecode = a => ({ alive: a[0], barrier: !!a[1], bhits: a[2], sleep: !!a[3], sleepT: a[4], sleepDmg: a[5], sleepDone: !!a[6], thrUsed: a[7], lvOut: a[8] / 100, lvIn: a[9] / 100, sleepNear: !!a[10], barrierT: a[11], lv: a[12], thrQ: a[13] || 0 });
+  SIMLIB.uenoDecode = a => ({ alive: a[0], barrier: !!a[1], bhits: a[2], sleep: !!a[3], sleepT: a[4], sleepDmg: a[5], stage: a[6], need: a[7], done: a[8], lvOut: a[9] / 1000, lvIn: a[10] / 1000, sleepNear: !!a[11], barrierT: a[12], lv: a[13], thrQ: a[14] || 0, waveIn: a[15], waveWait: a[16], cyc: a[17], pend: a[18] });
+})();
+
+/* ===== akiba.js ===== */
+/* akiba.js — 秋葉原編（あとで本実装に置き換える仮の枠） */
+(() => {
+  const P = Sim.prototype;
+  P.initAkiba = function () { this.stage = 'boss'; this.lanterns = []; };
+  P.clampAkiba = function (ox, oz, nx, nz) { return [nx, nz]; };
+  P.updateAkibaStage = function () { };
+  P.akibaCandySpot = function () { return [0, 5]; };
 })();
 
 /* ===== proto.js ===== */
@@ -3554,11 +3844,11 @@ const PROTO = (() => {
   const SK_IDS = Object.keys(DATA.SKILLS), SK_I = Object.fromEntries(SK_IDS.map((k, i) => [k, i]));
   const IT_I = Object.fromEntries(DATA.ITEM_IDS.map((k, i) => [k, i]));
   const ST = ['ok', 'down', 'gone'], ST_I = { ok: 0, down: 1, gone: 2 };
-  const STAGES = ['street', 'intro', 'boss', 'won', 'lost', 'train', 'arrive'], STAGE_IDS = ['senju', 'joban', 'ueno'], TRPH = ['stop', 'run'], MK = ['fuda', 'sword', 'fist', 'beam', 'shield'], STAGE_I = Object.fromEntries(STAGES.map((k, i) => [k, i]));
+  const STAGES = ['street', 'intro', 'boss', 'won', 'lost', 'train', 'arrive'], STAGE_IDS = ['senju', 'joban', 'ueno', 'ueno_street', 'akiba_platform', 'akiba_plaza'], TRPH = ['stop', 'run'], MK = ['fuda', 'sword', 'fist', 'beam', 'shield'], STAGE_I = Object.fromEntries(STAGES.map((k, i) => [k, i]));
   const BARR = ['street', 'none', 'plaza'], BARR_I = { street: 0, none: 1, plaza: 2 };
   const PK = ['food', 'bag', 'candy'], PK_I = { food: 0, bag: 1, candy: 2 };
   const CTX = ['dash', 'revive', 'lantern'], CTX_I = { dash: 0, revive: 1, lantern: 2, '': 0 };
-  const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land', 'ysword', 'yfist', 'ybeam', 'reikoW', 'shosho', 'stamp', 'ubeam', 'warp', 'throw'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
+  const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land', 'ysword', 'yfist', 'ybeam', 'reikoW', 'shosho', 'stamp', 'ubeam', 'warp', 'throw', 'hoshi', 'naka', 'oga', 'kae', 'link2', 'tri3', 'quad4', 'water', 'debuffMark'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
   const FLPH = ['rise', 'cross', 'gap', 'land'], FLPH_I = { rise: 0, cross: 1, gap: 2, land: 3 };
   const r2 = v => Math.round(v * 100) / 100, r1 = v => Math.round(v * 10) / 10;
   const EV_SKIP = new Set(['swing']); // 量が多い演出は数を絞る
@@ -3569,6 +3859,7 @@ const PROTO = (() => {
     if (a.buffs.def > 0) f |= 16; if (a.buffs.taunt > 0) f |= 32; if (a.hurtT > 0) f |= 64; if (a.dashing) f |= 128; if (a.tired) f |= 256;
     if (a.gLock.X) f |= 512; if (a.gLock.Y) f |= 1024; if (a.buffs.ramune > 0) f |= 2048; if (a.moving) f |= 4096; if (a.lan) f |= 8192; if (a.ctrlAI) f |= 16384;
     if (a.act && a.act.k === 'guard' && DATA.SKILLS[a.slots[a.act.slot]].reflect) f |= 32768;
+    if (a.orb) f |= 65536; if (a.act && a.act.k === 'sp' && a.act.heavy) f |= 131072;
     return f;
   }
   function encodeSnap(sim, o) {
@@ -3588,7 +3879,7 @@ const PROTO = (() => {
     let P = sim.projs.map(p => [p.id, PJ_I[p.kind], r2(p.x), r2(p.z), r2(p.yaw || 0), p.team === 'ally' ? 0 : 1, p.owner == null ? -1 : p.owner, r2(p.r)]);
     const H = sim.hazards.map(h => [h.id, HZ_I[h.kind], r2(h.x), r2(h.z), r2(h.yaw || 0),
       r2(h.kind === 'fan' ? h.r0 : h.kind === 'circle' ? h.r : h.len), r2(h.kind === 'fan' ? h.r1 : h.w || 0), r2(h.kind === 'fan' ? h.half : 0),
-      r2(h.t), r2(h.warn), r2(h.act + (h.keep || 0)), FX_I[h.fx] || 0, h.brief || 0]);
+      r2(h.t), r2(h.warn), r2(h.act + (h.keep || 0)), FX_I[h.fx] || 0, h.brief || 0, h.num || 0].concat(h.kind === 'poly' ? [h.pts.map(q => [r2(q[0]), r2(q[1])])] : []));
     const T = sim.traps.map(t => [t.id, t.kind === 'mine' ? 1 : 0, r2(t.x), r2(t.z), t.t >= t.arm ? 1 : 0]);
     const K = sim.pickups.map(p => [p.id, PK_I[p.kind] || 0, r2(p.x), r2(p.z), p.item ? IT_I[p.item] : -1]);
     const L = [sim.lanterns.reduce((s, l, i) => s | (l.lit ? 1 << i : 0), 0), r1(sim.lanternT), r1(sim.lanternCool), sim.lanternOrder > sim.t ? 1 : 0];
@@ -3600,8 +3891,10 @@ const PROTO = (() => {
       const c = {}; for (const k in e) { if (k === 't') continue; const v = e[k]; c[k] = typeof v === 'number' ? r2(v) : v; } E.push(c);
     }
     const S = [STAGE_I[sim.stage], r1(sim.stageT), r1(sim.timeLeft), BARR_I[sim.barrier], sim.introWait ? 1 : 0, sim.tick, sim.result ? [sim.result.win ? 1 : 0, sim.result.why, r1(sim.result.time)] : 0, sim.diffKey,
-      STAGE_IDS.indexOf(sim.stageId) > 0 ? STAGE_IDS.indexOf(sim.stageId) : 0, sim.tr ? [sim.tr.at, sim.tr.ph === 'run' ? 1 : 0, r1(sim.tr.v), r1(DATA.JOBAN.segLen[Math.min(3, sim.tr.at)] - sim.tr.d), r1(sim.tr.t), sim.tr.doors] : 0, sim.kills || 0, sim.total || 0, sim.phase || 0, sim.bid || '', sim.H0 || 1, sim.queue ? sim.queue.length : 0, sim.U ? sim.uenoSnap() : 0];
-    const snap = { t: 'sn', g: o.gid || 0, tm: r2(sim.t), s: S, a: A, b: B, m: M, p: P, h: H, k: T, u: K, l: L, e: E, pe: o.pe || 0 };
+      STAGE_IDS.indexOf(sim.stageId) > 0 ? STAGE_IDS.indexOf(sim.stageId) : 0, sim.tr ? [sim.tr.at, sim.tr.ph === 'run' ? 1 : 0, r1(sim.tr.v), r1(DATA.JOBAN.segLen[Math.min(3, sim.tr.at)] - sim.tr.d), r1(sim.tr.t), sim.tr.doors] : 0, sim.kills || 0, sim.total || 0, sim.phase || 0, sim.bid || '', sim.H0 || 1, sim.queue ? [sim.queue.filter(q => q.side !== 'rear').length, sim.queue.filter(q => q.side === 'rear').length, sim.sideT && sim.t - sim.sideT.front < 2.5 ? 1 : 0, sim.sideT && sim.t - sim.sideT.rear < 2.5 ? 1 : 0, sim.tr && sim.tr.hold ? 1 : 0] : 0, sim.U ? sim.uenoSnap() : 0];
+    const O = (sim.orbs || []).map(q => [q.id, r2(q.x), r2(q.z), r1(q.life)]);
+    const X = sim.extSnap ? sim.extSnap() : 0;
+    const snap = { t: 'sn', g: o.gid || 0, tm: r2(sim.t), s: S, a: A, b: B, m: M, p: P, h: H, k: T, u: K, l: L, e: E, o: O, x: X, pe: o.pe || 0 };
     if (o.maxBytes) { // room の presence は 4KiB まで
       let j = JSON.stringify(snap).length;
       while (j > o.maxBytes && (snap.e.length || snap.p.length)) { if (snap.e.length > 4) snap.e.splice(0, Math.ceil(snap.e.length / 3)); else if (snap.p.length) snap.p.splice(0, Math.ceil(snap.p.length / 3)); else snap.e = []; j = JSON.stringify(snap).length; }
@@ -3609,11 +3902,11 @@ const PROTO = (() => {
     return snap;
   }
   function decodeSnap(s) {
-    const v = { tm: s.tm, g: s.g, stage: STAGES[s.s[0]], stageT: s.s[1], timeLeft: s.s[2], barrier: BARR[s.s[3]], introWait: !!s.s[4], tick: s.s[5], result: s.s[6] ? { win: !!s.s[6][0], why: s.s[6][1], time: s.s[6][2] } : null, diff: s.s[7], pe: s.pe || 0, stageId: STAGE_IDS[s.s[8] || 0], tr: s.s[9] ? { at: s.s[9][0], ph: TRPH[s.s[9][1]], v: s.s[9][2], rem: s.s[9][3], t: s.s[9][4], doors: s.s[9][5] } : null, kills: s.s[10] || 0, total: s.s[11] || 0, phase: s.s[12] || 0, bid: s.s[13] || '', H: s.s[14] || 1, wait: s.s[15] || 0, U: s.s[16] ? SIMLIB.uenoDecode(s.s[16]) : null };
+    const v = { tm: s.tm, g: s.g, stage: STAGES[s.s[0]], stageT: s.s[1], timeLeft: s.s[2], barrier: BARR[s.s[3]], introWait: !!s.s[4], tick: s.s[5], result: s.s[6] ? { win: !!s.s[6][0], why: s.s[6][1], time: s.s[6][2] } : null, diff: s.s[7], pe: s.pe || 0, stageId: STAGE_IDS[s.s[8] || 0], tr: s.s[9] ? { at: s.s[9][0], ph: TRPH[s.s[9][1]], v: s.s[9][2], rem: s.s[9][3], t: s.s[9][4], doors: s.s[9][5] } : null, kills: s.s[10] || 0, total: s.s[11] || 0, phase: s.s[12] || 0, bid: s.s[13] || '', H: s.s[14] || 1, wait: s.s[15] ? s.s[15][0] + s.s[15][1] : 0, waitF: s.s[15] ? s.s[15][0] : 0, waitR: s.s[15] ? s.s[15][1] : 0, inF: !!(s.s[15] && s.s[15][2]), inR: !!(s.s[15] && s.s[15][3]), hold: !!(s.s[15] && s.s[15][4]), U: s.s[16] ? SIMLIB.uenoDecode(s.s[16]) : null };
     v.allies = s.a.map(r => ({
       slot: r[0], ch: CH_IDS[r[1]], x: r[2], z: r[3], yaw: r[4], st: ST[r[5]], act: ACTS[r[6]], actT: r[7], hpR: r[8] / 1000, sp: r[9], stam: r[10], f: r[11],
       guard: !!(r[11] & 1), stealth: !!(r[11] & 2), inv: !!(r[11] & 4), strBuff: !!(r[11] & 8), defBuff: !!(r[11] & 16), taunt: !!(r[11] & 32), hurt: !!(r[11] & 64), dash: !!(r[11] & 128), tired: !!(r[11] & 256),
-      gLockX: !!(r[11] & 512), gLockY: !!(r[11] & 1024), ramune: !!(r[11] & 2048), moving: !!(r[11] & 4096), lanHold: !!(r[11] & 8192), ai: !!(r[11] & 16384), reflect: !!(r[11] & 32768),
+      gLockX: !!(r[11] & 512), gLockY: !!(r[11] & 1024), ramune: !!(r[11] & 2048), moving: !!(r[11] & 4096), lanHold: !!(r[11] & 8192), ai: !!(r[11] & 16384), reflect: !!(r[11] & 32768), orb: !!(r[11] & 65536), heavy: !!(r[11] & 131072),
       downT: r[12], cdX: r[13], cdY: r[14], gX: r[15] / 100, gY: r[16] / 100, items: [{ id: DATA.ITEM_IDS[r[17]], n: r[18] }, { id: DATA.ITEM_IDS[r[19]], n: r[20] }],
       ctx: CTX[r[21]], revP: r[22] / 100, revT: r[23], chg: r[24] / 100, actSlot: r[25] === 1 ? 'X' : r[25] === 2 ? 'Y' : '', lastEv: r[26], cdMaxX: r[27], cdMaxY: r[28],
       sk: { X: SK_IDS[r[29]], Y: SK_IDS[r[30]] }, lanP: r[31] / 100, aq: r[32], item: r[33] >= 0 ? DATA.ITEM_IDS[r[33]] : null, stealthT: r[34], lv: r[35] || 1, kills: r[36] || 0,
@@ -3622,11 +3915,13 @@ const PROTO = (() => {
     v.boss = b ? { x: b[0], z: b[1], y: b[2], yaw: b[3], hpR: b[4] / 1000, st: BST[b[5]], mv: BMV[b[6]], t: b[7], phase: b[8], defDown: !!(b[9] & 1), stun: !!(b[9] & 2), dot: !!(b[9] & 4), fl: b[10] ? { ph: FLPH[b[10][0]], yaw: b[10][1], i: b[10][2], n: b[10][3], len: b[10][4], t: b[10][5] } : null, target: b[11], downT: b[12] } : null;
     v.mobs = s.m.map(r => ({ id: r[0], x: r[1], z: r[2], yaw: r[3], hpR: r[4] / 1000, dying: !!r[5], wind: !!r[6], para: !!r[7], kind: MK[r[8] || 0], yoshi: r.length > 8, ph: r[9] || 0, enter: !!r[10], moving: !!r[11], guard: !!r[12], scale: (r[13] || 100) / 100, air: r[14] || 0 }));
     v.projs = s.p.map(r => ({ id: r[0], kind: PJ[r[1]], x: r[2], z: r[3], yaw: r[4], team: r[5] ? 'enemy' : 'ally', owner: r[6], r: r[7] }));
-    v.hz = s.h.map(r => ({ id: r[0], kind: HZ[r[1]], x: r[2], z: r[3], yaw: r[4], a: r[5], b: r[6], c: r[7], t: r[8], warn: r[9], act: r[10], fx: FX[r[11]], brief: r[12] }));
+    v.hz = s.h.map(r => ({ id: r[0], kind: HZ[r[1]], x: r[2], z: r[3], yaw: r[4], a: r[5], b: r[6], c: r[7], t: r[8], warn: r[9], act: r[10], fx: FX[r[11]], brief: r[12], num: r[13] || 0, pts: r[14] || null }));
     v.traps = s.k.map(r => ({ id: r[0], kind: r[1] ? 'mine' : 'para', x: r[2], z: r[3], armed: !!r[4] }));
     v.pickups = s.u.map(r => ({ id: r[0], kind: PK[r[1]] || 'food', x: r[2], z: r[3], item: r[4] >= 0 ? DATA.ITEM_IDS[r[4]] : null }));
     v.lan = { lit: [0, 1, 2, 3].map(i => !!(s.l[0] & (1 << i))), T: s.l[1], cool: s.l[2], order: !!s.l[3] };
     v.ev = s.e;
+    v.orbs = (s.o || []).map(r => ({ id: r[0], x: r[1], z: r[2], life: r[3] }));
+    v.X = s.x && SIMLIB.extDecode ? SIMLIB.extDecode(s.x) : null;
     return v;
   }
   const lerp = (a, b, k) => a + (b - a) * k;
@@ -3641,6 +3936,7 @@ const PROTO = (() => {
     out.mobs = byId(v0.mobs, v1.mobs, (p, e) => Object.assign({}, e, { x: lerp(p.x, e.x, k), z: lerp(p.z, e.z, k), yaw: lerpAng(p.yaw, e.yaw, k) }));
     out.projs = byId(v0.projs, v1.projs, (p, e) => Object.assign({}, e, { x: lerp(p.x, e.x, k), z: lerp(p.z, e.z, k) }));
     out.hz = byId(v0.hz, v1.hz, (p, e) => Object.assign({}, e, { t: lerp(p.t, e.t, k) }));
+    out.orbs = byId(v0.orbs || [], v1.orbs || [], (p, e) => Object.assign({}, e, { x: lerp(p.x, e.x, k), z: lerp(p.z, e.z, k) }));
     if (v1.boss && v0.boss) out.boss.t = v1.boss.st === v0.boss.st ? lerp(v0.boss.t, v1.boss.t, k) : v1.boss.t;
     out.allies.forEach((a, i) => { const p = v0.allies[i]; if (p && p.act === a.act) a.actT = lerp(p.actT, a.actT, k); });
     out.stageT = lerp(v0.stageT, v1.stageT, k);
@@ -5761,11 +6057,12 @@ const GFX = {};
         case 'reiko': aR = k === 1 ? -1.2 : -1.6; aRz = k === 1 ? 0.4 : -0.2; glow = k === 1 ? 0.6 + Math.sin(T * 30) * 0.3 : 0.3; break; // 札を胸元へ寄せて放つ
         case 'shosho': sp = k === 1 ? 0.35 : 0.9; aR = aL = k === 1 ? -2.6 : k === 2 ? -0.9 : -0.6; aLz = 0; aRz = 0; shrink = k === 1 ? 0.9 : 1; break; // 肩を縮めて両腕を打ち下ろす
         case 'stamp': kneeR = k === 1 ? -1.4 * Math.min(1, t / 1.2) : 0; sp = k === 1 ? 0.3 : 0.6; aR = -1.0; aL = -1.0; aRz = -0.6; aLz = 0.6; break; // 肩と右膝を上げて踏み下ろす
+        case 'tengai': aR = aL = -2.9; aRz = 0.3; aLz = -0.3; glow = 1.0 + Math.sin(T * 14) * 0.3; lean = -0.25; break; // 札を空へ広げる
         case 'shosha': aR = -2.9; aRz = 0.1; glow = 0.8 + Math.sin(T * 20) * 0.3; lean = -0.15; break; // 札を空へ
         case 'warp': shrink = k === 1 ? 1 - Math.min(0.4, t / 0.7 * 0.4) : 1; glow = 0.6; break;
-        case 'summon': case 'cmd': aR = -1.3 + Math.sin(T * 8) * 0.5; aRz = -0.5; glow = 0.4; break; // 号令
+        case 'cmd': aR = -1.3 + Math.sin(T * 8) * 0.5; aRz = -0.5; glow = 0.4; break; // 号令
         case 'barrier': aR = aL = -1.4; aRz = -0.9; aLz = 0.9; glow = 0.8; break;
-        case 'throw20': m.dolls.visible = st !== 'rec'; aL = -1.2; aLz = 0.5; aR = k === 2 ? -2.2 + Math.abs(Math.sin(T * 17)) * 2.0 : -0.8; break; // 抱えた人形をぽいぽい投げる
+        case 'throw50': m.dolls.visible = st !== 'rec'; aL = -1.2; aLz = 0.5; aR = k === 2 ? -2.2 + Math.abs(Math.sin(T * 17)) * 2.0 : -0.8; break; // 抱えた人形をぽいぽい投げる
       }
     } else if (st === 'sleep') { sp = 0.15; lean = -0.35; headZ = 0.45; aR = 0.1; aL = 0.1; m.lidL.visible = true; bodyY = 1.1; } // もたれて眠る
     else if (st === 'down' || st === 'stun') { sp = 1.0; headZ = 0.5; aR = aL = 0.3; bodyY = st === 'down' ? 0.85 : 1.2; }
@@ -6283,7 +6580,7 @@ const R = (() => {
       case 'barrier': A(e.on ? 'protect' : e.broken ? 'crit' : 'ui', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); if (e.broken && v.boss) burst('add', 40, { x: v.boss.x, y: 1.8, z: v.boss.z, spd: 6, life: 0.6, s0: 0.5, s1: 0.05, c: 0x9ad0ff }); break;
       case 'warpIn': burst('add', 26, { x: e.x, y: 1.5, z: e.z, spd: 3, life: 0.5, s0: 0.45, s1: 0.05, c: 0xb89aff }); A('whoosh', e.x, e.z); break;
       case 'yLand': burst('norm', 6, { x: e.x, y: 0.2, z: e.z, spd: 1.5, life: 0.4, s0: 0.3, s1: 0.6, c: 0xd8d0e8, a: 0.6 }); break;
-      case 'summon': A('summon'); break;
+      case 'waveWarn': A('summon'); break;
       case 'sleep': A('bossDown'); break;
       case 'sleepEnd': A(e.ok ? 'allLit' : 'lanternFail'); if (!e.ok && v.boss) burst('add', 40, { x: v.boss.x, y: 1.5, z: v.boss.z, spd: 3, up: 2, life: 1.0, s0: 0.4, s1: 0.05, c: 0x8aff9a }); break;
       case 'ySpawn': burst('norm', 8, { x: e.x, y: 0.6, z: e.z, spd: 1.2, life: 0.5, s0: 0.35, s1: 0.7, c: 0xb8a8ff, a: 0.55 }); break;
@@ -6545,7 +6842,7 @@ async function detectNet() {
 function bindMenus() {
   const unlock = () => { AUDIO.init(); AUDIO.setVol(SET.bgm / 100, SET.sfx / 100); if (G.mode === 'title') AUDIO.bgm('title'); };
   document.addEventListener('pointerdown', unlock, { once: false, passive: true });
-  $('#btnSolo').onclick = () => { AUDIO.sfx('ok'); G.coop = false; openSortie(); };
+  $('#btnSolo').onclick = () => { AUDIO.sfx('ok'); G.coop = false; openTeam('title'); }; // 出動：まずキャラ選択 → 次にステージ選択
   $('#btnCoop').onclick = () => { AUDIO.sfx('ok'); $('#nick').value = G.nick; show('coop'); };
   $('#btnCoopBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
   $('#btnHow').onclick = () => openSub('how', 'title');
@@ -6553,8 +6850,8 @@ function bindMenus() {
   $('#btnHost').onclick = () => startHost();
   $('#btnJoin').onclick = () => startJoin();
   $('#btnTeamBack').onclick = () => { AUDIO.sfx('back'); if (G.coop) goTitle(); else { persistPrefs(); show(G.teamBack || 'title'); } };
-  $('#btnGo').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session && G.session.kind === 'host') { const S = G.session; S.lobby.diff = G.diff; if (!stageOpen(S.lobby.stage)) S.lobby.stage = 'senju'; S.startGame({ bid: newBid() }); enterGame(); } } else { persistPrefs(); openSortie(); } };
-  $('#btnStageBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
+  $('#btnGo').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session && G.session.kind === 'host') { const S = G.session; S.lobby.diff = G.diff; if (!stageOpen(S.lobby.stage)) S.lobby.stage = 'senju'; S.startGame({ bid: newBid() }); enterGame(); } } else { persistPrefs(); if (G.teamBack === 'prep') openPrep(); else if (G.teamBack === 'akiba') openAkibaWalkPrep(); else openSortie(); } };
+  $('#btnStageBack').onclick = () => { AUDIO.sfx('back'); openTeam('title'); }; // ステージ選択から戻ると、キャラ選択へ
   bindHub();
   $('#btnResume').onclick = () => resume();
   $('#btnPSet').onclick = () => openSub('settings', 'pause');
@@ -6564,7 +6861,7 @@ function bindMenus() {
   $('#btnSkip').onclick = () => { const s = G.session; if (s && s.sim && s.sim.stage === 'intro' && s.kind === 'solo') s.sim.stageT = s.sim.introLen(); resume(); };
   $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else if (G.nextPrep) { leaveBattle(); openPrep(); } else startSolo(G.stageId || 'senju'); };
   $('#btnReteam').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') G.session.backToLobby(); openLobby(); } else { leaveBattle(); openTeam('stage'); } };
-  $('#btnResGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop && G.session) goTitle(); else leaveBattle(); openGacha('title'); };
+  $('#btnResGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop && G.session) goTitle(); else leaveBattle(); openGacha(); };
   $('#btnResTitle').onclick = () => { AUDIO.sfx('back'); goTitle(); };
   $('#btnLostOk').onclick = () => goTitle();
   $('#rotateX').onclick = () => { G.rotateDismissed = true; $('#rotateHint').hidden = true; layoutHud(); };
@@ -6607,8 +6904,8 @@ function applySettings() {
 
 /* ---------- 編成・ロビー ---------- */
 function openTeam(back) {
-  G.coop = false; G.teamMode = 'solo'; G.teamBack = back || 'title'; $('#teamEyebrow').textContent = '編成（1体を操作＋AI3体）'; $('#teamTitle').textContent = '4体を選ぶ';
-  $('#lobCode').hidden = true; $('#lobStatus').hidden = true; $('#btnGo').disabled = false; $('#btnGo').textContent = '出動へ'; $('#btnRecommend').hidden = false; $('#itemsBox').hidden = false;
+  G.coop = false; G.teamMode = 'solo'; G.teamBack = back || 'title'; $('#teamEyebrow').textContent = back === 'title' ? '出動 ① キャラ選択（P1を操作＋AI3体）' : '編成（P1を操作＋AI3体）'; $('#teamTitle').textContent = '4体を選ぶ';
+  $('#lobCode').hidden = true; $('#lobStatus').hidden = true; $('#btnGo').disabled = false; $('#btnGo').textContent = back === 'prep' ? '上野の準備へ ▶' : back === 'akiba' ? '秋葉原へ向かう ▶' : 'ステージ選択へ ▶'; $('#btnRecommend').hidden = false; $('#itemsBox').hidden = false;
   G.focus = G.party[G.selSlot]; renderTeam(); show('team');
 }
 function openLobby() {
@@ -6676,7 +6973,10 @@ async function loginOk(save, msg) {
   const hadPending = G.pending.length > 0;
   if (hadPending) { for (const op of G.pending) SAVE.apply(save, op); G.pending = []; }
   updateAcctBar(); AUDIO.sfx('ok');
-  const back = G.loginBack || 'title'; show(back); if (back === 'gacha') openGacha(G.gcBack || 'title');
+  // 一回限りの遷移予約を先に取り出して消す（ガチャ→ログイン→ガチャ…の循環を残さない）
+  const target = G.afterLoginTarget || null, back0 = G.loginBack || 'title'; G.afterLoginTarget = null; G.loginBack = 'title';
+  const back = target === 'gacha' ? 'title' : back0;
+  if (target === 'gacha') openGacha(); else show(back);
   if (hadPending) { const ok = await persist(); extra = ok ? '。ログイン前の戦いの記録もセーブしました' : '。ログイン前の戦いの記録はセーブできませんでした'; if (G.run) G.lastAuto = ok ? `ID ${save.id} にセーブしました` : 'セーブできませんでした'; }
   if (back === 'result') refreshResSave();
   mtoast(msg + extra, 2800);
@@ -6706,7 +7006,7 @@ function runOp(v, fin) {
   const op = { kills: {}, fin: null };
   for (const i of slots) { const a = v.allies[i]; if (!a) continue; const k = Math.max(0, (a.kills || 0) - G.run.applied[i]); if (k) { op.kills[a.ch] = (op.kills[a.ch] || 0) + k; G.run.applied[i] += k; } }
   if (fin) {
-    const rateOf = i => { if (!sim) return 1; const a = sim.allies[i], T = sim.actT || 0; return DATA.REWARD.rate(T > 0 ? a.humT / T : (a.ctrlAI ? 0 : 1)); };
+    const main = G.coop ? G.my : 0, rateOf = i => DATA.REWARD.rate(i === main); // 出動時に決まった枠で固定（途中の操作交代で変えない）
     op.fin = { bid: v.bid || (G.run.bid), stage: v.stageId || 'senju', win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0, H: v.H || 1, slots: slots.filter(i => v.allies[i]).map(i => ({ ch: v.allies[i].ch, rate: rateOf(i) })) };
   }
   return op;
@@ -6767,7 +7067,7 @@ function bindAccount() {
     if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); G.restoreConfirm = r.confirm ? key : null; return; }
     G.restoreConfirm = null; $('#lgCode').value = ''; loginOk(r.save, r.msg);
   };
-  $('#btnGuest').onclick = () => { AUDIO.sfx('back'); const b = G.loginBack || 'title'; if (b === 'gacha') openGacha(G.gcBack); else show(b); };
+  $('#btnGuest').onclick = () => { AUDIO.sfx('back'); const t = G.afterLoginTarget, b = G.loginBack || 'title'; G.afterLoginTarget = null; G.loginBack = 'title'; if (t === 'gacha') openGacha(); else show(b === 'gacha' ? 'title' : b); }; // 取消：予約を消して戻る（ログインをもう一度開かない）
   $('#btnDoneOk').onclick = () => { const s = G.acct; showDone(false); setRegMode(false); if (s) loginOk(s, `ID ${s.id} でログインしました。全員Lv.1からスタート`); };
   for (const id of ['#lgId', '#lgPw', '#lgPw2']) $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); (G.regMode ? $('#btnRegister') : $('#btnLogin')).click(); } });
   $('#btnAcSave').onclick = async () => { await doSave('account'); renderAccount(); };
@@ -6815,7 +7115,7 @@ function startSolo(stageId) {
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
   S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
   const carry = G.stageId === 'ueno' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
-  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
+  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch), eq: eqOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {
@@ -7056,12 +7356,15 @@ function onEvent(e, v) {
     case 'board': notice(`${DATA.JOBAN.stations[e.st]}：ホームから部下が${e.n}体乗ってくる！`, 'warn', 2200); break;
     case 'jev': if (e.id && e.id.startsWith('mid_')) notice(`前の車両に潜んでいた部下${e.n}体が出てくる！`, 'warn', 2200); break;
     case 'arriveSt': if (e.st < 4) notice(`${DATA.JOBAN.stations[e.st]}に到着`, 'info', 1500); break;
-    case 'sleepWarn': banner('ヨシノシンのHPが半分に近い', '半分になる前に接近して必殺を準備しよう', 2600); break;
-    case 'sleep': banner('30分睡眠チャージ！', '10秒以内に4体合計3,000ダメージを与えろ！', 2000); break;
-    case 'sleepEnd': if (e.ok) banner('阻止成功！', `ヨシノシンがダウン（${e.dmg.toLocaleString()} / 3,000）`, 2400); else banner('阻止失敗…', `ヨシノシンが全回復した（${e.dmg.toLocaleString()} / 3,000）。また半分で同じ判定`, 2800); break;
+    case 'sleepWarn': banner(`もうすぐ30分睡眠チャージ（${['75%', '50%', '25%'][e.i]}）`, `接近して必殺・重玉を準備しよう（10秒で${e.need.toLocaleString()}）`, 2600); break;
+    case 'sleep': banner(`30分睡眠チャージ！（${e.i + 1}/3）`, `10秒以内に4体合計${e.need.toLocaleString()}ダメージを与えろ！`, 2000); break;
+    case 'sleepEnd': if (e.ok) banner(`阻止成功！（${e.i + 1}/3）`, `ヨシノシンがダウン（${e.dmg.toLocaleString()} / ${e.need.toLocaleString()}）`, 2400); else banner('阻止失敗…', `ヨシノシンがHP30,000まで全回復（${e.dmg.toLocaleString()} / ${e.need.toLocaleString()}）。3つの段階をやり直し`, 2800); break;
     case 'barrier': if (e.on) notice('完全指揮バリア！ 射撃部下のビームを本体へ2回誘導して壊そう', 'boss', 3200); else if (e.broken) notice('バリアを破壊！ ヨシノシンがよろめいた', 'sp', 1800); else notice('バリアが消えた', 'info', 1200); break;
     case 'bhit': if (e.n < 2) notice(`バリアに命中 ${e.n}/2`, 'sp', 1300); break;
-    case 'summon': notice(`追加動員：部下${e.n}体が奥から来る`, 'warn', 1800); break;
+    case 'waveWarn': notice(`包囲動員：部下${e.n}体が広場の入口から来る！`, 'warn', 1800); break;
+    case 'tengaiWave': if (e.n === 1) notice('天蓋乱射・三十六光！ 番号の順に光が落ちる', 'boss', 1800); break;
+    case 'gate': notice(e.n >= 3 ? '居酒屋通りの部下をすべて倒した！' : `暖簾の結界が開いた（${e.n}/3）。奥へ進もう`, 'info', 2000); break;
+    case 'holdUeno': notice('上野進入待ち：車内の敵を倒すと上野に到着', 'warn', 2600); break;
     case 'heal': if (e.v > 0) dmgNum(e.x, 1.2, e.z, '+' + e.v, 'heal'); break;
     case 'down': notice(`P${e.slot + 1}が気絶した${e.slot === me ? '…' : '（まわりの円に入って4秒で救助）'}`, 'warn', 2200); if (e.slot === me && G.session.kind === 'solo') setTimeout(() => notice('仲間のカードを押すと操作を交代できます', 'info', 2600), 900); break;
     case 'ascend': notice(`P${e.slot + 1}が昇天した（この戦闘では戻らない）`, 'warn', 2400); break;
@@ -7133,13 +7436,14 @@ function updateHud(v, dt) {
   $('#bossbox').hidden = !showBoss;
   const ue = v.stageId === 'ueno', U = v.U;
   $('#ueInfo').hidden = !(ue && showBoss);
+  $('#bossbox').classList.toggle('ueno', ue);
   if (showBoss && !jb) {
     const b = v.boss; setBar($('#bossFill'), b.hpR); G.lagBoss = G.lagBoss > b.hpR ? Math.max(b.hpR, G.lagBoss - dt * 0.15) : b.hpR; setBar($('#bossLag'), G.lagBoss);
     $('#bossPh').hidden = b.phase !== 2 || ue;
     $('#bossNm').textContent = ue ? 'ヨシノシン' : 'トバトーバン';
-    $('#bossSt').textContent = b.st === 'sleep' ? '睡眠中・被ダメージ×2' : b.st === 'down' ? 'ダウン中' : b.stun ? (ue ? 'よろめき' : '麻痺') : b.st === 'fly' ? '飛行中' : ue && U && U.sleepNear ? '半分で睡眠チャージ' : b.defDown ? '守り↓' : '';
+    $('#bossSt').textContent = b.st === 'sleep' ? '睡眠中・被ダメージ×2.25' : ue && U && U.pend >= 0 ? '睡眠準備' : b.st === 'down' ? 'ダウン中' : b.stun ? (ue ? 'よろめき' : '麻痺') : b.st === 'fly' ? '飛行中' : ue && U && U.sleepNear ? '睡眠チャージが近い' : b.defDown ? '守り↓' : '';
     if (ue && U) {
-      $('#ueMin').textContent = `部下 ${U.alive}/40`;
+      $('#ueMin').textContent = `部下 ${U.alive}/100${U.waveWait ? `（待機${U.waveWait}）` : ''}・増援まで${Math.ceil(U.waveIn)}秒`;
       const bb = $('#ueBar'); bb.hidden = !U.barrier; if (U.barrier) { bb.textContent = `バリア ${U.bhits}/2・${Math.max(0, Math.ceil(DATA.UENO.moves.barrier.max - U.barrierT))}秒`; bb.classList.toggle('hit', U.bhits >= 1); }
       $('#ueLv').textContent = U.barrier ? '' : `Lv${U.lv} 与×${U.lvOut.toFixed(2)}/被×${U.lvIn.toFixed(2)}`;
     }
@@ -7147,7 +7451,7 @@ function updateHud(v, dt) {
   // 上野：睡眠チェックの10秒と合計ダメージ
   const sb = $('#sleepBox'), sleepOn = ue && U && U.sleep && v.stage === 'boss';
   sb.hidden = !sleepOn;
-  if (sleepOn) { const S = DATA.UENO.moves.sleep, left = Math.max(0, S.dur - U.sleepT); $('#slTime').textContent = left.toFixed(1); setBar($('#slTimeFill'), left / S.dur); $('#slDmg').textContent = Math.min(99999, U.sleepDmg).toLocaleString(); setBar($('#slDmgFill'), U.sleepDmg / S.need); sb.classList.toggle('ok', U.sleepDmg >= S.need); }
+  if (sleepOn) { const S = DATA.UENO.moves.sleep, need = U.need || 1, left = Math.max(0, S.dur - U.sleepT); $('#slMsg').textContent = `10秒以内に4体合計${need.toLocaleString()}ダメージを与えろ！`; $('#slNeed').textContent = need.toLocaleString(); $('#slStage').textContent = `（${U.stage + 1}/3）`; $('#slTime').textContent = left.toFixed(1); setBar($('#slTimeFill'), left / S.dur); $('#slDmg').textContent = Math.min(99999, U.sleepDmg).toLocaleString(); setBar($('#slDmgFill'), U.sleepDmg / need); sb.classList.toggle('ok', U.sleepDmg >= need); }
   // 自分
   const lowHp = me.hpR < 0.3 && me.st === 'ok';
   $('#mebox').classList.toggle('low', lowHp); $('#meWarn').hidden = !lowHp;
@@ -7393,6 +7697,7 @@ boot();
    ===================================================================== */
 const ACC = () => G.acct || G.guest;
 const lvOf = id => SAVE.lvOf(ACC(), id);
+const eqOf = id => { const a = ACC(), c = a && a.chars[id]; return c && c.eq ? c.eq.slice(0, SAVE.eqSlots(a)) : []; };
 const ownsCh = id => SAVE.owns(ACC(), id);
 const newBid = () => 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36); // 戦闘ID（報酬を一度だけにする）
 const RANK_I = { S: 0, A: 1, B: 2, C: 3, D: 4 }, CH_I = Object.fromEntries(DATA.CHARS.map((c, i) => [c.id, i]));
@@ -7405,12 +7710,26 @@ function fixParty() {
 }
 G.sessClear = {};
 const cleared = id => !!((ACC() && ACC().clear && ACC().clear[id] > 0) || G.sessClear[id]);
-/** ステージの解放：電車はトバトーバン初勝利、ヨシノシンは電車の初クリアで */
-const stageOpen = id => id === 'senju' || (id === 'joban' && cleared('senju')) || (id === 'ueno' && (cleared('joban') || !!(ACC() && ACC().uenoOpen)));
+/** ステージの解放：電車＝トバトーバン初勝利、居酒屋通り＝電車の初クリア、ヨシノシン＝通りの初クリア（旧版で解放済みならそのまま）、秋葉原＝ヨシノシン初勝利、駅前広場＝ホーム初勝利 */
+const stageOpen = id => {
+  const a = ACC() || {};
+  switch (id) {
+    case 'senju': return true;
+    case 'joban': return cleared('senju');
+    case 'ueno_street': return cleared('joban');
+    case 'ueno': return cleared('ueno_street') || !!a.uenoOpen;
+    case 'akiba_platform': return cleared('ueno') || !!a.akibaOpen;
+    case 'akiba_plaza': return cleared('akiba_platform');
+  }
+  return false;
+};
 const STAGES = [
   { id: 'senju', ch: 0, cls: 's1', ic: '🏮', no: '北千住編', nm: '商店街と祭り広場', en: 'トバトーバン（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。', rec: 1, lock: '' },
-  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.events.reduce((s, e) => s + e.n, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車からの部下、途中駅と区間の途中で増える部下を全員倒すと上野に着く。', rec: 20, lock: 'トバトーバンを1回倒すと解放' },
-  { id: 'ueno', ch: 1, cls: 's3', ic: '🎌', no: '上野編', nm: '上野駅前 ヨシノシン', en: 'ヨシノシン（部下を戦わせる指揮官）＋部下36体', d: '駅前の広場で、部下を人形のように操る指揮官と戦う。HP半分の「30分睡眠チャージ」は10秒で3,000ダメージ与えて止めよう。', rec: 40, lock: '電車を1回クリアすると解放' },
+  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.events.reduce((s, e) => s + e.n, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車側と3号車側の両方から部下が来る。全員倒すと上野に着く。', rec: 20, lock: 'トバトーバンを1回倒すと解放' },
+  { id: 'ueno_street', ch: 1, cls: 's2', ic: '🏮', no: '上野編', nm: '上野の居酒屋通り', en: 'ヨシノシンの部下 30体（3地点×10体）', d: '改札を抜け、暖簾と提灯の並ぶ飲み屋街を進む。各地点の10体を倒すと先へ進める。', rec: 20, lock: '電車を1回クリアすると解放' },
+  { id: 'ueno', ch: 1, cls: 's3', ic: '🎌', no: '上野編', nm: '上野駅前 ヨシノシン', en: 'ヨシノシン（HP30,000の指揮官）＋部下36体〜', d: '駅前の広場で、部下を人形のように操る巨大な指揮官と戦う。HP75%・50%・25%の「30分睡眠チャージ」を10秒で止めよう。', rec: 40, lock: '居酒屋通りを1回クリアすると解放' },
+  { id: 'akiba_platform', ch: 2, cls: 's2', ic: '🚉', no: '秋葉原編', nm: '秋葉原駅ホーム', en: 'オガ・カエ（各HP4,000）', d: '閉鎖されたホームで2人と戦う前哨戦。前方の攻撃をよけて背後へ回ろう。', rec: 60, lock: 'ヨシノシンを1回倒すと解放' },
+  { id: 'akiba_plaza', ch: 2, cls: 's3', ic: '⭐', no: '秋葉原編', nm: '秋葉原駅前広場', en: '星・中（各HP8,000）＋オガ・カエ', d: '星と中は、片方を倒してから15秒以内にもう片方も倒さないと復活する。2〜4人で結ぶ図形の攻撃に注意。', rec: 60, lock: '秋葉原駅ホームを1回クリアすると解放' },
 ];
 const avgLv = ids => Math.floor(ids.reduce((s, id) => s + lvOf(id), 0) / Math.max(1, ids.length));
 const roleIc = id => DATA.ROLES[id] ? DATA.ROLES[id].ic + DATA.ROLES[id].short : '';
@@ -7427,7 +7746,7 @@ function renderSortie() {
     if (s.rec > 1) top.appendChild(el('span', 'rec', `推奨Lv${s.rec}`));
     const body = el('div', 'sc-body'); body.append(el('span', 'en', '敵：' + s.en), el('span', '', s.d));
     const pl = avgLv(G.party); if (s.rec > 1) body.appendChild(el('span', 'small', `いまの編成の平均Lv ${pl}${pl < s.rec ? '（低くても挑戦できます）' : ''}`));
-    if (s.id === 'ueno') { const P = pl, o = Math.min(1.25, Math.max(0.75, 1 + 0.02 * (P - 40))), i = Math.min(1.2, Math.max(0.8, 1 - 0.015 * (P - 40))); body.appendChild(el('span', 'small', `上野だけのLv補正：与えるダメージ×${o.toFixed(2)}・受けるダメージ×${i.toFixed(2)}`)); }
+    if (s.id === 'ueno' || s.id.startsWith('akiba')) { const k = DATA.lvAdjust(s.id === 'ueno' ? 'ueno' : 'akiba', pl); body.appendChild(el('span', 'small', `${s.id === 'ueno' ? '上野ボス' : '秋葉原'}だけのLv補正：与えるダメージ×${k.out.toFixed(2)}・受けるダメージ×${k.in.toFixed(2)}`)); }
     if (cleared(s.id)) body.appendChild(el('span', 'clr', 'クリア済み'));
     if (open) body.appendChild(el('span', 'go', '出動する ▶'));
     b.append(top, body);
@@ -7511,7 +7830,7 @@ function renderTeam() {
     const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; b.appendChild(im);
     b.appendChild(el('span', 'nm', own || zk ? c.nm : '？？？'));
     const mt = el('span', 'meta'); mt.appendChild(rankBadge(c.rank)); if (own) mt.appendChild(el('span', 'lv', 'Lv.' + rec.lv)); mt.appendChild(el('span', 'role', roleIc(c.roleId))); const e = el('span', 'el', c.el); e.style.background = DATA.ELEM_COL[c.el] || '#6a8ab0'; mt.appendChild(e); b.appendChild(mt);
-    if (own) { const pr = DATA.GROWTH.progress(c.rank, rec.exp), xp = el('span', 'xp'); const xi = el('i'); xi.style.width = Math.round(pr.r * 100) + '%'; xp.appendChild(xi); b.appendChild(xp); if (!rec.seen) b.appendChild(el('span', 'new', 'NEW')); }
+    if (own) { const pr = DATA.GROWTH.progress(c.rank, rec.exp), xp = el('span', 'xp'); const xi = el('i'); xi.style.width = Math.round(pr.r * 100) + '%'; xp.appendChild(xi); b.appendChild(xp); if (!rec.seen) b.appendChild(el('span', 'new', 'NEW')); const eqs = eqOf(c.id); if (eqs.length) b.appendChild(el('span', 'eqi', eqs.map(e => DATA.EQUIP_I[e].ic).join(''))); }
     if (own && !zk) { const used = el('span', 'used'); (coop ? [mySel] : G.party).forEach((id, i) => { if (id === c.id) { const p = el('span', 'pn', 'P' + (coop ? myLobbySlot() + 1 : i + 1)); p.style.background = pcol(coop ? myLobbySlot() : i); used.appendChild(p); } }); b.appendChild(used); }
     const dt = el('span', 'det', '詳細'); dt.onclick = ev => { ev.stopPropagation(); AUDIO.sfx('ui'); G.focus = c.id; if (rec && !rec.seen) rec.seen = 1; renderTeam(); }; b.appendChild(dt);
     b.onclick = () => {
@@ -7559,10 +7878,11 @@ function renderDetail() {
   if (!own) d.appendChild(el('p', 'small', c.gacha ? '未所持：通常ガチャで入手できます（Lv1・EXP0で加入）' : '未所持'));
   if (c.rank === 'D' && c.isNew) d.appendChild(el('p', 'small', '通常ガチャ対象外／初期仲間'));
   // 能力（いまのLv・人が操作／AIのとき）とEXP
-  const s = DATA.GROWTH.stats(c, lv), ai = DATA.GROWTH.aiStats(s), st = el('div', 'dt-stats');
-  st.append(el('span', ''), el('b', '', `Lv${lv}`), el('span', 'ai', 'AIのとき'), el('span', 'ai', 'Lv99'));
-  for (const [l, k, i] of [['HP', 'hp', 0], ['ちから', 'str', 1], ['ようりょく', 'yo', 2], ['まもり', 'def', 3]]) st.append(el('span', '', l), el('b', '', String(s[k])), el('span', 'ai', String(ai[k])), el('span', 'ai', String(c.cap[i])));
+  const s0 = DATA.GROWTH.stats(c, lv), eq = own ? eqOf(c.id) : [], s = DATA.GROWTH.withEquip(s0, eq), ai = DATA.GROWTH.aiStats(s), st = el('div', 'dt-stats eq');
+  st.append(el('span', ''), el('b', '', `Lv${lv}`), el('b', '', eq.length ? '装備後' : '装備なし'), el('span', 'ai', 'AIのとき'), el('span', 'ai', 'Lv99'));
+  for (const [l, k, i] of [['HP', 'hp', 0], ['ちから', 'str', 1], ['ようりょく', 'yo', 2], ['まもり', 'def', 3]]) st.append(el('span', '', l), el('span', '', String(s0[k])), el('b', s[k] > s0[k] ? 'up' : '', String(s[k])), el('span', 'ai', String(ai[k])), el('span', 'ai', String(c.cap[i])));
   d.appendChild(st);
+  if (own && G.teamMode !== 'zukan') d.appendChild(equipBox(c.id));
   if (own) { const pr = DATA.GROWTH.progress(c.rank, rec.exp); d.appendChild(el('p', 'small', pr.need == null ? '次のレベル：上限（Lv99）' : `次のLvまで ${pr.need - pr.in} EXP（${pr.in} / ${pr.need}）　累積 ${rec.exp}`)); }
   const tg = el('div', 'dt-tags'); for (const t of c.tags || []) tg.appendChild(el('span', '', t)); d.appendChild(tg);
   const slotI = G.coop ? 0 : G.selSlot, sw = G.swap[slotI] && G.party[slotI] === c.id;
@@ -7579,6 +7899,23 @@ function renderDetail() {
     b.onclick = () => { G.swap[slotI] = !G.swap[slotI]; STORE.set('swap', G.swap); sendMine(); AUDIO.sfx('ui'); renderTeam(); };
     d.appendChild(b);
   } else if (own) { const b = el('button', 'chip', G.coop ? 'このキャラにする' : `P${slotI + 1}の枠に入れる`); b.type = 'button'; b.onclick = () => { const card = [...document.querySelectorAll('#cards .card')].find(x => x.querySelector('.nm') && x.querySelector('.nm').textContent === c.nm); if (card) card.click(); }; d.appendChild(b); }
+}
+/** 装備（枠1・枠2）：変更前→変更後が見えるように。付け替えは拠点・戦闘前・次編成の画面だけ */
+function equipBox(id) {
+  const a = ACC(), n = SAVE.eqSlots(a), cur = (a.chars[id].eq || []).slice(0, n), box = el('div', 'eq-box');
+  box.appendChild(el('b', '', '装備'));
+  for (let i = 0; i < 2; i++) {
+    const row = el('div', 'eq-row'); row.appendChild(el('span', 'small', `枠${i + 1}`));
+    if (i >= n) { row.appendChild(el('span', 'small', '🔒 電車をクリアすると使えます')); box.appendChild(row); continue; }
+    const sel = el('select'); sel.setAttribute('aria-label', `装備枠${i + 1}`);
+    const none = el('option', '', '（なし）'); none.value = ''; sel.appendChild(none);
+    for (const e of DATA.EQUIP) { const o = el('option', '', `${e.ic} ${e.nm}：${e.statLabel}＋${e.pct}%`); o.value = e.id; if (cur.some((x, j) => j !== i && x === e.id)) o.disabled = true; sel.appendChild(o); }
+    sel.value = cur[i] || '';
+    sel.onchange = () => { const r = SAVE.setEquip(a, id, i, sel.value || null); if (!r.ok) { mtoast(r.msg, 2400); sel.value = cur[i] || ''; return; } AUDIO.sfx('ui'); if (G.acct) persist(); renderTeam(); };
+    row.appendChild(sel); box.appendChild(row);
+  }
+  box.appendChild(el('span', 'small', '同じ能力の増加は足し算（例：ちから＋40%と＋50%で1.90倍）。装備でLvの表示は変わりません。'));
+  return box;
 }
 function skillDesc(s) {
   const m = { charge: `${s.nm}：長押しでため、離して発動（基礎威力${s.pw}）`, dodge: '回避：押した方向へすばやく移動（一瞬無敵）', dot: `${s.nm}：当てた敵に${s.dur}秒の継続ダメージ`, retreat: `${s.nm}：攻撃しながら後ろへ下がる（威力${s.pw}）`, stealth: `${s.nm}：${s.dur}秒狙われにくくなる`, parry: `${s.nm}：構えて攻撃を受けると反撃`, heavy: `${s.nm}：ためて重い一撃（威力${s.pw}）`, trap: `${s.nm}：足元に麻痺のワナ`, protect: `${s.nm}：周りの味方を一瞬無敵にする`, guard: `${s.nm}：押している間ダメージを減らす${s.reflect ? '・一部を跳ね返す' : ''}`, taunt: `${s.nm}：敵を引きつける一撃（威力${s.pw}）`, mine: `${s.nm}：足元に地雷（威力${s.pw}・味方も巻き込む・1人1個・再使用${s.cd}秒）`, heal: `${s.nm}：ためるほど回復量アップ（基礎${s.pw}）`, healRing: `${s.nm}：ためるほど範囲が広がる回復（基礎${s.pw}）` };
@@ -7598,7 +7935,7 @@ function renderResExp(res) {
   if (res.dup) { box.appendChild(el('div', 'res-tix', 'この戦いの報酬は受け取り済みです')); return; }
   for (const x of res.exp) {
     const d = el('div', 'ex'), im = el('img'); im.src = G.thumbs[x.ch] || ''; im.alt = ''; d.appendChild(im);
-    const t = el('span'); t.append(el('span', '', DATA.CHI[x.ch].nm + ' '), el('b', '', `+${x.add.toLocaleString()} EXP`), el('span', 'small', x.ai ? '（AI 80%）' : '')); d.appendChild(t);
+    const t = el('span'); t.append(el('span', '', DATA.CHI[x.ch].nm + ' '), el('b', '', `+${x.add.toLocaleString()} EXP`), el('span', 'small', x.ai ? '（AI 80%）' : G.coop ? '（人間100%）' : '（P1 100%）')); d.appendChild(t);
     if (x.lv1 > x.lv0) d.appendChild(el('span', 'up', `Lv${x.lv0}→${x.lv1}`)); else d.appendChild(el('span', 'small', `Lv${x.lv1}`));
     box.appendChild(d);
   }
@@ -7612,7 +7949,8 @@ function bindHub() {
   $('#btnGacha').onclick = () => { AUDIO.sfx('ok'); openGacha('title'); };
   $('#btnLgGacha').onclick = () => { AUDIO.sfx('ok'); openGacha('login'); };
   $('#btnLgSet').onclick = () => openSub('settings', 'login');
-  $('#btnStageTeam').onclick = () => { AUDIO.sfx('ok'); openTeam('stage'); };
+  $('#btnEquip').onclick = () => { AUDIO.sfx('ok'); openTeam('title'); mtoast('キャラを選ぶと、右の詳細で装備を付け替えられます', 3000); };
+  $('#btnStageHub').onclick = () => { AUDIO.sfx('back'); show('title'); };
   document.querySelectorAll('#chTabs .tab').forEach(t => t.onclick = () => { AUDIO.sfx('ui'); G.chTab = +t.dataset.ch; renderSortie(); });
   $('#btnPrepGo').onclick = () => { AUDIO.sfx('ok'); startSolo('ueno'); };
   $('#btnPrepTeam').onclick = () => { AUDIO.sfx('ok'); G.carry = null; openTeam('prep'); };
@@ -7636,14 +7974,21 @@ function bindHub() {
    ===================================================================== */
 const GC = { r: null, sc: null, cam: null, run: false, ph: 'idle', t: 0, res: null, sample: false, fx: [], last: 0 };
 function gcAcc() { return G.acct; }
-function openGacha(back) {
-  G.gcBack = back || G.gcBack || 'title'; G.mode = G.mode === 'play' ? G.mode : 'title';
-  show('gacha'); gcInit(); gcReset(); renderGachaInfo();
+/** ガチャを開く。閉じる先はいつもタイトル（古い戻り先を残さない） */
+function openGacha() {
+  G.mode = G.mode === 'play' ? G.mode : 'title';
+  show('gacha'); $('#gacha').scrollTop = 0; gcInit(); gcReset(); renderGachaInfo();
   // 前回、演出の途中で閉じた抽選があれば、保存済みの結果をもう一度見せる（引き直さない）
   const pend = STORE.get('gcPending', null), a = gcAcc();
   if (pend && a && pend.id === a.id) { const done = a.gacha.log.find(g => g.req === pend.req && g.id); STORE.set('gcPending', null); if (done) { mtoast('前回の結果を表示します（もう一度は引きません）', 2600); gcPlay(done, false); } }
 }
-function closeGacha() { GC.run = false; if (GC.r) { GC.r.dispose(); if (GC.r.forceContextLoss) GC.r.forceContextLoss(); GC.r = null; } GC.sc = null; show(G.gcBack === 'login' ? 'login' : G.gcBack || 'title'); if (G.gcBack === 'title') updateAcctBar(); }
+/** 閉じる：描画ループとWebGLを終わらせ、キャンバスを新しくしてタイトルへ（次に開くとき新しく作れるように） */
+function closeGacha(to) {
+  GC.run = false; GC.ph = 'idle'; GC.busy = false;
+  if (GC.r) { try { GC.r.dispose(); if (GC.r.forceContextLoss) GC.r.forceContextLoss(); } catch (e) { } GC.r = null; const old = $('#gcCanvas'), cv = old.cloneNode(false); old.replaceWith(cv); }
+  GC.sc = null; GC.cap = null; GC.chr = null; GC.fx = []; GC.tx = null; GC.sparkT = null; GC.w = GC.h = 0;
+  show(to || 'title'); updateAcctBar();
+}
 function renderGachaInfo() {
   const a = gcAcc(), sim = a || G.guest;
   $('#gcTix').textContent = a ? String(a.tickets) : '−';
@@ -7651,10 +7996,8 @@ function renderGachaInfo() {
   for (const [nm, w, per] of [['トバトーバン', sim.wins.tobatoban, 3], ['ヨシノシン', sim.wins.yoshinoshin, 2]]) {
     const d = el('div', 'pg'); d.append(el('span', '', nm)); const pp = el('span', 'pips'); for (let i = 0; i < per; i++) pp.appendChild(el('i', i < w % per ? 'on' : '')); d.append(pp, el('span', 'small', `${w % per}/${per}勝で1枚`)); pg.appendChild(d);
   }
-  const rt = $('#gcRates'); rt.textContent = ''; const rates = SAVE.gachaRates(a || G.guest);
-  for (const k of ['C', 'B', 'A', 'S']) { const d = el('div'); d.style.background = DATA.RANK_INFO[k].col; d.append(el('b', '', `${(rates[k] * 100).toFixed(rates[k] > 0 && rates[k] < 0.1 ? 1 : 0)}%`), el('span', '', `${DATA.RANK_INFO[k].ic}${k}`)); rt.appendChild(d); }
   const pool = SAVE.gachaPool(a || G.guest).length, done = pool === 0;
-  $('#gcNote').textContent = (a ? '' : 'ログインすると、チケットを使って引けます（いまは説明と演出見本だけ）。') + `トバトーバン3勝・ヨシノシン2勝ごとにチケット1枚。チケットは貯められます。未入手 ${pool} / 40体（Dランクは初期仲間なので出ません）。割合は、まだ持っていないキャラだけで計算した今の値です。`;
+  $('#gcNote').textContent = (a ? '' : 'ログインすると、チケットを使って引けます（いまは説明と演出見本だけ）。') + `トバトーバン3勝・ヨシノシン2勝ごとにチケット1枚。チケットは貯められます。まだ持っていない仲間から1体が出ます（未入手 ${pool} / 40体）。`;
   const dr = $('#btnGcDraw'); dr.hidden = done; dr.textContent = !a ? 'ログインして引く' : '1回まわす（1枚）'; dr.disabled = !!a && (a.tickets < 1 || GC.busy);
   const ex = $('#gcEx'); ex.hidden = !(done && a); ex.textContent = '';
   if (done && a) { // 全40体を入手したら、1枚を選んだキャラのEXP10,000と交換
@@ -7698,8 +8041,8 @@ function capsuleTex(rk) {
   GC.tx = GC.tx || {}; if (GC.tx[rk]) return GC.tx[rk];
   const col = '#' + DATA.GACHA.col[rk].toString(16).padStart(6, '0');
   return (GC.tx[rk] = GFX.tex(256, 128, (g, w, h) => {
-    g.fillStyle = col; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `bold 54px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle';
-    for (let i = 0; i < 4; i++) { const x = 32 + i * 64; g.fillText(rk, x, 44); g.font = `bold 30px ${GFX.FONT_UI}`; g.fillText(DATA.RANK_INFO[rk].ic, x, 98); g.font = `bold 54px ${GFX.FONT_UI}`; }
+    g.fillStyle = col; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,.28)'; // 文字・王冠は印字しない（色だけ）
+    for (let i = 0; i < 8; i++) { g.beginPath(); g.arc(16 + i * 32, 64 + (i % 2 ? 22 : -22), 9, 0, 7); g.fill(); }
   }));
 }
 function makeCapsule(rk) {
@@ -7800,7 +8143,7 @@ function gcShowResult(res, sample) {
 }
 async function gcDraw() {
   const a = gcAcc();
-  if (!a) { AUDIO.sfx('ui'); G.gcBack = G.gcBack || 'title'; openLogin('gacha', 'ログインすると、チケットを使ってガチャを引けます'); return; }
+  if (!a) { AUDIO.sfx('ui'); closeGacha('login'); openLogin('title', 'ログインすると、チケットを使ってガチャを引けます'); G.afterLoginTarget = 'gacha'; return; } // 一回限りの予約
   if (GC.busy) return;
   if (a.tickets < 1) { mtoast('チケットがありません（トバトーバン3勝・ヨシノシン2勝ごとに1枚）', 2600); return; }
   GC.busy = true; $('#btnGcDraw').disabled = true;
@@ -7830,7 +8173,7 @@ function bindGacha() {
 }
 bindGacha();
 
-window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX, THREE };
+window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX, THREE, GC };
 
 </script>
 </body>
