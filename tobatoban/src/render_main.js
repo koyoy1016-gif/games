@@ -139,6 +139,7 @@ const R = (() => {
       PJM.leaf = PJM.star;
       const ft = GFX.fudaTex(); PJM.fuda = [new THREE.PlaneGeometry(0.24, 0.42), GFX.lam(0xffffff, { map: ft, side: THREE.DoubleSide, emissive: 0x552211 })];
       PJM.lantern = PJM.fire;
+      PJM.reiko = [new THREE.SphereGeometry(0.3, 12, 10), new THREE.MeshBasicMaterial({ color: 0xd8ff8a })];
     }
     const [g, m] = PJM[kind] || PJM.star; const mesh = new THREE.Mesh(g, m); scene.add(mesh); return mesh;
   }
@@ -205,7 +206,16 @@ const R = (() => {
     if (t < t0 + 1.7) { const q = lerp(d, f, (t - t0 - 0.7) / 1.0); return { x: q[0], z: q[1], yaw: Math.atan2(f[0] - d[0], f[1] - d[1]), moving: true, act: '', st: 'ok' }; }
     return { x: f[0], z: f[1], yaw: Math.atan2(-4.3 - f[0], 2 - f[1]), moving: false, act: '', st: 'ok' };
   }
+  /* ---------- 上野編：駅前の広場 ---------- */
+  let UW = null; const ensureUeno = () => UW || (UW = GFX.buildUeno(scene));
+  function syncUeno(v, T) {
+    const ue = v.stageId === 'ueno';
+    if (ue) { ensureUeno(); UW.root.visible = true; W.root.visible = false; if (TW) TW.root.visible = false; UW.update(T); }
+    else if (UW) UW.root.visible = false;
+    return ue;
+  }
   function syncTrain(v, dt, T, me) {
+    if (syncUeno(v, T)) return;
     const jb = v.stageId === 'joban', it = v.introWait ? 0 : v.stageT;
     const showTrain = jb && !(v.stage === 'intro' && it < 3.5);
     W.root.visible = !showTrain; if (jb) ensureTrain(); if (TW) TW.root.visible = showTrain;
@@ -262,7 +272,11 @@ const R = (() => {
     });
     // ボス
     if (v.boss) {
-      if (!boss) { boss = GFX.makeBoss(); scene.add(boss.root); scene.add(boss.shadow); }
+      const wantK = v.stageId === 'ueno' ? 'yoshinoshin' : 'tobatoban';
+      if (boss && (boss.kind || 'tobatoban') !== wantK) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }
+      if (!boss) { boss = wantK === 'yoshinoshin' ? GFX.makeYoshinoshin() : GFX.makeBoss(); scene.add(boss.root); scene.add(boss.shadow); }
+      if (wantK === 'yoshinoshin') { GFX.animYoshinoshin(boss, v.boss, T, dt, v); if (v.boss.st === 'sleep' && Math.random() < 0.05) emit('add', { x: v.boss.x + 0.4, y: 3.4, z: v.boss.z, vy: 0.6, vx: 0.3, life: 1.6, s0: 0.35, s1: 0.6, c: 0xbfd8ff }); }
+      else {
       boss.root.visible = v.boss.st !== 'hidden'; boss.shadow.visible = boss.root.visible;
       GFX.animBoss(boss, v.boss, T, dt, v);
       if (v.boss.st === 'intro') { boss.root.visible = v.stageT > 0.75 && !v.introWait; }
@@ -270,6 +284,7 @@ const R = (() => {
       if (v.boss.stun && Math.random() < 0.3) emit('add', { x: v.boss.x + (Math.random() - 0.5) * 2, y: 3 + Math.random() * 2, z: v.boss.z + (Math.random() - 0.5) * 2, life: 0.3, s0: 0.3, s1: 0.05, c: 0xfff060 });
       if (v.boss.st === 'down' && Math.random() < 0.2) emit('add', { x: v.boss.x + (Math.random() - 0.5) * 1.5, y: 4.6, z: v.boss.z + (Math.random() - 0.5) * 1.5, vy: 0.3, life: 0.8, s0: 0.25, s1: 0.1, c: 0xffe070 });
       if (v.boss.st === 'fly' && Math.random() < 0.6) emit('norm', { x: v.boss.x, y: v.boss.y + 2, z: v.boss.z, vy: -0.4, vx: (Math.random() - 0.5), life: 1.0, s0: 0.5, s1: 1.2, c: 0xd8c8b0, a: 0.4 });
+      }
     } else if (boss) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }
     // 札小僧
     const seenM = new Set();
@@ -279,10 +294,10 @@ const R = (() => {
     const seenP = new Set();
     for (const p of v.projs) {
       seenP.add(p.id); let m = projs.get(p.id); if (!m) { m = projMesh(p.kind); projs.set(p.id, m); }
-      m.position.set(p.x, p.kind === 'fuda' ? 0.6 : 0.65, p.z); m.rotation.y = T * 12;
+      m.position.set(p.x, p.kind === 'fuda' ? 0.6 : p.kind === 'reiko' ? 1.1 : 0.65, p.z); m.rotation.y = T * 12;
       if (p.kind === 'focus') m.scale.setScalar(Math.max(0.8, p.r / 0.45 * 1.2));
       if (p.kind === 'fuda') { m.rotation.set(0, p.yaw + T * 14, 0.3); }
-      if (Math.random() < (p.kind === 'fire' ? 0.9 : 0.5)) emit('add', { x: p.x, y: 0.65, z: p.z, life: 0.25, s0: p.kind === 'fire' ? 0.5 : 0.25, s1: 0.02, c: { star: 0xffe27a, can: 0xbfd8ff, focus: 0xfff6c0, fire: 0xff7a2a, mark: 0xff4a2a, fuda: 0xff8a6a }[p.kind] || 0xffffff });
+      if (Math.random() < (p.kind === 'fire' ? 0.9 : 0.5)) emit('add', { x: p.x, y: 0.65, z: p.z, life: 0.25, s0: p.kind === 'fire' ? 0.5 : 0.25, s1: 0.02, c: { star: 0xffe27a, can: 0xbfd8ff, focus: 0xfff6c0, fire: 0xff7a2a, mark: 0xff4a2a, fuda: 0xff8a6a, reiko: 0xc8ff6a }[p.kind] || 0xffffff });
     }
     for (const [id, m] of projs) if (!seenP.has(id)) { scene.remove(m); projs.delete(id); }
     // 予兆
@@ -373,7 +388,13 @@ const R = (() => {
     const len = DATA.JOBAN.wpn.beam.len, g = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, len), new THREE.MeshBasicMaterial({ color: 0xc8ff7a, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }));
     g.position.set(e.x + Math.sin(e.yaw) * len / 2, 0.95, e.z + Math.cos(e.yaw) * len / 2); g.rotation.y = e.yaw; scene.add(g); beams.push({ g, t: 0.28 });
   }
-  function stepBeams(dt) { for (const b of beams) { b.t -= dt; b.g.material.opacity = Math.max(0, b.t / 0.28) * 0.85; b.g.scale.x = b.g.scale.y = 0.6 + b.t * 3; if (b.t <= 0) { scene.remove(b.g); b.g.geometry.dispose(); } } for (let i = beams.length - 1; i >= 0; i--) if (beams[i].t <= 0) beams.splice(i, 1); }
+  /** 上空からのビーム（号令四連照射） */
+  function skyBeam(e) {
+    const g = new THREE.Mesh(new THREE.CylinderGeometry(DATA.UENO.moves.shosha.r, DATA.UENO.moves.shosha.r, 14, 20, 1, true), new THREE.MeshBasicMaterial({ color: 0xc8a8ff, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+    g.position.set(e.x, 7, e.z); scene.add(g); beams.push({ g, t: 0.35, max: 0.35 });
+    burst('add', 18, { x: e.x, y: 0.3, z: e.z, spd: 4, up: 2, life: 0.4, s0: 0.5, s1: 0.05, c: 0xe0c8ff }); shake(0.08);
+  }
+  function stepBeams(dt) { for (const b of beams) { b.t -= dt; const mx = b.max || 0.28; b.g.material.opacity = Math.max(0, b.t / mx) * 0.85; if (b.max) { b.g.scale.x = b.g.scale.z = 0.5 + b.t / mx * 0.6; } else b.g.scale.x = b.g.scale.y = 0.6 + b.t * 3; if (b.t <= 0) { scene.remove(b.g); b.g.geometry.dispose(); } } for (let i = beams.length - 1; i >= 0; i--) if (beams[i].t <= 0) beams.splice(i, 1); }
   function fx(e, v, me) {
     const A = AUDIO.sfx;
     switch (e.type) {
@@ -459,6 +480,10 @@ const R = (() => {
         if (e.fx === 'otoshi' || e.fx === 'bomb') { A('boom', e.x, e.z, 0.7); burst('add', 18, { x: e.x, y: 0.3, z: e.z, spd: 5, up: 1.5, life: 0.4, s0: 0.6, s1: 0.1, c: 0xff8a3a }); burst('norm', 6, { x: e.x, y: 0.3, z: e.z, spd: 1.5, life: 0.8, s0: 0.7, s1: 1.4, c: 0x5a5060, a: 0.5 }); shake(0.08); }
         if (e.fx === 'land') { A('land', e.x, e.z); for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI * 2; emit('norm', { x: e.x + Math.cos(a) * 1.5, y: 0.2, z: e.z + Math.sin(a) * 1.5, vx: Math.cos(a) * 7, vz: Math.sin(a) * 7, life: 0.8, s0: 0.6, s1: 1.4, c: 0xc8b8a0, a: 0.6 }); } shake(0.4); }
         if (e.fx === 'ybeam') { A('shot_focus', e.x, e.z, 0.8); beamFlash(e); }
+        if (e.fx === 'ubeam') { A('beam', e.x, e.z, 0.6); skyBeam(e); }
+        if (e.fx === 'stamp') { A('land', e.x, e.z); for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2; emit('norm', { x: e.x + Math.cos(a) * 1.2, y: 0.2, z: e.z + Math.sin(a) * 1.2, vx: Math.cos(a) * 9, vz: Math.sin(a) * 9, life: 0.6, s0: 0.6, s1: 1.3, c: 0xe9d6a8, a: 0.6 }); } shake(0.45); }
+        if (e.fx === 'shosho') { A('slap', e.x, e.z); burst('add', 16, { x: e.x + Math.sin(e.yaw) * 2, y: 0.4, z: e.z + Math.cos(e.yaw) * 2, spd: 4, life: 0.3, s0: 0.5, s1: 0.05, c: 0xd8c8ff }); shake(0.25); }
+        if (e.fx === 'throw') { A('stomp', e.x, e.z, 0.5); burst('norm', 8, { x: e.x, y: 0.2, z: e.z, spd: 2.5, life: 0.5, s0: 0.4, s1: 0.8, c: 0xc8b8d8, a: 0.6 }); }
         if (e.fx === 'ysword') { A('slash', e.x, e.z, 0.7); for (let i = 0; i < 6; i++) { const a = e.yaw + (i - 2.5) * 0.22; emit('add', { x: e.x + Math.sin(a) * 1.3, y: 0.7, z: e.z + Math.cos(a) * 1.3, vx: Math.sin(a) * 2, vz: Math.cos(a) * 2, life: 0.2, s0: 0.3, s1: 0.02, c: 0xe4ecff }); } }
         if (e.fx === 'yfist') { A('hit', e.x, e.z, 0.7); burst('norm', 6, { x: e.x + Math.sin(e.yaw) * 1.1, y: 0.6, z: e.z + Math.cos(e.yaw) * 1.1, spd: 2, life: 0.35, s0: 0.3, s1: 0.6, c: 0xd8d0f0, a: 0.6 }); }
         if (e.fx === 'harite') { for (let d = 0.2; d < DATA.BMOVES.harite.len; d += 0.35) for (const s of [-1, 0, 1]) emit('norm', { x: e.x + Math.sin(e.yaw) * d + Math.cos(e.yaw) * s * 0.9, y: 0.25, z: e.z + Math.cos(e.yaw) * d - Math.sin(e.yaw) * s * 0.9, vx: Math.sin(e.yaw) * 3, vz: Math.cos(e.yaw) * 3, vy: 1.2, life: 0.55, s0: 0.5, s1: 1.2, c: 0xc8b8a0, a: 0.65 }); burst('add', 14, { x: e.x + Math.sin(e.yaw) * 1.2, y: 0.4, z: e.z + Math.cos(e.yaw) * 1.2, spd: 4, life: 0.3, s0: 0.5, s1: 0.05, c: 0xfff0c0 }); }
@@ -466,6 +491,14 @@ const R = (() => {
       }
       case 'cross': A('flyPass', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); break;
       case 'yAtk': A(e.w === 'beam' ? 'charge' : 'swing', e.x, e.z, 0.5); break;
+      case 'bblock': if (Math.random() < 0.5) burst('add', 6, { x: e.x, y: 1.8, z: e.z, spd: 3, life: 0.25, s0: 0.3, s1: 0.03, c: 0x9ad0ff }); A('block', e.x, e.z, 0.4); break;
+      case 'bhit': A('crit', e.x, e.z); burst('add', 24, { x: e.x, y: 1.8, z: e.z, spd: 5, life: 0.4, s0: 0.4, s1: 0.05, c: e.n >= 2 ? 0xffffff : 0xff6a4a }); shake(0.2); break;
+      case 'barrier': A(e.on ? 'protect' : e.broken ? 'crit' : 'ui', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); if (e.broken && v.boss) burst('add', 40, { x: v.boss.x, y: 1.8, z: v.boss.z, spd: 6, life: 0.6, s0: 0.5, s1: 0.05, c: 0x9ad0ff }); break;
+      case 'warpIn': burst('add', 26, { x: e.x, y: 1.5, z: e.z, spd: 3, life: 0.5, s0: 0.45, s1: 0.05, c: 0xb89aff }); A('whoosh', e.x, e.z); break;
+      case 'yLand': burst('norm', 6, { x: e.x, y: 0.2, z: e.z, spd: 1.5, life: 0.4, s0: 0.3, s1: 0.6, c: 0xd8d0e8, a: 0.6 }); break;
+      case 'summon': A('summon'); break;
+      case 'sleep': A('bossDown'); break;
+      case 'sleepEnd': A(e.ok ? 'allLit' : 'lanternFail'); if (!e.ok && v.boss) burst('add', 40, { x: v.boss.x, y: 1.5, z: v.boss.z, spd: 3, up: 2, life: 1.0, s0: 0.4, s1: 0.05, c: 0x8aff9a }); break;
       case 'ySpawn': burst('norm', 8, { x: e.x, y: 0.6, z: e.z, spd: 1.2, life: 0.5, s0: 0.35, s1: 0.7, c: 0xb8a8ff, a: 0.55 }); break;
       case 'doors': A(e.open ? 'doorOpen' : 'doorClose'); break;
       case 'depart': A('trainChime'); break;
@@ -545,13 +578,19 @@ const R = (() => {
     if (cam.reset) { cam.reset = false; cam.yaw = a.yaw; }
     if (cam.lock && !cam.dragT && !flying) { const t = cam.lock === 'boss' && B ? B : v.mobs.find(e => e.id === cam.lock); if (t) { const want = Math.atan2(t.x - a.x, t.z - a.z); const d = SIMLIB.angDiff(cam.yaw, want); if (Math.hypot(t.x - a.x, t.z - a.z) > 2.5) cam.yaw += Math.max(-1.0 * dt, Math.min(1.0 * dt, d)); } }
     cam.flyPull += ((flying ? 2.5 : 0) - cam.flyPull) * Math.min(1, dt * 2);
-    const dist = fr.dist + cam.flyPull, p = cam.pitch * Math.PI / 180;
+    const dist = fr.dist + cam.flyPull + (v.stageId === 'ueno' ? 2.2 : 0), p = cam.pitch * Math.PI / 180; // 上野は広いので少し引く（9〜13m）
     let cx = cam.fx - Math.sin(cam.yaw) * Math.cos(p) * dist, cz = cam.fz - Math.cos(cam.yaw) * Math.cos(p) * dist, cy = 0.5 + Math.sin(p) * dist;
     let lx = cam.fx, ly = 0.5, lz = cam.fz;
     // 登場演出（4.5秒・入力無効の間だけ低い視点）
     if (v.stage === 'intro' && B) {
       const t = v.introWait ? 0 : v.stageT, bx = B.x, bz = B.z;
-      const shots = [
+      const shots = v.stageId === 'ueno' ? [ // 上野：部下の列の奥で指を鳴らす→通常のカメラへ
+        { t: 0, c: [0, 3.2, 7], l: [0, 1.2, 16] },
+        { t: 0.9, c: [2.5, 2.6, bz - 7], l: [bx, 2.6, bz] },
+        { t: 2.0, c: [1.5, 2.4, bz - 6], l: [bx, 2.8, bz] },
+        { t: DATA.UENO.introT, c: [cx, cy, cz], l: [lx, ly, lz] },
+        { t: DATA.UENO.introT + 1, c: [cx, cy, cz], l: [lx, ly, lz] },
+      ] : [
         { t: 0, c: [0, 2.2, 1.5], l: [0, 0.3, bz - 2] },
         { t: 1.0, c: [3.5, 1.0, bz - 6.5], l: [bx, 0.6, bz] },
         { t: 2.0, c: [2.5, 0.8, bz - 6], l: [bx, 2.6, bz] },
@@ -596,7 +635,7 @@ const R = (() => {
     for (const [, m] of traps) scene.remove(m); traps.clear(); for (const [, m] of picks) scene.remove(m); picks.clear();
     cam.lanT = 0; if (W) for (const L of W.lanternsStreet) if (L.lit) W.setStreetLantern(L, false);
     for (const p of [PA, PN]) if (p) for (const q of p.P) q.life = 0;
-    if (W && W.root) W.root.visible = true; if (TW) TW.root.visible = false; if (JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; } JT.dist = 0; JT.rail = 0; JT.lcd = '';
+    if (W && W.root) W.root.visible = true; if (TW) TW.root.visible = false; if (UW) UW.root.visible = false; if (JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; } JT.dist = 0; JT.rail = 0; JT.lcd = '';
     for (const b of beams) scene.remove(b.g); beams.length = 0; resize();
   }
   function snapCam(v, me) { const a = v && v.allies[me]; if (!a) return; cam.fx = a.x; cam.fz = a.z; cam.yaw = 0; }

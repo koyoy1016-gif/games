@@ -13,13 +13,13 @@ class RNG { constructor(s) { this.s = (s >>> 0) || 1; } next() { let t = this.s 
 // 行動コード（スナップショットと描画で共有）
 const ACTS = ['', 'combo', 'melee', 'shot', 'charge', 'release', 'dodge', 'retreat', 'cast', 'stealth', 'parry', 'heavy', 'guard', 'taunt', 'sp', 'item', 'stagger', 'counter'];
 const ACT_I = Object.fromEntries(ACTS.map((k, i) => [k, i]));
-const BST = ['intro', 'idle', 'walk', 'wind', 'act', 'rec', 'fly', 'down', 'stun', 'dead', 'hidden'];
+const BST = ['intro', 'idle', 'walk', 'wind', 'act', 'rec', 'fly', 'down', 'stun', 'dead', 'hidden', 'sleep'];
 const BST_I = Object.fromEntries(BST.map((k, i) => [k, i]));
-const BMV = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'zouen'];
+const BMV = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'zouen', 'reiko', 'shosho', 'stamp', 'shosha', 'warp', 'summon', 'barrier', 'throw20', 'sleep', 'cmd'];
 const BMV_I = Object.fromEntries(BMV.map((k, i) => [k, i]));
 const HZ = ['fan2', 'fan', 'line', 'circle', 'rect', 'path'];
 const HZ_I = Object.fromEntries(HZ.map((k, i) => [k, i]));
-const PJ = ['star', 'can', 'focus', 'fire', 'mark', 'leaf', 'fuda', 'lantern', 'pshot', 'bean', 'orb'];
+const PJ = ['star', 'can', 'focus', 'fire', 'mark', 'leaf', 'fuda', 'lantern', 'pshot', 'bean', 'orb', 'reiko'];
 const PJ_I = Object.fromEntries(PJ.map((k, i) => [k, i]));
 
 function inFan(px, pz, ox, oz, yaw, r0, r1, half, tr) {
@@ -37,6 +37,7 @@ function inLine(px, pz, ox, oz, yaw, len, halfW, tr) {
 
 /** ボスの当たり判定と衝突の形（脚2本＋胴の下）。クライアント予測からも使う */
 function bossParts(b) {
+  if (b.kind === 'yoshinoshin') return [{ x: b.x, z: b.z, r: DATA.UENO.bossR }]; // 上野：細長い体（足元の円ひとつ）
   const B = DATA.BOSS, c = Math.cos(b.yaw), s = Math.sin(b.yaw);
   const p = [{ x: b.x + c * B.legX, z: b.z - s * B.legX, r: B.legR }, { x: b.x - c * B.legX, z: b.z + s * B.legX, r: B.legR }, { x: b.x, z: b.z, r: B.coreR }];
   if (b.st === 'down') p.push({ x: b.x + Math.sin(b.yaw) * 0.7, z: b.z + Math.cos(b.yaw) * 0.7, r: 1.2 });
@@ -61,6 +62,7 @@ class Sim {
     this.wave = 0; this.waveSpawned = false; this.barrier = 'street'; this.introWait = false; this.result = null;
     this.test = !!o.test;
     if (this.stageId === 'joban') this.initJoban(o);
+    else if (this.stageId === 'ueno') this.initUeno(o);
     else if (o.test) this.spawnBoss(true);
     else this.spawnWave(0);
   }
@@ -217,6 +219,7 @@ class Sim {
   moveAlly(a, dx, dz) { const r = this.clampPos(a.x, a.z, a.x + dx, a.z + dz, 0.35); a.x = r[0]; a.z = r[1]; }
   clampPos(ox, oz, nx, nz, rad) {
     if (this.stageId === 'joban') return this.clampTrain(ox, oz, nx, nz, rad);
+    if (this.stageId === 'ueno') return this.clampUeno(ox, oz, nx, nz, rad);
     const ST = DATA.STAGE, hw = ST.streetHalfW - rad, pw = ST.plazaHalfW - rad;
     if (nz < 0) {
       if (Math.abs(nx) > hw) { if (oz >= 0 && Math.abs(ox) > hw) nz = 0; else nx = clamp(nx, -hw, hw); }
@@ -541,6 +544,7 @@ class Sim {
   dealToEnemy(a, e, pw, stat, kind, log, hit, opt) {
     if (e === this.boss && !this.bossHittable()) return 0;
     if (e.st && e.st !== 'ok' && e !== this.boss) return 0;
+    if (this.uenoBlock && this.uenoBlock(e, a)) return 0; // 上野：完全指揮バリア中の本体
     const S = DATA.SIM, P = DATA.PASSIVE;
     let atk = stat === 'yo' ? this.stat(a, 'yo') : stat === 'mix' ? (this.stat(a, 'str') + this.stat(a, 'yo')) / 2 : this.stat(a, 'str');
     let state = 1;
@@ -598,6 +602,7 @@ class Sim {
   }
   reflectTo(o, src, v) {
     if (src === this.boss && !this.bossHittable()) return;
+    if (this.uenoBlock && this.uenoBlock(src, o)) return;
     src.hp -= v; o.stats.dmg += v; this.ev('dmg', { v, crit: 0, x: src.x, z: src.z, y: src === this.boss ? 2.4 : 0.8, src: o.slot, kind: 'reflect', el: 0 });
     if (src.hp <= 0) { src.hp = 0; if (src === this.boss) this.bossDie(); else this.mobDie(src, o); }
   }
@@ -810,9 +815,10 @@ class Sim {
     for (const [x, z] of W) this.spawnMob(x, z, true);
     this.wave = i; this.waveSpawned = true;
   }
-  introLen() { return this.stageId === 'joban' ? DATA.JOBAN.introT : DATA.BOSS.introT; }
+  introLen() { return this.stageId === 'joban' ? DATA.JOBAN.introT : this.stageId === 'ueno' ? DATA.UENO.introT : DATA.BOSS.introT; }
   updateStage(dt) {
     if (this.stageId === 'joban') { this.updateJoban(dt); return; }
+    if (this.stageId === 'ueno') { this.updateUenoStage(dt); return; }
     if (this.stage === 'street') {
       const alive = this.mobs.filter(m => m.st === 'ok').length;
       if (alive === 0) {
@@ -849,6 +855,7 @@ class Sim {
   updateMob(m, dt) {
     m.t += dt;
     if (m.st === 'dying') { m.dieT -= dt; if (m.dieT <= 0) m.st = 'gone'; return; }
+    if (m.st === 'fly') return this.updateFly(m, dt); // 上野：投げられて飛んでいる部下
     if (m.st !== 'ok') return;
     if (m.kind === 'yoshi') return this.updateYoshi(m, dt);
     if (m.para > 0) { m.para -= dt; return; }
@@ -908,6 +915,7 @@ class Sim {
   }
   hz(o) { const h = Object.assign({ id: this.id(), t: 0, hits: {}, src: 'boss', max: 1, iv: 99, act: 0.12 }, o); this.hazards.push(h); return h; }
   updateBoss(dt) {
+    if (this.stageId === 'ueno') return this.updateUenoBoss(dt);
     const b = this.boss, M = DATA.BMOVES;
     b.t += dt;
     for (const k in b.cds) if (b.cds[k] > 0) b.cds[k] -= dt;
@@ -1099,14 +1107,15 @@ class Sim {
       for (const o of this.allies) {
         if (h.single && o !== only) continue;
         if (o.st !== 'ok') continue;
-        const rec = h.hits[o.slot];
+        const rec = h.hits[o.slot], gr = h.grp ? h.grp.hits[o.slot] || 0 : 0;
         if (rec && (rec.n >= h.max || h.t - rec.last < h.iv - 1e-6)) continue;
+        if (h.grp && gr >= h.grp.max) continue; // 同じ一斉射・一斉投げでは1人あたりの上限まで
         let inside = false;
         if (h.kind === 'fan') inside = inFan(o.x, o.z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, DATA.MOB.allyR);
         else if (h.kind === 'circle') inside = dist2(o.x, o.z, h.x, h.z) <= h.r + DATA.MOB.allyR;
         else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR);
         if (!inside) continue;
-        h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t };
+        h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t }; if (h.grp) h.grp.hits[o.slot] = gr + 1;
         this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: h.kx != null ? h.kx : o.x - h.x, kz: h.kz != null ? h.kz : o.z - h.z, src: h.src === 'boss' ? b : (h.srcEnt || null), mul: h.mul });
       }
     }
@@ -1209,7 +1218,7 @@ class Sim {
     // 4) 必殺
     if (a.sp >= 100 && this.free(a)) {
       const tgtE = this.aiEnemy(a);
-      const bossOpen = b && (b.st === 'down' || b.st === 'stun' || b.st === 'rec');
+      const bossOpen = b && (b.st === 'down' || b.st === 'stun' || b.st === 'rec' || b.st === 'sleep');
       const S = DATA.SPECIALS[a.c.sp];
       let use = false;
       if (S.type === 'heal') use = (S.revive !== false && this.allies.some(o => o.st === 'down')) || this.allies.filter(o => o.st === 'ok' && o.hp / o.maxHp < 0.5 && (!S.r || dist2(a.x, a.z, o.x, o.z) < S.r)).length >= 2;

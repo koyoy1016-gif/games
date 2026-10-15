@@ -131,7 +131,7 @@
   P.spawnYoshi = function (x, z, grp, from, typ) {
     const rng = this.rng, cfg = this.ycfg, T = cfg.types[typ] || cfg.types.melee;
     const wpn = T.wpn || (typ === 'beam' ? 'beam' : typ === 'guard' ? 'shield' : (rng.next() < 0.5 ? 'sword' : 'fist'));
-    const m = { id: 'm' + this.id(), kind: 'yoshi', typ, T, wpn, grp, from, x, z, yaw: from === 'door' ? Math.PI / 2 : from === 'front' ? Math.PI : (this.stageId === 'ueno' ? Math.PI : Math.PI), hp: T.hp, maxHp: T.hp, def: T.def, str: T.str, yo: T.yo, r: DATA.JOBAN.r * (T.scale || 1), st: 'ok', t: 0, para: 0, defDown: 0, dots: [], dl: [],
+    const m = { id: 'm' + this.id(), kind: 'yoshi', typ, T, wpn, grp, from, x, z, yaw: from === 'door' ? Math.PI / 2 : Math.PI, hp: T.hp, maxHp: T.hp, def: T.def, str: T.str, yo: T.yo, r: T.r || DATA.JOBAN.r, st: 'ok', t: 0, para: 0, defDown: 0, dots: [], dl: [],
       spd: T.spd * rng.range(0.97, 1.03), cd: 0.6 + rng.next() * 1.2, act: null, tgt: -1, retT: 0, enterT: from === 'in' ? 0.7 : from === 'drop' ? 0 : 0.55, wind: 0, moving: 0, fireT: 99, strafe: rng.next() < 0.5 ? 1 : -1, gT: 0, gCd: 0, scale: T.scale || 1 };
     this.mobs.push(m); this.ev('ySpawn', { x, z, from });
     return m;
@@ -210,7 +210,7 @@
     let h;
     if (m.wpn === 'sword') h = this.hz(Object.assign(base, { kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: W.r, half: W.half, fx: 'ysword', dodge: true }));
     else if (m.wpn === 'fist' || m.wpn === 'shield') h = this.hz(Object.assign(base, { kind: 'rect', x: m.x + fx * 0.25, z: m.z + fz * 0.25, yaw: m.yaw, len: W.len, w: W.w, fx: 'yfist', single: true }));
-    else h = this.hz(Object.assign(base, { kind: 'line', x: m.x + fx * 0.5, z: m.z + fz * 0.5, yaw: m.yaw, len: W.len, w: W.w, fx: 'ybeam', dodge: true, single: true, hook: 'yBeam' })); // 幅0.7m：通路（3m）の左右に逃げ幅が残る
+    else h = this.hz(Object.assign(base, { kind: 'line', x: m.x + fx * 0.5, z: m.z + fz * 0.5, yaw: m.yaw, len: T.len || W.len, w: W.w, fx: 'ybeam', dodge: true, single: true, hook: 'yBeam' })); // 幅0.7m：通路（3m）の左右に逃げ幅が残る
     m.act = { t: 0, w: warn, end: warn + W.act + W.rec };
     m.cd = T.period + this.rng.next() * 0.4; // 準備開始から次の準備開始までの最短周期
     this.ev('yAtk', { w: m.wpn, x: m.x, z: m.z });

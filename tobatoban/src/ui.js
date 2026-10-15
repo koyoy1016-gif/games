@@ -382,7 +382,8 @@ function startSolo(stageId) {
   G.stageId = stageOpen(stageId) ? stageId : 'senju';
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
   S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
-  S.startGame({ stageId: G.stageId, bid: newBid(), party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
+  const carry = G.stageId === 'ueno' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
+  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {
@@ -599,7 +600,7 @@ function onNotice(o) {
   if (o.k === 'sp') {
     if (o.me) { const c = $('#cutin'); $('#cutImg').src = G.thumbs[v.allies[o.slot].ch] || ''; $('#cutWho').textContent = 'P' + (o.slot + 1) + '　必殺技'; $('#cutNm').textContent = o.nm; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show'); }
     else notice(`P${o.slot + 1}：${o.nm}！`, 'sp', 1300);
-  } else if (o.k === 'boss') { const M = DATA.BMOVES[o.mv]; if (M) notice(M.nm, 'boss', 1100); }
+  } else if (o.k === 'boss') { const M = (G.v && G.v.stageId === 'ueno' ? DATA.UENO.moves : DATA.BMOVES)[o.mv]; if (M && o.mv !== 'cmd') notice(M.nm, 'boss', 1100); }
   else if (o.k === 'phase2') { banner('トバトーバンが本気を出した', '空を飛ぶ巡行が3回に増える。ミニマップと矢印を見よう', 2400); AUDIO.bgm('boss2'); }
   else if (o.k === 'unlock') { if (G.lock === 'boss') { G.lock = null; G.relockWanted = SET.relock; } notice('ボスが飛んだ！ 注目が外れた', 'warn', 1500); }
   else if (o.k === 'sig') { const t = { help: '助けて！', heal: '回復する！', lantern: '灯籠へ！', sp: '必殺準備OK！', left: '通信が切れたためAIが引き継ぎます' }[o.code] || ''; notice(`P${o.slot + 1}：${t}`, o.code === 'left' ? 'warn' : '', 2000); }
@@ -609,8 +610,8 @@ function onNotice(o) {
     if (o.s === 'intro') { AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
     if (o.s === 'train') { AUDIO.bgm('boss'); banner('ヨシノシンの部下が現れた！', '上野に着くまでに、車内の部下をすべて倒せ', 2400); }
     if (o.s === 'arrive') { banner('上野に到着！', 'ヨシノシンは上野で待っている……', 3000); }
-    if (o.s === 'fight') { AUDIO.bgm('boss'); banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
-    if (o.s === 'won') { AUDIO.jingle(true); if (v && v.stageId === 'joban') banner('ヨシノシンの部下を全員倒した！', '常磐線は無事に上野へ着いた', 3000); else banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
+    if (o.s === 'fight') { AUDIO.bgm('boss'); if (v && v.stageId === 'ueno') banner('ヨシノシンを鎮めよ！', '部下の予告を見切り、本体に近づこう', 2200); else banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
+    if (o.s === 'won') { AUDIO.jingle(true); if (v && v.stageId === 'joban') banner('ヨシノシンの部下を全員倒した！', '常磐線は無事に上野へ着いた', 3000); else if (v && v.stageId === 'ueno') banner('ヨシノシンを鎮めた！', '命令を失った部下たちが、ぱたりと倒れた', 3000); else banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
     if (o.s === 'lost') { AUDIO.jingle(false); banner(G.v && G.v.result && G.v.result.why === 'time' ? '時間切れ' : '全滅', '', 2500); }
   }
 }
@@ -623,6 +624,12 @@ function onEvent(e, v) {
     case 'board': notice(`${DATA.JOBAN.stations[e.st]}：ホームから部下が${e.n}体乗ってくる！`, 'warn', 2200); break;
     case 'jev': if (e.id && e.id.startsWith('mid_')) notice(`前の車両に潜んでいた部下${e.n}体が出てくる！`, 'warn', 2200); break;
     case 'arriveSt': if (e.st < 4) notice(`${DATA.JOBAN.stations[e.st]}に到着`, 'info', 1500); break;
+    case 'sleepWarn': banner('ヨシノシンのHPが半分に近い', '半分になる前に接近して必殺を準備しよう', 2600); break;
+    case 'sleep': banner('30分睡眠チャージ！', '10秒以内に4体合計3,000ダメージを与えろ！', 2000); break;
+    case 'sleepEnd': if (e.ok) banner('阻止成功！', `ヨシノシンがダウン（${e.dmg.toLocaleString()} / 3,000）`, 2400); else banner('阻止失敗…', `ヨシノシンが全回復した（${e.dmg.toLocaleString()} / 3,000）。また半分で同じ判定`, 2800); break;
+    case 'barrier': if (e.on) notice('完全指揮バリア！ 射撃部下のビームを本体へ2回誘導して壊そう', 'boss', 3200); else if (e.broken) notice('バリアを破壊！ ヨシノシンがよろめいた', 'sp', 1800); else notice('バリアが消えた', 'info', 1200); break;
+    case 'bhit': if (e.n < 2) notice(`バリアに命中 ${e.n}/2`, 'sp', 1300); break;
+    case 'summon': notice(`追加動員：部下${e.n}体が奥から来る`, 'warn', 1800); break;
     case 'heal': if (e.v > 0) dmgNum(e.x, 1.2, e.z, '+' + e.v, 'heal'); break;
     case 'down': notice(`P${e.slot + 1}が気絶した${e.slot === me ? '…' : '（まわりの円に入って4秒で救助）'}`, 'warn', 2200); if (e.slot === me && G.session.kind === 'solo') setTimeout(() => notice('仲間のカードを押すと操作を交代できます', 'info', 2600), 900); break;
     case 'ascend': notice(`P${e.slot + 1}が昇天した（この戦闘では戻らない）`, 'warn', 2400); break;
@@ -692,11 +699,23 @@ function updateHud(v, dt) {
   // ボス
   const showBoss = jb ? v.stage !== 'intro' : v.boss && (v.stage === 'boss' || v.stage === 'won' || v.stage === 'lost');
   $('#bossbox').hidden = !showBoss;
+  const ue = v.stageId === 'ueno', U = v.U;
+  $('#ueInfo').hidden = !(ue && showBoss);
   if (showBoss && !jb) {
     const b = v.boss; setBar($('#bossFill'), b.hpR); G.lagBoss = G.lagBoss > b.hpR ? Math.max(b.hpR, G.lagBoss - dt * 0.15) : b.hpR; setBar($('#bossLag'), G.lagBoss);
-    $('#bossPh').hidden = b.phase !== 2;
-    $('#bossSt').textContent = b.st === 'down' ? 'ダウン中' : b.stun ? '麻痺' : b.st === 'fly' ? '飛行中' : b.defDown ? '守り↓' : '';
+    $('#bossPh').hidden = b.phase !== 2 || ue;
+    $('#bossNm').textContent = ue ? 'ヨシノシン' : 'トバトーバン';
+    $('#bossSt').textContent = b.st === 'sleep' ? '睡眠中・被ダメージ×2' : b.st === 'down' ? 'ダウン中' : b.stun ? (ue ? 'よろめき' : '麻痺') : b.st === 'fly' ? '飛行中' : ue && U && U.sleepNear ? '半分で睡眠チャージ' : b.defDown ? '守り↓' : '';
+    if (ue && U) {
+      $('#ueMin').textContent = `部下 ${U.alive}/40`;
+      const bb = $('#ueBar'); bb.hidden = !U.barrier; if (U.barrier) { bb.textContent = `バリア ${U.bhits}/2・${Math.max(0, Math.ceil(DATA.UENO.moves.barrier.max - U.barrierT))}秒`; bb.classList.toggle('hit', U.bhits >= 1); }
+      $('#ueLv').textContent = U.barrier ? '' : `Lv${U.lv} 与×${U.lvOut.toFixed(2)}/被×${U.lvIn.toFixed(2)}`;
+    }
   }
+  // 上野：睡眠チェックの10秒と合計ダメージ
+  const sb = $('#sleepBox'), sleepOn = ue && U && U.sleep && v.stage === 'boss';
+  sb.hidden = !sleepOn;
+  if (sleepOn) { const S = DATA.UENO.moves.sleep, left = Math.max(0, S.dur - U.sleepT); $('#slTime').textContent = left.toFixed(1); setBar($('#slTimeFill'), left / S.dur); $('#slDmg').textContent = Math.min(99999, U.sleepDmg).toLocaleString(); setBar($('#slDmgFill'), U.sleepDmg / S.need); sb.classList.toggle('ok', U.sleepDmg >= S.need); }
   // 自分
   const lowHp = me.hpR < 0.3 && me.st === 'ok';
   $('#mebox').classList.toggle('low', lowHp); $('#meWarn').hidden = !lowHp;
@@ -767,7 +786,7 @@ function overlays(v, me) {
   if (v.boss && (v.stage === 'boss') && v.boss.st !== 'dead') edge('boss', v.boss.x, v.boss.y + 2, v.boss.z, '#cb4b46', v.boss.st === 'fly' ? '飛行' : 'ボス');
   // 注目のレティクル
   let tgt = null; if (G.lock === 'boss' && v.boss) tgt = { x: v.boss.x, y: v.boss.y + 2.6, z: v.boss.z }; else if (G.lock) { const mo = v.mobs.find(q => q.id === G.lock); if (mo) tgt = { x: mo.x, y: 0.6, z: mo.z }; else G.lock = null; }
-  if (G.lock === 'boss' && v.boss && !['idle', 'walk', 'wind', 'act', 'rec', 'down', 'stun'].includes(v.boss.st)) { G.lock = null; tgt = null; }
+  if (G.lock === 'boss' && v.boss && !['idle', 'walk', 'wind', 'act', 'rec', 'down', 'stun', 'sleep'].includes(v.boss.st)) { G.lock = null; tgt = null; }
   if (!G.lock && G.relockWanted && v.boss && v.boss.st !== 'fly' && v.stage === 'boss') { G.lock = 'boss'; G.relockWanted = false; }
   if (tgt) {
     const lk = G.lock === 'boss' ? v.boss : v.mobs.find(q => q.id === G.lock), rr = G.lock === 'boss' ? 1.4 : 0.4;
@@ -789,6 +808,7 @@ function devOverlay(v) {
 function drawMap(v) {
   const c = $('#mapc'); const g = c.getContext('2d'); const W = c.width, H = c.height; g.clearRect(0, 0, W, H);
   if (v.stageId === 'joban') return drawTrainMap(v, g, W, H);
+  if (v.stageId === 'ueno') return drawUenoMap(v, g, W, H);
   const big = $('#map').classList.contains('big');
   const me = v.allies[G.my];
   const inPlaza = v.stage !== 'street';
@@ -824,6 +844,26 @@ function drawMap(v) {
   const [mx, mz] = P(me.x, me.z), cy = R.cam.yaw; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy - 0.45) * 28, mz - Math.cos(cy - 0.45) * 28); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy + 0.45) * 28, mz - Math.cos(cy + 0.45) * 28); g.stroke();
 }
 
+/** 上野のミニマップ：広場（34m×28m）。上が奥（駅舎） */
+function drawUenoMap(v, g, W, H) {
+  const D = DATA.UENO, me = v.allies[G.my], sc = Math.min(W / (D.halfX * 2 + 2), H / (D.zMax + 2));
+  const P = (x, z) => [W / 2 - x * sc, H / 2 - (z - D.zMax / 2) * sc];
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, W, H);
+  let [a1, b1] = P(D.halfX, D.zMax), [a2, b2] = P(-D.halfX, 0); g.fillStyle = '#8a4a38'; g.fillRect(Math.min(a1, a2), Math.min(b1, b2), Math.abs(a2 - a1), Math.abs(b2 - b1));
+  g.fillStyle = '#d9cbb4'; g.fillRect(Math.min(a1, a2), Math.min(b1, b2) - 4, Math.abs(a2 - a1), 4);
+  const fs = Math.max(10, Math.round(W / 10)); g.font = `900 ${fs}px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const h of v.hz) if (h.kind === 'circle') { const [x, z] = P(h.x, h.z); g.strokeStyle = h.fx === 'warp' ? 'rgba(190,150,255,.9)' : 'rgba(255,110,60,.9)'; g.lineWidth = 2; g.beginPath(); g.arc(x, z, Math.max(2.5, h.a * sc), 0, 7); g.stroke(); }
+  for (const p of v.pickups) { const [x, z] = P(p.x, p.z); g.fillStyle = p.kind === 'candy' ? '#ff5fa8' : '#d07aa0'; g.beginPath(); g.arc(x, z, p.kind === 'candy' ? 5 : 3, 0, 7); g.fill(); }
+  for (const m of v.mobs) { if (m.dying) continue; const [x, z] = P(m.x, m.z); g.fillStyle = m.kind === 'beam' ? '#c8ff6a' : m.air ? '#ffb0e0' : '#ff5a4a'; g.beginPath(); g.arc(x, z, 2.6, 0, 7); g.fill(); }
+  if (v.boss && v.boss.st !== 'hidden') { const b = v.boss, [x, z] = P(b.x, b.z); g.fillStyle = v.U && v.U.barrier ? '#6ab8ff' : '#7a4ac8'; g.beginPath(); g.arc(x, z, 8, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; g.fillText('ボ', x, z + 1); }
+  v.allies.forEach((a, i) => {
+    if (a.st === 'gone') return; const [x, z] = P(a.x, a.z);
+    if (i === G.my) { g.save(); g.translate(x, z); g.rotate(-a.yaw); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(0, -9); g.lineTo(7, 7); g.lineTo(0, 3); g.lineTo(-7, 7); g.closePath(); g.fill(); g.restore(); }
+    else { g.fillStyle = pcol(i); g.beginPath(); g.arc(x, z, 6, 0, 7); g.fill(); }
+    if (a.st === 'down') { g.strokeStyle = '#7dffb0'; g.lineWidth = 2; g.beginPath(); g.arc(x, z, 9, 0, 7); g.stroke(); }
+  });
+}
+
 /** 車内のミニマップ：左が3号車（後ろ）、右が2号車（前・上野方面）。右端から部下が来る */
 function drawTrainMap(v, g, W, H) {
   const J = DATA.JOBAN, me = v.allies[G.my];
@@ -851,7 +891,7 @@ function showResult(v) {
   $('#resEyebrow').textContent = win ? (jb ? '電車クリア' : '勝利') : '敗北'; $('#resTitle').textContent = win ? T[0] : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
   const kv = $('#resKv'); kv.textContent = '';
   const rows = [['ステージ', T[1]], ['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : `協力プレイ（${v.H || 1}人）`]];
-  if (jb || ue) rows.splice(2, 0, ['倒した部下', `${v.kills} / ${v.total}`]);
+  if (jb || ue) rows.splice(2, 0, ['倒した部下', ue ? `${v.kills}体` : `${v.kills} / ${v.total}`]);
   for (const [k, val] of rows) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
   const grid = $('#resGrid'); grid.textContent = '';
   const stats = S.sim ? S.sim.allies.map(a => a.stats) : null;
@@ -864,6 +904,7 @@ function showResult(v) {
   $('#resReward').textContent = msg;
   const host = S.kind !== 'client';
   G.nextPrep = !G.coop && jb && win;
+  G.carry = G.nextPrep ? v.allies.map(a => a.items.map(i => i.n)) : null;
   $('#btnRetry').hidden = !host; $('#btnReteam').hidden = !host && G.coop;
   $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : G.nextPrep ? '上野へ進む' : ue && !win ? 'ボスから再挑戦' : '再出動';
   $('#btnResGacha').hidden = !(res && res.ticket > 0) && !((G.acct || G.guest).tickets > 0);

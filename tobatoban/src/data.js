@@ -279,6 +279,40 @@ const JOBAN = {
   introT: p('常磐線', '始まりの演出（トバトーバンが倒れる→乗車→発車）', 12, 's', 'proto'), arriveT: 6,
   dropRate: 0.06,
 };
+/* ---------------- 上野編：上野駅前の広場・指揮官ヨシノシン ---------------- */
+// 座標：x＝左右（±17）、z＝奥行き（入口 z=0 → 奥 z=28）。味方は z≈4、部下は z12〜18、本体は z≈23
+const U_H = 1.45; // 電車の部下モデルの身長（m）。上野の部下はこれを縮めて 0.8〜0.95m にする
+const UENO = {
+  nm: '上野駅前', boss: 'ヨシノシン', minion: 'ヨシノシンの部下（妖怪人形）',
+  halfX: p('上野', '戦闘領域の横幅', 34, 'm', 'spec', null, 'x=±17') / 2, zMax: p('上野', '戦闘領域の奥行き', 28, 'm', 'spec', null, '入口 z=0'),
+  start: [[-1.5, 4.2], [1.5, 4.2], [-0.5, 3.0], [0.5, 3.0]], bossSpawn: [0, 23], center: [0, 14],
+  bossR: 1.0, bossH: p('ヨシノシン', '身長', 3.2, 'm', 'spec', null, '約5頭身・コゲマル1mの3.2倍'),
+  hp: p('ヨシノシン', '体力', 26000, 'points', 'spec'), str: p('ヨシノシン', 'ちから', 400, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 450, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 135, 'points', 'spec'),
+  introT: p('上野', '登場の演出（指を鳴らす→部下が走り出す）', 3.2, 's', 'spec', null, '最初の予告より前に攻撃しない'),
+  minGap: p('ヨシノシン', '直接攻撃どうしの開始間隔（最低）', 3.0, 's', 'spec'),
+  rec: 40,
+  lvOut: { k: 0.02, lo: 0.75, hi: 1.25 }, lvIn: { k: 0.015, lo: 0.80, hi: 1.20 },
+  minions: {
+    melee: { nm: '通常近接', hp: 100, str: 100, yo: 80, def: 40, pw: 40, stat: 'str', warn: 0.65, period: 3.2, spd: 2.6, scale: 0.85 / U_H, r: 0.32 },
+    guard: { nm: '防御', hp: 160, str: 110, yo: 80, def: 70, pw: 45, stat: 'str', warn: 0.8, period: 4.0, spd: 2.3, scale: 0.95 / U_H, r: 0.34, gMul: 0.7, gMax: 2, gCd: 5 },
+    beam: { nm: '射撃', hp: 80, str: 60, yo: 260, def: 30, pw: 90, stat: 'yo', warn: 1.2, period: 5.0, spd: 2.4, scale: 0.85 / U_H, r: 0.32, len: 13 },
+    thrown: { nm: '投げられる部下', hp: 75, str: 95, yo: 80, def: 35, pw: 35, stat: 'str', warn: 0.65, period: 3.5, spd: 2.6, scale: 0.8 / U_H, r: 0.3 },
+  },
+  init: p('上野', '最初の部下（近接・防御・射撃）', { melee: 24, guard: 8, beam: 4 }, '体', 'spec', null, '36体が同時に前進する'),
+  cap: p('上野', '部下の生存上限', 40, '体', 'spec'),
+  rights: p('上野', '同時に攻撃を始められる部下', { melee: 4, beam: 2, all: 6 }, '体', 'spec', null, '近接・防御4体＋射撃2体＝6体'),
+  moves: {
+    reiko: { nm: '采配三連霊光', pw: 22, stat: 'yo', n: 3, spread: 0.32, speed: 9, warn: 0.65, rec: 0.7, cd: 6, r: 0.35, range: 13 },
+    shosho: { nm: '指令連掌', pw: 110, stat: 'str', warn: 0.7, lockT: 0.25, act: 0.15, rec: 1.0, cd: 10, len: 3.4, w: 2.6, near: 3.6 },
+    stamp: { nm: '一斉決裁スタンプ', pw: 100, stat: 'str', r: 4.5, warn: 1.6, act: 0.2, rec: 1.2, cd: 18 },
+    shosha: { nm: '号令四連照射', pw: 65, stat: 'yo', warn: 1.3, act: 0.35, rec: 1.0, cd: 12, r: 1.35, gap: 3.0, iv: 0.9 },
+    warp: { nm: '後方指揮ワープ', warn: 0.7, act: 0.25, rec: 0.5, cd: 10 },
+    summon: { nm: '追加動員', n: 6, warn: 1.5, cd: 30, at: 8 },
+    barrier: { nm: '完全指揮バリア', warn: 0.8, hits: 2, max: 8, cd: 35, stagger: 1.2 },
+    throw20: { nm: '部下丸投げ二十連', n: 20, iv: 0.18, land: 1.1, warn: 1.5, rec: 1.5, r: 0.65, pw: 12, stat: 'yo', maxHits: 2, at: [0.75, 0.25], calm: 1.0 },
+    sleep: { nm: '30分睡眠チャージ', at: 0.5, warnAt: 0.55, dur: 10, need: 3000, mul: 2.0, down: 4 },
+  },
+};
 const CAM = {
   camera_pitch_deg: p('カメラ', 'camera_pitch_deg（俯角）', 44, 'deg', 'proto', null, '35〜55度で調整。ボスが遠いときは最大8度浅くする'),
   vertical_fov_deg: p('カメラ', 'vertical_fov_deg（横画面）', 50, 'deg', 'proto'),
@@ -297,4 +331,4 @@ const NET = {
 };
 p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 10, 'Apple 44pt / Android 48dp の目安より大きく');
 
-const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };
+const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, UENO, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };

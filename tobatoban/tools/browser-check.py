@@ -123,10 +123,9 @@ with sync_playwright() as p:
         port = SCEN == 'jobanport'
         W, H = (390, 844) if port else (844, 390)
         pre = 'p' if port else ''
-        steps = [ev("() => { document.getElementById('btnGuest').click(); document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); return 1; }"), wait(0.4), ev(vis, 'screen'), shot(pre + '60_stage_locked'),
-            ev("() => { document.querySelectorAll('#stages .stage-card')[1].click(); return __tb.G.mode; }", 'locked_click_mode'), wait(0.3), shot(pre + '60b_locked_toast'),
-            ev("() => { __tb.G.sessClear.senju = true; document.getElementById('btnStageBack').click(); document.getElementById('btnGo').click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'cards'), wait(0.3), shot(pre + '61_stage_open'),
-            ev("() => { document.querySelectorAll('#stages .stage-card')[1].click(); return __tb.G.mode + ' ' + " + sim + ".stageId + ' ' + " + sim + ".stage; }", 'start'),
+        steps = [ev("() => { document.getElementById('btnGuest').click(); document.getElementById('btnSolo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return 1; }"), wait(0.4), ev(vis, 'screen'), shot(pre + '60_stage_locked'),
+            ev("() => { __tb.G.guest.clear.senju = 1; __tb.G.party.forEach(c => { __tb.G.guest.chars[c].lv = 20; __tb.G.guest.chars[c].exp = __tb.DATA.GROWTH.cum(__tb.DATA.CHI[c].rank, 20); }); document.getElementById('btnSolo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'cards'), wait(0.3), shot(pre + '61_stage_open'),
+            ev("() => { document.querySelectorAll('#stages .stage-card')[0].click(); return __tb.G.mode + ' ' + " + sim + ".stageId + ' ' + " + sim + ".stage; }", 'start'),
             wait(1.2), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_62_cut_collapse'), shot(pre + '62_cut_collapse'), wait(2.4), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_63_cut_platform'), shot(pre + '63_cut_platform'), wait(1.8), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_64_cut_board'), shot(pre + '64_cut_board'), wait(2.6), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_65_cut_inside'), shot(pre + '65_cut_inside'), wait(2.6), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_66_cut_depart'), shot(pre + '66_cut_depart'),
             wait(2.0), ev("() => " + sim + ".stage + ' mobs ' + " + sim + ".mobs.length", 'after_intro'), shot(pre + '67_train'), check_overlap('overlap_train'),
             ev("() => { const s=" + sim + "; s.allies.forEach(a => a.inv = 999); const L = __tb.G.session.local; L.push('A'); L.push('A'); return 1; }"), wait(3.0), shot(pre + '68_fight'),
@@ -135,11 +134,38 @@ with sync_playwright() as p:
             # 南千住の手前まで進める → 停車・ドア・乗車
             ev("() => { const s=" + sim + "; s.tr.d = DATA_LEN0 - 12; s.tr.v = 7; return s.tr.d; }".replace('DATA_LEN0', '__tb.DATA.JOBAN.segLen[0]')), wait(5.5), ev("() => { const t=" + sim + ".tr; return [t.at, t.ph, t.doors, Math.round(t.t*10)/10]; }", 'station'), shot(pre + '69_station'), wait(2.0), shot(pre + '70_boarding'),
             # 最後まで飛ばす：部下を全滅・日暮里を出た所 → 上野に着く
-            ev("() => { const s=" + sim + "; s.phase = 3; s.boardedSt = 3; s.queue = []; s.mobs.forEach(m => { if (m.st === 'ok') s.dealToEnemy(s.allies[0], m, 99999, 'str', 'A', null); }); s.kills = s.total; const t = s.tr; t.at = 3; t.ph = 'run'; t.t = 0; t.d = __tb.DATA.JOBAN.segLen[3] - 100; t.v = 20; return s.stage; }", 'skip'),
+            ev("() => { const s=" + sim + "; __tb.DATA.JOBAN.events.forEach(e => s.fired[e.id] = 1); s.queue = []; s.mobs.forEach(m => { if (m.st === 'ok') s.dealToEnemy(s.allies[0], m, 99999, 'str', 'A', null); }); s.kills = s.total; const t = s.tr; t.at = 3; t.ph = 'run'; t.t = 0; t.d = __tb.DATA.JOBAN.segLen[3] - 100; t.v = 20; return s.stage; }", 'skip'),
             wait(3.0), shot(pre + '71_approach_ueno'), wait(8.5), ev("() => " + sim + ".stage + ' at ' + " + sim + ".tr.at", 'arrive_stage'), shot(pre + '72_ueno'), wait(2.5), shot(pre + '72b_ueno_platform'), wait(3.0), shot(pre + '72c_ueno_platform'), wait(3.0), ev("() => [__tb.G.mode, " + sim + ".result && " + sim + ".result.why]", 'result'), shot(pre + '73_result'),
             ev("() => document.getElementById('result') ? document.getElementById('result').innerText.slice(0, 300) : ''", 'result_text'),
+            ev("() => { document.getElementById('btnRetry').click(); return [document.getElementById('btnRetry').textContent, " + vis + "()]; }", 'to_prep'), wait(0.4), shot(pre + '74_prep'),
+            ev("() => document.getElementById('prep').innerText.replace(/\\n/g, ' | ').slice(0, 300)", 'prep_text'),
+            ev("() => { document.getElementById('btnPrepGo').click(); const s = " + sim + "; return [s.stageId, s.stage, s.allies.map(a => a.items.map(i => i.n).join('/')).join(' '), s.allies.map(a => a.sp).join('/')]; }", 'ueno_start'), wait(2.0), shot(pre + '75_ueno_intro'),
         ]
         results.append(run(p, W, H, 'joban', steps))
+    if SCEN in ('ueno', 'uenoport'):
+        # 上野：章タブ→ヨシノシン→登場（指を鳴らす）→36体の前進→バリア→二十連→睡眠チェック→撃破→結果
+        vis = "() => [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',')"
+        sim = "__tb.G.session.sim"
+        port = SCEN == 'uenoport'
+        W, H = (390, 844) if port else (844, 390)
+        pre = 'p' if port else ''
+        steps = [ev("() => { document.getElementById('btnGuest').click(); const g = __tb.G.guest; g.clear.senju = 1; g.clear.joban = 1; g.uenoOpen = true; __tb.G.party.forEach(c => { g.chars[c].lv = 40; g.chars[c].exp = __tb.DATA.GROWTH.cum(__tb.DATA.CHI[c].rank, 40); }); document.getElementById('btnSolo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'cards'), wait(0.4), shot(pre + '80_sortie_ueno'),
+            ev("() => document.getElementById('stages').innerText.replace(/\\n/g, ' | ').slice(0, 400)", 'sortie_text'),
+            ev("() => { document.querySelectorAll('#stages .stage-card')[1].click(); return __tb.G.mode + ' ' + " + sim + ".stageId + ' ' + " + sim + ".stage; }", 'start'),
+            wait(0.6), shot(pre + '81_intro_a'), wait(0.8), shot(pre + '82_intro_snap'), wait(1.0), shot(pre + '83_intro_lean'), wait(1.6), ev("() => [" + sim + ".stage, " + sim + ".mobs.length, " + sim + ".hazards.length]", 'after_intro'), shot(pre + '84_charge'),
+            ev("() => { const s=" + sim + "; s.allies.forEach(a => a.inv = 1e9); return 1; }"), wait(3.0), shot(pre + '85_fight'), check_overlap('overlap_ueno'),
+            ev("() => { const i = __tb.R.renderer.info; return {calls: i.render.calls, tris: i.render.triangles, geos: i.memory.geometries, tex: i.memory.textures}; }", 'perf'),
+            ev("() => document.getElementById('bossbox').innerText.replace(/\\n/g,' | ')", 'bossbox_text'),
+            ev("() => { const s=" + sim + "; s.U.barrier = { t: 0, hits: 1, seen: {} }; s.ev('barrier', { on: 1 }); return 1; }"), wait(1.0), shot(pre + '86_barrier'),
+            ev("() => { const s=" + sim + "; s.U.barrier = null; const al = s.mobs.filter(m => m.st === 'ok'); al.slice(0, Math.max(0, al.length - 10)).forEach(m => s.dealToEnemy(s.allies[0], m, 1e6, 'str', 'A', null)); const b = s.boss; b.st = 'idle'; b.gap = 0; s.U.thrQ = 1; return s.uenoAlive(); }", 'before_throw'), wait(2.2), shot(pre + '87_throw'), wait(1.5), shot(pre + '88_throw_land'), ev("() => [" + sim + ".uenoAlive(), " + sim + ".U.thrUsed]", 'after_throw'),
+            wait(4.0), ev("() => { const s=" + sim + ", b = s.boss; b.hp = Math.round(b.maxHp * 0.52); s.U.barrier = null; if (b.st === 'hidden') { b.st = 'idle'; } s.U.sleepArmed = true; s.U.sleepWarn = false; s.dealToEnemy(s.allies[0], b, 3000, 'str', 'A', null); return [b.hp, s.U.sleepPend, b.st]; }", 'cross_half'), wait(4.0), ev("() => { const s=" + sim + "; return [s.boss.st, s.U.sleep && Math.round(s.U.sleep.dmg)]; }", 'sleeping'), shot(pre + '89_sleep'),
+            ev("() => document.getElementById('sleepBox').innerText.replace(/\\n/g,' | ')", 'sleep_text'),
+            ev("() => { const s=" + sim + "; s.dealToEnemy(s.allies[0], s.boss, 4000, 'str', 'A', null); return 1; }"), wait(1.2), ev("() => [" + sim + ".boss.st, " + sim + ".U.sleepDone]", 'sleep_ok'), shot(pre + '90_sleep_ok'),
+            ev("() => { document.getElementById('map').click(); return 1; }"), wait(0.4), shot(pre + '91_map'), ev("() => { document.getElementById('map').click(); return 1; }"),
+            ev("() => { const s=" + sim + "; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); return s.stage; }", 'kill'), wait(1.5), shot(pre + '92_won'), wait(5.0),
+            ev("() => [__tb.G.mode, document.getElementById('resExp') ? document.getElementById('resExp').innerText.replace(/\\n/g,' | ') : '']", 'result'), shot(pre + '93_result'),
+        ]
+        results.append(run(p, W, H, 'ueno', steps))
     if SCEN in ('hub',):
         # 四人でバスターズ：ログイン画面のガチャ入口→演出見本→拠点→編成（絞り込み・詳細）→図鑑→出動（章タブ）→北千住で勝つ→結果のEXP
         vis = "() => [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',')"

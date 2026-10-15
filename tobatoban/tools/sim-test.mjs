@@ -2,7 +2,7 @@
 // 使い方: node tobatoban/tools/sim-test.mjs
 import fs from 'fs'; import vm from 'vm'; import path from 'path'; import { fileURLToPath } from 'url';
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
-const src = ['data.js', 'roster_data.js', 'roster.js', 'sim.js', 'joban.js', 'proto.js'].filter(f => fs.existsSync(path.join(dir, f))).map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+const src = ['data.js', 'roster_data.js', 'roster.js', 'sim.js', 'joban.js', 'ueno.js', 'proto.js'].filter(f => fs.existsSync(path.join(dir, f))).map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console, Math, Set, Map, JSON, Object, Array, Number, String, Date });
 vm.runInContext(src + '\n;globalThis.__ = { DATA, SIMLIB, PROTO: typeof PROTO!=="undefined"?PROTO:null };', ctx);
 const { DATA, SIMLIB, PROTO } = ctx.__;
@@ -219,6 +219,99 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   const s = new Sim({ party, seed: 12, stageId: 'joban', test: true }); s.allies.forEach(a => a.inv = 1e9);
   for (let i = 0; i < 60 * 400; i++) s.step();
   ok(s.stage === 'train' && s.tr.at === 3 && s.tr.ph === 'run', `敵が残っていると日暮里→上野の間を走り続ける（${DATA.JOBAN.stations[s.tr.at]}・${s.tr.ph}）`);
+}
+// 7.9) 上野：ヨシノシン・36体・攻撃権6・Lv補正・睡眠チェック・二十連・バリア
+{
+  const U = DATA.UENO, mk = (lv, o) => new Sim(Object.assign({ party: ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(ch => ({ ch, lv })), seed: 21, stageId: 'ueno' }, o || {}));
+  const s = mk(40);
+  const cnt = k => s.mobs.filter(m => m.typ === k).length;
+  ok(s.stage === 'intro' && s.boss.hp === 26000 && s.boss.str === 400 && s.boss.yo === 450 && s.boss.def === 135, 'ヨシノシン：HP26,000・ちから400・ようりょく450・まもり135');
+  ok(s.mobs.length === 36 && cnt('melee') === 24 && cnt('guard') === 8 && cnt('beam') === 4, `最初の部下36体（近接${cnt('melee')}・防御${cnt('guard')}・射撃${cnt('beam')}）`);
+  ok(s.mobs.every(m => m.z >= 11.5 && m.z <= 18.5) && Math.abs(s.boss.z - 23) < 0.01 && s.allies.every(a => a.z < 5), '部下はz12〜18、本体はz23、味方は入口側');
+  ok(s.allies.every(a => a.sp >= 50), '開始時の妖気は最低50');
+  const lvk = [30, 40, 50].map(lv => { const q = mk(lv); return q.lvOut.toFixed(2) + '/' + q.lvIn.toFixed(2); });
+  ok(lvk.join(' ') === '0.80/1.15 1.00/1.00 1.20/0.85', `Lv補正（Lv30・40・50）：与/被 ${lvk.join('　')}`);
+  { const q = new Sim({ party: ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(ch => ({ ch, lv: 40 })), seed: 1, stageId: 'senju', test: true }); ok(!q.lvOut || q.lvOut === 1, '北千住にはLv補正をかけない'); }
+  // 登場の演出のあいだは攻撃しない
+  let early = 0; for (let i = 0; i < 60 * (U.introT - 0.1); i++) { s.step(); early += s.hazards.length + s.projs.filter(p => p.team === 'enemy').length; }
+  ok(early === 0, `登場（約${U.introT}秒）の間は予告も攻撃もない`);
+  // 攻撃権：近接・防御4＋射撃2＝最大6
+  s.allies.forEach(a => { a.inv = 1e9; a.x = (a.slot - 1.5) * 2; a.z = 12; });
+  let maxM = 0, maxB = 0; s.boss.testIdle = true;
+  for (let i = 0; i < 60 * 15; i++) { s.step(); s.allies.forEach(a => { a.hp = a.maxHp; }); const at = s.mobs.filter(m => m.st === 'ok' && m.act); maxM = Math.max(maxM, at.filter(m => m.typ !== 'beam').length); maxB = Math.max(maxB, at.filter(m => m.typ === 'beam').length); }
+  ok(maxM <= 4 && maxB <= 2 && maxM + maxB >= 4, `同時に攻撃するのは近接・防御${maxM}体（最大4）＋射撃${maxB}体（最大2）`);
+  // 本体の技の威力（共通式）：Lv40コゲマルのまもり98で 霊光45・連掌202・スタンプ183・上空ビーム134
+  const ko = s.allies[0]; ko.ctrlAI = false; s.syncAi(ko); ko.inv = 0;
+  const hitBy = (pw, stat) => { ko.hp = ko.maxHp; ko.act = null; ko.st = 'ok'; const h0 = ko.hp; s.dealToAlly(ko, pw, stat, s.boss, { src: s.boss }); return h0 - ko.hp; };
+  const M = U.moves, vals = [hitBy(M.reiko.pw, 'yo'), hitBy(M.shosho.pw, 'str'), hitBy(M.stamp.pw, 'str'), hitBy(M.shosha.pw, 'yo')];
+  ok(s.stat(ko, 'def') === 98 && vals.join('/') === '45/202/183/134', `Lv40コゲマル（まもり${s.stat(ko, 'def')}）：霊光・連掌・スタンプ・上空ビーム＝${vals.join('/')}（仕様の確認例 45/202/183/134）`);
+}
+{ // 睡眠チェック：2,999は失敗→全回復して再発動、3,000で成功→4秒ダウン・以後なし。余剰だけ計上。被ダメージ×2
+  const U = DATA.UENO, S = U.moves.sleep;
+  const mk = () => { const s = new Sim({ party: ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(ch => ({ ch, lv: 40 })), seed: 5, stageId: 'ueno', test: true, idle: true }); s.mobs.forEach(m => { m.st = 'gone'; }); s.mobs = []; s.allies.forEach(a => { a.inv = 1e9; }); return s; };
+  const s = mk(), b = s.boss, a = s.allies[0];
+  const hit = v => { const before = b.hp; b.hp -= v; s.uenoAfterHit(b, v, a, 'A'); return before; };
+  hit(b.maxHp * 0.5 - 100); s.step();
+  ok(!s.U.sleep && !s.U.sleepPend, '半分より上では眠らない');
+  hit(400); s.step(); // 半分を300またぐ
+  ok(b.st === 'sleep' && s.U.sleep && s.U.sleep.dmg === 300, `半分をまたぐと睡眠チャージ（またいだ後の余剰だけ ${s.U.sleep && s.U.sleep.dmg} を計上）`);
+  ok(s.mobs.every(m => !m.act), '睡眠中は部下の攻撃を止める');
+  const d1 = s.dealToEnemy(a, b, 100, 'str', 'A', null); s.U.sleep.dmg -= d1; b.hp += d1; // 試しに1発
+  const sl = s.U.sleep; s.U.sleep = null; const d0 = s.dealToEnemy(a, b, 100, 'str', 'A', null); b.hp += d0; s.U.sleep = sl;
+  ok(Math.abs(d1 / d0 - 2) < 0.05, `睡眠中は被ダメージ×2（${d0}→${d1}）`);
+  s.U.sleep.dmg = S.need - 1; for (let i = 0; i < 60 * (S.dur + 0.1); i++) s.step();
+  ok(!s.U.sleep && b.hp === b.maxHp && s.U.sleepArmed && !s.U.sleepDone, `2,999では失敗：最大HPに戻り（${b.hp}）、また半分で再発動`);
+  hit(b.hp - b.maxHp * 0.5 + 1); s.step();
+  ok(b.st === 'sleep', 'もう一度半分をまたぐと再発動');
+  s.U.sleep.t = S.dur - 1 / 60 - 1e-9; s.U.sleep.dmg = S.need - 50; s.dealToEnemy(a, b, 1e3, 'str', 'A', null); s.step(); // 期限ちょうどの一撃は先に計上
+  ok(s.U.sleepDone && b.st === 'down' && Math.abs(b.downT - S.down) < 0.05, `3,000に届くと成功（期限の同じ瞬間の攻撃を先に数える）→ ${S.down}秒ダウン`);
+  for (let i = 0; i < 60 * 5; i++) s.step(); b.hp = b.maxHp * 0.6; hit(b.maxHp * 0.2); s.step();
+  ok(b.st !== 'sleep' && !s.U.sleepPend, '成功したあとは二度と眠らない');
+  const s2 = mk(); s2.U.sleep = null; s2.boss.hp = 10; s2.dealToEnemy(s2.allies[0], s2.boss, 1e5, 'str', 'A', null);
+  ok(s2.stage === 'won', 'HP0なら撃破が優先（勝ち）');
+}
+{ // 二十連：HP75%・25%で1回ずつ（全回復でも戻らない）、生存20以下になってから必ず20体、上限40
+  const U = DATA.UENO, T = U.moves.throw20;
+  const s = new Sim({ party: ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(ch => ({ ch, lv: 40 })), seed: 9, stageId: 'ueno', test: true }); const b = s.boss;
+  s.allies.forEach(a => { a.inv = 1e9; a.z = 3; }); s.mobs.forEach(m => m.para = 1e9);
+  b.hp = b.maxHp * 0.74; s.uenoAfterHit(b, b.maxHp * 0.02, s.allies[0], 'A');
+  ok(s.U.thrQ === 1, '75%をまたぐと二十連を予約');
+  for (let i = 0; i < 60 * 3; i++) s.step();
+  ok(s.U.thrUsed === 0 && s.uenoAlive() === 36, `生存${s.uenoAlive()}体（20より多い）の間は始めない`);
+  for (const m of s.mobs.slice(0, 18)) s.dealToEnemy(s.allies[0], m, 1e6, 'str', 'A', null);
+  let maxAlive = 0, landed = 0; for (let i = 0; i < 60 * 12; i++) { s.step(); maxAlive = Math.max(maxAlive, s.uenoAlive()); for (const e of s.events) if (!e._c && e.type === 'yLand') { e._c = 1; landed++; } }
+  ok(s.U.thrUsed === 1 && landed === 20 && maxAlive <= U.cap, `生存18体から20体を投げて着地（${landed}体・最大${maxAlive}体≦40）`);
+  b.hp = b.maxHp * 0.24; s.uenoAfterHit(b, b.maxHp * 0.02, s.allies[0], 'A'); b.hp = b.maxHp; b.hp = b.maxHp * 0.7; s.uenoAfterHit(b, b.maxHp * 0.1, s.allies[0], 'A');
+  ok(s.U.thrQ === 1, '全回復しても75%の使用済みは戻らない（25%の1回だけ予約）');
+  // 着弾は1回の一斉投げで1人2回まで
+  const g = { hits: {}, max: T.maxHits }, o = s.allies[1]; o.inv = 0; o.hp = o.maxHp; let n = 0; const hp0 = o.hp;
+  for (let k = 0; k < 4; k++) { s.hz({ kind: 'circle', x: o.x, z: o.z, r: T.r, warn: 0, act: 0.1, pw: T.pw, stat: 'yo', src: 'boss', grp: g }); s.updateHazards(1 / 60); s.hazards = []; }
+  ok(g.hits[o.slot] === 2, `同じ一斉投げの着弾は1人2回まで（${g.hits[o.slot]}回）`);
+}
+{ // バリア：通常ダメージを遮る・射撃部下のビーム2本で破壊・同じビームは1回・射撃部下がいなければ使わない・8秒で解除
+  const U = DATA.UENO;
+  const s = new Sim({ party: ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(ch => ({ ch, lv: 40 })), seed: 3, stageId: 'ueno', test: true }); const b = s.boss;
+  s.allies.forEach(a => { a.inv = 1e9; a.x = 10; a.z = 3; });
+  s.U.barrier = { t: 0, hits: 0, seen: {} };
+  const hp0 = b.hp; s.dealToEnemy(s.allies[0], b, 500, 'str', 'A', null);
+  ok(b.hp === hp0, 'バリア中は本体にダメージが通らない');
+  const beam = id => ({ id, hook: 'yBeam', x: b.x, z: b.z - 8, yaw: 0, len: 13, w: 0.7 });
+  const h1 = beam(9001); s.hzHook(h1); s.hzHook(h1);
+  ok(s.U.barrier && s.U.barrier.hits === 1, '1本のビームを2回には数えない');
+  s.hzHook(beam(9002));
+  ok(!s.U.barrier && b.st === 'stun', '2本目で破壊して短くよろめく');
+  const s2 = new Sim({ party: ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(ch => ({ ch, lv: 40 })), seed: 3, stageId: 'ueno', test: true });
+  s2.mobs = s2.mobs.filter(m => m.typ !== 'beam'); s2.stageT = 100; s2.allies.forEach(a => { a.inv = 1e9; a.z = 2; }); s2.mobs.forEach(m => m.para = 1e9);
+  let used = 0; for (let i = 0; i < 60 * 60; i++) { s2.step(); for (const e of s2.events) if (!e._c && e.type === 'bossmove') { e._c = 1; if (e.mv === 'barrier') used++; } }
+  ok(used === 0, '射撃部下がいないとバリアを使わない');
+  s2.U.barrier = { t: 0, hits: 0, seen: {} }; for (let i = 0; i < 60 * (U.moves.barrier.max + 0.1); i++) s2.step();
+  ok(!s2.U.barrier, `${U.moves.barrier.max}秒で必ず解除`);
+}
+{ // 上野のスナップショット
+  const s = new Sim({ party: ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(ch => ({ ch, lv: 30 })), seed: 3, stageId: 'ueno' });
+  for (let i = 0; i < 60 * 5; i++) s.step();
+  const v = PROTO.decodeSnap(JSON.parse(JSON.stringify(PROTO.encodeSnap(s))));
+  ok(v.stageId === 'ueno' && v.U && v.U.alive === 36 && Math.abs(v.U.lvOut - 0.8) < 1e-9 && v.boss && v.mobs.length === 36 && v.mobs.every(m => m.yoshi && m.scale < 0.7), `スナップショットに上野の状態（部下${v.U && v.U.alive}・補正${v.U && v.U.lvOut}・ボス${v.boss && v.boss.st}）`);
 }
 // 8) 接触してから当たる（離れた所からの空振りは当たらない）
 {

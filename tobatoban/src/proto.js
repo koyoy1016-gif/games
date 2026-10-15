@@ -13,7 +13,7 @@ const PROTO = (() => {
   const BARR = ['street', 'none', 'plaza'], BARR_I = { street: 0, none: 1, plaza: 2 };
   const PK = ['food', 'bag', 'candy'], PK_I = { food: 0, bag: 1, candy: 2 };
   const CTX = ['dash', 'revive', 'lantern'], CTX_I = { dash: 0, revive: 1, lantern: 2, '': 0 };
-  const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land', 'ysword', 'yfist', 'ybeam'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
+  const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land', 'ysword', 'yfist', 'ybeam', 'reikoW', 'shosho', 'stamp', 'ubeam', 'warp', 'throw'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
   const FLPH = ['rise', 'cross', 'gap', 'land'], FLPH_I = { rise: 0, cross: 1, gap: 2, land: 3 };
   const r2 = v => Math.round(v * 100) / 100, r1 = v => Math.round(v * 10) / 10;
   const EV_SKIP = new Set(['swing']); // 量が多い演出は数を絞る
@@ -39,7 +39,7 @@ const PROTO = (() => {
     const b = sim.boss;
     const B = b ? [r2(b.x), r2(b.z), r2(b.y), r2(b.yaw), Math.round(b.hp / b.maxHp * 1000), BST_I[b.st], b.mv ? BMV_I[b.mv] : 0, r2(b.t), b.phase, (b.defDown > 0 ? 1 : 0) | (b.st === 'stun' ? 2 : 0) | (b.dots && b.dots.length ? 4 : 0),
       b.fl ? [FLPH_I[b.fl.ph], r2(b.fl.yaw || 0), b.fl.i, b.fl.n, r2(b.fl.len || 0), r2(b.fl.t)] : 0, b.target, b.downT || 0] : 0;
-    const M = sim.mobs.map(m => [m.id, r2(m.x), r2(m.z), r2(m.yaw), Math.round(Math.max(0, m.hp) / m.maxHp * 1000), m.st === 'ok' ? 0 : 1, m.wind > 0 ? 1 : 0, m.para > 0 ? 1 : 0].concat(m.kind === 'yoshi' ? [MK.indexOf(m.wpn), m.act ? (m.act.t < m.act.w ? 1 : 2) : 0, m.enterT > 0 ? 1 : 0, m.moving ? 1 : 0, m.gT > 0 ? 1 : 0, Math.round((m.scale || 1) * 100), m.air ? r2(m.air) : 0] : []));
+    const M = sim.mobs.map(m => [m.id, r2(m.x), r2(m.z), r2(m.yaw), Math.round(Math.max(0, m.hp) / m.maxHp * 1000), m.st === 'ok' || m.st === 'fly' ? 0 : 1, m.wind > 0 ? 1 : 0, m.para > 0 ? 1 : 0].concat(m.kind === 'yoshi' ? [MK.indexOf(m.wpn), m.act ? (m.act.t < m.act.w ? 1 : 2) : 0, m.enterT > 0 ? 1 : 0, m.moving ? 1 : 0, m.gT > 0 ? 1 : 0, Math.round((m.scale || 1) * 100), m.air ? r2(m.air) : 0] : []));
     let P = sim.projs.map(p => [p.id, PJ_I[p.kind], r2(p.x), r2(p.z), r2(p.yaw || 0), p.team === 'ally' ? 0 : 1, p.owner == null ? -1 : p.owner, r2(p.r)]);
     const H = sim.hazards.map(h => [h.id, HZ_I[h.kind], r2(h.x), r2(h.z), r2(h.yaw || 0),
       r2(h.kind === 'fan' ? h.r0 : h.kind === 'circle' ? h.r : h.len), r2(h.kind === 'fan' ? h.r1 : h.w || 0), r2(h.kind === 'fan' ? h.half : 0),

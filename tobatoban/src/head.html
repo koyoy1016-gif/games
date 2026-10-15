@@ -167,12 +167,27 @@ a{color:var(--shu)}
 #hud.cine>*:not(#bMenu):not(#notice):not(#touch){opacity:0!important;pointer-events:none}
 #hud.cine #bMenu{opacity:.7!important;pointer-events:auto}
 .bossbox{display:flex;flex-direction:column;gap:3px}
-.bossname{display:flex;align-items:baseline;gap:8px;font-weight:900;font-size:15px;text-shadow:0 1px 2px #000}
+.bossname{display:flex;align-items:baseline;gap:8px;white-space:nowrap;font-weight:900;font-size:15px;text-shadow:0 1px 2px #000}
 .bossname .df{font-size:11px;background:var(--shu);border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
 .bossname .ph{font-size:11px;background:#7a1f3a;border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
 .bossname .st{font-size:11px;color:var(--gold)}
 .bossbox .route{display:flex;flex-direction:column;gap:3px}
 .bossbox.train .bossname,.bossbox.train .hpbar{display:none}
+.ue-info[hidden]{display:none}
+.ue-info{display:inline-flex;gap:8px;margin-left:auto;align-items:center;font-weight:900;font-size:12px;text-shadow:0 1px 2px #000;white-space:nowrap}
+.ue-info #ueBar{background:#2a5a9a;border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
+.ue-info #ueBar.hit{background:#c0392b}
+.ue-info #ueLv{color:#cfc8e8;font-size:11px}
+#sleepBox{position:absolute;left:50%;top:15%;transform:translateX(-50%);width:min(440px,86%);background:rgba(16,14,40,.86);border:3px solid #9ad0ff;border-radius:14px;padding:8px 12px;color:#fff;text-align:center;pointer-events:none;box-shadow:0 0 24px rgba(120,180,255,.45);z-index:6}
+#sleepBox .sl-t{font-family:var(--f-disp);font-size:18px;color:#bfe0ff}
+#sleepBox .sl-m{font-weight:900;font-size:14px;margin:2px 0 6px;color:#ffe27a}
+#sleepBox .sl-row{display:flex;align-items:center;gap:8px;font-weight:900;font-size:13px;margin:3px 0}
+#sleepBox .sl-row span{min-width:96px;text-align:left}
+#sleepBox .sl-bar{flex:1;height:10px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden;border:1.5px solid #0d0b1d}
+#sleepBox .sl-bar i{display:block;height:100%;background:#9ad0ff}
+#sleepBox .sl-bar.dmg i{background:linear-gradient(90deg,#ff8a3a,#ffe27a)}
+#sleepBox .sl-x{font-size:12px;font-weight:900;color:#ff9a8a;margin-top:2px}
+#sleepBox.ok{border-color:#7dffb0}#sleepBox.ok .sl-bar.dmg i{background:#7dffb0}
 .rt-top{display:flex;align-items:baseline;gap:8px;font-weight:900;font-size:13px;line-height:16px;text-shadow:0 1px 2px #000;white-space:nowrap;overflow:hidden}
 .rt-top b{font-size:11px;background:#1d56b8;border-radius:5px;padding:0 6px;text-shadow:none}
 .rt-top .rt-k{margin-left:auto;color:var(--gold)}
@@ -685,7 +700,7 @@ a{color:var(--shu)}
 <!-- HUD -->
 <div id="hud" hidden>
   <div id="touch"></div>
-  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
   <div class="hb party" id="party"></div>
   <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
   <div class="hb" id="map"><canvas id="mapc"></canvas></div>
@@ -711,6 +726,7 @@ a{color:var(--shu)}
 </div>
 <div id="cutin"><img id="cutImg" alt=""><div><small id="cutWho" style="display:block;font-size:11px;font-weight:900"></small><b id="cutNm"></b></div></div>
 <div id="banner"></div>
+<div id="sleepBox" hidden><div class="sl-t">💤 30分睡眠チャージ</div><div class="sl-m">10秒以内に4体合計3,000ダメージを与えろ！</div><div class="sl-row"><span>残り <b id="slTime">10.0</b>秒</span><div class="sl-bar"><i id="slTimeFill"></i></div></div><div class="sl-row"><span><b id="slDmg">0</b> / 3,000</span><div class="sl-bar dmg"><i id="slDmgFill"></i></div></div><div class="sl-x">隙だらけ・与ダメージ×2</div></div>
 <div id="fade"></div>
 <div id="bossCard"><div class="s">付喪神</div><div class="n">トバトーバン</div><div class="d">古い大看板と祭りの台座が、宵の広場で目を覚ました</div></div>
 <div id="rotateHint" hidden>📱↻ 横画面のほうが見やすく遊べます<button id="rotateX">とじる</button></div>

@@ -20,7 +20,7 @@ const cleared = id => !!((ACC() && ACC().clear && ACC().clear[id] > 0) || G.sess
 const stageOpen = id => id === 'senju' || (id === 'joban' && cleared('senju')) || (id === 'ueno' && (cleared('joban') || !!(ACC() && ACC().uenoOpen)));
 const STAGES = [
   { id: 'senju', ch: 0, cls: 's1', ic: '🏮', no: '北千住編', nm: '商店街と祭り広場', en: 'トバトーバン（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。', rec: 1, lock: '' },
-  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.total || 135}体`, d: '青い常磐線の2号車・3号車で戦う。1号車からの部下、途中駅と区間の途中で増える部下を全員倒すと上野に着く。', rec: 20, lock: 'トバトーバンを1回倒すと解放' },
+  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.events.reduce((s, e) => s + e.n, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車からの部下、途中駅と区間の途中で増える部下を全員倒すと上野に着く。', rec: 20, lock: 'トバトーバンを1回倒すと解放' },
   { id: 'ueno', ch: 1, cls: 's3', ic: '🎌', no: '上野編', nm: '上野駅前 ヨシノシン', en: 'ヨシノシン（部下を戦わせる指揮官）＋部下36体', d: '駅前の広場で、部下を人形のように操る指揮官と戦う。HP半分の「30分睡眠チャージ」は10秒で3,000ダメージ与えて止めよう。', rec: 40, lock: '電車を1回クリアすると解放' },
 ];
 const avgLv = ids => Math.floor(ids.reduce((s, id) => s + lvOf(id), 0) / Math.max(1, ids.length));
@@ -226,8 +226,8 @@ function bindHub() {
   $('#btnStageTeam').onclick = () => { AUDIO.sfx('ok'); openTeam('stage'); };
   document.querySelectorAll('#chTabs .tab').forEach(t => t.onclick = () => { AUDIO.sfx('ui'); G.chTab = +t.dataset.ch; renderSortie(); });
   $('#btnPrepGo').onclick = () => { AUDIO.sfx('ok'); startSolo('ueno'); };
-  $('#btnPrepTeam').onclick = () => { AUDIO.sfx('ok'); openTeam('prep'); };
-  $('#btnPrepHub').onclick = () => { AUDIO.sfx('back'); show('title'); };
+  $('#btnPrepTeam').onclick = () => { AUDIO.sfx('ok'); G.carry = null; openTeam('prep'); };
+  $('#btnPrepHub').onclick = () => { AUDIO.sfx('back'); G.carry = null; show('title'); };
   $('#btnRecommend').onclick = () => { AUDIO.sfx('ok'); recommendParty(); renderTeam(); mtoast('おすすめ編成にしました（いつでも戻せます）'); };
   $('#rsSort').onchange = () => { G.prefs.sort = $('#rsSort').value; persistPrefs(); renderTeam(); };
   $('#rsFilterBtn').onclick = () => { $('#rsFilters').hidden = !$('#rsFilters').hidden; AUDIO.sfx('ui'); };

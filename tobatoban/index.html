@@ -167,12 +167,27 @@ a{color:var(--shu)}
 #hud.cine>*:not(#bMenu):not(#notice):not(#touch){opacity:0!important;pointer-events:none}
 #hud.cine #bMenu{opacity:.7!important;pointer-events:auto}
 .bossbox{display:flex;flex-direction:column;gap:3px}
-.bossname{display:flex;align-items:baseline;gap:8px;font-weight:900;font-size:15px;text-shadow:0 1px 2px #000}
+.bossname{display:flex;align-items:baseline;gap:8px;white-space:nowrap;font-weight:900;font-size:15px;text-shadow:0 1px 2px #000}
 .bossname .df{font-size:11px;background:var(--shu);border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
 .bossname .ph{font-size:11px;background:#7a1f3a;border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
 .bossname .st{font-size:11px;color:var(--gold)}
 .bossbox .route{display:flex;flex-direction:column;gap:3px}
 .bossbox.train .bossname,.bossbox.train .hpbar{display:none}
+.ue-info[hidden]{display:none}
+.ue-info{display:inline-flex;gap:8px;margin-left:auto;align-items:center;font-weight:900;font-size:12px;text-shadow:0 1px 2px #000;white-space:nowrap}
+.ue-info #ueBar{background:#2a5a9a;border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
+.ue-info #ueBar.hit{background:#c0392b}
+.ue-info #ueLv{color:#cfc8e8;font-size:11px}
+#sleepBox{position:absolute;left:50%;top:15%;transform:translateX(-50%);width:min(440px,86%);background:rgba(16,14,40,.86);border:3px solid #9ad0ff;border-radius:14px;padding:8px 12px;color:#fff;text-align:center;pointer-events:none;box-shadow:0 0 24px rgba(120,180,255,.45);z-index:6}
+#sleepBox .sl-t{font-family:var(--f-disp);font-size:18px;color:#bfe0ff}
+#sleepBox .sl-m{font-weight:900;font-size:14px;margin:2px 0 6px;color:#ffe27a}
+#sleepBox .sl-row{display:flex;align-items:center;gap:8px;font-weight:900;font-size:13px;margin:3px 0}
+#sleepBox .sl-row span{min-width:96px;text-align:left}
+#sleepBox .sl-bar{flex:1;height:10px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden;border:1.5px solid #0d0b1d}
+#sleepBox .sl-bar i{display:block;height:100%;background:#9ad0ff}
+#sleepBox .sl-bar.dmg i{background:linear-gradient(90deg,#ff8a3a,#ffe27a)}
+#sleepBox .sl-x{font-size:12px;font-weight:900;color:#ff9a8a;margin-top:2px}
+#sleepBox.ok{border-color:#7dffb0}#sleepBox.ok .sl-bar.dmg i{background:#7dffb0}
 .rt-top{display:flex;align-items:baseline;gap:8px;font-weight:900;font-size:13px;line-height:16px;text-shadow:0 1px 2px #000;white-space:nowrap;overflow:hidden}
 .rt-top b{font-size:11px;background:#1d56b8;border-radius:5px;padding:0 6px;text-shadow:none}
 .rt-top .rt-k{margin-left:auto;color:var(--gold)}
@@ -685,7 +700,7 @@ a{color:var(--shu)}
 <!-- HUD -->
 <div id="hud" hidden>
   <div id="touch"></div>
-  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
   <div class="hb party" id="party"></div>
   <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
   <div class="hb" id="map"><canvas id="mapc"></canvas></div>
@@ -711,6 +726,7 @@ a{color:var(--shu)}
 </div>
 <div id="cutin"><img id="cutImg" alt=""><div><small id="cutWho" style="display:block;font-size:11px;font-weight:900"></small><b id="cutNm"></b></div></div>
 <div id="banner"></div>
+<div id="sleepBox" hidden><div class="sl-t">💤 30分睡眠チャージ</div><div class="sl-m">10秒以内に4体合計3,000ダメージを与えろ！</div><div class="sl-row"><span>残り <b id="slTime">10.0</b>秒</span><div class="sl-bar"><i id="slTimeFill"></i></div></div><div class="sl-row"><span><b id="slDmg">0</b> / 3,000</span><div class="sl-bar dmg"><i id="slDmgFill"></i></div></div><div class="sl-x">隙だらけ・与ダメージ×2</div></div>
 <div id="fade"></div>
 <div id="bossCard"><div class="s">付喪神</div><div class="n">トバトーバン</div><div class="d">古い大看板と祭りの台座が、宵の広場で目を覚ました</div></div>
 <div id="rotateHint" hidden>📱↻ 横画面のほうが見やすく遊べます<button id="rotateX">とじる</button></div>
@@ -1000,6 +1016,40 @@ const JOBAN = {
   introT: p('常磐線', '始まりの演出（トバトーバンが倒れる→乗車→発車）', 12, 's', 'proto'), arriveT: 6,
   dropRate: 0.06,
 };
+/* ---------------- 上野編：上野駅前の広場・指揮官ヨシノシン ---------------- */
+// 座標：x＝左右（±17）、z＝奥行き（入口 z=0 → 奥 z=28）。味方は z≈4、部下は z12〜18、本体は z≈23
+const U_H = 1.45; // 電車の部下モデルの身長（m）。上野の部下はこれを縮めて 0.8〜0.95m にする
+const UENO = {
+  nm: '上野駅前', boss: 'ヨシノシン', minion: 'ヨシノシンの部下（妖怪人形）',
+  halfX: p('上野', '戦闘領域の横幅', 34, 'm', 'spec', null, 'x=±17') / 2, zMax: p('上野', '戦闘領域の奥行き', 28, 'm', 'spec', null, '入口 z=0'),
+  start: [[-1.5, 4.2], [1.5, 4.2], [-0.5, 3.0], [0.5, 3.0]], bossSpawn: [0, 23], center: [0, 14],
+  bossR: 1.0, bossH: p('ヨシノシン', '身長', 3.2, 'm', 'spec', null, '約5頭身・コゲマル1mの3.2倍'),
+  hp: p('ヨシノシン', '体力', 26000, 'points', 'spec'), str: p('ヨシノシン', 'ちから', 400, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 450, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 135, 'points', 'spec'),
+  introT: p('上野', '登場の演出（指を鳴らす→部下が走り出す）', 3.2, 's', 'spec', null, '最初の予告より前に攻撃しない'),
+  minGap: p('ヨシノシン', '直接攻撃どうしの開始間隔（最低）', 3.0, 's', 'spec'),
+  rec: 40,
+  lvOut: { k: 0.02, lo: 0.75, hi: 1.25 }, lvIn: { k: 0.015, lo: 0.80, hi: 1.20 },
+  minions: {
+    melee: { nm: '通常近接', hp: 100, str: 100, yo: 80, def: 40, pw: 40, stat: 'str', warn: 0.65, period: 3.2, spd: 2.6, scale: 0.85 / U_H, r: 0.32 },
+    guard: { nm: '防御', hp: 160, str: 110, yo: 80, def: 70, pw: 45, stat: 'str', warn: 0.8, period: 4.0, spd: 2.3, scale: 0.95 / U_H, r: 0.34, gMul: 0.7, gMax: 2, gCd: 5 },
+    beam: { nm: '射撃', hp: 80, str: 60, yo: 260, def: 30, pw: 90, stat: 'yo', warn: 1.2, period: 5.0, spd: 2.4, scale: 0.85 / U_H, r: 0.32, len: 13 },
+    thrown: { nm: '投げられる部下', hp: 75, str: 95, yo: 80, def: 35, pw: 35, stat: 'str', warn: 0.65, period: 3.5, spd: 2.6, scale: 0.8 / U_H, r: 0.3 },
+  },
+  init: p('上野', '最初の部下（近接・防御・射撃）', { melee: 24, guard: 8, beam: 4 }, '体', 'spec', null, '36体が同時に前進する'),
+  cap: p('上野', '部下の生存上限', 40, '体', 'spec'),
+  rights: p('上野', '同時に攻撃を始められる部下', { melee: 4, beam: 2, all: 6 }, '体', 'spec', null, '近接・防御4体＋射撃2体＝6体'),
+  moves: {
+    reiko: { nm: '采配三連霊光', pw: 22, stat: 'yo', n: 3, spread: 0.32, speed: 9, warn: 0.65, rec: 0.7, cd: 6, r: 0.35, range: 13 },
+    shosho: { nm: '指令連掌', pw: 110, stat: 'str', warn: 0.7, lockT: 0.25, act: 0.15, rec: 1.0, cd: 10, len: 3.4, w: 2.6, near: 3.6 },
+    stamp: { nm: '一斉決裁スタンプ', pw: 100, stat: 'str', r: 4.5, warn: 1.6, act: 0.2, rec: 1.2, cd: 18 },
+    shosha: { nm: '号令四連照射', pw: 65, stat: 'yo', warn: 1.3, act: 0.35, rec: 1.0, cd: 12, r: 1.35, gap: 3.0, iv: 0.9 },
+    warp: { nm: '後方指揮ワープ', warn: 0.7, act: 0.25, rec: 0.5, cd: 10 },
+    summon: { nm: '追加動員', n: 6, warn: 1.5, cd: 30, at: 8 },
+    barrier: { nm: '完全指揮バリア', warn: 0.8, hits: 2, max: 8, cd: 35, stagger: 1.2 },
+    throw20: { nm: '部下丸投げ二十連', n: 20, iv: 0.18, land: 1.1, warn: 1.5, rec: 1.5, r: 0.65, pw: 12, stat: 'yo', maxHits: 2, at: [0.75, 0.25], calm: 1.0 },
+    sleep: { nm: '30分睡眠チャージ', at: 0.5, warnAt: 0.55, dur: 10, need: 3000, mul: 2.0, down: 4 },
+  },
+};
 const CAM = {
   camera_pitch_deg: p('カメラ', 'camera_pitch_deg（俯角）', 44, 'deg', 'proto', null, '35〜55度で調整。ボスが遠いときは最大8度浅くする'),
   vertical_fov_deg: p('カメラ', 'vertical_fov_deg（横画面）', 50, 'deg', 'proto'),
@@ -1018,7 +1068,7 @@ const NET = {
 };
 p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 10, 'Apple 44pt / Android 48dp の目安より大きく');
 
-const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };
+const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, UENO, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };
 
 /* ===== roster_data.js ===== */
 /* roster_data.js — tools/gen-roster.py が設定データ（data/nightwatch-v2-game-data.json）から作る。手で直さない */
@@ -1587,13 +1637,13 @@ class RNG { constructor(s) { this.s = (s >>> 0) || 1; } next() { let t = this.s 
 // 行動コード（スナップショットと描画で共有）
 const ACTS = ['', 'combo', 'melee', 'shot', 'charge', 'release', 'dodge', 'retreat', 'cast', 'stealth', 'parry', 'heavy', 'guard', 'taunt', 'sp', 'item', 'stagger', 'counter'];
 const ACT_I = Object.fromEntries(ACTS.map((k, i) => [k, i]));
-const BST = ['intro', 'idle', 'walk', 'wind', 'act', 'rec', 'fly', 'down', 'stun', 'dead', 'hidden'];
+const BST = ['intro', 'idle', 'walk', 'wind', 'act', 'rec', 'fly', 'down', 'stun', 'dead', 'hidden', 'sleep'];
 const BST_I = Object.fromEntries(BST.map((k, i) => [k, i]));
-const BMV = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'zouen'];
+const BMV = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'zouen', 'reiko', 'shosho', 'stamp', 'shosha', 'warp', 'summon', 'barrier', 'throw20', 'sleep', 'cmd'];
 const BMV_I = Object.fromEntries(BMV.map((k, i) => [k, i]));
 const HZ = ['fan2', 'fan', 'line', 'circle', 'rect', 'path'];
 const HZ_I = Object.fromEntries(HZ.map((k, i) => [k, i]));
-const PJ = ['star', 'can', 'focus', 'fire', 'mark', 'leaf', 'fuda', 'lantern', 'pshot', 'bean', 'orb'];
+const PJ = ['star', 'can', 'focus', 'fire', 'mark', 'leaf', 'fuda', 'lantern', 'pshot', 'bean', 'orb', 'reiko'];
 const PJ_I = Object.fromEntries(PJ.map((k, i) => [k, i]));
 
 function inFan(px, pz, ox, oz, yaw, r0, r1, half, tr) {
@@ -1611,6 +1661,7 @@ function inLine(px, pz, ox, oz, yaw, len, halfW, tr) {
 
 /** ボスの当たり判定と衝突の形（脚2本＋胴の下）。クライアント予測からも使う */
 function bossParts(b) {
+  if (b.kind === 'yoshinoshin') return [{ x: b.x, z: b.z, r: DATA.UENO.bossR }]; // 上野：細長い体（足元の円ひとつ）
   const B = DATA.BOSS, c = Math.cos(b.yaw), s = Math.sin(b.yaw);
   const p = [{ x: b.x + c * B.legX, z: b.z - s * B.legX, r: B.legR }, { x: b.x - c * B.legX, z: b.z + s * B.legX, r: B.legR }, { x: b.x, z: b.z, r: B.coreR }];
   if (b.st === 'down') p.push({ x: b.x + Math.sin(b.yaw) * 0.7, z: b.z + Math.cos(b.yaw) * 0.7, r: 1.2 });
@@ -1635,6 +1686,7 @@ class Sim {
     this.wave = 0; this.waveSpawned = false; this.barrier = 'street'; this.introWait = false; this.result = null;
     this.test = !!o.test;
     if (this.stageId === 'joban') this.initJoban(o);
+    else if (this.stageId === 'ueno') this.initUeno(o);
     else if (o.test) this.spawnBoss(true);
     else this.spawnWave(0);
   }
@@ -1791,6 +1843,7 @@ class Sim {
   moveAlly(a, dx, dz) { const r = this.clampPos(a.x, a.z, a.x + dx, a.z + dz, 0.35); a.x = r[0]; a.z = r[1]; }
   clampPos(ox, oz, nx, nz, rad) {
     if (this.stageId === 'joban') return this.clampTrain(ox, oz, nx, nz, rad);
+    if (this.stageId === 'ueno') return this.clampUeno(ox, oz, nx, nz, rad);
     const ST = DATA.STAGE, hw = ST.streetHalfW - rad, pw = ST.plazaHalfW - rad;
     if (nz < 0) {
       if (Math.abs(nx) > hw) { if (oz >= 0 && Math.abs(ox) > hw) nz = 0; else nx = clamp(nx, -hw, hw); }
@@ -2115,6 +2168,7 @@ class Sim {
   dealToEnemy(a, e, pw, stat, kind, log, hit, opt) {
     if (e === this.boss && !this.bossHittable()) return 0;
     if (e.st && e.st !== 'ok' && e !== this.boss) return 0;
+    if (this.uenoBlock && this.uenoBlock(e, a)) return 0; // 上野：完全指揮バリア中の本体
     const S = DATA.SIM, P = DATA.PASSIVE;
     let atk = stat === 'yo' ? this.stat(a, 'yo') : stat === 'mix' ? (this.stat(a, 'str') + this.stat(a, 'yo')) / 2 : this.stat(a, 'str');
     let state = 1;
@@ -2172,6 +2226,7 @@ class Sim {
   }
   reflectTo(o, src, v) {
     if (src === this.boss && !this.bossHittable()) return;
+    if (this.uenoBlock && this.uenoBlock(src, o)) return;
     src.hp -= v; o.stats.dmg += v; this.ev('dmg', { v, crit: 0, x: src.x, z: src.z, y: src === this.boss ? 2.4 : 0.8, src: o.slot, kind: 'reflect', el: 0 });
     if (src.hp <= 0) { src.hp = 0; if (src === this.boss) this.bossDie(); else this.mobDie(src, o); }
   }
@@ -2384,9 +2439,10 @@ class Sim {
     for (const [x, z] of W) this.spawnMob(x, z, true);
     this.wave = i; this.waveSpawned = true;
   }
-  introLen() { return this.stageId === 'joban' ? DATA.JOBAN.introT : DATA.BOSS.introT; }
+  introLen() { return this.stageId === 'joban' ? DATA.JOBAN.introT : this.stageId === 'ueno' ? DATA.UENO.introT : DATA.BOSS.introT; }
   updateStage(dt) {
     if (this.stageId === 'joban') { this.updateJoban(dt); return; }
+    if (this.stageId === 'ueno') { this.updateUenoStage(dt); return; }
     if (this.stage === 'street') {
       const alive = this.mobs.filter(m => m.st === 'ok').length;
       if (alive === 0) {
@@ -2423,6 +2479,7 @@ class Sim {
   updateMob(m, dt) {
     m.t += dt;
     if (m.st === 'dying') { m.dieT -= dt; if (m.dieT <= 0) m.st = 'gone'; return; }
+    if (m.st === 'fly') return this.updateFly(m, dt); // 上野：投げられて飛んでいる部下
     if (m.st !== 'ok') return;
     if (m.kind === 'yoshi') return this.updateYoshi(m, dt);
     if (m.para > 0) { m.para -= dt; return; }
@@ -2482,6 +2539,7 @@ class Sim {
   }
   hz(o) { const h = Object.assign({ id: this.id(), t: 0, hits: {}, src: 'boss', max: 1, iv: 99, act: 0.12 }, o); this.hazards.push(h); return h; }
   updateBoss(dt) {
+    if (this.stageId === 'ueno') return this.updateUenoBoss(dt);
     const b = this.boss, M = DATA.BMOVES;
     b.t += dt;
     for (const k in b.cds) if (b.cds[k] > 0) b.cds[k] -= dt;
@@ -2673,14 +2731,15 @@ class Sim {
       for (const o of this.allies) {
         if (h.single && o !== only) continue;
         if (o.st !== 'ok') continue;
-        const rec = h.hits[o.slot];
+        const rec = h.hits[o.slot], gr = h.grp ? h.grp.hits[o.slot] || 0 : 0;
         if (rec && (rec.n >= h.max || h.t - rec.last < h.iv - 1e-6)) continue;
+        if (h.grp && gr >= h.grp.max) continue; // 同じ一斉射・一斉投げでは1人あたりの上限まで
         let inside = false;
         if (h.kind === 'fan') inside = inFan(o.x, o.z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, DATA.MOB.allyR);
         else if (h.kind === 'circle') inside = dist2(o.x, o.z, h.x, h.z) <= h.r + DATA.MOB.allyR;
         else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR);
         if (!inside) continue;
-        h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t };
+        h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t }; if (h.grp) h.grp.hits[o.slot] = gr + 1;
         this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: h.kx != null ? h.kx : o.x - h.x, kz: h.kz != null ? h.kz : o.z - h.z, src: h.src === 'boss' ? b : (h.srcEnt || null), mul: h.mul });
       }
     }
@@ -2783,7 +2842,7 @@ class Sim {
     // 4) 必殺
     if (a.sp >= 100 && this.free(a)) {
       const tgtE = this.aiEnemy(a);
-      const bossOpen = b && (b.st === 'down' || b.st === 'stun' || b.st === 'rec');
+      const bossOpen = b && (b.st === 'down' || b.st === 'stun' || b.st === 'rec' || b.st === 'sleep');
       const S = DATA.SPECIALS[a.c.sp];
       let use = false;
       if (S.type === 'heal') use = (S.revive !== false && this.allies.some(o => o.st === 'down')) || this.allies.filter(o => o.st === 'ok' && o.hp / o.maxHp < 0.5 && (!S.r || dist2(a.x, a.z, o.x, o.z) < S.r)).length >= 2;
@@ -3023,7 +3082,7 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   P.spawnYoshi = function (x, z, grp, from, typ) {
     const rng = this.rng, cfg = this.ycfg, T = cfg.types[typ] || cfg.types.melee;
     const wpn = T.wpn || (typ === 'beam' ? 'beam' : typ === 'guard' ? 'shield' : (rng.next() < 0.5 ? 'sword' : 'fist'));
-    const m = { id: 'm' + this.id(), kind: 'yoshi', typ, T, wpn, grp, from, x, z, yaw: from === 'door' ? Math.PI / 2 : from === 'front' ? Math.PI : (this.stageId === 'ueno' ? Math.PI : Math.PI), hp: T.hp, maxHp: T.hp, def: T.def, str: T.str, yo: T.yo, r: DATA.JOBAN.r * (T.scale || 1), st: 'ok', t: 0, para: 0, defDown: 0, dots: [], dl: [],
+    const m = { id: 'm' + this.id(), kind: 'yoshi', typ, T, wpn, grp, from, x, z, yaw: from === 'door' ? Math.PI / 2 : Math.PI, hp: T.hp, maxHp: T.hp, def: T.def, str: T.str, yo: T.yo, r: T.r || DATA.JOBAN.r, st: 'ok', t: 0, para: 0, defDown: 0, dots: [], dl: [],
       spd: T.spd * rng.range(0.97, 1.03), cd: 0.6 + rng.next() * 1.2, act: null, tgt: -1, retT: 0, enterT: from === 'in' ? 0.7 : from === 'drop' ? 0 : 0.55, wind: 0, moving: 0, fireT: 99, strafe: rng.next() < 0.5 ? 1 : -1, gT: 0, gCd: 0, scale: T.scale || 1 };
     this.mobs.push(m); this.ev('ySpawn', { x, z, from });
     return m;
@@ -3102,7 +3161,7 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     let h;
     if (m.wpn === 'sword') h = this.hz(Object.assign(base, { kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: W.r, half: W.half, fx: 'ysword', dodge: true }));
     else if (m.wpn === 'fist' || m.wpn === 'shield') h = this.hz(Object.assign(base, { kind: 'rect', x: m.x + fx * 0.25, z: m.z + fz * 0.25, yaw: m.yaw, len: W.len, w: W.w, fx: 'yfist', single: true }));
-    else h = this.hz(Object.assign(base, { kind: 'line', x: m.x + fx * 0.5, z: m.z + fz * 0.5, yaw: m.yaw, len: W.len, w: W.w, fx: 'ybeam', dodge: true, single: true, hook: 'yBeam' })); // 幅0.7m：通路（3m）の左右に逃げ幅が残る
+    else h = this.hz(Object.assign(base, { kind: 'line', x: m.x + fx * 0.5, z: m.z + fz * 0.5, yaw: m.yaw, len: T.len || W.len, w: W.w, fx: 'ybeam', dodge: true, single: true, hook: 'yBeam' })); // 幅0.7m：通路（3m）の左右に逃げ幅が残る
     m.act = { t: 0, w: warn, end: warn + W.act + W.rec };
     m.cd = T.period + this.rng.next() * 0.4; // 準備開始から次の準備開始までの最短周期
     this.ev('yAtk', { w: m.wpn, x: m.x, z: m.z });
@@ -3117,6 +3176,370 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     if (this.uenoMinionDie) this.uenoMinionDie(m);
     this.ev('ykill', { n: this.kills });
   };
+})();
+
+/* ===== ueno.js ===== */
+/* =====================================================================
+   ueno.js — 上野編のボス戦：上野駅前の広場で指揮官ヨシノシンと部下（妖怪人形）と戦う
+   sim.js の Sim に足す（ホストだけが動かす・three.js 非依存）。部下の動きは joban.js と共通。
+   流れ：intro（指を鳴らす→36体が走り出す・約3秒）→ boss（本体＋部下）→ won / lost
+   優先順位：撃破 ＞ 未成功の睡眠チェック ＞ 予約済みの二十連 ＞ ふつうの行動
+   ===================================================================== */
+(() => {
+  const P = Sim.prototype;
+  const U = () => DATA.UENO;
+
+  P.initUeno = function (o) {
+    const D = U();
+    this.stage = o.test ? 'boss' : 'intro'; this.barrier = 'none'; this.lanterns = [];
+    this.kills = 0; this.total = 0; this.queue = null;
+    this.ycfg = { types: D.minions, rights: D.rights };
+    // 平均Lv（出動開始時の4体・切り捨て）で決まる上野だけの補正。途中の操作交代では変えない
+    const Pl = Math.floor(this.allies.reduce((s, a) => s + a.lv, 0) / this.allies.length);
+    this.uenoLv = Pl;
+    this.lvOut = clamp(1 + D.lvOut.k * (Pl - D.rec), D.lvOut.lo, D.lvOut.hi);
+    this.lvIn = clamp(1 - D.lvIn.k * (Pl - D.rec), D.lvIn.lo, D.lvIn.hi);
+    this.U = { thrFlag: {}, thrQ: 0, thrUsed: 0, thr: null, sleepArmed: true, sleepPend: false, sleepCarry: 0, sleep: null, sleepDone: false, sleepWarn: false, barrier: null, cmdN: 0, shoshaI: 0, reserve: 0, lastSleep: null };
+    for (const a of this.allies) {
+      const q = D.start[a.slot]; a.x = a.px = q[0]; a.z = a.pz = q[1]; a.yaw = 0; a.ai.tx = a.x; a.ai.tz = a.z + 1;
+      a.sp = Math.max(a.sp, 50); // 妖気は最低50（高ければそのまま）
+      if (o.carry && o.carry[a.slot]) a.items.forEach((it, i) => { if (o.carry[a.slot][i] != null) it.n = o.carry[a.slot][i]; }); // 電車から続けるときは所持数を引き継ぐ
+    }
+    const [bx, bz] = D.bossSpawn;
+    this.boss = { id: 'boss', kind: 'yoshinoshin', x: bx, z: bz, y: 0, yaw: Math.PI, hp: D.hp, maxHp: D.hp, str: D.str, yo: D.yo, def: D.def, st: o.test ? 'idle' : 'intro', mv: null, t: 0, gap: 1.2, phase: 1, cds: {}, target: 0, defDown: 0, paraImm: 0, dots: [], dl: [], fl: null, downT: 0, stunT: 0, lastAtk: -99, wantWarp: false, hz: null, home: [bx, bz] };
+    if (o.test) this.boss.testIdle = !!o.idle;
+    // 最初の36体：6列に並び、開始と同時に全員が前進する（小分けのウェーブにしない）
+    const kinds = []; for (const k of ['melee', 'guard', 'beam']) for (let i = 0; i < D.init[k]; i++) kinds.push(k);
+    const front = kinds.filter(k => k !== 'beam'); for (let i = front.length - 1; i > 0; i--) { const j = (this.rng.next() * (i + 1)) | 0; [front[i], front[j]] = [front[j], front[i]]; }
+    const order = front.slice(0, 30).concat(kinds.filter(k => k === 'beam'), front.slice(30)); // 射撃は後ろの列
+    order.forEach((k, i) => { const row = Math.floor(i / 6), col = i % 6; this.spawnYoshi(-7.5 + col * 3 + (row % 2 ? 0.75 : -0.75), 12 + row * 1.2, 'init', 'in', k); });
+    for (const m of this.mobs) { m.enterT = 0; m.yaw = Math.PI; m.cd = 0.4 + this.rng.next() * 1.6; }
+  };
+
+  /** 広場の外へは出ない。本体の体は通り抜けない */
+  P.clampUeno = function (ox, oz, nx, nz, rad) {
+    const D = U(); nx = clamp(nx, -D.halfX + rad, D.halfX - rad); nz = clamp(nz, 0.2 + rad, D.zMax - rad);
+    const b = this.boss;
+    if (b && b.st !== 'hidden' && b.st !== 'dead' && b.y < 1.2) for (const q of bossParts(b)) {
+      const dx = nx - q.x, dz = nz - q.z, d = Math.hypot(dx, dz), m = q.r + rad;
+      if (d < m) { if (d < 1e-4) nx = q.x + m; else { nx = q.x + dx / d * m; nz = q.z + dz / d * m; } }
+    }
+    return [nx, nz];
+  };
+  P.uenoMinionsLive = function () { return this.stage === 'boss' && !this.U.sleep && this.boss && this.boss.st !== 'dead'; };
+  P.uenoAlive = function () { let n = 0; for (const m of this.mobs) if (m.st === 'ok' || m.st === 'fly') n++; return n; };
+
+  P.updateUenoStage = function (dt) {
+    if (this.stage === 'intro') {
+      if (this.introWait) return;
+      if (this.stageT >= 1.0 && !this._snap) { this._snap = 1; this.ev('sfx', { s: 'snap' }); this.ev('snap', {}); } // 指を鳴らす
+      if (this.stageT >= U().introT) { this.stage = 'boss'; this.stageT = 0; const b = this.boss; b.st = 'idle'; b.t = 0; b.gap = 1.0; this.ev('stage', { k: 'fight' }); }
+    }
+  };
+
+  /* ---------- 被ダメージ・バリア・HPのしきい値 ---------- */
+  /** バリア中の本体には通常ダメージが通らない */
+  P.uenoBlock = function (e) { if (e !== this.boss || !this.U || !this.U.barrier) return false; this.ev('bblock', { x: e.x, z: e.z }); return true; };
+  /** 睡眠中の本体は被ダメージ×2（Lv補正とは別に一度だけ） */
+  P.uenoDmgMul = function (e) { return e === this.boss && this.U && this.U.sleep ? U().moves.sleep.mul : 1; };
+  P.uenoAfterHit = function (e, dmg) {
+    const b = this.boss, Us = this.U; if (e !== b || !Us) return;
+    const M = U().moves, max = b.maxHp, hp = Math.max(0, b.hp), prev = hp + dmg;
+    if (Us.sleep) { Us.sleep.dmg += dmg; return; } // 実ダメージだけを数える（反射・味方への爆発・回復は入らない）
+    if (hp <= 0) return; // 撃破が優先
+    if (Us.sleepArmed && !Us.sleepDone && !Us.sleepWarn && prev > max * M.sleep.warnAt && hp <= max * M.sleep.warnAt && hp > max * M.sleep.at) { Us.sleepWarn = true; this.ev('sleepWarn', {}); }
+    if (Us.sleepArmed && !Us.sleepDone && prev > max * M.sleep.at && hp <= max * M.sleep.at) { // 半分を上からまたいだ：余剰だけを一度計上
+      Us.sleepArmed = false; Us.sleepPend = true; Us.sleepCarry = Math.round(max * M.sleep.at - hp); this.ev('sleepPend', {});
+    }
+    for (const f of M.throw20.at) if (!Us.thrFlag[f] && prev > max * f && hp <= max * f) { Us.thrFlag[f] = 1; Us.thrQ++; } // 使用済みは全回復でも戻さない
+  };
+
+  /** 射撃部下のビームが本体を通ったか（味方に当たって止まった場合は届かない） */
+  P.hzHook = function (h) {
+    if (h.hook !== 'yBeam' || this.stageId !== 'ueno') return;
+    const Us = this.U, b = this.boss; if (!Us.barrier || !b || b.st === 'dead' || b.st === 'hidden') return;
+    if (Us.barrier.seen[h.id]) return; // 1本のビームを2回に数えない
+    const fx = Math.sin(h.yaw), fz = Math.cos(h.yaw), R = U().bossR;
+    if (!inLine(b.x, b.z, h.x, h.z, h.yaw, h.len, h.w / 2, R)) return;
+    const fb = (b.x - h.x) * fx + (b.z - h.z) * fz;
+    for (const o of this.allies) if (o.st === 'ok' && inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR) && (o.x - h.x) * fx + (o.z - h.z) * fz < fb && !(o.inv > 0)) return; // 手前の味方で止まった
+    Us.barrier.seen[h.id] = 1; Us.barrier.hits++;
+    this.ev('bhit', { n: Us.barrier.hits, x: b.x, z: b.z });
+    if (Us.barrier.hits >= U().moves.barrier.hits) this.endBarrier(true);
+  };
+  P.endBarrier = function (broken) {
+    const Us = this.U, b = this.boss; if (!Us.barrier) return;
+    Us.barrier = null; this.ev('barrier', { on: 0, broken: broken ? 1 : 0 });
+    if (broken && (b.st === 'idle' || b.st === 'walk' || b.st === 'rec' || b.st === 'act' || b.st === 'wind') && b.mv !== 'throw20') { this.clearBossHz(); b.st = 'stun'; b.stunT = U().moves.barrier.stagger; b.t = 0; b.mv = null; b.hz = null; }
+  };
+  P.clearBossHz = function () { this.hazards = this.hazards.filter(h => h.src !== 'boss' || h.t > h.warn || h.keepOnCancel); };
+
+  /* ---------- ボスの行動 ---------- */
+  P.uenoTarget = function () {
+    const b = this.boss; let best = null, bs = -1;
+    for (const o of this.allies) { if (o.st !== 'ok') continue; const d = dist2(b.x, b.z, o.x, o.z); const s = (o.buffs.stealth > 0 ? 0.25 : 1) * (1 + o.threat / 900) / (1 + d / 7) * (o.buffs.taunt > 0 ? 3 : 1); if (s > bs) { bs = s; best = o; } }
+    if (best) b.target = best.slot; return best;
+  };
+  P.updateUenoBoss = function (dt) {
+    const b = this.boss, Us = this.U, D = U(), M = D.moves;
+    if (!b) return;
+    b.t += dt;
+    for (const k in b.cds) if (b.cds[k] > 0) b.cds[k] -= dt;
+    if (b.st === 'dead' || this.stage === 'won' || this.stage === 'lost') return;
+    if (this.stage === 'intro') { b.st = 'intro'; return; }
+    if (Us.barrier) { Us.barrier.t += dt; if (Us.barrier.t >= M.barrier.max) this.endBarrier(false); } // 最大8秒で必ず解除
+    // 睡眠チェック中
+    if (b.st === 'sleep') {
+      const S = Us.sleep; S.t += dt;
+      if (S.dmg >= M.sleep.need) { // 成功：回復を中断して4秒ダウン。以後は眠らない
+        Us.sleep = null; Us.sleepDone = true; Us.lastSleep = { ok: 1, dmg: S.dmg }; b.st = 'down'; b.t = 0; b.downT = M.sleep.down; b.mv = null; this.ev('sleepEnd', { ok: 1, dmg: Math.round(S.dmg) }); this.ev('bossdown', {});
+      } else if (S.t >= M.sleep.dur) { // 失敗：最大HPまで戻り、また半分で同じ判定
+        Us.sleep = null; Us.sleepArmed = true; Us.sleepWarn = false; Us.lastSleep = { ok: 0, dmg: S.dmg }; b.hp = b.maxHp; b.st = 'idle'; b.t = 0; b.gap = 1.0; b.mv = null; this.ev('sleepEnd', { ok: 0, dmg: Math.round(S.dmg) });
+      }
+      return;
+    }
+    if (b.st === 'down') { b.downT -= dt; if (b.downT <= 0) { b.st = 'idle'; b.t = 0; b.gap = 0.8; } return; }
+    if (b.st === 'stun') { b.stunT -= dt; if (b.stunT <= 0) { b.st = 'idle'; b.t = 0; b.gap = 0.6; } return; }
+    // 二十連の投げ（本体の状態とは別に進む）
+    if (Us.thr) this.updateThrow(dt);
+    // 睡眠の開始待ち：二十連の途中なら全員の着地を待ってから
+    if (Us.sleepPend && !Us.thr && !this.mobs.some(m => m.st === 'fly')) { this.startSleep(); return; }
+    if (Us.sleepPend && (b.st === 'idle' || b.st === 'walk')) return; // 待っている間は新しい大技・動員をしない
+    switch (b.st) {
+      case 'idle': case 'walk': {
+        const tg = this.uenoTarget();
+        if (tg) { const ty = yawTo(tg.x - b.x, tg.z - b.z); b.yaw += clamp(angDiff(b.yaw, ty), -2.2 * dt, 2.2 * dt); }
+        // 位置調整：部下の後ろ（奥）を保ち、追い回さない
+        if (b.home) { const dx = b.home[0] - b.x, dz = b.home[1] - b.z, d = Math.hypot(dx, dz); if (d > 0.3) { const s = Math.min(d, 1.6 * dt); b.x += dx / d * s; b.z += dz / d * s; b.st = 'walk'; } else b.st = 'idle'; }
+        if (b.testIdle) return;
+        b.gap -= dt; if (b.gap <= 0) this.uenoDecide();
+        return;
+      }
+      case 'hidden': case 'wind': case 'act': case 'rec': this.updateUenoMove(dt); return;
+    }
+  };
+
+  /** 次の行動を決める：指揮・待機・位置調整 3 に対して 直接攻撃 2 くらい。直接攻撃の開始は3秒以上あける */
+  P.uenoDecide = function () {
+    const b = this.boss, Us = this.U, D = U(), M = D.moves, alive = this.uenoAlive();
+    const tg = this.uenoTarget(); if (!tg) { b.gap = 0.5; return; }
+    const cd = k => !(b.cds[k] > 0), dT = dist2(b.x, b.z, tg.x, tg.z);
+    // 予約済みの二十連：生存が20体以下になったら必ず20体
+    if (Us.thrQ > 0 && !Us.thr && alive <= D.cap - M.throw20.n) return this.startMove('throw20');
+    if (b.wantWarp && cd('warp')) return this.startMove('warp');
+    if (!Us.thrQ && alive <= M.summon.at && cd('summon') && alive + M.summon.n <= D.cap) return this.startMove('summon');
+    if (!Us.barrier && cd('barrier') && this.stageT > 18 && this.mobs.some(m => m.st === 'ok' && m.typ === 'beam') && this.rng.next() < 0.35) return this.startMove('barrier');
+    const ready = this.t - b.lastAtk >= D.minGap;
+    let near = null, nd = 1e9; for (const o of this.allies) if (o.st === 'ok') { const d = dist2(b.x, b.z, o.x, o.z); if (d < nd) { nd = d; near = o; } }
+    if (ready && near && nd < M.shosho.near && cd('shosho')) return this.startMove('shosho', near); // 近づいた味方へ連掌（そのあと後方へワープ）
+    if (ready && Us.cmdN <= 0) {
+      const c = [];
+      if (cd('reiko') && dT < M.reiko.range) c.push(['reiko', 3]);
+      if (cd('shosha')) c.push(['shosha', 2]);
+      if (cd('stamp') && this.allies.filter(o => o.st === 'ok' && dist2(o.x, o.z, D.center[0], D.center[1]) < M.stamp.r + 2.5).length >= 1) c.push(['stamp', 1.3]);
+      if (c.length) { let r = this.rng.next() * c.reduce((s, q) => s + q[1], 0); for (const [k, w] of c) { r -= w; if (r <= 0) return this.startMove(k, tg); } return this.startMove(c[0][0], tg); }
+    }
+    // 指揮（部下へ号令）・待機・位置調整
+    Us.cmdN--;
+    if (cd('warp') && dT < 2.6 && this.rng.next() < 0.5) return this.startMove('warp');
+    const cx = this.allies.filter(o => o.st === 'ok').reduce((s, o, i, arr) => s + o.x / arr.length, 0);
+    b.home = [clamp(cx * 0.6 + this.rng.range(-3, 3), -11, 11), clamp(this.rng.range(19, 24), 17, 25.5)];
+    if (this.rng.next() < 0.5) return this.startMove('cmd');
+    b.gap = 0.9 + this.rng.next() * 0.8;
+  };
+
+  P.startMove = function (mv, tg) {
+    const b = this.boss, D = U(), M = D.moves[mv] || { warn: 1.0 }, Us = this.U;
+    b.mv = mv; b.t = 0; b.st = 'wind'; b.hz = null; b.ms = { tg: tg ? tg.slot : b.target, n: 0 };
+    if (['reiko', 'shosho', 'stamp', 'shosha'].includes(mv)) { b.lastAtk = this.t; Us.cmdN = 1 + (this.rng.next() < 0.5 ? 1 : 0); }
+    if (M.cd) b.cds[mv] = M.cd;
+    const fx = Math.sin(b.yaw), fz = Math.cos(b.yaw);
+    if (mv === 'reiko') { // 3方向の光弾：準備中は3本の細い線で予告
+      const t = this.allies[b.ms.tg]; if (t) b.yaw = yawTo(t.x - b.x, t.z - b.z);
+      for (let i = -1; i <= 1; i++) this.hz({ kind: 'line', x: b.x + Math.sin(b.yaw) * 0.9, z: b.z + Math.cos(b.yaw) * 0.9, yaw: b.yaw + i * M.spread, len: 9, w: 0.45, warn: M.warn, act: 0, src: 'boss', fx: 'reikoW' });
+    } else if (mv === 'shosho') { // 前半は向きを追い、最後の0.25秒は固定
+      b.hz = this.hz({ kind: 'rect', x: b.x + fx * 0.5, z: b.z + fz * 0.5, yaw: b.yaw, len: M.len, w: M.w, warn: M.warn, act: M.act, pw: M.pw, stat: M.stat, src: 'boss', knock: 5, fx: 'shosho' });
+    } else if (mv === 'stamp') { // 広場中央の到着印へワープしてから踏み下ろす
+      const [cx, cz] = D.center; b.ms.to = [cx, cz]; b.st = 'hidden';
+      this.hz({ kind: 'circle', x: cx, z: cz, r: M.r, warn: M.warn, act: M.act, pw: M.pw, stat: M.stat, src: 'boss', knock: 6, fx: 'stamp' });
+    } else if (mv === 'shosha') {
+      const form = ['front4', 'surround4', 'track3'][Us.shoshaI++ % 3]; b.ms.form = form; b.ms.grp = { hits: {}, max: 1 };
+      if (form !== 'track3') this.shoshaVolley(form);
+    } else if (mv === 'warp') {
+      const to = this.warpSpot(); b.ms.to = to;
+      this.hz({ kind: 'circle', x: to[0], z: to[1], r: 1.1, warn: M.warn + M.act, act: 0, src: 'boss', fx: 'warp' });
+    } else if (mv === 'throw20') { Us.thrQ--; Us.thrUsed++; Us.reserve = M.n; }
+    this.ev('bossmove', { mv });
+  };
+  /** 号令四連照射：前方へ横並び4本／周囲4本（追跡3発は updateUenoMove で） */
+  P.shoshaVolley = function (form) {
+    const b = this.boss, M = U().moves.shosha, t = this.allies[b.ms.tg] || this.allies.find(o => o.st === 'ok'), pts = [];
+    if (form === 'front4') {
+      const yaw = t ? yawTo(t.x - b.x, t.z - b.z) : b.yaw, d = t ? clamp(dist2(b.x, b.z, t.x, t.z), 4, 9) : 6, cx = b.x + Math.sin(yaw) * d, cz = b.z + Math.cos(yaw) * d, px = Math.cos(yaw), pz = -Math.sin(yaw);
+      for (const k of [-1.5, -0.5, 0.5, 1.5]) pts.push([cx + px * k * M.gap, cz + pz * k * M.gap]);
+    } else for (let k = 0; k < 4; k++) { const a = b.yaw + Math.PI / 4 + k * Math.PI / 2; pts.push([b.x + Math.sin(a) * 4.2, b.z + Math.cos(a) * 4.2]); }
+    for (const [x, z] of pts) { const c = this.clampUeno(x, z, x, z, 0.1); this.hz({ kind: 'circle', x: c[0], z: c[1], r: M.r, warn: M.warn, act: M.act, pw: M.pw, stat: M.stat, src: 'boss', fx: 'ubeam', grp: b.ms.grp }); }
+  };
+  /** ワープ先：奥の通行できる場所。入口や味方の真下には出ない */
+  P.warpSpot = function () {
+    const b = this.boss, D = U();
+    for (let k = 0; k < 24; k++) {
+      const x = this.rng.range(-11, 11), z = this.rng.range(19.5, 25);
+      if (this.allies.some(o => o.st !== 'gone' && dist2(o.x, o.z, x, z) < 4)) continue;
+      if (dist2(b.x, b.z, x, z) < 4) continue;
+      return [x, z];
+    }
+    return [-b.x * 0.5, 23];
+  };
+
+  P.updateUenoMove = function (dt) {
+    const b = this.boss, D = U(), mv = b.mv, M = D.moves[mv] || { warn: 1.0, rec: 0.6 }, Us = this.U, t = b.t;
+    const toRec = () => { b.st = 'rec'; b.t = 0; };
+    const done = () => { b.st = 'idle'; b.t = 0; b.mv = null; b.hz = null; b.gap = 0.5 + this.rng.next() * 0.6; };
+    if (b.st === 'rec') { if (t >= (M.rec != null ? M.rec : 0.5)) { if (mv === 'shosho') b.wantWarp = true; done(); } return; }
+    switch (mv) {
+      case 'cmd': if (t >= 1.3) done(); return; // 札を振って号令（攻撃はしない）
+      case 'reiko':
+        if (b.st === 'wind' && t >= M.warn) {
+          for (let i = -1; i <= 1; i++) { const yaw = b.yaw + i * M.spread, fx = Math.sin(yaw), fz = Math.cos(yaw); this.projs.push({ id: this.id(), kind: 'reiko', team: 'enemy', x: b.x + fx * 0.9, y: 1.6, z: b.z + fz * 0.9, vx: fx * M.speed, vz: fz * M.speed, life: M.range / M.speed, r: M.r, pw: M.pw, stat: M.stat, src: b, srcEnt: b, hit: new Set(), yaw }); }
+          this.ev('bossfire', { mv }); toRec();
+        } else if (b.st === 'wind') { const tg = this.allies[b.ms.tg]; if (tg && tg.st === 'ok') b.yaw += clamp(angDiff(b.yaw, yawTo(tg.x - b.x, tg.z - b.z)), -1.5 * dt, 1.5 * dt); }
+        return;
+      case 'shosho': {
+        const tg = this.allies[b.ms.tg];
+        if (b.st === 'wind') {
+          if (t < M.warn - M.lockT && tg && tg.st === 'ok') { b.yaw += clamp(angDiff(b.yaw, yawTo(tg.x - b.x, tg.z - b.z)), -4 * dt, 4 * dt); if (b.hz) { b.hz.yaw = b.yaw; b.hz.x = b.x + Math.sin(b.yaw) * 0.5; b.hz.z = b.z + Math.cos(b.yaw) * 0.5; } }
+          if (t >= M.warn) { b.st = 'act'; b.t = 0; this.ev('bossfire', { mv }); }
+        } else if (b.st === 'act' && t >= M.act) toRec();
+        return;
+      }
+      case 'stamp':
+        if (b.st === 'hidden' && t >= 0.3) { b.x = b.ms.to[0]; b.z = b.ms.to[1]; b.st = 'wind'; b.home = [b.x, b.z]; for (const a of this.allies) { const r = this.clampPos(a.x, a.z, a.x, a.z, 0.35); a.x = r[0]; a.z = r[1]; } this.ev('warpIn', { x: b.x, z: b.z }); }
+        if (b.st === 'wind') { b.y = Math.min(0.7, Math.max(0, (t - 0.4) / (M.warn - 0.4)) * 0.7); if (t >= M.warn) { b.y = 0; b.st = 'act'; b.t = 0; this.ev('bossfire', { mv }); } }
+        else if (b.st === 'act' && t >= M.act) { toRec(); b.home = [clamp(b.x, -10, 10), 22]; }
+        return;
+      case 'shosha':
+        if (b.ms.form === 'track3') { // 追跡3発：0.9秒ずつずらし、それぞれ1.3秒前に位置を固定
+          if (b.st === 'wind' && t >= 0.4) { b.st = 'act'; b.t = 0; }
+          if (b.st === 'act') {
+            while (b.ms.n < 3 && b.t >= b.ms.n * M.iv) {
+              const alive = this.allies.filter(o => o.st === 'ok').sort((p, q) => dist2(b.x, b.z, p.x, p.z) - dist2(b.x, b.z, q.x, q.z)), o = alive[b.ms.n % Math.max(1, alive.length)];
+              if (o) this.hz({ kind: 'circle', x: o.x, z: o.z, r: M.r, warn: M.warn, act: M.act, pw: M.pw, stat: M.stat, src: 'boss', fx: 'ubeam' });
+              b.ms.n++;
+            }
+            if (b.t >= 2 * M.iv + M.warn + M.act) toRec();
+          }
+        } else {
+          if (b.st === 'wind' && t >= M.warn) { b.st = 'act'; b.t = 0; this.ev('bossfire', { mv }); }
+          else if (b.st === 'act' && t >= M.act) toRec();
+        }
+        return;
+      case 'warp':
+        if (b.st === 'wind' && t >= M.warn) { b.st = 'hidden'; b.t = 0; }
+        else if (b.st === 'hidden' && t >= M.act) { b.x = b.ms.to[0]; b.z = b.ms.to[1]; b.home = [b.x, b.z]; b.wantWarp = false; b.st = 'rec'; b.t = 0; this.ev('warpIn', { x: b.x, z: b.z }); }
+        return;
+      case 'summon':
+        if (b.st === 'wind' && t >= M.warn) {
+          const n = Math.min(M.n, U().cap - this.uenoAlive());
+          for (let i = 0; i < n; i++) { const x = -7.5 + i * 3 + this.rng.range(-0.5, 0.5); this.spawnYoshi(x, D.zMax - 0.6, 'summon', 'back', i === 2 ? 'beam' : i === 4 ? 'guard' : 'melee'); }
+          this.ev('summon', { n }); b.st = 'rec'; b.t = 0;
+        }
+        return;
+      case 'barrier':
+        if (b.st === 'wind' && t >= M.warn) { Us.barrier = { t: 0, hits: 0, seen: {} }; this.ev('barrier', { on: 1 }); b.st = 'rec'; b.t = 0; }
+        return;
+      case 'throw20':
+        if (b.st === 'wind' && t >= M.warn) { b.st = 'act'; b.t = 0; Us.thr = { i: 0, t: 0, grp: { hits: {}, max: M.maxHits }, pts: [] }; }
+        else if (b.st === 'act' && !Us.thr && t > 0.2) { b.st = 'rec'; b.t = 0; }
+        return;
+    }
+    if (t > 6) done(); // 念のため
+  };
+
+  /** 部下丸投げ二十連：0.18秒ごとに1体、約1.1秒後に着地。着地点は散らし、入口と左右の退避帯を残す */
+  P.updateThrow = function (dt) {
+    const b = this.boss, Us = this.U, M = U().moves.throw20, T = Us.thr;
+    T.t += dt;
+    while (T.i < M.n && T.t >= T.i * M.iv) {
+      const pt = this.throwSpot(T.pts); T.pts.push(pt);
+      this.hz({ kind: 'circle', x: pt[0], z: pt[1], r: M.r, warn: M.land, act: 0.1, pw: M.pw, stat: M.stat, src: 'boss', fx: 'throw', grp: T.grp, keepOnCancel: true });
+      const m = this.spawnYoshi(b.x, b.z, 'throw', 'drop', 'thrown');
+      m.st = 'fly'; m.fly = { t: 0, x0: b.x + Math.sin(b.yaw + 1.2) * 0.8, z0: b.z + Math.cos(b.yaw + 1.2) * 0.8, x1: pt[0], z1: pt[1] }; m.x = m.fly.x0; m.z = m.fly.z0; m.air = 2.2;
+      T.i++; Us.reserve = Math.max(0, Us.reserve - 1);
+      this.ev('sfx', { s: 'gDrop', x: b.x, z: b.z });
+    }
+    if (T.i >= M.n) Us.thr = null;
+  };
+  P.throwSpot = function (prev) {
+    const D = U(), alive = this.allies.filter(o => o.st === 'ok');
+    for (let k = 0; k < 40; k++) {
+      let x, z;
+      if (alive.length && this.rng.next() < 0.6) { const o = alive[(this.rng.next() * alive.length) | 0], a = this.rng.next() * TAU, r = this.rng.range(2.5, 6.5); x = o.x + Math.sin(a) * r; z = o.z + Math.cos(a) * r; }
+      else { x = this.rng.range(-12.5, 12.5); z = this.rng.range(4, 22); }
+      if (Math.abs(x) > D.halfX - 3 || z < 3 || z > D.zMax - 2) continue; // 左右の退避帯と入口は空ける
+      if (dist2(x, z, this.boss.x, this.boss.z) < 2.2) continue;
+      if (prev.some(p => dist2(p[0], p[1], x, z) < 1.5)) continue; // 1点に重ねない
+      return [x, z];
+    }
+    return [this.rng.range(-10, 10), this.rng.range(6, 20)];
+  };
+  /** 投げられた部下の飛行（放物線）。着地後1秒は攻撃しない */
+  P.updateFly = function (m, dt) {
+    const F = m.fly, L = U().moves.throw20.land; F.t += dt; const k = Math.min(1, F.t / L);
+    m.x = F.x0 + (F.x1 - F.x0) * k; m.z = F.z0 + (F.z1 - F.z0) * k; m.air = 2.2 * (1 - k) + 3.2 * 4 * k * (1 - k) * 0.6;
+    if (k >= 1) { m.st = 'ok'; m.air = 0; m.fly = null; m.enterT = 0; m.cd = Math.max(m.cd, U().moves.throw20.calm + 0.2 + this.rng.next() * 0.8); this.ev('yLand', { x: m.x, z: m.z }); }
+  };
+
+  /** 30分睡眠チャージ：10秒以内に4体合計3,000ダメージで阻止 */
+  P.startSleep = function () {
+    const b = this.boss, Us = this.U;
+    Us.sleepPend = false; this.endBarrier(false);
+    this.hazards = this.hazards.filter(h => h.src !== 'boss' && !(h.src === 'mob' && h.t < h.warn)); // 本体の予告と、部下のまだ出ていない攻撃を消す
+    this.projs = this.projs.filter(p => p.team === 'ally');
+    for (const m of this.mobs) if (m.kind === 'yoshi') m.act = null;
+    b.st = 'sleep'; b.t = 0; b.mv = 'sleep'; b.y = 0; b.hz = null;
+    Us.sleep = { t: 0, dmg: Us.sleepCarry || 0 }; Us.sleepCarry = 0;
+    this.ev('sleep', { carry: Us.sleep.dmg });
+  };
+
+  /** 撃破：残った部下は命令を失って倒れる（飛行中も） */
+  const bossDie0 = P.bossDie;
+  P.bossDie = function () {
+    if (this.stageId === 'ueno') { for (const m of this.mobs) if (m.st === 'fly') { m.st = 'dying'; m.dieT = 0.6; } if (this.U) { this.U.sleep = null; this.U.barrier = null; this.U.thr = null; } }
+    return bossDie0.call(this);
+  };
+  P.uenoMinionDie = function () { };
+
+  /* ---------- 味方AI（上野） ---------- */
+  const aiEnemy0 = P.aiEnemy;
+  P.aiEnemy = function (a) {
+    if (this.stageId !== 'ueno') return aiEnemy0.call(this, a);
+    const b = this.boss, Us = this.U;
+    if (Us.sleep && this.bossHittable()) return b; // 睡眠中は本体へ集中
+    const mobs = this.mobs.filter(m => m.st === 'ok');
+    if (Us.barrier) { // バリア中：最後の射撃部下は倒さずに誘導する
+      const beams = mobs.filter(m => m.typ === 'beam'), ok = mobs.filter(m => !(m.typ === 'beam' && beams.length <= 1));
+      if (ok.length) return ok.sort((p, q) => dist2(a.x, a.z, p.x, p.z) - dist2(a.x, a.z, q.x, q.z))[0];
+      return null;
+    }
+    if ((Us.sleepWarn || Us.sleepPend) && !Us.sleepDone && this.bossHittable() && dist2(a.x, a.z, b.x, b.z) > 5) return b; // 半分が近い：本体に寄っておく
+    return aiEnemy0.call(this, a);
+  };
+  const aiDecide0 = P.aiDecide;
+  P.aiDecide = function (a, out, push) {
+    if (this.stageId === 'ueno' && this.U.barrier && !this.inDanger(a.x, a.z, 0.5, 1.2)) { // 射撃部下にねらわれたら、本体を背にして立つ（ビームはかわす）
+      const b = this.boss, m = this.mobs.find(q => q.st === 'ok' && q.typ === 'beam' && q.tgt === a.slot);
+      if (m && b) { const dx = b.x - m.x, dz = b.z - m.z, d = Math.hypot(dx, dz) || 1, k = clamp(d - 3.0, 3.5, 7); const p = this.clampPos(a.x, a.z, m.x + dx / d * k, m.z + dz / d * k, 0.4); a.ai.tx = p[0]; a.ai.tz = p[1]; a.ai.stay = dist2(a.x, a.z, p[0], p[1]) < 0.5; a.ai.wantA = false; out.healT = null; if (a.ai.stay) { a.ai.tx = a.x; a.ai.tz = a.z; } return; }
+    }
+    return aiDecide0.call(this, a, out, push);
+  };
+
+  /* ---------- スナップショット（上野だけの状態） ---------- */
+  P.uenoSnap = function () {
+    const Us = this.U, r = v => Math.round(v * 10) / 10;
+    return [this.uenoAlive(), Us.barrier ? 1 : 0, Us.barrier ? Us.barrier.hits : 0, Us.sleep ? 1 : 0, Us.sleep ? r(Us.sleep.t) : 0, Us.sleep ? Math.round(Us.sleep.dmg) : 0, Us.sleepDone ? 1 : 0, Us.thrUsed, Math.round(this.lvOut * 100), Math.round(this.lvIn * 100), (Us.sleepWarn || Us.sleepPend) && !Us.sleepDone ? 1 : 0, Us.barrier ? r(Us.barrier.t) : 0, this.uenoLv, Us.thrQ];
+  };
+  SIMLIB.uenoDecode = a => ({ alive: a[0], barrier: !!a[1], bhits: a[2], sleep: !!a[3], sleepT: a[4], sleepDmg: a[5], sleepDone: !!a[6], thrUsed: a[7], lvOut: a[8] / 100, lvIn: a[9] / 100, sleepNear: !!a[10], barrierT: a[11], lv: a[12], thrQ: a[13] || 0 });
 })();
 
 /* ===== proto.js ===== */
@@ -3135,7 +3558,7 @@ const PROTO = (() => {
   const BARR = ['street', 'none', 'plaza'], BARR_I = { street: 0, none: 1, plaza: 2 };
   const PK = ['food', 'bag', 'candy'], PK_I = { food: 0, bag: 1, candy: 2 };
   const CTX = ['dash', 'revive', 'lantern'], CTX_I = { dash: 0, revive: 1, lantern: 2, '': 0 };
-  const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land', 'ysword', 'yfist', 'ybeam'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
+  const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land', 'ysword', 'yfist', 'ybeam', 'reikoW', 'shosho', 'stamp', 'ubeam', 'warp', 'throw'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
   const FLPH = ['rise', 'cross', 'gap', 'land'], FLPH_I = { rise: 0, cross: 1, gap: 2, land: 3 };
   const r2 = v => Math.round(v * 100) / 100, r1 = v => Math.round(v * 10) / 10;
   const EV_SKIP = new Set(['swing']); // 量が多い演出は数を絞る
@@ -3161,7 +3584,7 @@ const PROTO = (() => {
     const b = sim.boss;
     const B = b ? [r2(b.x), r2(b.z), r2(b.y), r2(b.yaw), Math.round(b.hp / b.maxHp * 1000), BST_I[b.st], b.mv ? BMV_I[b.mv] : 0, r2(b.t), b.phase, (b.defDown > 0 ? 1 : 0) | (b.st === 'stun' ? 2 : 0) | (b.dots && b.dots.length ? 4 : 0),
       b.fl ? [FLPH_I[b.fl.ph], r2(b.fl.yaw || 0), b.fl.i, b.fl.n, r2(b.fl.len || 0), r2(b.fl.t)] : 0, b.target, b.downT || 0] : 0;
-    const M = sim.mobs.map(m => [m.id, r2(m.x), r2(m.z), r2(m.yaw), Math.round(Math.max(0, m.hp) / m.maxHp * 1000), m.st === 'ok' ? 0 : 1, m.wind > 0 ? 1 : 0, m.para > 0 ? 1 : 0].concat(m.kind === 'yoshi' ? [MK.indexOf(m.wpn), m.act ? (m.act.t < m.act.w ? 1 : 2) : 0, m.enterT > 0 ? 1 : 0, m.moving ? 1 : 0, m.gT > 0 ? 1 : 0, Math.round((m.scale || 1) * 100), m.air ? r2(m.air) : 0] : []));
+    const M = sim.mobs.map(m => [m.id, r2(m.x), r2(m.z), r2(m.yaw), Math.round(Math.max(0, m.hp) / m.maxHp * 1000), m.st === 'ok' || m.st === 'fly' ? 0 : 1, m.wind > 0 ? 1 : 0, m.para > 0 ? 1 : 0].concat(m.kind === 'yoshi' ? [MK.indexOf(m.wpn), m.act ? (m.act.t < m.act.w ? 1 : 2) : 0, m.enterT > 0 ? 1 : 0, m.moving ? 1 : 0, m.gT > 0 ? 1 : 0, Math.round((m.scale || 1) * 100), m.air ? r2(m.air) : 0] : []));
     let P = sim.projs.map(p => [p.id, PJ_I[p.kind], r2(p.x), r2(p.z), r2(p.yaw || 0), p.team === 'ally' ? 0 : 1, p.owner == null ? -1 : p.owner, r2(p.r)]);
     const H = sim.hazards.map(h => [h.id, HZ_I[h.kind], r2(h.x), r2(h.z), r2(h.yaw || 0),
       r2(h.kind === 'fan' ? h.r0 : h.kind === 'circle' ? h.r : h.len), r2(h.kind === 'fan' ? h.r1 : h.w || 0), r2(h.kind === 'fan' ? h.half : 0),
@@ -3235,7 +3658,7 @@ const PROTO = (() => {
    自分の移動だけ予測して表示する。
    ===================================================================== */
 const NETLIB = (() => {
-  const VERSION = 'tb4'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
+  const VERSION = 'tb5'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
   const hashStr = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
   const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
@@ -3372,7 +3795,7 @@ const NETLIB = (() => {
       const party = this.lobby.slots.map((s, i) => s ? { ch: s.ch, swap: s.swap, items: s.items, nick: s.nick, lv: s.lv || 1 } : { ch: fill[i], swap: false, items: ['onigiri', 'ramune'], nick: 'AI', lv: this.lobby.lvs[fill[i]] || 1 });
       if (o.party) o.party.forEach((p, i) => { if (!this.lobby.slots[i] || i === 0) Object.assign(party[i], p); });
       this.gid++; this.lobby.phase = 'game';
-      this.sim = new Sim({ party, diff: this.lobby.diff, stageId: o.stageId || this.lobby.stage, seed: (Math.random() * 1e9) | 0, bid: o.bid || ('b' + Date.now().toString(36) + this.gid) });
+      this.sim = new Sim({ party, diff: this.lobby.diff, stageId: o.stageId || this.lobby.stage, seed: (Math.random() * 1e9) | 0, bid: o.bid || ('b' + Date.now().toString(36) + this.gid), carry: o.carry || null });
       this.sim.allies.forEach((a, i) => { a.ctrlAI = !this.lobby.slots[i] || (this.lobby.slots[i].who === 'peer' && !this.clients.has(this.lobby.slots[i].peer)); });
       for (const c of this.clients.values()) { c.q = 0; c.inp = null; c.loaded = false; }
       this.local = new LocalInput(); this.mySlot = 0; this.acc = 0; this.views = []; this.waitT = this.kind === 'host' ? 0 : -1;
@@ -3674,6 +4097,8 @@ const AUDIO = (() => {
       case 'back': O({ f: 660, f1: 440, dur: 0.1, type: 'triangle', g: 0.12 }); break;
       case 'ready': [0, 0.07, 0.14].forEach((o, i) => O({ f: [988, 1319, 1760][i], dur: 0.25, type: 'triangle', g: 0.12, at: t + o, rev: 0.4 })); break;
       case 'swing': N({ type: 'bandpass', f: 1200, f1: 400, q: 1.2, dur: 0.12, g: 0.12 }); break;
+      case 'whoosh': N({ type: 'bandpass', f: 400, f1: 2400, q: 1.5, dur: 0.3, g: 0.18 }); O({ f: 220, f1: 660, dur: 0.25, type: 'sine', g: 0.08 }); break;
+      case 'snap': N({ type: 'highpass', f: 2500, f1: 1800, dur: 0.05, g: 0.5 }); O({ f: 1600, f1: 900, dur: 0.04, type: 'square', g: 0.06 }); break;
       case 'hit': N({ f: 1400, f1: 300, dur: 0.09, g: 0.32 }); O({ f: 180, f1: 70, dur: 0.1, g: 0.3 }); break;
       case 'hit3': N({ f: 2000, f1: 250, dur: 0.16, g: 0.4 }); O({ f: 160, f1: 50, dur: 0.18, g: 0.42 }); O({ f: 2400, dur: 0.05, type: 'square', g: 0.04 }); break;
       case 'crit': O({ f: 2600, f1: 3400, dur: 0.12, type: 'triangle', g: 0.12, rev: 0.4 }); N({ type: 'highpass', f: 5000, dur: 0.08, g: 0.1 }); break;
@@ -5190,6 +5615,175 @@ const GFX = {};
   };
 })();
 
+/* ===== render_ueno.js ===== */
+/* =====================================================================
+   render_ueno.js — 上野編：上野駅前の広場（架空の再構成）と指揮官ヨシノシンの見た目
+   ・赤茶色のタイルの広い広場（34m×28m）、奥に駅舎と大きな庇、高架の青い常磐線、案内板、街灯、遠景の並木
+   ・ヨシノシン：身長3.2m・約5頭身。背を丸め肩を前へ、頭を少し傾けた細い笑い。灰紫の長い上着、指揮札、左右で長さの違う袖
+   座標は sim と同じ：x＝左右、z＝奥行き（入口 z=0 → 奥 z=28）。
+   ===================================================================== */
+(() => {
+  const P = GFX.parts, S = P.S, B = P.B, C = P.C, K = P.K, G = P.G;
+  const L = GFX.lam, BAS = GFX.bas;
+
+  /* ---------- 広場 ---------- */
+  GFX.buildUeno = function (scene) {
+    const D = DATA.UENO, HX = D.halfX, ZM = D.zMax;
+    const W = { root: new THREE.Group(), fade: [] }; scene.add(W.root); W.root.visible = false;
+    const root = W.root;
+    root.add(new THREE.HemisphereLight(0xfff2e0, 0x6a5a66, 1.15));
+    const sun = new THREE.DirectionalLight(0xfff0d8, 0.85); sun.position.set(-8, 16, 4); root.add(sun); root.add(sun.target); sun.target.position.set(0, 0, 14);
+    // 空と遠景
+    const sky = new THREE.Mesh(new THREE.SphereGeometry(180, 24, 12), new THREE.MeshBasicMaterial({ side: THREE.BackSide, map: GFX.tex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#5a7fc4'); gr.addColorStop(0.45, '#f2b98a'); gr.addColorStop(0.6, '#f7d8b0'); gr.addColorStop(1, '#3a3450'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }), depthWrite: false }));
+    sky.position.set(0, 0, 14); root.add(sky);
+    // 床：赤茶色のタイル（戦闘領域）＋外側の石畳
+    const tileT = GFX.tex(128, 128, (g, w, h) => { g.fillStyle = '#a5563e'; g.fillRect(0, 0, w, h); for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { g.fillStyle = (x + y) % 2 ? '#9a4c37' : '#ad5f45'; g.fillRect(x * 32 + 1, y * 32 + 1, 30, 30); } g.strokeStyle = 'rgba(60,30,20,.45)'; g.lineWidth = 2; for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(i * 32, 0); g.lineTo(i * 32, h); g.stroke(); g.beginPath(); g.moveTo(0, i * 32); g.lineTo(w, i * 32); g.stroke(); } }, [HX * 2 / 2, ZM / 2]);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(HX * 2, ZM), L(0xffffff, { map: tileT })); floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, ZM / 2); root.add(floor);
+    const stoneT = GFX.tex(64, 64, (g, w, h) => { g.fillStyle = '#8c8a90'; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(40,40,50,.35)'; g.lineWidth = 2; g.strokeRect(1, 1, 62, 62); g.strokeRect(1, 1, 30, 30); }, [40, 40]);
+    const out = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), L(0xffffff, { map: stoneT })); out.rotation.x = -Math.PI / 2; out.position.set(0, -0.02, 14); root.add(out);
+    // 縁石（戦闘領域の外周・低い）と、入口の白い線
+    const curb = L(0xd8d0c4);
+    for (const s of [-1, 1]) B(root, 0.3, 0.18, ZM + 0.6, curb, s * (HX + 0.15), 0.09, ZM / 2);
+    B(root, HX * 2 + 0.6, 0.18, 0.3, curb, 0, 0.09, ZM + 0.15);
+    const line = new THREE.Mesh(new THREE.PlaneGeometry(HX * 2, 0.12), BAS(0xf4f0e6)); line.rotation.x = -Math.PI / 2; line.position.set(0, 0.01, 0.06); root.add(line);
+    // 中央の到着印（スタンプの目印になる円）
+    const mark = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.25, 40), BAS(0xe9d6a8, { transparent: true, opacity: 0.55 })); mark.rotation.x = -Math.PI / 2; mark.position.set(D.center[0], 0.012, D.center[1]); root.add(mark);
+    // 駅舎（奥）：大きな庇・時計・駅名
+    const wallM = L(0xd9cbb4), darkM = L(0x3a3444), glassM = L(0x7fa8c8, { emissive: 0x223344 }), roofM = L(0x5a5a66);
+    const bz = ZM + 6;
+    B(root, 46, 9, 6, wallM, 0, 4.5, bz + 3);
+    for (let i = -5; i <= 5; i++) B(root, 2.6, 3.4, 0.2, glassM, i * 4, 2.2, bz - 0.05);
+    B(root, 50, 0.5, 7.5, roofM, 0, 9.2, bz + 3);
+    const eave = B(root, 40, 0.35, 5.2, L(0xe8e2d8), 0, 4.4, ZM + 3.4); W.fade.push(eave.material); // 大きな庇
+    for (const x of [-18, -9, 0, 9, 18]) C(root, 0.22, 0.22, 4.4, darkM, x, 2.2, ZM + 1.2);
+    const nameT = GFX.tex(512, 128, (g, w, h) => { g.fillStyle = '#1d2a48'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = `bold 64px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('上野駅', w / 2, 52); g.font = `24px ${GFX.FONT_UI}`; g.fillText('UENO  STATION', w / 2, 104); });
+    const nm = new THREE.Mesh(new THREE.PlaneGeometry(8, 2), BAS(0xffffff, { map: nameT })); nm.position.set(0, 6.6, bz - 0.06); nm.rotation.y = Math.PI; root.add(nm);
+    const clockT = GFX.tex(128, 128, (g, w, h) => { g.fillStyle = '#fff'; g.beginPath(); g.arc(64, 64, 60, 0, 7); g.fill(); g.strokeStyle = '#222'; g.lineWidth = 6; g.stroke(); g.lineWidth = 5; g.beginPath(); g.moveTo(64, 64); g.lineTo(64, 22); g.moveTo(64, 64); g.lineTo(96, 76); g.stroke(); });
+    const ck = new THREE.Mesh(new THREE.CircleGeometry(1.0, 28), BAS(0xffffff, { map: clockT })); ck.position.set(12, 6.6, bz - 0.06); ck.rotation.y = Math.PI; root.add(ck);
+    // 高架の青い常磐線（左奥）
+    const via = L(0x8a8690);
+    B(root, 3.6, 0.6, 70, via, -HX - 9, 5.2, 14); for (let z = -18; z <= 46; z += 8) B(root, 0.8, 5.2, 0.8, via, -HX - 9, 2.6, z);
+    const carM = L(0xe6eaee), blueM = L(0x1d56b8), winM = L(0x2a3446, { emissive: 0x101820 });
+    for (let k = 0; k < 3; k++) { const z = 2 + k * 20.5; B(root, 2.8, 3.0, 20, carM, -HX - 9, 7.0, z); B(root, 2.85, 0.35, 20, blueM, -HX - 9, 6.3, z); for (let w = -8; w <= 8; w += 2.6) for (const s of [-1, 1]) B(root, 0.05, 0.9, 1.6, winM, -HX - 9 + s * 1.42, 7.5, z + w); }
+    // 案内板（左右の外側・視界をふさがない高さ）
+    const signT = GFX.tex(256, 128, (g, w, h) => { g.fillStyle = '#1b3a6e'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffd23a'; g.font = `bold 32px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('← 公園口　常磐線 →', w / 2, 44); g.fillStyle = '#fff'; g.font = `22px ${GFX.FONT_UI}`; g.fillText('避難済み・立入規制中', w / 2, 92); });
+    for (const [x, z, ry] of [[-HX - 2.2, 8, Math.PI / 2], [HX + 2.2, 18, -Math.PI / 2]]) { C(root, 0.08, 0.08, 2.6, darkM, x, 1.3, z); const sg = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), BAS(0xffffff, { map: signT, side: THREE.DoubleSide })); sg.position.set(x, 2.9, z); sg.rotation.y = ry; root.add(sg); }
+    // 街灯（戦闘領域の外）
+    W.lamps = [];
+    for (const s of [-1, 1]) for (const z of [2, 10, 18, 26]) {
+      const x = s * (HX + 1.4); C(root, 0.09, 0.12, 4.2, darkM, x, 2.1, z); B(root, 0.9, 0.08, 0.12, darkM, x - s * 0.35, 4.2, z);
+      const glow = S(root, 0.22, BAS(0xfff0c0), x - s * 0.75, 4.05, z); W.lamps.push(glow);
+    }
+    // 遠景の並木
+    const leaf = L(0x4f7a3e), trunk = L(0x5a4030);
+    for (let i = 0; i < 26; i++) { const s = i % 2 ? 1 : -1, x = s * (HX + 5 + (i * 7) % 9), z = -8 + (i * 13) % 44; C(root, 0.18, 0.25, 2.2, trunk, x, 1.1, z); S(root, 1.5 + (i % 3) * 0.3, leaf, x, 3.2, z, 1, 0.9, 1); }
+    for (let i = 0; i < 9; i++) { const x = -16 + i * 4, z = -12 - (i % 3) * 3; C(root, 0.2, 0.25, 2.4, trunk, x, 1.2, z); S(root, 1.8, leaf, x, 3.5, z); }
+    // 入口側の段差（装飾）
+    for (let k = 0; k < 3; k++) B(root, HX * 2 + 4, 0.15, 1.0, L(0xb8b0a6), 0, -0.08 - k * 0.15, -0.6 - k * 1.0);
+    W.update = (T) => { for (const l of W.lamps) l.material.color.setHSL(0.12, 0.8, 0.75 + Math.sin(T * 2) * 0.03); };
+    return W;
+  };
+
+  /* ---------- ヨシノシン（3.2m） ---------- */
+  GFX.makeYoshinoshin = function () {
+    const M = {
+      coat: L(0x7a6d8c), coatD: L(0x5a4e6a), trim: L(0xc9b26a, { emissive: 0x3a2a00, emissiveIntensity: 0.4 }), collar: L(0xebe6d8), skin: L(0xc9c0d6), skinD: L(0x958ba8), hair: L(0x40394f),
+      eyeW: L(0xf6f2d6, { emissive: 0x3a3a10, emissiveIntensity: 0.35 }), iris: BAS(0xc8ff3a), pupil: BAS(0x0c0a10), lid: L(0x766c8e), gold: L(0xe0b84e, { emissive: 0x4a3200, emissiveIntensity: 0.5 }),
+      cap: L(0x17151f), mouth: BAS(0x3a1830), boot: L(0x1d1a26), paper: L(0xf4ecd4, { emissive: 0x2a2410, emissiveIntensity: 0.3 }), seal: BAS(0xd8402a), doll: L(0x2b2552),
+    };
+    const root = G(null), body = G(root, 0, 1.3, 0);
+    const legL = G(body, -0.2, 0, 0), legR = G(body, 0.2, 0, 0);
+    for (const lg of [legL, legR]) { C(lg, 0.1, 0.085, 1.25, M.coatD, 0, -0.62, 0); B(lg, 0.2, 0.12, 0.38, M.boot, 0, -1.25, 0.08); }
+    // 上着の裾（長い・前が割れる）
+    const skirt = C(body, 0.36, 0.55, 0.95, M.coat, 0, -0.3, -0.02, null, 14);
+    // 猫背：背骨ごと前に曲げる
+    const spine = G(body, 0, 0.1, 0); spine.rotation.x = 0.5;
+    C(spine, 0.3, 0.38, 1.05, M.coat, 0, 0.5, 0);
+    C(spine, 0.32, 0.36, 0.08, M.trim, 0, 0.05, 0);
+    B(spine, 0.05, 0.95, 0.03, M.trim, 0, 0.52, 0.33);
+    for (const y of [0.25, 0.5, 0.75]) S(spine, 0.035, M.gold, 0, y, 0.34 - y * 0.08);
+    C(spine, 0.27, 0.33, 0.2, M.collar, 0, 1.03, 0.02);
+    // 肩を前へ（肩パッドの段差）
+    for (const s of [-1, 1]) S(spine, 0.2, M.coat, s * 0.38, 0.93, 0.08, 1.1, 0.8, 1.0);
+    const neck = G(spine, 0, 1.08, 0.08); neck.rotation.x = -0.35;
+    const head = G(neck, 0, 0.32, 0.08); head.rotation.z = 0.16; // 頭を少し傾ける
+    S(head, 0.32, M.skin, 0, 0.08, 0, 1, 1.25, 1.05);
+    B(head, 0.44, 0.06, 0.1, M.skinD, 0, 0.09, 0.26);
+    for (const s of [-1, 1]) B(head, 0.06, 0.22, 0.1, M.hair, s * 0.3, -0.04, -0.03);
+    const eyeL = G(head, -0.13, 0.0, 0.25), eyeR = G(head, 0.13, 0.035, 0.255);
+    S(eyeL, 0.14, M.eyeW, 0, 0, 0); S(eyeL, 0.085, M.iris, 0, 0, 0.085); S(eyeL, 0.03, M.pupil, 0, 0, 0.155);
+    S(eyeR, 0.085, M.eyeW, 0, 0, 0); S(eyeR, 0.05, M.iris, 0, 0, 0.052); S(eyeR, 0.018, M.pupil, 0, 0, 0.095);
+    const lidR = B(eyeR, 0.2, 0.05, 0.08, M.lid, 0, 0.07, 0.04); lidR.rotation.z = -0.25;
+    const lidL = B(eyeL, 0.3, 0.15, 0.16, M.lid, 0, 0.12, 0.04); lidL.visible = false; // 眠るときに閉じる
+    const ring = (r, x, y) => { const m = new THREE.Mesh(new THREE.TorusGeometry(r, 0.014, 6, 22), M.gold); m.position.set(x, y, 0.36); head.add(m); return m; };
+    ring(0.16, -0.13, 0.0); ring(0.115, 0.13, 0.035); B(head, 0.08, 0.018, 0.018, M.gold, 0, 0.03, 0.37);
+    // 細い笑い（三日月）
+    const sm = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.014, 4, 16, Math.PI * 0.85), M.mouth); sm.position.set(0.02, -0.17, 0.3); sm.rotation.z = Math.PI + 0.25; head.add(sm);
+    // 角帽と房（部下と同じ意匠を大きく）
+    C(head, 0.25, 0.28, 0.13, M.cap, 0, 0.44, -0.02);
+    const board = B(head, 0.5, 0.035, 0.5, M.cap, 0, 0.52, -0.04); board.rotation.y = 0.75;
+    C(head, 0.009, 0.009, 0.3, M.gold, 0.32, 0.38, 0.14); S(head, 0.035, M.gold, 0.32, 0.22, 0.14);
+    // 腕（長い）：右は短い袖＋指揮札、左は床近くまで垂れる長い袖
+    const armL = G(spine, -0.42, 0.95, 0.06), armR = G(spine, 0.42, 0.95, 0.06);
+    C(armL, 0.1, 0.08, 1.0, M.coat, 0, -0.5, 0); const sleeveL = C(armL, 0.13, 0.24, 0.85, M.coat, 0, -1.25, 0, null, 10); // 長く垂れる袖
+    C(armR, 0.1, 0.08, 0.95, M.coat, 0, -0.47, 0); C(armR, 0.12, 0.14, 0.18, M.trim, 0, -0.95, 0);
+    const handR = G(armR, 0, -1.05, 0); S(handR, 0.09, M.skin, 0, 0, 0, 1, 1.2, 1);
+    for (let i = 0; i < 3; i++) C(handR, 0.018, 0.015, 0.16, M.skin, -0.04 + i * 0.04, -0.1, 0.03); // 細い指
+    const fuda = G(handR, 0, -0.12, 0.06); fuda.rotation.x = -0.4;
+    B(fuda, 0.24, 0.48, 0.02, M.paper, 0, -0.22, 0); const seal = new THREE.Mesh(new THREE.CircleGeometry(0.07, 18), M.seal); seal.position.set(0, -0.2, 0.012); fuda.add(seal);
+    for (const y of [-0.06, -0.36]) B(fuda, 0.18, 0.015, 0.025, M.seal, 0, y, 0);
+    const handL = G(armL, 0, -1.62, 0); S(handL, 0.08, M.skin, 0, 0, 0);
+    // 二十連のとき左腕に抱える小さな人形（部下）
+    const dolls = G(armL, 0.12, -0.95, 0.25); dolls.visible = false;
+    for (let i = 0; i < 4; i++) { const d = G(dolls, (i % 2) * 0.16 - 0.08, (i >> 1) * 0.16, 0); S(d, 0.08, M.doll, 0, 0, 0); S(d, 0.06, M.skin, 0, 0.1, 0.02); B(d, 0.12, 0.012, 0.12, M.cap, 0, 0.16, 0.02); }
+    // 指揮札の光
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), new THREE.MeshBasicMaterial({ color: 0xc8ff7a, transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending })); glow.position.set(0, -0.22, 0.05); fuda.add(glow);
+    // バリア（半透明の殻：青→赤）
+    const barrier = new THREE.Mesh(new THREE.SphereGeometry(2.0, 28, 18), new THREE.MeshBasicMaterial({ color: 0x6ab8ff, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })); barrier.position.y = 1.7; barrier.visible = false; root.add(barrier);
+    const shadow = GFX.blob(1.1);
+    return { root, body, spine, neck, head, armL, armR, legL, legR, sleeveL, handR, fuda, glow, dolls, lidL, lidR, skirt, barrier, shadow, ph: 0, kind: 'yoshinoshin', fadeT: 1 };
+  };
+
+  /** ヨシノシンの動き：e＝復元したボス、U＝上野の状態 */
+  GFX.animYoshinoshin = function (m, e, T, dt, v) {
+    const Us = v.U || {}, st = e.st, mv = e.mv, t = e.t || 0;
+    m.root.position.set(e.x, e.y || 0, e.z); m.root.rotation.set(0, e.yaw, 0); m.shadow.position.set(e.x, 0.02, e.z);
+    const walk = st === 'walk' ? 1 : 0, wk = T * 5;
+    let sp = 0.5 + Math.sin(T * 1.4) * 0.04, aR = -0.25 + Math.sin(T * 1.1) * 0.06, aL = -0.15, aRz = -0.15, aLz = 0.12, lean = 0, kneeR = 0, bodyY = 1.3, headZ = 0.16 + Math.sin(T * 0.8) * 0.05, glow = 0, shrink = 1;
+    m.legL.rotation.x = Math.sin(wk) * 0.4 * walk; m.legR.rotation.x = -Math.sin(wk) * 0.4 * walk;
+    m.dolls.visible = false; m.lidL.visible = false;
+    if (st === 'intro') { // 指を鳴らす → 椅子の背にもたれるように反る
+      if (t < 1.0) { aR = -1.6; aRz = -0.6; } else if (t < 1.25) { aR = -1.8; aRz = -0.2; } else { sp = 0.2; lean = -0.15; aR = -0.4; aL = -0.3; }
+      if (t > 1.0 && t < 1.15) glow = 1.5;
+    } else if (st === 'wind' || st === 'act' || st === 'rec') {
+      const k = st === 'wind' ? 1 : st === 'act' ? 2 : 3;
+      switch (mv) {
+        case 'reiko': aR = k === 1 ? -1.2 : -1.6; aRz = k === 1 ? 0.4 : -0.2; glow = k === 1 ? 0.6 + Math.sin(T * 30) * 0.3 : 0.3; break; // 札を胸元へ寄せて放つ
+        case 'shosho': sp = k === 1 ? 0.35 : 0.9; aR = aL = k === 1 ? -2.6 : k === 2 ? -0.9 : -0.6; aLz = 0; aRz = 0; shrink = k === 1 ? 0.9 : 1; break; // 肩を縮めて両腕を打ち下ろす
+        case 'stamp': kneeR = k === 1 ? -1.4 * Math.min(1, t / 1.2) : 0; sp = k === 1 ? 0.3 : 0.6; aR = -1.0; aL = -1.0; aRz = -0.6; aLz = 0.6; break; // 肩と右膝を上げて踏み下ろす
+        case 'shosha': aR = -2.9; aRz = 0.1; glow = 0.8 + Math.sin(T * 20) * 0.3; lean = -0.15; break; // 札を空へ
+        case 'warp': shrink = k === 1 ? 1 - Math.min(0.4, t / 0.7 * 0.4) : 1; glow = 0.6; break;
+        case 'summon': case 'cmd': aR = -1.3 + Math.sin(T * 8) * 0.5; aRz = -0.5; glow = 0.4; break; // 号令
+        case 'barrier': aR = aL = -1.4; aRz = -0.9; aLz = 0.9; glow = 0.8; break;
+        case 'throw20': m.dolls.visible = st !== 'rec'; aL = -1.2; aLz = 0.5; aR = k === 2 ? -2.2 + Math.abs(Math.sin(T * 17)) * 2.0 : -0.8; break; // 抱えた人形をぽいぽい投げる
+      }
+    } else if (st === 'sleep') { sp = 0.15; lean = -0.35; headZ = 0.45; aR = 0.1; aL = 0.1; m.lidL.visible = true; bodyY = 1.1; } // もたれて眠る
+    else if (st === 'down' || st === 'stun') { sp = 1.0; headZ = 0.5; aR = aL = 0.3; bodyY = st === 'down' ? 0.85 : 1.2; }
+    else if (st === 'dead') { const k = Math.min(1, t / 1.4); sp = 0.5 + k * 0.8; bodyY = 1.3 - k * 0.9; m.root.rotation.z = k * 0.3; }
+    m.spine.rotation.x = sp + lean; m.spine.scale.setScalar(shrink); m.body.position.y = bodyY;
+    m.neck.rotation.z = Math.sin(T * 0.6) > 0.93 ? 0.35 : 0; m.head.rotation.z = headZ;
+    m.armR.rotation.x = aR; m.armR.rotation.z = aRz; m.armL.rotation.x = aL; m.armL.rotation.z = aLz;
+    m.legR.rotation.x += kneeR;
+    m.sleeveL.rotation.x = -aL * 0.4 + Math.sin(T * 1.7) * 0.06; // 長い袖が揺れる
+    m.glow.material.opacity = Math.min(1, glow * 0.6);
+    // バリア
+    m.barrier.visible = !!Us.barrier && st !== 'dead';
+    if (m.barrier.visible) { m.barrier.material.color.set(Us.bhits >= 1 ? 0xff5a4a : 0x6ab8ff); m.barrier.material.opacity = 0.18 + Math.sin(T * 6) * 0.05; m.barrier.rotation.y = T * 0.6; }
+    m.root.visible = st !== 'hidden' && !(st === 'dead' && t > 3.2);
+    m.shadow.visible = m.root.visible;
+  };
+})();
+
 /* ===== render_main.js ===== */
 /* =====================================================================
    render_main.js — 描画の本体：エンティティ同期・予兆表示・弾・演出・カメラ
@@ -5332,6 +5926,7 @@ const R = (() => {
       PJM.leaf = PJM.star;
       const ft = GFX.fudaTex(); PJM.fuda = [new THREE.PlaneGeometry(0.24, 0.42), GFX.lam(0xffffff, { map: ft, side: THREE.DoubleSide, emissive: 0x552211 })];
       PJM.lantern = PJM.fire;
+      PJM.reiko = [new THREE.SphereGeometry(0.3, 12, 10), new THREE.MeshBasicMaterial({ color: 0xd8ff8a })];
     }
     const [g, m] = PJM[kind] || PJM.star; const mesh = new THREE.Mesh(g, m); scene.add(mesh); return mesh;
   }
@@ -5398,7 +5993,16 @@ const R = (() => {
     if (t < t0 + 1.7) { const q = lerp(d, f, (t - t0 - 0.7) / 1.0); return { x: q[0], z: q[1], yaw: Math.atan2(f[0] - d[0], f[1] - d[1]), moving: true, act: '', st: 'ok' }; }
     return { x: f[0], z: f[1], yaw: Math.atan2(-4.3 - f[0], 2 - f[1]), moving: false, act: '', st: 'ok' };
   }
+  /* ---------- 上野編：駅前の広場 ---------- */
+  let UW = null; const ensureUeno = () => UW || (UW = GFX.buildUeno(scene));
+  function syncUeno(v, T) {
+    const ue = v.stageId === 'ueno';
+    if (ue) { ensureUeno(); UW.root.visible = true; W.root.visible = false; if (TW) TW.root.visible = false; UW.update(T); }
+    else if (UW) UW.root.visible = false;
+    return ue;
+  }
   function syncTrain(v, dt, T, me) {
+    if (syncUeno(v, T)) return;
     const jb = v.stageId === 'joban', it = v.introWait ? 0 : v.stageT;
     const showTrain = jb && !(v.stage === 'intro' && it < 3.5);
     W.root.visible = !showTrain; if (jb) ensureTrain(); if (TW) TW.root.visible = showTrain;
@@ -5455,7 +6059,11 @@ const R = (() => {
     });
     // ボス
     if (v.boss) {
-      if (!boss) { boss = GFX.makeBoss(); scene.add(boss.root); scene.add(boss.shadow); }
+      const wantK = v.stageId === 'ueno' ? 'yoshinoshin' : 'tobatoban';
+      if (boss && (boss.kind || 'tobatoban') !== wantK) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }
+      if (!boss) { boss = wantK === 'yoshinoshin' ? GFX.makeYoshinoshin() : GFX.makeBoss(); scene.add(boss.root); scene.add(boss.shadow); }
+      if (wantK === 'yoshinoshin') { GFX.animYoshinoshin(boss, v.boss, T, dt, v); if (v.boss.st === 'sleep' && Math.random() < 0.05) emit('add', { x: v.boss.x + 0.4, y: 3.4, z: v.boss.z, vy: 0.6, vx: 0.3, life: 1.6, s0: 0.35, s1: 0.6, c: 0xbfd8ff }); }
+      else {
       boss.root.visible = v.boss.st !== 'hidden'; boss.shadow.visible = boss.root.visible;
       GFX.animBoss(boss, v.boss, T, dt, v);
       if (v.boss.st === 'intro') { boss.root.visible = v.stageT > 0.75 && !v.introWait; }
@@ -5463,6 +6071,7 @@ const R = (() => {
       if (v.boss.stun && Math.random() < 0.3) emit('add', { x: v.boss.x + (Math.random() - 0.5) * 2, y: 3 + Math.random() * 2, z: v.boss.z + (Math.random() - 0.5) * 2, life: 0.3, s0: 0.3, s1: 0.05, c: 0xfff060 });
       if (v.boss.st === 'down' && Math.random() < 0.2) emit('add', { x: v.boss.x + (Math.random() - 0.5) * 1.5, y: 4.6, z: v.boss.z + (Math.random() - 0.5) * 1.5, vy: 0.3, life: 0.8, s0: 0.25, s1: 0.1, c: 0xffe070 });
       if (v.boss.st === 'fly' && Math.random() < 0.6) emit('norm', { x: v.boss.x, y: v.boss.y + 2, z: v.boss.z, vy: -0.4, vx: (Math.random() - 0.5), life: 1.0, s0: 0.5, s1: 1.2, c: 0xd8c8b0, a: 0.4 });
+      }
     } else if (boss) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }
     // 札小僧
     const seenM = new Set();
@@ -5472,10 +6081,10 @@ const R = (() => {
     const seenP = new Set();
     for (const p of v.projs) {
       seenP.add(p.id); let m = projs.get(p.id); if (!m) { m = projMesh(p.kind); projs.set(p.id, m); }
-      m.position.set(p.x, p.kind === 'fuda' ? 0.6 : 0.65, p.z); m.rotation.y = T * 12;
+      m.position.set(p.x, p.kind === 'fuda' ? 0.6 : p.kind === 'reiko' ? 1.1 : 0.65, p.z); m.rotation.y = T * 12;
       if (p.kind === 'focus') m.scale.setScalar(Math.max(0.8, p.r / 0.45 * 1.2));
       if (p.kind === 'fuda') { m.rotation.set(0, p.yaw + T * 14, 0.3); }
-      if (Math.random() < (p.kind === 'fire' ? 0.9 : 0.5)) emit('add', { x: p.x, y: 0.65, z: p.z, life: 0.25, s0: p.kind === 'fire' ? 0.5 : 0.25, s1: 0.02, c: { star: 0xffe27a, can: 0xbfd8ff, focus: 0xfff6c0, fire: 0xff7a2a, mark: 0xff4a2a, fuda: 0xff8a6a }[p.kind] || 0xffffff });
+      if (Math.random() < (p.kind === 'fire' ? 0.9 : 0.5)) emit('add', { x: p.x, y: 0.65, z: p.z, life: 0.25, s0: p.kind === 'fire' ? 0.5 : 0.25, s1: 0.02, c: { star: 0xffe27a, can: 0xbfd8ff, focus: 0xfff6c0, fire: 0xff7a2a, mark: 0xff4a2a, fuda: 0xff8a6a, reiko: 0xc8ff6a }[p.kind] || 0xffffff });
     }
     for (const [id, m] of projs) if (!seenP.has(id)) { scene.remove(m); projs.delete(id); }
     // 予兆
@@ -5566,7 +6175,13 @@ const R = (() => {
     const len = DATA.JOBAN.wpn.beam.len, g = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, len), new THREE.MeshBasicMaterial({ color: 0xc8ff7a, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }));
     g.position.set(e.x + Math.sin(e.yaw) * len / 2, 0.95, e.z + Math.cos(e.yaw) * len / 2); g.rotation.y = e.yaw; scene.add(g); beams.push({ g, t: 0.28 });
   }
-  function stepBeams(dt) { for (const b of beams) { b.t -= dt; b.g.material.opacity = Math.max(0, b.t / 0.28) * 0.85; b.g.scale.x = b.g.scale.y = 0.6 + b.t * 3; if (b.t <= 0) { scene.remove(b.g); b.g.geometry.dispose(); } } for (let i = beams.length - 1; i >= 0; i--) if (beams[i].t <= 0) beams.splice(i, 1); }
+  /** 上空からのビーム（号令四連照射） */
+  function skyBeam(e) {
+    const g = new THREE.Mesh(new THREE.CylinderGeometry(DATA.UENO.moves.shosha.r, DATA.UENO.moves.shosha.r, 14, 20, 1, true), new THREE.MeshBasicMaterial({ color: 0xc8a8ff, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+    g.position.set(e.x, 7, e.z); scene.add(g); beams.push({ g, t: 0.35, max: 0.35 });
+    burst('add', 18, { x: e.x, y: 0.3, z: e.z, spd: 4, up: 2, life: 0.4, s0: 0.5, s1: 0.05, c: 0xe0c8ff }); shake(0.08);
+  }
+  function stepBeams(dt) { for (const b of beams) { b.t -= dt; const mx = b.max || 0.28; b.g.material.opacity = Math.max(0, b.t / mx) * 0.85; if (b.max) { b.g.scale.x = b.g.scale.z = 0.5 + b.t / mx * 0.6; } else b.g.scale.x = b.g.scale.y = 0.6 + b.t * 3; if (b.t <= 0) { scene.remove(b.g); b.g.geometry.dispose(); } } for (let i = beams.length - 1; i >= 0; i--) if (beams[i].t <= 0) beams.splice(i, 1); }
   function fx(e, v, me) {
     const A = AUDIO.sfx;
     switch (e.type) {
@@ -5652,6 +6267,10 @@ const R = (() => {
         if (e.fx === 'otoshi' || e.fx === 'bomb') { A('boom', e.x, e.z, 0.7); burst('add', 18, { x: e.x, y: 0.3, z: e.z, spd: 5, up: 1.5, life: 0.4, s0: 0.6, s1: 0.1, c: 0xff8a3a }); burst('norm', 6, { x: e.x, y: 0.3, z: e.z, spd: 1.5, life: 0.8, s0: 0.7, s1: 1.4, c: 0x5a5060, a: 0.5 }); shake(0.08); }
         if (e.fx === 'land') { A('land', e.x, e.z); for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI * 2; emit('norm', { x: e.x + Math.cos(a) * 1.5, y: 0.2, z: e.z + Math.sin(a) * 1.5, vx: Math.cos(a) * 7, vz: Math.sin(a) * 7, life: 0.8, s0: 0.6, s1: 1.4, c: 0xc8b8a0, a: 0.6 }); } shake(0.4); }
         if (e.fx === 'ybeam') { A('shot_focus', e.x, e.z, 0.8); beamFlash(e); }
+        if (e.fx === 'ubeam') { A('beam', e.x, e.z, 0.6); skyBeam(e); }
+        if (e.fx === 'stamp') { A('land', e.x, e.z); for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2; emit('norm', { x: e.x + Math.cos(a) * 1.2, y: 0.2, z: e.z + Math.sin(a) * 1.2, vx: Math.cos(a) * 9, vz: Math.sin(a) * 9, life: 0.6, s0: 0.6, s1: 1.3, c: 0xe9d6a8, a: 0.6 }); } shake(0.45); }
+        if (e.fx === 'shosho') { A('slap', e.x, e.z); burst('add', 16, { x: e.x + Math.sin(e.yaw) * 2, y: 0.4, z: e.z + Math.cos(e.yaw) * 2, spd: 4, life: 0.3, s0: 0.5, s1: 0.05, c: 0xd8c8ff }); shake(0.25); }
+        if (e.fx === 'throw') { A('stomp', e.x, e.z, 0.5); burst('norm', 8, { x: e.x, y: 0.2, z: e.z, spd: 2.5, life: 0.5, s0: 0.4, s1: 0.8, c: 0xc8b8d8, a: 0.6 }); }
         if (e.fx === 'ysword') { A('slash', e.x, e.z, 0.7); for (let i = 0; i < 6; i++) { const a = e.yaw + (i - 2.5) * 0.22; emit('add', { x: e.x + Math.sin(a) * 1.3, y: 0.7, z: e.z + Math.cos(a) * 1.3, vx: Math.sin(a) * 2, vz: Math.cos(a) * 2, life: 0.2, s0: 0.3, s1: 0.02, c: 0xe4ecff }); } }
         if (e.fx === 'yfist') { A('hit', e.x, e.z, 0.7); burst('norm', 6, { x: e.x + Math.sin(e.yaw) * 1.1, y: 0.6, z: e.z + Math.cos(e.yaw) * 1.1, spd: 2, life: 0.35, s0: 0.3, s1: 0.6, c: 0xd8d0f0, a: 0.6 }); }
         if (e.fx === 'harite') { for (let d = 0.2; d < DATA.BMOVES.harite.len; d += 0.35) for (const s of [-1, 0, 1]) emit('norm', { x: e.x + Math.sin(e.yaw) * d + Math.cos(e.yaw) * s * 0.9, y: 0.25, z: e.z + Math.cos(e.yaw) * d - Math.sin(e.yaw) * s * 0.9, vx: Math.sin(e.yaw) * 3, vz: Math.cos(e.yaw) * 3, vy: 1.2, life: 0.55, s0: 0.5, s1: 1.2, c: 0xc8b8a0, a: 0.65 }); burst('add', 14, { x: e.x + Math.sin(e.yaw) * 1.2, y: 0.4, z: e.z + Math.cos(e.yaw) * 1.2, spd: 4, life: 0.3, s0: 0.5, s1: 0.05, c: 0xfff0c0 }); }
@@ -5659,6 +6278,14 @@ const R = (() => {
       }
       case 'cross': A('flyPass', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); break;
       case 'yAtk': A(e.w === 'beam' ? 'charge' : 'swing', e.x, e.z, 0.5); break;
+      case 'bblock': if (Math.random() < 0.5) burst('add', 6, { x: e.x, y: 1.8, z: e.z, spd: 3, life: 0.25, s0: 0.3, s1: 0.03, c: 0x9ad0ff }); A('block', e.x, e.z, 0.4); break;
+      case 'bhit': A('crit', e.x, e.z); burst('add', 24, { x: e.x, y: 1.8, z: e.z, spd: 5, life: 0.4, s0: 0.4, s1: 0.05, c: e.n >= 2 ? 0xffffff : 0xff6a4a }); shake(0.2); break;
+      case 'barrier': A(e.on ? 'protect' : e.broken ? 'crit' : 'ui', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); if (e.broken && v.boss) burst('add', 40, { x: v.boss.x, y: 1.8, z: v.boss.z, spd: 6, life: 0.6, s0: 0.5, s1: 0.05, c: 0x9ad0ff }); break;
+      case 'warpIn': burst('add', 26, { x: e.x, y: 1.5, z: e.z, spd: 3, life: 0.5, s0: 0.45, s1: 0.05, c: 0xb89aff }); A('whoosh', e.x, e.z); break;
+      case 'yLand': burst('norm', 6, { x: e.x, y: 0.2, z: e.z, spd: 1.5, life: 0.4, s0: 0.3, s1: 0.6, c: 0xd8d0e8, a: 0.6 }); break;
+      case 'summon': A('summon'); break;
+      case 'sleep': A('bossDown'); break;
+      case 'sleepEnd': A(e.ok ? 'allLit' : 'lanternFail'); if (!e.ok && v.boss) burst('add', 40, { x: v.boss.x, y: 1.5, z: v.boss.z, spd: 3, up: 2, life: 1.0, s0: 0.4, s1: 0.05, c: 0x8aff9a }); break;
       case 'ySpawn': burst('norm', 8, { x: e.x, y: 0.6, z: e.z, spd: 1.2, life: 0.5, s0: 0.35, s1: 0.7, c: 0xb8a8ff, a: 0.55 }); break;
       case 'doors': A(e.open ? 'doorOpen' : 'doorClose'); break;
       case 'depart': A('trainChime'); break;
@@ -5738,13 +6365,19 @@ const R = (() => {
     if (cam.reset) { cam.reset = false; cam.yaw = a.yaw; }
     if (cam.lock && !cam.dragT && !flying) { const t = cam.lock === 'boss' && B ? B : v.mobs.find(e => e.id === cam.lock); if (t) { const want = Math.atan2(t.x - a.x, t.z - a.z); const d = SIMLIB.angDiff(cam.yaw, want); if (Math.hypot(t.x - a.x, t.z - a.z) > 2.5) cam.yaw += Math.max(-1.0 * dt, Math.min(1.0 * dt, d)); } }
     cam.flyPull += ((flying ? 2.5 : 0) - cam.flyPull) * Math.min(1, dt * 2);
-    const dist = fr.dist + cam.flyPull, p = cam.pitch * Math.PI / 180;
+    const dist = fr.dist + cam.flyPull + (v.stageId === 'ueno' ? 2.2 : 0), p = cam.pitch * Math.PI / 180; // 上野は広いので少し引く（9〜13m）
     let cx = cam.fx - Math.sin(cam.yaw) * Math.cos(p) * dist, cz = cam.fz - Math.cos(cam.yaw) * Math.cos(p) * dist, cy = 0.5 + Math.sin(p) * dist;
     let lx = cam.fx, ly = 0.5, lz = cam.fz;
     // 登場演出（4.5秒・入力無効の間だけ低い視点）
     if (v.stage === 'intro' && B) {
       const t = v.introWait ? 0 : v.stageT, bx = B.x, bz = B.z;
-      const shots = [
+      const shots = v.stageId === 'ueno' ? [ // 上野：部下の列の奥で指を鳴らす→通常のカメラへ
+        { t: 0, c: [0, 3.2, 7], l: [0, 1.2, 16] },
+        { t: 0.9, c: [2.5, 2.6, bz - 7], l: [bx, 2.6, bz] },
+        { t: 2.0, c: [1.5, 2.4, bz - 6], l: [bx, 2.8, bz] },
+        { t: DATA.UENO.introT, c: [cx, cy, cz], l: [lx, ly, lz] },
+        { t: DATA.UENO.introT + 1, c: [cx, cy, cz], l: [lx, ly, lz] },
+      ] : [
         { t: 0, c: [0, 2.2, 1.5], l: [0, 0.3, bz - 2] },
         { t: 1.0, c: [3.5, 1.0, bz - 6.5], l: [bx, 0.6, bz] },
         { t: 2.0, c: [2.5, 0.8, bz - 6], l: [bx, 2.6, bz] },
@@ -5789,7 +6422,7 @@ const R = (() => {
     for (const [, m] of traps) scene.remove(m); traps.clear(); for (const [, m] of picks) scene.remove(m); picks.clear();
     cam.lanT = 0; if (W) for (const L of W.lanternsStreet) if (L.lit) W.setStreetLantern(L, false);
     for (const p of [PA, PN]) if (p) for (const q of p.P) q.life = 0;
-    if (W && W.root) W.root.visible = true; if (TW) TW.root.visible = false; if (JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; } JT.dist = 0; JT.rail = 0; JT.lcd = '';
+    if (W && W.root) W.root.visible = true; if (TW) TW.root.visible = false; if (UW) UW.root.visible = false; if (JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; } JT.dist = 0; JT.rail = 0; JT.lcd = '';
     for (const b of beams) scene.remove(b.g); beams.length = 0; resize();
   }
   function snapCam(v, me) { const a = v && v.allies[me]; if (!a) return; cam.fx = a.x; cam.fz = a.z; cam.yaw = 0; }
@@ -6181,7 +6814,8 @@ function startSolo(stageId) {
   G.stageId = stageOpen(stageId) ? stageId : 'senju';
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
   S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
-  S.startGame({ stageId: G.stageId, bid: newBid(), party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
+  const carry = G.stageId === 'ueno' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
+  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {
@@ -6398,7 +7032,7 @@ function onNotice(o) {
   if (o.k === 'sp') {
     if (o.me) { const c = $('#cutin'); $('#cutImg').src = G.thumbs[v.allies[o.slot].ch] || ''; $('#cutWho').textContent = 'P' + (o.slot + 1) + '　必殺技'; $('#cutNm').textContent = o.nm; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show'); }
     else notice(`P${o.slot + 1}：${o.nm}！`, 'sp', 1300);
-  } else if (o.k === 'boss') { const M = DATA.BMOVES[o.mv]; if (M) notice(M.nm, 'boss', 1100); }
+  } else if (o.k === 'boss') { const M = (G.v && G.v.stageId === 'ueno' ? DATA.UENO.moves : DATA.BMOVES)[o.mv]; if (M && o.mv !== 'cmd') notice(M.nm, 'boss', 1100); }
   else if (o.k === 'phase2') { banner('トバトーバンが本気を出した', '空を飛ぶ巡行が3回に増える。ミニマップと矢印を見よう', 2400); AUDIO.bgm('boss2'); }
   else if (o.k === 'unlock') { if (G.lock === 'boss') { G.lock = null; G.relockWanted = SET.relock; } notice('ボスが飛んだ！ 注目が外れた', 'warn', 1500); }
   else if (o.k === 'sig') { const t = { help: '助けて！', heal: '回復する！', lantern: '灯籠へ！', sp: '必殺準備OK！', left: '通信が切れたためAIが引き継ぎます' }[o.code] || ''; notice(`P${o.slot + 1}：${t}`, o.code === 'left' ? 'warn' : '', 2000); }
@@ -6408,8 +7042,8 @@ function onNotice(o) {
     if (o.s === 'intro') { AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
     if (o.s === 'train') { AUDIO.bgm('boss'); banner('ヨシノシンの部下が現れた！', '上野に着くまでに、車内の部下をすべて倒せ', 2400); }
     if (o.s === 'arrive') { banner('上野に到着！', 'ヨシノシンは上野で待っている……', 3000); }
-    if (o.s === 'fight') { AUDIO.bgm('boss'); banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
-    if (o.s === 'won') { AUDIO.jingle(true); if (v && v.stageId === 'joban') banner('ヨシノシンの部下を全員倒した！', '常磐線は無事に上野へ着いた', 3000); else banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
+    if (o.s === 'fight') { AUDIO.bgm('boss'); if (v && v.stageId === 'ueno') banner('ヨシノシンを鎮めよ！', '部下の予告を見切り、本体に近づこう', 2200); else banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
+    if (o.s === 'won') { AUDIO.jingle(true); if (v && v.stageId === 'joban') banner('ヨシノシンの部下を全員倒した！', '常磐線は無事に上野へ着いた', 3000); else if (v && v.stageId === 'ueno') banner('ヨシノシンを鎮めた！', '命令を失った部下たちが、ぱたりと倒れた', 3000); else banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
     if (o.s === 'lost') { AUDIO.jingle(false); banner(G.v && G.v.result && G.v.result.why === 'time' ? '時間切れ' : '全滅', '', 2500); }
   }
 }
@@ -6422,6 +7056,12 @@ function onEvent(e, v) {
     case 'board': notice(`${DATA.JOBAN.stations[e.st]}：ホームから部下が${e.n}体乗ってくる！`, 'warn', 2200); break;
     case 'jev': if (e.id && e.id.startsWith('mid_')) notice(`前の車両に潜んでいた部下${e.n}体が出てくる！`, 'warn', 2200); break;
     case 'arriveSt': if (e.st < 4) notice(`${DATA.JOBAN.stations[e.st]}に到着`, 'info', 1500); break;
+    case 'sleepWarn': banner('ヨシノシンのHPが半分に近い', '半分になる前に接近して必殺を準備しよう', 2600); break;
+    case 'sleep': banner('30分睡眠チャージ！', '10秒以内に4体合計3,000ダメージを与えろ！', 2000); break;
+    case 'sleepEnd': if (e.ok) banner('阻止成功！', `ヨシノシンがダウン（${e.dmg.toLocaleString()} / 3,000）`, 2400); else banner('阻止失敗…', `ヨシノシンが全回復した（${e.dmg.toLocaleString()} / 3,000）。また半分で同じ判定`, 2800); break;
+    case 'barrier': if (e.on) notice('完全指揮バリア！ 射撃部下のビームを本体へ2回誘導して壊そう', 'boss', 3200); else if (e.broken) notice('バリアを破壊！ ヨシノシンがよろめいた', 'sp', 1800); else notice('バリアが消えた', 'info', 1200); break;
+    case 'bhit': if (e.n < 2) notice(`バリアに命中 ${e.n}/2`, 'sp', 1300); break;
+    case 'summon': notice(`追加動員：部下${e.n}体が奥から来る`, 'warn', 1800); break;
     case 'heal': if (e.v > 0) dmgNum(e.x, 1.2, e.z, '+' + e.v, 'heal'); break;
     case 'down': notice(`P${e.slot + 1}が気絶した${e.slot === me ? '…' : '（まわりの円に入って4秒で救助）'}`, 'warn', 2200); if (e.slot === me && G.session.kind === 'solo') setTimeout(() => notice('仲間のカードを押すと操作を交代できます', 'info', 2600), 900); break;
     case 'ascend': notice(`P${e.slot + 1}が昇天した（この戦闘では戻らない）`, 'warn', 2400); break;
@@ -6491,11 +7131,23 @@ function updateHud(v, dt) {
   // ボス
   const showBoss = jb ? v.stage !== 'intro' : v.boss && (v.stage === 'boss' || v.stage === 'won' || v.stage === 'lost');
   $('#bossbox').hidden = !showBoss;
+  const ue = v.stageId === 'ueno', U = v.U;
+  $('#ueInfo').hidden = !(ue && showBoss);
   if (showBoss && !jb) {
     const b = v.boss; setBar($('#bossFill'), b.hpR); G.lagBoss = G.lagBoss > b.hpR ? Math.max(b.hpR, G.lagBoss - dt * 0.15) : b.hpR; setBar($('#bossLag'), G.lagBoss);
-    $('#bossPh').hidden = b.phase !== 2;
-    $('#bossSt').textContent = b.st === 'down' ? 'ダウン中' : b.stun ? '麻痺' : b.st === 'fly' ? '飛行中' : b.defDown ? '守り↓' : '';
+    $('#bossPh').hidden = b.phase !== 2 || ue;
+    $('#bossNm').textContent = ue ? 'ヨシノシン' : 'トバトーバン';
+    $('#bossSt').textContent = b.st === 'sleep' ? '睡眠中・被ダメージ×2' : b.st === 'down' ? 'ダウン中' : b.stun ? (ue ? 'よろめき' : '麻痺') : b.st === 'fly' ? '飛行中' : ue && U && U.sleepNear ? '半分で睡眠チャージ' : b.defDown ? '守り↓' : '';
+    if (ue && U) {
+      $('#ueMin').textContent = `部下 ${U.alive}/40`;
+      const bb = $('#ueBar'); bb.hidden = !U.barrier; if (U.barrier) { bb.textContent = `バリア ${U.bhits}/2・${Math.max(0, Math.ceil(DATA.UENO.moves.barrier.max - U.barrierT))}秒`; bb.classList.toggle('hit', U.bhits >= 1); }
+      $('#ueLv').textContent = U.barrier ? '' : `Lv${U.lv} 与×${U.lvOut.toFixed(2)}/被×${U.lvIn.toFixed(2)}`;
+    }
   }
+  // 上野：睡眠チェックの10秒と合計ダメージ
+  const sb = $('#sleepBox'), sleepOn = ue && U && U.sleep && v.stage === 'boss';
+  sb.hidden = !sleepOn;
+  if (sleepOn) { const S = DATA.UENO.moves.sleep, left = Math.max(0, S.dur - U.sleepT); $('#slTime').textContent = left.toFixed(1); setBar($('#slTimeFill'), left / S.dur); $('#slDmg').textContent = Math.min(99999, U.sleepDmg).toLocaleString(); setBar($('#slDmgFill'), U.sleepDmg / S.need); sb.classList.toggle('ok', U.sleepDmg >= S.need); }
   // 自分
   const lowHp = me.hpR < 0.3 && me.st === 'ok';
   $('#mebox').classList.toggle('low', lowHp); $('#meWarn').hidden = !lowHp;
@@ -6566,7 +7218,7 @@ function overlays(v, me) {
   if (v.boss && (v.stage === 'boss') && v.boss.st !== 'dead') edge('boss', v.boss.x, v.boss.y + 2, v.boss.z, '#cb4b46', v.boss.st === 'fly' ? '飛行' : 'ボス');
   // 注目のレティクル
   let tgt = null; if (G.lock === 'boss' && v.boss) tgt = { x: v.boss.x, y: v.boss.y + 2.6, z: v.boss.z }; else if (G.lock) { const mo = v.mobs.find(q => q.id === G.lock); if (mo) tgt = { x: mo.x, y: 0.6, z: mo.z }; else G.lock = null; }
-  if (G.lock === 'boss' && v.boss && !['idle', 'walk', 'wind', 'act', 'rec', 'down', 'stun'].includes(v.boss.st)) { G.lock = null; tgt = null; }
+  if (G.lock === 'boss' && v.boss && !['idle', 'walk', 'wind', 'act', 'rec', 'down', 'stun', 'sleep'].includes(v.boss.st)) { G.lock = null; tgt = null; }
   if (!G.lock && G.relockWanted && v.boss && v.boss.st !== 'fly' && v.stage === 'boss') { G.lock = 'boss'; G.relockWanted = false; }
   if (tgt) {
     const lk = G.lock === 'boss' ? v.boss : v.mobs.find(q => q.id === G.lock), rr = G.lock === 'boss' ? 1.4 : 0.4;
@@ -6588,6 +7240,7 @@ function devOverlay(v) {
 function drawMap(v) {
   const c = $('#mapc'); const g = c.getContext('2d'); const W = c.width, H = c.height; g.clearRect(0, 0, W, H);
   if (v.stageId === 'joban') return drawTrainMap(v, g, W, H);
+  if (v.stageId === 'ueno') return drawUenoMap(v, g, W, H);
   const big = $('#map').classList.contains('big');
   const me = v.allies[G.my];
   const inPlaza = v.stage !== 'street';
@@ -6623,6 +7276,26 @@ function drawMap(v) {
   const [mx, mz] = P(me.x, me.z), cy = R.cam.yaw; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy - 0.45) * 28, mz - Math.cos(cy - 0.45) * 28); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy + 0.45) * 28, mz - Math.cos(cy + 0.45) * 28); g.stroke();
 }
 
+/** 上野のミニマップ：広場（34m×28m）。上が奥（駅舎） */
+function drawUenoMap(v, g, W, H) {
+  const D = DATA.UENO, me = v.allies[G.my], sc = Math.min(W / (D.halfX * 2 + 2), H / (D.zMax + 2));
+  const P = (x, z) => [W / 2 - x * sc, H / 2 - (z - D.zMax / 2) * sc];
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, W, H);
+  let [a1, b1] = P(D.halfX, D.zMax), [a2, b2] = P(-D.halfX, 0); g.fillStyle = '#8a4a38'; g.fillRect(Math.min(a1, a2), Math.min(b1, b2), Math.abs(a2 - a1), Math.abs(b2 - b1));
+  g.fillStyle = '#d9cbb4'; g.fillRect(Math.min(a1, a2), Math.min(b1, b2) - 4, Math.abs(a2 - a1), 4);
+  const fs = Math.max(10, Math.round(W / 10)); g.font = `900 ${fs}px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const h of v.hz) if (h.kind === 'circle') { const [x, z] = P(h.x, h.z); g.strokeStyle = h.fx === 'warp' ? 'rgba(190,150,255,.9)' : 'rgba(255,110,60,.9)'; g.lineWidth = 2; g.beginPath(); g.arc(x, z, Math.max(2.5, h.a * sc), 0, 7); g.stroke(); }
+  for (const p of v.pickups) { const [x, z] = P(p.x, p.z); g.fillStyle = p.kind === 'candy' ? '#ff5fa8' : '#d07aa0'; g.beginPath(); g.arc(x, z, p.kind === 'candy' ? 5 : 3, 0, 7); g.fill(); }
+  for (const m of v.mobs) { if (m.dying) continue; const [x, z] = P(m.x, m.z); g.fillStyle = m.kind === 'beam' ? '#c8ff6a' : m.air ? '#ffb0e0' : '#ff5a4a'; g.beginPath(); g.arc(x, z, 2.6, 0, 7); g.fill(); }
+  if (v.boss && v.boss.st !== 'hidden') { const b = v.boss, [x, z] = P(b.x, b.z); g.fillStyle = v.U && v.U.barrier ? '#6ab8ff' : '#7a4ac8'; g.beginPath(); g.arc(x, z, 8, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; g.fillText('ボ', x, z + 1); }
+  v.allies.forEach((a, i) => {
+    if (a.st === 'gone') return; const [x, z] = P(a.x, a.z);
+    if (i === G.my) { g.save(); g.translate(x, z); g.rotate(-a.yaw); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(0, -9); g.lineTo(7, 7); g.lineTo(0, 3); g.lineTo(-7, 7); g.closePath(); g.fill(); g.restore(); }
+    else { g.fillStyle = pcol(i); g.beginPath(); g.arc(x, z, 6, 0, 7); g.fill(); }
+    if (a.st === 'down') { g.strokeStyle = '#7dffb0'; g.lineWidth = 2; g.beginPath(); g.arc(x, z, 9, 0, 7); g.stroke(); }
+  });
+}
+
 /** 車内のミニマップ：左が3号車（後ろ）、右が2号車（前・上野方面）。右端から部下が来る */
 function drawTrainMap(v, g, W, H) {
   const J = DATA.JOBAN, me = v.allies[G.my];
@@ -6650,7 +7323,7 @@ function showResult(v) {
   $('#resEyebrow').textContent = win ? (jb ? '電車クリア' : '勝利') : '敗北'; $('#resTitle').textContent = win ? T[0] : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
   const kv = $('#resKv'); kv.textContent = '';
   const rows = [['ステージ', T[1]], ['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : `協力プレイ（${v.H || 1}人）`]];
-  if (jb || ue) rows.splice(2, 0, ['倒した部下', `${v.kills} / ${v.total}`]);
+  if (jb || ue) rows.splice(2, 0, ['倒した部下', ue ? `${v.kills}体` : `${v.kills} / ${v.total}`]);
   for (const [k, val] of rows) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
   const grid = $('#resGrid'); grid.textContent = '';
   const stats = S.sim ? S.sim.allies.map(a => a.stats) : null;
@@ -6663,6 +7336,7 @@ function showResult(v) {
   $('#resReward').textContent = msg;
   const host = S.kind !== 'client';
   G.nextPrep = !G.coop && jb && win;
+  G.carry = G.nextPrep ? v.allies.map(a => a.items.map(i => i.n)) : null;
   $('#btnRetry').hidden = !host; $('#btnReteam').hidden = !host && G.coop;
   $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : G.nextPrep ? '上野へ進む' : ue && !win ? 'ボスから再挑戦' : '再出動';
   $('#btnResGacha').hidden = !(res && res.ticket > 0) && !((G.acct || G.guest).tickets > 0);
@@ -6735,7 +7409,7 @@ const cleared = id => !!((ACC() && ACC().clear && ACC().clear[id] > 0) || G.sess
 const stageOpen = id => id === 'senju' || (id === 'joban' && cleared('senju')) || (id === 'ueno' && (cleared('joban') || !!(ACC() && ACC().uenoOpen)));
 const STAGES = [
   { id: 'senju', ch: 0, cls: 's1', ic: '🏮', no: '北千住編', nm: '商店街と祭り広場', en: 'トバトーバン（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。', rec: 1, lock: '' },
-  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.total || 135}体`, d: '青い常磐線の2号車・3号車で戦う。1号車からの部下、途中駅と区間の途中で増える部下を全員倒すと上野に着く。', rec: 20, lock: 'トバトーバンを1回倒すと解放' },
+  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.events.reduce((s, e) => s + e.n, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車からの部下、途中駅と区間の途中で増える部下を全員倒すと上野に着く。', rec: 20, lock: 'トバトーバンを1回倒すと解放' },
   { id: 'ueno', ch: 1, cls: 's3', ic: '🎌', no: '上野編', nm: '上野駅前 ヨシノシン', en: 'ヨシノシン（部下を戦わせる指揮官）＋部下36体', d: '駅前の広場で、部下を人形のように操る指揮官と戦う。HP半分の「30分睡眠チャージ」は10秒で3,000ダメージ与えて止めよう。', rec: 40, lock: '電車を1回クリアすると解放' },
 ];
 const avgLv = ids => Math.floor(ids.reduce((s, id) => s + lvOf(id), 0) / Math.max(1, ids.length));
@@ -6941,8 +7615,8 @@ function bindHub() {
   $('#btnStageTeam').onclick = () => { AUDIO.sfx('ok'); openTeam('stage'); };
   document.querySelectorAll('#chTabs .tab').forEach(t => t.onclick = () => { AUDIO.sfx('ui'); G.chTab = +t.dataset.ch; renderSortie(); });
   $('#btnPrepGo').onclick = () => { AUDIO.sfx('ok'); startSolo('ueno'); };
-  $('#btnPrepTeam').onclick = () => { AUDIO.sfx('ok'); openTeam('prep'); };
-  $('#btnPrepHub').onclick = () => { AUDIO.sfx('back'); show('title'); };
+  $('#btnPrepTeam').onclick = () => { AUDIO.sfx('ok'); G.carry = null; openTeam('prep'); };
+  $('#btnPrepHub').onclick = () => { AUDIO.sfx('back'); G.carry = null; show('title'); };
   $('#btnRecommend').onclick = () => { AUDIO.sfx('ok'); recommendParty(); renderTeam(); mtoast('おすすめ編成にしました（いつでも戻せます）'); };
   $('#rsSort').onchange = () => { G.prefs.sort = $('#rsSort').value; persistPrefs(); renderTeam(); };
   $('#rsFilterBtn').onclick = () => { $('#rsFilters').hidden = !$('#rsFilters').hidden; AUDIO.sfx('ui'); };

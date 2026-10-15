@@ -146,6 +146,8 @@ const AUDIO = (() => {
       case 'back': O({ f: 660, f1: 440, dur: 0.1, type: 'triangle', g: 0.12 }); break;
       case 'ready': [0, 0.07, 0.14].forEach((o, i) => O({ f: [988, 1319, 1760][i], dur: 0.25, type: 'triangle', g: 0.12, at: t + o, rev: 0.4 })); break;
       case 'swing': N({ type: 'bandpass', f: 1200, f1: 400, q: 1.2, dur: 0.12, g: 0.12 }); break;
+      case 'whoosh': N({ type: 'bandpass', f: 400, f1: 2400, q: 1.5, dur: 0.3, g: 0.18 }); O({ f: 220, f1: 660, dur: 0.25, type: 'sine', g: 0.08 }); break;
+      case 'snap': N({ type: 'highpass', f: 2500, f1: 1800, dur: 0.05, g: 0.5 }); O({ f: 1600, f1: 900, dur: 0.04, type: 'square', g: 0.06 }); break;
       case 'hit': N({ f: 1400, f1: 300, dur: 0.09, g: 0.32 }); O({ f: 180, f1: 70, dur: 0.1, g: 0.3 }); break;
       case 'hit3': N({ f: 2000, f1: 250, dur: 0.16, g: 0.4 }); O({ f: 160, f1: 50, dur: 0.18, g: 0.42 }); O({ f: 2400, dur: 0.05, type: 'square', g: 0.04 }); break;
       case 'crit': O({ f: 2600, f1: 3400, dur: 0.12, type: 'triangle', g: 0.12, rev: 0.4 }); N({ type: 'highpass', f: 5000, dur: 0.08, g: 0.1 }); break;
