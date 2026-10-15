@@ -40,7 +40,7 @@ const SAVE = (() => {
   function fresh(id, pw) {
     const now = Date.now();
     return { v: VER, id, pw, created: now, saved: 0, chars: freshChars(now), rec: { b: 0, w: 0, mobs: 0, best: 0 }, clear: freshClear(),
-      wins: { tobatoban: 0, yoshinoshin: 0 }, tickets: 0, uenoOpen: false, akibaOpen: false, walkSeen: false, rewarded: [], gacha: { log: [] }, prefs: freshPrefs(), party: null, swap: null, items: null, nick: '', mig: { d: 1, exp3: 1, v5: 1 } };
+      wins: { tobatoban: 0, yoshinoshin: 0 }, tickets: 0, uenoOpen: false, akibaOpen: false, walkSeen: false, rewarded: [], gacha: { log: [] }, prefs: freshPrefs(), party: null, swap: null, items: null, nick: '', fcode: '', mig: { d: 1, exp3: 1, v5: 1 } };
   }
   const int = (v, lo) => Math.max(lo || 0, Math.floor(+v || 0));
   /** 古い形式（Lvだけの記録・ステージ1つの頃）からの移行。何度通しても増えも減りもしない */
@@ -55,7 +55,7 @@ const SAVE = (() => {
     o.wins.tobatoban = int(o.wins.tobatoban); o.wins.yoshinoshin = int(o.wins.yoshinoshin);
     o.rewarded = Array.isArray(s.rewarded) ? s.rewarded.slice(-40) : []; o.gacha = { log: Array.isArray(s.gacha && s.gacha.log) ? s.gacha.log.slice(-30) : [] };
     o.uenoOpen = !!s.uenoOpen || o.clear.ueno_street > 0 || o.clear.ueno > 0; // 旧版でボスを解放済みならそのまま（新規は通りのクリアで解放）
-    o.akibaOpen = !!s.akibaOpen || o.clear.ueno > 0; o.walkSeen = !!s.walkSeen; mig.v5 = 1;
+    o.akibaOpen = !!s.akibaOpen || o.clear.ueno > 0; o.walkSeen = !!s.walkSeen; mig.v5 = 1; o.fcode = typeof s.fcode === 'string' ? s.fcode.slice(0, 8) : '';
     // キャラ：既存10体は必ず所持。追加Dの10体は一度だけ配る（もう持っていれば Lv1 に戻さない）
     const ch = {}; const src = s.chars || {};
     for (const id of INIT_IDS()) ch[id] = Object.assign(charRec(0, 1), src[id] || {});

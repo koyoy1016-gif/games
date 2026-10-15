@@ -117,7 +117,7 @@ function lobbyTick() {
 
 /* ---------- 協力プレイ ---------- */
 function openCoop() { if (G.coop) { mtoast(`ルーム ${G.session ? G.session.code : ''} に参加中です（やめるときは上の「退出」）`, 2400); return; } $('#nick').value = G.nick; show('coop'); }
-function openLobby() { G.coop = true; G.mode = 'lobby'; $('#hud').hidden = true; G.selSlot = 0; show('title'); }
+function openLobby() { G.coop = true; G.mode = 'lobby'; $('#hud').hidden = true; G.selSlot = 0; show('title'); frPublish(true); } // フレンドに「募集中」をすぐ知らせる
 
 /* ---------- 編成（キャラ一覧） ---------- */
 function openRoster(back, slot) {
@@ -374,6 +374,7 @@ function bindLobby() {
   $('#btnLgSet').onclick = () => openSub('settings', 'login');
   document.querySelectorAll('[data-gear]').forEach(b => b.onclick = () => { const s = b.closest('.screen'); openSub('settings', s ? s.id : 'title'); });
   $('#btnSetHow').onclick = () => { G.backPrev = G.back; openSub('how', 'settings'); };
+  bindFriend();
   makeHScroll($('#cards')); makeHScroll($('#stages'));
   // キャラ詳細：中央を左右にドラッグして回す（一覧の横スワイプとは別の場所）
   const rot = $('#chRot'); let rd = null;

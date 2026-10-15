@@ -3,9 +3,18 @@ rules_version = '2';
 // ・meta/counter … 次に割り当てるID。1つずつしか進められず、進めるときは ids/{その番号} を自分のものとして同時に作る
 // ・ids/{番号}   … IDの持ち主（あとから変えられない）
 // ・saves/{uid}  … セーブ。本人だけが読み書きできる
+// ・codes/{コード} … フレンドコード（ランダム8文字）→ 持ち主。コードを知っていれば1件だけ引ける（一覧は取れない）
+// ・profiles/{uid} … なまえ・先頭キャラ・最後に見えた時刻・募集中のルーム。本人とフレンドだけが読める
+// ・friends/{uidA_uidB} … 申請（req）と、相手の承認（ok）。当人どうしだけが読める。招待（inv）もここ
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function fpath(a, b) { return /databases/$(database)/documents/friends/$(a + '_' + b); }
+    function okDoc(p) { return exists(p) && get(p).data.st == 'ok'; }
+    function isFriend(o) { return okDoc(fpath(me(), o)) || okDoc(fpath(o, me())); }
+    function shortStr(v) { return v is string && v.size() <= 12; }
+    function card(d) { return shortStr(d.nm) && d.ch is string && d.ch.size() <= 20 && d.lv is int && d.lv >= 0 && d.lv <= 999; }
 
     match /meta/counter {
       allow read: if signedIn();
@@ -34,6 +43,78 @@ service cloud.firestore {
 
     match /saves/{uid} {
       allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /codes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && code.matches('^[A-HJKMNP-Z2-9]{8}$')
+        && request.resource.data.keys().hasOnly(['uid', 'nm', 'ch', 'lv'])
+        && request.resource.data.uid == me()
+        && card(request.resource.data);
+      allow update: if signedIn()
+        && resource.data.uid == me()
+        && request.resource.data.keys().hasOnly(['uid', 'nm', 'ch', 'lv'])
+        && request.resource.data.uid == me()
+        && card(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /profiles/{uid} {
+      allow get: if signedIn() && (me() == uid || isFriend(uid));
+      allow list: if false;
+      allow create, update: if signedIn() && me() == uid
+        && request.resource.data.keys().hasOnly(['code', 'nm', 'ch', 'lv', 'seen', 'act', 'room'])
+        && card(request.resource.data)
+        && request.resource.data.code is string && request.resource.data.code.size() <= 8
+        && request.resource.data.seen is int
+        && request.resource.data.act in ['', 'room', 'play']
+        && request.resource.data.room is string && request.resource.data.room.size() <= 8;
+      allow delete: if signedIn() && me() == uid;
+    }
+
+    match /friends/{pid} {
+      allow get, list: if signedIn() && me() in resource.data.m;
+      // 申請：自分→相手（相手のフレンドコードを知っていること）
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['m', 'from', 'to', 'tc', 'st', 't', 'fnm', 'fch', 'flv', 'tnm'])
+        && request.resource.data.from == me()
+        && request.resource.data.to is string
+        && request.resource.data.to != me()
+        && request.resource.data.m is list
+        && request.resource.data.m.size() == 2
+        && request.resource.data.m.hasAll([me(), request.resource.data.to])
+        && request.resource.data.m[0] < request.resource.data.m[1]
+        && pid == request.resource.data.m[0] + '_' + request.resource.data.m[1]
+        && request.resource.data.tc is string
+        && get(/databases/$(database)/documents/codes/$(request.resource.data.tc)).data.uid == request.resource.data.to
+        && request.resource.data.st == 'req'
+        && request.resource.data.t is int
+        && shortStr(request.resource.data.fnm) && shortStr(request.resource.data.tnm)
+        && request.resource.data.fch is string && request.resource.data.fch.size() <= 20
+        && request.resource.data.flv is int;
+      // 承認（申請された側だけ）／招待（フレンドどうし。inv だけ書きかえる）
+      allow update: if signedIn()
+        && me() in resource.data.m
+        && request.resource.data.m == resource.data.m
+        && request.resource.data.from == resource.data.from
+        && request.resource.data.to == resource.data.to
+        && (
+          (resource.data.st == 'req' && me() == resource.data.to
+            && request.resource.data.st == 'ok'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 't'])
+            && request.resource.data.t is int)
+          ||
+          (resource.data.st == 'ok' && request.resource.data.st == 'ok'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['inv'])
+            && request.resource.data.inv.keys().hasOnly(['by', 'room', 't'])
+            && request.resource.data.inv.by == me()
+            && request.resource.data.inv.room is string && request.resource.data.inv.room.size() <= 8
+            && request.resource.data.inv.t is int)
+        );
+      // 拒否・取り消し・フレンド解除（どちらからでも）
+      allow delete: if signedIn() && me() in resource.data.m;
     }
 
     match /{other=**} {

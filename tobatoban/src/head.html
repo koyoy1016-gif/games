@@ -475,13 +475,49 @@ a{color:var(--shu)}
 .hm-res .tk{width:26px;height:18px;border-radius:4px;background:linear-gradient(135deg,#ffd23a,#f2a81c);border:2px solid var(--bk);position:relative}
 .hm-res .tk::after{content:"";position:absolute;left:8px;top:2px;bottom:2px;border-left:2px dashed var(--bk)}
 .hm-left{position:absolute;left:max(12px,var(--sal,0px));top:calc(max(8px,var(--sat,0px)) + 50px);bottom:calc(max(10px,var(--sab,0px)) + 62px);display:flex;flex-direction:column;gap:8px;width:clamp(86px,13vmax,112px);z-index:3;justify-content:flex-start}
-.hm-mb{position:relative;flex:0 1 80px;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:14px;border:3px solid var(--bk);background:linear-gradient(#3d7cf5,#1f4fc4);box-shadow:0 4px 0 var(--bk),inset 0 2px 0 rgba(255,255,255,.35);font-size:14px}
+.hm-mb{position:relative;flex:0 1 80px;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:14px;border:3px solid var(--bk);background:linear-gradient(#3d7cf5,#1f4fc4);box-shadow:0 4px 0 var(--bk),inset 0 2px 0 rgba(255,255,255,.35);font-size:14px}
 .hm-mb:active{transform:translateY(3px);box-shadow:0 1px 0 var(--bk)}
 .hm-mb b{font-size:clamp(12px,1.6vmax,15px);line-height:1.1}
 .hm-badge{position:absolute;right:-6px;top:-6px;min-width:22px;height:22px;border-radius:11px;background:#e4572e;border:2px solid var(--bk);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 .mi{width:clamp(26px,4vmax,36px);height:clamp(26px,4vmax,36px);background:center/contain no-repeat}
 .mi-team{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg stroke='%230b1440' stroke-width='1.6'%3E%3Ccircle cx='11' cy='11' r='5' fill='%23ffd23a'/%3E%3Cpath d='M3 27c0-6 4-9 8-9s8 3 8 9z' fill='%23ffd23a'/%3E%3Ccircle cx='22' cy='9' r='4.2' fill='%23fff'/%3E%3Cpath d='M15 24c0-5 3.5-8 7-8s7 3 7 8z' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E")}
 .mi-coop{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg stroke='%230b1440' stroke-width='1.6'%3E%3Ccircle cx='9' cy='12' r='6' fill='%23ff8a6a'/%3E%3Ccircle cx='23' cy='12' r='6' fill='%237df0b0'/%3E%3Cpath d='M5 27c2-5 6-6 11-6s9 1 11 6z' fill='%23fff'/%3E%3Cpath d='M13 12h6' stroke-width='2.4'/%3E%3C/g%3E%3C/svg%3E")}
+.mi-friend{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg stroke='%230b1440' stroke-width='1.6'%3E%3Ccircle cx='13' cy='11' r='5.5' fill='%237df0b0'/%3E%3Cpath d='M3 28c0-6.5 4.5-10 10-10s10 3.5 10 10z' fill='%237df0b0'/%3E%3Ccircle cx='24.5' cy='9.5' r='5.5' fill='%23ffd23a'/%3E%3Cpath d='M24.5 6.5v6M21.5 9.5h6' stroke-width='2.2'/%3E%3C/g%3E%3C/svg%3E")}
+.fr-reload{margin-left:auto}
+.cp-wrap.fr-wrap{gap:8px;width:min(880px,calc(100% - 32px))}
+.fr-off{background:rgba(11,20,64,.6);border:3px solid var(--bk);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;font-weight:700;font-size:14px}
+.fr-off p{margin:0;line-height:1.6}
+#frBody{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:10px;flex:1 1 auto;min-height:0}
+#frBody[hidden]{display:none}
+.fr-col1,.fr-col2{display:flex;flex-direction:column;gap:8px;min-height:0}
+.fr-col1{overflow:auto}.fr-col2{overflow:auto;padding-right:2px}
+.fr-me{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;background:rgba(11,20,64,.6);border:3px solid var(--bk);border-radius:14px;padding:10px 12px}
+.fr-mycode small{display:block;font-size:11px;font-weight:900;opacity:.85}
+.fr-mycode{min-width:0}.fr-mycode b{white-space:nowrap;font-family:var(--f-disp);font-weight:400;font-size:clamp(20px,3.3vmax,28px);letter-spacing:.08em;color:#ffe46a;user-select:all;-webkit-user-select:all}
+.fr-share{grid-column:1/-1}
+.fr-nick{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-weight:900;font-size:13px}
+.fr-nick input{flex:1;min-width:0;font-size:15px!important;padding:5px 10px!important}
+.fr-note{grid-column:1/-1;margin:0;font-size:11px;font-weight:700;opacity:.85}
+.fr-add{display:flex;gap:8px}
+.fr-add input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:.06em}
+.fr-msg{min-height:1.2em;font-size:13px;font-weight:900}
+.fr-msg.ok{color:#9dffcf}.fr-msg.ng{color:#ffb3a3}
+.fr-h{font-weight:900;font-size:14px;margin:4px 2px 2px;text-shadow:0 2px 0 var(--bk)}
+.fr-empty{font-size:13px;font-weight:700;background:rgba(11,20,64,.45);border-radius:10px;padding:10px}
+.fr-row{display:flex;align-items:center;gap:10px;background:linear-gradient(#2d63dc,#1c46b4);border:3px solid var(--bk);border-radius:14px;padding:6px 8px;margin-bottom:6px;box-shadow:0 3px 0 var(--bk)}
+.fr-av{width:46px;height:46px;flex:0 0 46px;border-radius:10px;border:2px solid var(--bk);background:#0f2a74;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:24px}
+.fr-av img{width:100%;height:100%;object-fit:cover}
+.fr-tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.fr-tx b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-sub{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+.fr-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--bk);flex:0 0 auto;background:#7b8bb8}
+.fr-dot.on{background:#3ee08a}.fr-dot.room{background:#ffd23a;box-shadow:0 0 8px #ffd23a}.fr-dot.play{background:#ff8a6a}
+.fr-act{display:flex;gap:6px;flex:0 0 auto;align-items:center}
+.bl-btn.sm{min-height:38px;padding:4px 12px;font-size:14px}
+.fr-rm{background:#4a5684;padding:4px 8px}.fr-rm.armed{background:#c4402a}
+.fr-inv{position:absolute;left:50%;transform:translateX(-50%);top:calc(max(8px,var(--sat,0px)) + 52px);z-index:6;display:flex;align-items:center;gap:8px;max-width:calc(100% - 24px);background:linear-gradient(#ff9d3a,#e4572e);border:3px solid var(--bk);border-radius:14px;padding:6px 8px 6px 12px;box-shadow:0 4px 0 var(--bk);font-weight:900;font-size:14px;text-shadow:0 2px 0 var(--bk);animation:frIn .35s ease-out}
+.fr-inv span{min-width:0}.fr-inv button{white-space:nowrap;flex:0 0 auto}
+@keyframes frIn{from{transform:translate(-50%,-20px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 .mi-gacha{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg stroke='%230b1440' stroke-width='1.6'%3E%3Cpath d='M5 16a11 11 0 0 1 22 0z' fill='%23ff5ad8'/%3E%3Cpath d='M5 16a11 11 0 0 0 22 0z' fill='%23fff'/%3E%3Cpath d='M5 16h22' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23ffd23a'/%3E%3C/g%3E%3C/svg%3E")}
 .hm-room{position:absolute;left:50%;transform:translateX(-50%);top:calc(max(8px,var(--sat,0px)) + 48px);display:flex;gap:8px;align-items:center;background:rgba(11,20,64,.78);border:3px solid var(--bk);border-radius:12px;padding:4px 6px 4px 10px;z-index:3;white-space:nowrap;max-width:60%}
 .hm-room .rm-code{font-family:var(--f-disp);font-size:18px;color:var(--yl);letter-spacing:.12em}
@@ -642,6 +678,7 @@ a{color:var(--shu)}
 .lg-ov{position:absolute;inset:0;background:rgba(12,10,28,.6);display:flex;align-items:center;justify-content:center;padding:10px;overflow:auto;z-index:5}
 .lg-panel{margin:auto;width:min(560px,100%)}
 @container app (max-width:600px){.lg-choices{flex-direction:column}.cp-cols{grid-template-columns:1fr}.cp-wrap{width:calc(100% - 24px)}}
+@container app (max-width:600px){#frBody{grid-template-columns:1fr;flex:none}.fr-col1,.fr-col2{overflow:visible}.fr-row{flex-wrap:wrap}.fr-act{margin-left:auto}}
 </style>
 </head>
 <body>
@@ -660,6 +697,7 @@ a{color:var(--shu)}
     <button class="hm-mb" id="btnTeam" type="button"><span class="mi mi-team" aria-hidden="true"></span><b>編成</b></button>
     <button class="hm-mb" id="btnCoop" type="button"><span class="mi mi-coop" aria-hidden="true"></span><b id="btnCoopLbl">協力プレイ</b></button>
     <button class="hm-mb" id="btnGacha" type="button"><span class="mi mi-gacha" aria-hidden="true"></span><b>ガチャ</b><span class="hm-badge" id="gTixBadge" hidden></span></button>
+    <button class="hm-mb" id="btnFriend" type="button"><span class="mi mi-friend" aria-hidden="true"></span><b>フレンド</b><span class="hm-badge" id="fBadge" hidden></span></button>
   </div>
   <div class="hm-room" id="hmRoom" hidden><span class="rm-code" id="hmRoomCode">----</span><span class="rm-st" id="hmRoomSt"></span><button class="hm-chip" id="btnRoomLeave" type="button">退出</button></div>
   <div class="hm-tags" id="hmTags"></div>
@@ -669,6 +707,7 @@ a{color:var(--shu)}
   </div>
   <div class="hm-msg" id="hmMsg" role="status"></div>
   <button class="gear" id="btnSet" type="button" aria-label="設定"></button>
+  <div class="fr-inv" id="frInv" hidden role="alert"><span id="frInvTxt"></span><button class="bl-btn yellow sm" id="btnFrInvGo" type="button">参加</button><button class="hm-chip" id="btnFrInvX" type="button" aria-label="閉じる">×</button></div>
 </section>
 
 <!-- 協力プレイ：ルームを作る／パスワードで参加（アカウントのパスワードとは別） -->
@@ -684,6 +723,28 @@ a{color:var(--shu)}
     <div class="cp-st"><span class="dot" id="netDot"></span><span id="netMsg">通信の準備を確認しています…</span></div>
   </div>
   <button class="gear" data-gear type="button" aria-label="設定"></button>
+</section>
+
+<!-- フレンド：フレンドコード（ランダム8文字・ログインIDとは別）／招待リンク／申請・承認／オンライン・ルームへ参加・招待 -->
+<section class="screen lobby" id="friend" hidden>
+  <div class="bl-bar"><button class="bl-back" id="btnFrBack" type="button" aria-label="もどる"></button><b>フレンド</b><button class="hm-chip fr-reload" id="btnFrReload" type="button">更新</button></div>
+  <div class="cp-wrap fr-wrap">
+    <div class="fr-off" id="frOff" hidden><p id="frOffTxt"></p><button class="bl-btn yellow" id="btnFrLogin" type="button">ログイン</button></div>
+    <div id="frBody" hidden>
+      <div class="fr-col1">
+      <div class="fr-me">
+        <div class="fr-mycode"><small>あなたのフレンドコード</small><b id="frCode">----</b></div>
+        <button class="hm-chip" id="btnFrCopy" type="button">コピー</button>
+        <button class="bl-btn yellow sm fr-share" id="btnFrShare" type="button">招待リンクを送る</button>
+        <label class="fr-nick"><span>なまえ</span><input type="text" id="frNick" maxlength="10" autocomplete="off" placeholder="もののけ"></label>
+        <p class="fr-note">ログインIDとは別のコードです。教えても大丈夫（パスワードは教えないで）。</p>
+      </div>
+      <div class="fr-add"><input type="text" id="frIn" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="例 K7Q4-2MPX" aria-label="友だちのフレンドコード"><button class="bl-btn" id="btnFrAdd" type="button">申請</button></div>
+      <div class="fr-msg" id="frMsg" role="status"></div>
+      </div>
+      <div class="fr-col2"><div id="frReq"></div><div id="frList"></div></div>
+    </div>
+  </div>
 </section>
 
 <!-- 編成：キャラクター一覧（横スワイプ）。上の並べ替え・戻る・ホームは固定 -->

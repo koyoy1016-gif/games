@@ -80,7 +80,8 @@ async function boot() {
   bindMenus(); bindHud(); bindRotScroll(); applySettings();
   detectNet();
   G.guest = SAVE.fresh(0, ''); fixParty(); // ログインしていない間の所持・レベル（この画面を開いている間だけ）
-  ACCT.setup(); G.mode = 'title'; updateAcctBar(); openLogin('title'); // 開くたびにログインをたずねる
+  frTakeLink(); // 招待リンク（?friend=コード）
+  ACCT.setup(); G.mode = 'title'; updateAcctBar(); openLogin('title', G.frPending && ACCT.mode === 'cloud' ? 'フレンドの招待リンクです。ログインすると申請できます' : ''); // 開くたびにログインをたずねる
   requestAnimationFrame(frame);
 }
 function makeThumbs() {
@@ -247,6 +248,7 @@ async function loginOk(save, msg) {
   if (hadPending) { const ok = await persist(); extra = ok ? '。ログイン前の戦いの記録もセーブしました' : '。ログイン前の戦いの記録はセーブできませんでした'; if (G.run) G.lastAuto = ok ? `ID ${save.id} にセーブしました` : 'セーブできませんでした'; }
   if (back === 'result') refreshResSave();
   mtoast(msg + extra, 2800);
+  frOnLogin(); // フレンド：状態を知らせ、一覧・招待を読む（招待リンクで開いたならフレンド画面へ）
 }
 /** いまの編成なども入れて保存する（サーバーのときは通信が終わるまで待つ） */
 async function persist() {
@@ -337,7 +339,7 @@ function bindAccount() {
   for (const id of ['#lgId', '#lgPw', '#lgPw2']) $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); (G.regMode ? $('#btnRegister') : $('#btnLogin')).click(); } });
   $('#btnAcSave').onclick = async () => { await doSave('account'); renderAccount(); };
   $('#btnAcCopy').onclick = async () => { const t = $('#acCode').textContent; try { await navigator.clipboard.writeText(t); mtoast('引き継ぎコードをコピーしました'); } catch (e) { mtoast('コピーできませんでした。コードを長押しして選んでください', 3000); } };
-  $('#btnLogout').onclick = () => { G.acct = null; ACCT.logout(); AUDIO.sfx('back'); mtoast('ログアウトしました'); openLogin('title'); };
+  $('#btnLogout').onclick = () => { G.acct = null; ACCT.logout(); frOnLogout(); AUDIO.sfx('back'); mtoast('ログアウトしました'); openLogin('title'); };
   $('#btnAcBack').onclick = () => { AUDIO.sfx('back'); show(G.acBack || 'title'); };
   $('#btnResLogin').onclick = async () => { if (G.acct) { const ok = await doSave('result'); G.lastAuto = ok ? `ID ${G.acct.id} にセーブしました` : G.lastAuto; refreshResSave(); } else openLogin('result', 'ログインすると、この戦いの記録もセーブされます'); };
 }

@@ -475,13 +475,49 @@ a{color:var(--shu)}
 .hm-res .tk{width:26px;height:18px;border-radius:4px;background:linear-gradient(135deg,#ffd23a,#f2a81c);border:2px solid var(--bk);position:relative}
 .hm-res .tk::after{content:"";position:absolute;left:8px;top:2px;bottom:2px;border-left:2px dashed var(--bk)}
 .hm-left{position:absolute;left:max(12px,var(--sal,0px));top:calc(max(8px,var(--sat,0px)) + 50px);bottom:calc(max(10px,var(--sab,0px)) + 62px);display:flex;flex-direction:column;gap:8px;width:clamp(86px,13vmax,112px);z-index:3;justify-content:flex-start}
-.hm-mb{position:relative;flex:0 1 80px;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:14px;border:3px solid var(--bk);background:linear-gradient(#3d7cf5,#1f4fc4);box-shadow:0 4px 0 var(--bk),inset 0 2px 0 rgba(255,255,255,.35);font-size:14px}
+.hm-mb{position:relative;flex:0 1 80px;min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:14px;border:3px solid var(--bk);background:linear-gradient(#3d7cf5,#1f4fc4);box-shadow:0 4px 0 var(--bk),inset 0 2px 0 rgba(255,255,255,.35);font-size:14px}
 .hm-mb:active{transform:translateY(3px);box-shadow:0 1px 0 var(--bk)}
 .hm-mb b{font-size:clamp(12px,1.6vmax,15px);line-height:1.1}
 .hm-badge{position:absolute;right:-6px;top:-6px;min-width:22px;height:22px;border-radius:11px;background:#e4572e;border:2px solid var(--bk);font-weight:900;font-size:12px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 .mi{width:clamp(26px,4vmax,36px);height:clamp(26px,4vmax,36px);background:center/contain no-repeat}
 .mi-team{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg stroke='%230b1440' stroke-width='1.6'%3E%3Ccircle cx='11' cy='11' r='5' fill='%23ffd23a'/%3E%3Cpath d='M3 27c0-6 4-9 8-9s8 3 8 9z' fill='%23ffd23a'/%3E%3Ccircle cx='22' cy='9' r='4.2' fill='%23fff'/%3E%3Cpath d='M15 24c0-5 3.5-8 7-8s7 3 7 8z' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E")}
 .mi-coop{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg stroke='%230b1440' stroke-width='1.6'%3E%3Ccircle cx='9' cy='12' r='6' fill='%23ff8a6a'/%3E%3Ccircle cx='23' cy='12' r='6' fill='%237df0b0'/%3E%3Cpath d='M5 27c2-5 6-6 11-6s9 1 11 6z' fill='%23fff'/%3E%3Cpath d='M13 12h6' stroke-width='2.4'/%3E%3C/g%3E%3C/svg%3E")}
+.mi-friend{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg stroke='%230b1440' stroke-width='1.6'%3E%3Ccircle cx='13' cy='11' r='5.5' fill='%237df0b0'/%3E%3Cpath d='M3 28c0-6.5 4.5-10 10-10s10 3.5 10 10z' fill='%237df0b0'/%3E%3Ccircle cx='24.5' cy='9.5' r='5.5' fill='%23ffd23a'/%3E%3Cpath d='M24.5 6.5v6M21.5 9.5h6' stroke-width='2.2'/%3E%3C/g%3E%3C/svg%3E")}
+.fr-reload{margin-left:auto}
+.cp-wrap.fr-wrap{gap:8px;width:min(880px,calc(100% - 32px))}
+.fr-off{background:rgba(11,20,64,.6);border:3px solid var(--bk);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;font-weight:700;font-size:14px}
+.fr-off p{margin:0;line-height:1.6}
+#frBody{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:10px;flex:1 1 auto;min-height:0}
+#frBody[hidden]{display:none}
+.fr-col1,.fr-col2{display:flex;flex-direction:column;gap:8px;min-height:0}
+.fr-col1{overflow:auto}.fr-col2{overflow:auto;padding-right:2px}
+.fr-me{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;background:rgba(11,20,64,.6);border:3px solid var(--bk);border-radius:14px;padding:10px 12px}
+.fr-mycode small{display:block;font-size:11px;font-weight:900;opacity:.85}
+.fr-mycode{min-width:0}.fr-mycode b{white-space:nowrap;font-family:var(--f-disp);font-weight:400;font-size:clamp(20px,3.3vmax,28px);letter-spacing:.08em;color:#ffe46a;user-select:all;-webkit-user-select:all}
+.fr-share{grid-column:1/-1}
+.fr-nick{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-weight:900;font-size:13px}
+.fr-nick input{flex:1;min-width:0;font-size:15px!important;padding:5px 10px!important}
+.fr-note{grid-column:1/-1;margin:0;font-size:11px;font-weight:700;opacity:.85}
+.fr-add{display:flex;gap:8px}
+.fr-add input{flex:1;min-width:0;text-transform:uppercase;letter-spacing:.06em}
+.fr-msg{min-height:1.2em;font-size:13px;font-weight:900}
+.fr-msg.ok{color:#9dffcf}.fr-msg.ng{color:#ffb3a3}
+.fr-h{font-weight:900;font-size:14px;margin:4px 2px 2px;text-shadow:0 2px 0 var(--bk)}
+.fr-empty{font-size:13px;font-weight:700;background:rgba(11,20,64,.45);border-radius:10px;padding:10px}
+.fr-row{display:flex;align-items:center;gap:10px;background:linear-gradient(#2d63dc,#1c46b4);border:3px solid var(--bk);border-radius:14px;padding:6px 8px;margin-bottom:6px;box-shadow:0 3px 0 var(--bk)}
+.fr-av{width:46px;height:46px;flex:0 0 46px;border-radius:10px;border:2px solid var(--bk);background:#0f2a74;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:24px}
+.fr-av img{width:100%;height:100%;object-fit:cover}
+.fr-tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.fr-tx b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-sub{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+.fr-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--bk);flex:0 0 auto;background:#7b8bb8}
+.fr-dot.on{background:#3ee08a}.fr-dot.room{background:#ffd23a;box-shadow:0 0 8px #ffd23a}.fr-dot.play{background:#ff8a6a}
+.fr-act{display:flex;gap:6px;flex:0 0 auto;align-items:center}
+.bl-btn.sm{min-height:38px;padding:4px 12px;font-size:14px}
+.fr-rm{background:#4a5684;padding:4px 8px}.fr-rm.armed{background:#c4402a}
+.fr-inv{position:absolute;left:50%;transform:translateX(-50%);top:calc(max(8px,var(--sat,0px)) + 52px);z-index:6;display:flex;align-items:center;gap:8px;max-width:calc(100% - 24px);background:linear-gradient(#ff9d3a,#e4572e);border:3px solid var(--bk);border-radius:14px;padding:6px 8px 6px 12px;box-shadow:0 4px 0 var(--bk);font-weight:900;font-size:14px;text-shadow:0 2px 0 var(--bk);animation:frIn .35s ease-out}
+.fr-inv span{min-width:0}.fr-inv button{white-space:nowrap;flex:0 0 auto}
+@keyframes frIn{from{transform:translate(-50%,-20px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 .mi-gacha{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg stroke='%230b1440' stroke-width='1.6'%3E%3Cpath d='M5 16a11 11 0 0 1 22 0z' fill='%23ff5ad8'/%3E%3Cpath d='M5 16a11 11 0 0 0 22 0z' fill='%23fff'/%3E%3Cpath d='M5 16h22' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23ffd23a'/%3E%3C/g%3E%3C/svg%3E")}
 .hm-room{position:absolute;left:50%;transform:translateX(-50%);top:calc(max(8px,var(--sat,0px)) + 48px);display:flex;gap:8px;align-items:center;background:rgba(11,20,64,.78);border:3px solid var(--bk);border-radius:12px;padding:4px 6px 4px 10px;z-index:3;white-space:nowrap;max-width:60%}
 .hm-room .rm-code{font-family:var(--f-disp);font-size:18px;color:var(--yl);letter-spacing:.12em}
@@ -642,6 +678,7 @@ a{color:var(--shu)}
 .lg-ov{position:absolute;inset:0;background:rgba(12,10,28,.6);display:flex;align-items:center;justify-content:center;padding:10px;overflow:auto;z-index:5}
 .lg-panel{margin:auto;width:min(560px,100%)}
 @container app (max-width:600px){.lg-choices{flex-direction:column}.cp-cols{grid-template-columns:1fr}.cp-wrap{width:calc(100% - 24px)}}
+@container app (max-width:600px){#frBody{grid-template-columns:1fr;flex:none}.fr-col1,.fr-col2{overflow:visible}.fr-row{flex-wrap:wrap}.fr-act{margin-left:auto}}
 </style>
 </head>
 <body>
@@ -660,6 +697,7 @@ a{color:var(--shu)}
     <button class="hm-mb" id="btnTeam" type="button"><span class="mi mi-team" aria-hidden="true"></span><b>編成</b></button>
     <button class="hm-mb" id="btnCoop" type="button"><span class="mi mi-coop" aria-hidden="true"></span><b id="btnCoopLbl">協力プレイ</b></button>
     <button class="hm-mb" id="btnGacha" type="button"><span class="mi mi-gacha" aria-hidden="true"></span><b>ガチャ</b><span class="hm-badge" id="gTixBadge" hidden></span></button>
+    <button class="hm-mb" id="btnFriend" type="button"><span class="mi mi-friend" aria-hidden="true"></span><b>フレンド</b><span class="hm-badge" id="fBadge" hidden></span></button>
   </div>
   <div class="hm-room" id="hmRoom" hidden><span class="rm-code" id="hmRoomCode">----</span><span class="rm-st" id="hmRoomSt"></span><button class="hm-chip" id="btnRoomLeave" type="button">退出</button></div>
   <div class="hm-tags" id="hmTags"></div>
@@ -669,6 +707,7 @@ a{color:var(--shu)}
   </div>
   <div class="hm-msg" id="hmMsg" role="status"></div>
   <button class="gear" id="btnSet" type="button" aria-label="設定"></button>
+  <div class="fr-inv" id="frInv" hidden role="alert"><span id="frInvTxt"></span><button class="bl-btn yellow sm" id="btnFrInvGo" type="button">参加</button><button class="hm-chip" id="btnFrInvX" type="button" aria-label="閉じる">×</button></div>
 </section>
 
 <!-- 協力プレイ：ルームを作る／パスワードで参加（アカウントのパスワードとは別） -->
@@ -684,6 +723,28 @@ a{color:var(--shu)}
     <div class="cp-st"><span class="dot" id="netDot"></span><span id="netMsg">通信の準備を確認しています…</span></div>
   </div>
   <button class="gear" data-gear type="button" aria-label="設定"></button>
+</section>
+
+<!-- フレンド：フレンドコード（ランダム8文字・ログインIDとは別）／招待リンク／申請・承認／オンライン・ルームへ参加・招待 -->
+<section class="screen lobby" id="friend" hidden>
+  <div class="bl-bar"><button class="bl-back" id="btnFrBack" type="button" aria-label="もどる"></button><b>フレンド</b><button class="hm-chip fr-reload" id="btnFrReload" type="button">更新</button></div>
+  <div class="cp-wrap fr-wrap">
+    <div class="fr-off" id="frOff" hidden><p id="frOffTxt"></p><button class="bl-btn yellow" id="btnFrLogin" type="button">ログイン</button></div>
+    <div id="frBody" hidden>
+      <div class="fr-col1">
+      <div class="fr-me">
+        <div class="fr-mycode"><small>あなたのフレンドコード</small><b id="frCode">----</b></div>
+        <button class="hm-chip" id="btnFrCopy" type="button">コピー</button>
+        <button class="bl-btn yellow sm fr-share" id="btnFrShare" type="button">招待リンクを送る</button>
+        <label class="fr-nick"><span>なまえ</span><input type="text" id="frNick" maxlength="10" autocomplete="off" placeholder="もののけ"></label>
+        <p class="fr-note">ログインIDとは別のコードです。教えても大丈夫（パスワードは教えないで）。</p>
+      </div>
+      <div class="fr-add"><input type="text" id="frIn" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="例 K7Q4-2MPX" aria-label="友だちのフレンドコード"><button class="bl-btn" id="btnFrAdd" type="button">申請</button></div>
+      <div class="fr-msg" id="frMsg" role="status"></div>
+      </div>
+      <div class="fr-col2"><div id="frReq"></div><div id="frList"></div></div>
+    </div>
+  </div>
 </section>
 
 <!-- 編成：キャラクター一覧（横スワイプ）。上の並べ替え・戻る・ホームは固定 -->
@@ -1621,7 +1682,7 @@ const SAVE = (() => {
   function fresh(id, pw) {
     const now = Date.now();
     return { v: VER, id, pw, created: now, saved: 0, chars: freshChars(now), rec: { b: 0, w: 0, mobs: 0, best: 0 }, clear: freshClear(),
-      wins: { tobatoban: 0, yoshinoshin: 0 }, tickets: 0, uenoOpen: false, akibaOpen: false, walkSeen: false, rewarded: [], gacha: { log: [] }, prefs: freshPrefs(), party: null, swap: null, items: null, nick: '', mig: { d: 1, exp3: 1, v5: 1 } };
+      wins: { tobatoban: 0, yoshinoshin: 0 }, tickets: 0, uenoOpen: false, akibaOpen: false, walkSeen: false, rewarded: [], gacha: { log: [] }, prefs: freshPrefs(), party: null, swap: null, items: null, nick: '', fcode: '', mig: { d: 1, exp3: 1, v5: 1 } };
   }
   const int = (v, lo) => Math.max(lo || 0, Math.floor(+v || 0));
   /** 古い形式（Lvだけの記録・ステージ1つの頃）からの移行。何度通しても増えも減りもしない */
@@ -1636,7 +1697,7 @@ const SAVE = (() => {
     o.wins.tobatoban = int(o.wins.tobatoban); o.wins.yoshinoshin = int(o.wins.yoshinoshin);
     o.rewarded = Array.isArray(s.rewarded) ? s.rewarded.slice(-40) : []; o.gacha = { log: Array.isArray(s.gacha && s.gacha.log) ? s.gacha.log.slice(-30) : [] };
     o.uenoOpen = !!s.uenoOpen || o.clear.ueno_street > 0 || o.clear.ueno > 0; // 旧版でボスを解放済みならそのまま（新規は通りのクリアで解放）
-    o.akibaOpen = !!s.akibaOpen || o.clear.ueno > 0; o.walkSeen = !!s.walkSeen; mig.v5 = 1;
+    o.akibaOpen = !!s.akibaOpen || o.clear.ueno > 0; o.walkSeen = !!s.walkSeen; mig.v5 = 1; o.fcode = typeof s.fcode === 'string' ? s.fcode.slice(0, 8) : '';
     // キャラ：既存10体は必ず所持。追加Dの10体は一度だけ配る（もう持っていれば Lv1 に戻さない）
     const ch = {}; const src = s.chars || {};
     for (const id of INIT_IDS()) ch[id] = Object.assign(charRec(0, 1), src[id] || {});
@@ -1894,6 +1955,7 @@ const CLOUD = (() => {
       });
       user = (await L.au.linkWithCredential(anon, L.au.EmailAuthProvider.credential(email(id), pw))).user;
       const s = SAVE.fresh(id, ''); await L.fs.setDoc(L.fs.doc(db, 'saves', user.uid), toDoc(s));
+      await FR.ensure(s); // フレンドコード（失敗してもアカウントは使える）
       return { ok: true, id, save: s, msg: `アカウントを作りました。あなたのIDは ${id} です` };
     } catch (err) { console.warn('register', err); try { if (auth && auth.currentUser && auth.currentUser.isAnonymous) await L.au.signOut(auth); } catch (e2) { } user = null; return { ok: false, msg: errMsg(err) }; }
   }
@@ -1903,15 +1965,108 @@ const CLOUD = (() => {
     try {
       await init();
       user = (await L.au.signInWithEmailAndPassword(auth, email(id), pw)).user;
-      return { ok: true, save: await loadSave(id), msg: `ID ${id} でログインしました` };
+      const s = await loadSave(id); await FR.ensure(s);
+      return { ok: true, save: s, msg: `ID ${id} でログインしました` };
     } catch (err) { console.warn('login', err); user = null; return { ok: false, msg: errMsg(err) }; }
   }
   async function write(s) {
     if (!user) return false;
     try { s.saved = Date.now(); await L.fs.setDoc(L.fs.doc(db, 'saves', user.uid), toDoc(s)); return true; } catch (err) { console.warn('save', err); return false; }
   }
-  async function logout() { user = null; try { if (auth) await L.au.signOut(auth); } catch (e) { } }
-  return { init, register, login, write, logout, email, errMsg, get user() { return user; } };
+  async function logout() { try { if (user) await Promise.race([FR.offline(), new Promise(r => setTimeout(r, 1500))]); } catch (e) { } user = null; FR.reset(); try { if (auth) await L.au.signOut(auth); } catch (e) { } }
+
+  /* ---------- フレンド ----------
+     ・フレンドコード：アカウントごとのランダムな8文字（ログインIDとは別。IDはパスワードと組のログイン情報で、連番なので推測されやすい）
+       codes/{コード} → { uid, nm, ch, lv }（コードを知っている人だけが1件ずつ引ける。一覧は取れない）
+     ・profiles/{uid}：なまえ・先頭キャラ・最後に見えた時刻・募集中のルーム。読めるのは本人とフレンドだけ
+     ・friends/{uidA_uidB}：申請（req）→ 相手が承認（ok）。どちらからでも削除できる。招待（inv）もここに書く */
+  const FR = (() => {
+    const ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 0/O・1/I/L のように見まちがえる字は使わない
+    const MAX = 50, ONLINE = 300e3, INV = 300e3; // オンライン＝5分以内に知らせがあった。招待は5分有効
+    let code = '', card = '', ok = null, last = null, closing = false;
+    const norm = c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const fmt = c => c ? c.slice(0, 4) + '-' + c.slice(4) : '';
+    const valid = c => c.length === 8 && [...c].every(ch => ABC.includes(ch));
+    const gen = () => { let s = ''; const r = new Uint32Array(8); (globalThis.crypto && crypto.getRandomValues) ? crypto.getRandomValues(r) : r.forEach((_, i) => r[i] = Math.random() * 1e9); for (const x of r) s += ABC[x % ABC.length]; return s; };
+    const pid = (a, b) => a < b ? a + '_' + b : b + '_' + a;
+    const cardOf = o => ({ nm: String(o.nm || 'もののけ').slice(0, 10), ch: String(o.ch || '').slice(0, 20), lv: Math.max(0, Math.min(999, Math.floor(+o.lv || 0))) });
+    /** ログイン直後：コードが無ければ作る（重なったら作り直す）。セーブにも書く */
+    async function ensure(s, c0) {
+      code = ''; card = ''; ok = null; last = null; closing = false;
+      try {
+        if (s.fcode && valid(s.fcode)) { code = s.fcode; ok = true; return code; }
+        const c = cardOf(c0 || {});
+        for (let i = 0; i < 5 && !code; i++) {
+          const k = gen();
+          try { await L.fs.setDoc(L.fs.doc(db, 'codes', k), Object.assign({ uid: user.uid }, c)); code = k; } catch (e) { if (!/permission/i.test(e.code || e.message)) throw e; } // 他の人のコードと重なると書けない
+        }
+        if (!code) throw new Error('code');
+        s.fcode = code; await L.fs.setDoc(L.fs.doc(db, 'saves', user.uid), toDoc(s)); ok = true; card = JSON.stringify(c); return code;
+      } catch (e) { console.warn('friend code', e); ok = false; code = ''; return ''; }
+    }
+    /** 自分の状態を知らせる（なまえ・先頭キャラ・いま何をしているか）。act：''／'room'（募集中）／'play' */
+    async function publish(o) {
+      if (!user || !code || (closing && !o.off)) return false; // ログアウト中は「オフライン」だけ
+      const c = cardOf(o), ck = JSON.stringify(c); if (!o.off) last = Object.assign({}, c);
+      const p = Object.assign({ code }, c, { seen: o.off ? 0 : Date.now(), act: ['room', 'play'].includes(o.act) ? o.act : '', room: o.act === 'room' ? String(o.room || '').slice(0, 8) : '' });
+      try {
+        await L.fs.setDoc(L.fs.doc(db, 'profiles', user.uid), p);
+        if (ck !== card) { await L.fs.setDoc(L.fs.doc(db, 'codes', code), Object.assign({ uid: user.uid }, c)); card = ck; }
+        return true;
+      } catch (e) { console.warn('profile', e); return false; }
+    }
+    const offline = () => (closing = true, last) ? publish(Object.assign({}, last, { off: true, act: '' })) : Promise.resolve(false); // このページで知らせた分だけ「オフライン」に戻す
+    async function lookup(c) { c = norm(c); if (!valid(c)) return null; const sn = await L.fs.getDoc(L.fs.doc(db, 'codes', c)); return sn.exists() ? Object.assign({ code: c }, sn.data()) : null; }
+    /** 一覧：フレンド（相手の状態つき）・届いた申請・送った申請 */
+    /** opt.light：相手の状態（profiles）は読まない（ホームでの申請・招待の確認用。読む回数を抑える） */
+    async function list(opt) {
+      const light = !!(opt && opt.light);
+      if (!user) throw Object.assign(new Error('login'), { code: 'login' });
+      const me = user.uid, q = L.fs.query(L.fs.collection(db, 'friends'), L.fs.where('m', 'array-contains', me));
+      const sn = await L.fs.getDocs(q), out = { friends: [], incoming: [], outgoing: [], now: Date.now() };
+      const docs = sn.docs.map(d => Object.assign({ pid: d.id }, d.data()));
+      await Promise.all(docs.map(async d => {
+        const other = d.m[0] === me ? d.m[1] : d.m[0];
+        if (d.st === 'ok') {
+          let pr = null; if (!light) try { const ps = await L.fs.getDoc(L.fs.doc(db, 'profiles', other)); pr = ps.exists() ? ps.data() : null; } catch (e) { }
+          const p = pr || { nm: d.from === me ? d.tnm : d.fnm, ch: '', lv: 0, seen: 0, act: '', room: '' };
+          const on = out.now - (p.seen || 0) < ONLINE;
+          const inv = d.inv && d.inv.by === other && out.now - d.inv.t < INV && (light || on) ? d.inv : null;
+          out.friends.push({ pid: d.pid, uid: other, nm: p.nm || '？', ch: p.ch, lv: p.lv | 0, seen: p.seen || 0, on, act: on ? p.act : '', room: on && p.act === 'room' ? p.room : '', inv, since: d.t, light });
+        } else if (d.to === me) out.incoming.push({ pid: d.pid, uid: other, nm: d.fnm, ch: d.fch, lv: d.flv | 0, t: d.t });
+        else out.outgoing.push({ pid: d.pid, uid: other, nm: d.tnm || '？', t: d.t });
+      }));
+      const ord = (a, b) => (b.act === 'room') - (a.act === 'room') || b.on - a.on || b.seen - a.seen;
+      out.friends.sort(ord); out.incoming.sort((a, b) => b.t - a.t); out.outgoing.sort((a, b) => b.t - a.t);
+      return out;
+    }
+    /** コードで申請する。相手からの申請が来ていれば、そのまま承認になる */
+    async function request(c, mine) {
+      c = norm(c); if (!valid(c)) return { ok: false, msg: 'フレンドコードは8文字です（例：K7Q4-2MPX）' };
+      if (!user) return { ok: false, msg: 'ログインしてください' };
+      if (!code) return { ok: false, msg: 'フレンド機能の準備ができていません（サーバーの設定を確認してください）' };
+      if (c === code) return { ok: false, msg: 'それはあなたのフレンドコードです' };
+      try {
+        const t = await lookup(c); if (!t) return { ok: false, msg: `${fmt(c)} のプレイヤーは見つかりませんでした` };
+        const L0 = await list({ light: true }), all = L0.friends.concat(L0.incoming, L0.outgoing), hit = all.find(x => x.uid === t.uid);
+        if (hit && L0.friends.includes(hit)) return { ok: false, msg: `${hit.nm} さんとはもうフレンドです` };
+        if (hit && L0.incoming.includes(hit)) { await accept(hit.pid, mine); return { ok: true, msg: `${t.nm} さんからも申請が来ていたので、フレンドになりました`, done: true }; }
+        if (hit) return { ok: false, msg: `${t.nm} さんへは申請ずみです（承認を待っています）` };
+        if (all.length >= MAX) return { ok: false, msg: `フレンドと申請は合わせて${MAX}人までです` };
+        const m = [user.uid, t.uid].sort(), me = cardOf(mine || {});
+        await L.fs.setDoc(L.fs.doc(db, 'friends', pid(user.uid, t.uid)), { m, from: user.uid, to: t.uid, tc: c, st: 'req', t: Date.now(), fnm: me.nm, fch: me.ch, flv: me.lv, tnm: String(t.nm || '').slice(0, 10) });
+        return { ok: true, msg: `${t.nm} さんにフレンド申請を送りました` };
+      } catch (e) { console.warn('friend req', e); return { ok: false, msg: errMsg(e) }; }
+    }
+    async function getF(p) { const sn = await L.fs.getDoc(L.fs.doc(db, 'friends', p)); if (!sn.exists()) throw Object.assign(new Error('gone'), { code: 'gone' }); return sn.data(); }
+    async function accept(p) { const d = await getF(p); d.st = 'ok'; d.t = Date.now(); await L.fs.setDoc(L.fs.doc(db, 'friends', p), d); return true; }
+    async function remove(p) { await L.fs.deleteDoc(L.fs.doc(db, 'friends', p)); return true; }
+    async function invite(p, room) { const d = await getF(p); if (d.st !== 'ok') return false; d.inv = { by: user.uid, room: String(room).slice(0, 8), t: Date.now() }; await L.fs.setDoc(L.fs.doc(db, 'friends', p), d); return true; }
+    const wrap = f => async (...a) => { try { return { ok: true, v: await f(...a) } } catch (e) { console.warn('friend', e); return { ok: false, msg: /gone|permission/i.test(e.code || '') ? '相手が取り消したか、すでに削除されています' : errMsg(e) }; } };
+    return { ensure, publish, offline, lookup, list, request, accept: wrap(accept), remove: wrap(remove), invite: wrap(invite), norm, fmt, valid, gen, pid, ONLINE, INV, MAX,
+      reset() { code = ''; card = ''; ok = null; last = null; closing = false; }, get code() { return code; }, get ready() { return ok; } };
+  })();
+  return { init, register, login, write, logout, email, errMsg, FR, get user() { return user; } };
 })();
 
 /** ゲームから使う窓口：サーバー（cloud）か、この端末だけ（local）か */
@@ -1929,6 +2084,8 @@ const ACCT = {
   login(id, pw) { return this.mode === 'cloud' ? CLOUD.login(id, pw) : Promise.resolve(SAVE.login(id, pw)); },
   write(s) { return this.mode === 'cloud' ? CLOUD.write(s) : Promise.resolve(SAVE.write(s)); },
   logout() { if (this.mode === 'cloud') CLOUD.logout(); },
+  /** フレンド機能（サーバー版でログイン中だけ）。使えないときは null */
+  get FR() { return this.mode === 'cloud' && CLOUD.user ? CLOUD.FR : null; },
 };
 
 /* ===== sim.js ===== */
@@ -7744,7 +7901,8 @@ async function boot() {
   bindMenus(); bindHud(); bindRotScroll(); applySettings();
   detectNet();
   G.guest = SAVE.fresh(0, ''); fixParty(); // ログインしていない間の所持・レベル（この画面を開いている間だけ）
-  ACCT.setup(); G.mode = 'title'; updateAcctBar(); openLogin('title'); // 開くたびにログインをたずねる
+  frTakeLink(); // 招待リンク（?friend=コード）
+  ACCT.setup(); G.mode = 'title'; updateAcctBar(); openLogin('title', G.frPending && ACCT.mode === 'cloud' ? 'フレンドの招待リンクです。ログインすると申請できます' : ''); // 開くたびにログインをたずねる
   requestAnimationFrame(frame);
 }
 function makeThumbs() {
@@ -7911,6 +8069,7 @@ async function loginOk(save, msg) {
   if (hadPending) { const ok = await persist(); extra = ok ? '。ログイン前の戦いの記録もセーブしました' : '。ログイン前の戦いの記録はセーブできませんでした'; if (G.run) G.lastAuto = ok ? `ID ${save.id} にセーブしました` : 'セーブできませんでした'; }
   if (back === 'result') refreshResSave();
   mtoast(msg + extra, 2800);
+  frOnLogin(); // フレンド：状態を知らせ、一覧・招待を読む（招待リンクで開いたならフレンド画面へ）
 }
 /** いまの編成なども入れて保存する（サーバーのときは通信が終わるまで待つ） */
 async function persist() {
@@ -8001,7 +8160,7 @@ function bindAccount() {
   for (const id of ['#lgId', '#lgPw', '#lgPw2']) $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); (G.regMode ? $('#btnRegister') : $('#btnLogin')).click(); } });
   $('#btnAcSave').onclick = async () => { await doSave('account'); renderAccount(); };
   $('#btnAcCopy').onclick = async () => { const t = $('#acCode').textContent; try { await navigator.clipboard.writeText(t); mtoast('引き継ぎコードをコピーしました'); } catch (e) { mtoast('コピーできませんでした。コードを長押しして選んでください', 3000); } };
-  $('#btnLogout').onclick = () => { G.acct = null; ACCT.logout(); AUDIO.sfx('back'); mtoast('ログアウトしました'); openLogin('title'); };
+  $('#btnLogout').onclick = () => { G.acct = null; ACCT.logout(); frOnLogout(); AUDIO.sfx('back'); mtoast('ログアウトしました'); openLogin('title'); };
   $('#btnAcBack').onclick = () => { AUDIO.sfx('back'); show(G.acBack || 'title'); };
   $('#btnResLogin').onclick = async () => { if (G.acct) { const ok = await doSave('result'); G.lastAuto = ok ? `ID ${G.acct.id} にセーブしました` : G.lastAuto; refreshResSave(); } else openLogin('result', 'ログインすると、この戦いの記録もセーブされます'); };
 }
@@ -9277,7 +9436,7 @@ function lobbyTick() {
 
 /* ---------- 協力プレイ ---------- */
 function openCoop() { if (G.coop) { mtoast(`ルーム ${G.session ? G.session.code : ''} に参加中です（やめるときは上の「退出」）`, 2400); return; } $('#nick').value = G.nick; show('coop'); }
-function openLobby() { G.coop = true; G.mode = 'lobby'; $('#hud').hidden = true; G.selSlot = 0; show('title'); }
+function openLobby() { G.coop = true; G.mode = 'lobby'; $('#hud').hidden = true; G.selSlot = 0; show('title'); frPublish(true); } // フレンドに「募集中」をすぐ知らせる
 
 /* ---------- 編成（キャラ一覧） ---------- */
 function openRoster(back, slot) {
@@ -9534,6 +9693,7 @@ function bindLobby() {
   $('#btnLgSet').onclick = () => openSub('settings', 'login');
   document.querySelectorAll('[data-gear]').forEach(b => b.onclick = () => { const s = b.closest('.screen'); openSub('settings', s ? s.id : 'title'); });
   $('#btnSetHow').onclick = () => { G.backPrev = G.back; openSub('how', 'settings'); };
+  bindFriend();
   makeHScroll($('#cards')); makeHScroll($('#stages'));
   // キャラ詳細：中央を左右にドラッグして回す（一覧の横スワイプとは別の場所）
   const rot = $('#chRot'); let rd = null;
@@ -9542,7 +9702,213 @@ function bindLobby() {
   const end = () => { rd = null; }; rot.addEventListener('pointerup', end); rot.addEventListener('pointercancel', end);
 }
 
-window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX, THREE, GC, WALK, LOBBY3D };
+/* ===== ui_friend.js ===== */
+/* =====================================================================
+   ui_friend.js — フレンド（サーバー版でログイン中だけ）
+   ・フレンドコード（ランダム8文字）か招待リンク（?friend=コード）で申請 → 相手が承認
+   ・フレンドのオンライン／募集中のルームが見え、「参加」でそのまま協力プレイへ。ホスト中は「招待」を送れる
+   ・通信は読み込みだけ（常時接続はしない）：フレンド画面は20秒ごと（相手の状態も読む）、ほかの画面は90秒ごと（申請・招待だけ）、戦闘中は読まない
+   ・自分の状態は変わったときと2分ごとに知らせる（Firestore の無料枠の読み書き回数を使いすぎないように）
+   ===================================================================== */
+const FRND = { data: null, busy: false, lastList: 0, lastPub: 0, pubKey: '', dismissed: new Set(), invShown: null, rmArm: null, err: '' };
+const frFmt = c => CLOUD.FR.fmt(c);
+function frAgo(t, now) {
+  if (!t) return 'オフライン';
+  const m = Math.floor((now - t) / 60000);
+  if (m < 1) return '最終 たった今'; if (m < 60) return `最終 ${m}分前`; if (m < 1440) return `最終 ${Math.floor(m / 60)}時間前`; return `最終 ${Math.floor(m / 1440)}日前`;
+}
+/** いまの自分の状態：ホストで仲間を待っている＝募集中、戦闘中＝プレイ中 */
+function frMine() {
+  const S = G.session, ch = G.party[0];
+  const room = G.coop && S && S.kind === 'host' && G.mode === 'lobby' && S.code ? S.code : '';
+  const act = room ? 'room' : ['play', 'pause', 'result', 'walk'].includes(G.mode) && S ? 'play' : '';
+  return { nm: (G.nick || 'もののけ').slice(0, 10), ch, lv: lvOf(ch), act, room };
+}
+/** 状態が変わったら（または60秒ごとに）知らせる */
+async function frPublish(force) {
+  const F = ACCT.FR; if (!F || !F.code) return; // 裏にいても知らせる（ホストがLINEで合言葉を送っている間も「募集中」のまま）
+  const m = frMine(), k = JSON.stringify(m), now = Date.now();
+  if (!force && k === FRND.pubKey && now - FRND.lastPub < 120000) return;
+  if (!force && now - FRND.lastPub < 2500) return; // 続けて変わるときはまとめる
+  FRND.pubKey = k; FRND.lastPub = now; await F.publish(m);
+}
+/** 一覧を読みなおす。light：相手の状態は読まず、前回の状態に申請・招待だけ重ねる */
+async function frRefresh(force, light) {
+  const F = ACCT.FR; if (!F) return;
+  if (FRND.busy) { if (!light) FRND.again = true; return; } // 読み込み中なら、終わってからもう一度（状態つきで）
+  FRND.busy = true;
+  try {
+    const d = await F.list({ light: !!light });
+    if (light && FRND.data) { const prev = new Map(FRND.data.friends.filter(f => !f.light).map(f => [f.pid, f])); d.friends = d.friends.map(f => prev.has(f.pid) ? Object.assign({}, prev.get(f.pid), { inv: f.inv }) : f); }
+    FRND.data = d; FRND.err = '';
+  }
+  catch (e) { console.warn('friends', e); FRND.err = CLOUD.errMsg(e); }
+  FRND.busy = false; FRND.lastList = Date.now();
+  frBadge(); frInviteCheck();
+  if (!$('#friend').hidden) renderFriend();
+  if (FRND.again) { FRND.again = false; return frRefresh(true, false); }
+}
+function frBadge() {
+  const d = FRND.data, n = d ? d.incoming.length + d.friends.filter(f => f.inv && !FRND.dismissed.has(f.pid + f.inv.t)).length : 0;
+  const b = $('#fBadge'); b.hidden = !n; b.textContent = n > 9 ? '9+' : String(n);
+}
+/** フレンドからの招待（5分以内）を、ホームにいるときだけ知らせる */
+function frInviteCheck() {
+  const d = FRND.data, box = $('#frInv');
+  const f = d && !G.coop && (G.mode === 'title') && d.friends.find(x => x.inv && !FRND.dismissed.has(x.pid + x.inv.t));
+  if (!f) { box.hidden = true; FRND.invShown = null; return; }
+  FRND.invShown = f; box.hidden = false;
+  $('#frInvTxt').textContent = `${f.nm} さんから協力プレイの招待（ルーム ${f.inv.room}）`;
+}
+function frTick() {
+  if (!ACCT.FR) { if (!$('#frInv').hidden) $('#frInv').hidden = true; return; }
+  frPublish(false);
+  if (document.hidden) return;
+  const inBattle = ['play', 'pause', 'walk'].includes(G.mode);
+  const open = !$('#friend').hidden, every = open ? 20000 : 90000;
+  if (!inBattle && Date.now() - FRND.lastList > every) frRefresh(false, !open);
+  if (inBattle && !$('#frInv').hidden) $('#frInv').hidden = true;
+}
+/* ---------- 画面 ---------- */
+function openFriend(prefill) {
+  if (G.mode === 'lobby' && G.session && G.session.kind === 'client') { mtoast('参加中のルームから退出すると使えます', 2200); return; }
+  FRND.rmArm = null;
+  if (prefill) $('#frIn').value = frFmt(CLOUD.FR.norm(prefill));
+  $('#frNick').value = G.nick || '';
+  show('friend'); renderFriend();
+  if (ACCT.FR) { frPublish(true); frRefresh(true); }
+}
+function frMsg(s, ok) { const m = $('#frMsg'); m.textContent = s || ''; m.className = 'fr-msg' + (s ? ok ? ' ok' : ' ng' : ''); }
+function renderFriend() {
+  const F = ACCT.FR, off = $('#frOff'), body = $('#frBody');
+  if (!F || !F.code) {
+    body.hidden = true; off.hidden = false;
+    const t = $('#frOffTxt'), b = $('#btnFrLogin');
+    if (ACCT.mode !== 'cloud') { t.textContent = 'フレンドは、公開ページ（GitHub Pages）でアカウントにログインすると使えます。この画面ではセーブが端末の中だけなので使えません。'; b.hidden = true; }
+    else if (!G.acct) { t.textContent = 'フレンドを使うにはログインしてください。フレンドコードはアカウントごとに1つ作られます。'; b.hidden = false; }
+    else { t.textContent = 'フレンド機能の準備ができませんでした。サーバーの設定（Firestoreのルール）が新しくなっているか確認して、ログインしなおしてください。'; b.hidden = true; }
+    return;
+  }
+  off.hidden = true; body.hidden = false;
+  $('#frCode').textContent = frFmt(F.code);
+  const d = FRND.data, now = Date.now();
+  // 届いた申請・送った申請
+  const rq = $('#frReq'); rq.textContent = '';
+  if (d && (d.incoming.length || d.outgoing.length)) {
+    if (d.incoming.length) rq.appendChild(el('div', 'fr-h', `届いた申請（${d.incoming.length}）`));
+    for (const r of d.incoming) {
+      const row = frRow(r.ch, r.nm, `Lv${r.lv} ・ ${frAgo(r.t, now).replace('最終 ', '')} 申請`, '');
+      const a = el('button', 'bl-btn yellow sm', '承認'); a.type = 'button'; a.onclick = () => frDo(() => CLOUD.FR.accept(r.pid), `${r.nm} さんとフレンドになりました`);
+      const n = el('button', 'hm-chip', '拒否'); n.type = 'button'; n.onclick = () => frDo(() => CLOUD.FR.remove(r.pid), '申請を断りました');
+      row.querySelector('.fr-act').append(a, n); rq.appendChild(row);
+    }
+    if (d.outgoing.length) rq.appendChild(el('div', 'fr-h', `送った申請（承認待ち ${d.outgoing.length}）`));
+    for (const r of d.outgoing) {
+      const row = frRow('', r.nm, '承認を待っています', '');
+      const c = el('button', 'hm-chip', '取り消し'); c.type = 'button'; c.onclick = () => frDo(() => CLOUD.FR.remove(r.pid), '申請を取り消しました');
+      row.querySelector('.fr-act').append(c); rq.appendChild(row);
+    }
+  }
+  // フレンド
+  const ls = $('#frList'); ls.textContent = '';
+  const fs = d ? d.friends : [];
+  ls.appendChild(el('div', 'fr-h', d ? `フレンド（${fs.length}／${CLOUD.FR.MAX}）` : 'フレンド（読み込み中…）'));
+  if (FRND.err) ls.appendChild(el('div', 'fr-empty', FRND.err));
+  else if (d && !fs.length) ls.appendChild(el('div', 'fr-empty', 'まだフレンドがいません。上のコードを友だちに送るか、友だちのコードを入れて申請しましょう。'));
+  const mine = frMine();
+  for (const f of fs) {
+    const st = f.light ? '確認中…' : f.act === 'room' ? `募集中（ルーム${f.room}）` : f.act === 'play' ? 'プレイ中' : f.on ? 'オンライン' : frAgo(f.seen, now);
+    const row = frRow(f.ch, f.nm, (f.lv && f.act !== 'room' ? `Lv${f.lv} ・ ` : '') + st, f.act === 'room' ? 'room' : f.act === 'play' ? 'play' : f.on ? 'on' : 'off');
+    const act = row.querySelector('.fr-act');
+    if (f.act === 'room' && !G.coop) { const j = el('button', 'bl-btn yellow sm', '参加'); j.type = 'button'; j.onclick = () => frJoin(f, f.room); act.appendChild(j); }
+    if (mine.act === 'room' && f.on && f.act !== 'play' && f.act !== 'room') {
+      const sent = f.invSent && now - f.invSent < 60000;
+      const v = el('button', 'bl-btn sm', sent ? '招待ずみ' : '招待'); v.type = 'button'; v.disabled = sent;
+      v.onclick = async () => { v.disabled = true; const r = await CLOUD.FR.invite(f.pid, mine.room); if (r.ok) { f.invSent = Date.now(); AUDIO.sfx('ok'); frMsg(`${f.nm} さんに招待を送りました（ルーム ${mine.room}）`, true); v.textContent = '招待ずみ'; } else { frMsg(r.msg, false); v.disabled = false; } };
+      act.appendChild(v);
+    }
+    const armed = FRND.rmArm === f.pid;
+    const rm = el('button', 'hm-chip fr-rm' + (armed ? ' armed' : ''), armed ? '本当に解除？' : '解除'); rm.type = 'button';
+    rm.onclick = () => { if (FRND.rmArm !== f.pid) { FRND.rmArm = f.pid; AUDIO.sfx('ui'); renderFriend(); return; } FRND.rmArm = null; frDo(() => CLOUD.FR.remove(f.pid), `${f.nm} さんとのフレンドを解除しました`); };
+    act.appendChild(rm);
+    ls.appendChild(row);
+  }
+}
+function frRow(ch, nm, sub, dot) {
+  const row = el('div', 'fr-row'), av = el('div', 'fr-av');
+  if (ch && G.thumbs[ch]) { const im = el('img'); im.src = G.thumbs[ch]; im.alt = ''; av.appendChild(im); } else av.textContent = '👤';
+  const tx = el('div', 'fr-tx'); tx.append(el('b', '', nm || '？'));
+  const s = el('span', 'fr-sub'); if (dot) s.appendChild(el('i', 'fr-dot ' + dot)); s.append(sub); tx.appendChild(s);
+  row.append(av, tx, el('div', 'fr-act')); return row;
+}
+async function frDo(fn, okMsg) {
+  if (FRND.busy) return; AUDIO.sfx('ui');
+  const r = await fn(); if (r && r.ok) { AUDIO.sfx('ok'); frMsg(okMsg, true); } else frMsg((r && r.msg) || 'うまくいきませんでした', false);
+  await frRefresh(true);
+}
+async function frAdd() {
+  const F = ACCT.FR; if (!F) return;
+  const v = $('#frIn').value; const b = $('#btnFrAdd'); b.disabled = true; frMsg('申請しています…', true);
+  const r = await F.request(v, frMine()); b.disabled = false;
+  frMsg(r.msg, r.ok); if (r.ok) { AUDIO.sfx('ok'); $('#frIn').value = ''; } else AUDIO.sfx('back');
+  await frRefresh(true);
+}
+/** フレンドのルームへ（協力プレイの「パスワードで参加」と同じ） */
+async function frJoin(f, room) {
+  if (G.coop) { mtoast('いまのルームから退出してから参加してください', 2400); return; }
+  if ($('#btnJoin').disabled) { mtoast('このブラウザでは協力プレイを使えません', 2600); return; }
+  $('#frInv').hidden = true; if (f.inv) FRND.dismissed.add(f.pid + f.inv.t);
+  $('#code').value = room; $('#nick').value = G.nick || '';
+  await startJoin();
+  if (!G.coop) mtoast('ルームにつなげませんでした。もう一度ためしてください', 2800);
+}
+function frShareUrl(code) { return location.origin + location.pathname + '?friend=' + code; }
+async function frShare() {
+  const F = ACCT.FR; if (!F || !F.code) return;
+  const url = frShareUrl(F.code), text = `BIGバスターズでフレンドになろう！ フレンドコード ${frFmt(F.code)}`;
+  try { if (navigator.share) { await navigator.share({ title: 'BIGバスターズ', text, url }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  frCopy(text + '\n' + url, '招待リンクをコピーしました。LINEなどに貼りつけて送ってください');
+}
+async function frCopy(s, msg) {
+  let ok = false;
+  try { await navigator.clipboard.writeText(s); ok = true; } catch (e) {
+    try { const t = document.createElement('textarea'); t.value = s; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); ok = document.execCommand('copy'); t.remove(); } catch (e2) { }
+  }
+  frMsg(ok ? msg : `コピーできませんでした。${s.split('\n')[0]}`, ok); if (ok) AUDIO.sfx('ok');
+}
+/** 招待リンク（?friend=コード）で開いたとき：ログイン後にフレンド画面へ（コードを入れておく） */
+function frTakeLink() {
+  const m = /[?&]friend=([A-Za-z0-9-]{8,9})/.exec(location.search); if (!m) return;
+  const c = CLOUD.FR.norm(m[1]); if (CLOUD.FR.valid(c)) G.frPending = c;
+  try { const u = new URL(location.href); u.searchParams.delete('friend'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
+}
+/** ログインできたとき（ui.js の loginOk から） */
+function frOnLogin() {
+  FRND.data = null; FRND.pubKey = ''; FRND.lastPub = 0; FRND.lastList = 0; FRND.err = ''; frBadge();
+  if (!$('#friend').hidden) renderFriend();
+  if (!ACCT.FR) return;
+  frPublish(true); frRefresh(true, $('#friend').hidden);
+  if (G.frPending) { const c = G.frPending; G.frPending = null; if (c !== ACCT.FR.code) { openFriend(c); frMsg('招待リンクのフレンドコードを入れました。「申請」を押すと申請します', true); } }
+}
+function frOnLogout() { FRND.data = null; FRND.err = ''; frBadge(); $('#frInv').hidden = true; }
+function bindFriend() {
+  $('#btnFriend').onclick = () => { AUDIO.sfx('ok'); openFriend(); };
+  $('#btnFrBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
+  $('#btnFrReload').onclick = () => { AUDIO.sfx('ui'); frRefresh(true); };
+  $('#btnFrAdd').onclick = () => frAdd();
+  $('#frIn').onkeydown = e => { if (e.key === 'Enter') frAdd(); };
+  $('#frIn').oninput = () => { const i = $('#frIn'), c = CLOUD.FR.norm(i.value).slice(0, 8); const v = c.length > 4 ? c.slice(0, 4) + '-' + c.slice(4) : c; if (v !== i.value) i.value = v; };
+  $('#btnFrCopy').onclick = () => { const F = ACCT.FR; if (F && F.code) frCopy(frFmt(F.code), 'フレンドコードをコピーしました'); };
+  $('#btnFrShare').onclick = () => frShare();
+  $('#btnFrLogin').onclick = () => { AUDIO.sfx('ui'); openLogin('friend', 'ログインするとフレンドを使えます'); };
+  $('#frNick').onchange = () => { G.nick = ($('#frNick').value.trim() || '').slice(0, 10); $('#frNick').value = G.nick; $('#nick').value = G.nick; STORE.set('nick', G.nick); frPublish(true); if (G.acct) persist(); frMsg('なまえを変えました', true); };
+  $('#btnFrInvGo').onclick = () => { const f = FRND.invShown; if (f && f.inv) { AUDIO.sfx('ok'); frJoin(f, f.inv.room); } };
+  $('#btnFrInvX').onclick = () => { const f = FRND.invShown; if (f && f.inv) FRND.dismissed.add(f.pid + f.inv.t); $('#frInv').hidden = true; frBadge(); };
+  setInterval(() => { try { frTick(); } catch (e) { console.warn(e); } }, 2000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && ACCT.FR) { frPublish(true); frRefresh(false, $('#friend').hidden); } });
+}
+
+window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX, THREE, GC, WALK, LOBBY3D, FRND };
 
 </script>
 </body>
