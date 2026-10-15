@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#1b1838">
+<title>北千住もののけ夜警隊</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Yuji+Syuku&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+<style>
+/* 夜祭りの札：紙（生成り）と朱・金、HUDは藍の半透明 */
+:root{
+  --ink:#1f1a2e; --paper:#fff6e6; --paper2:#f6e9cf; --shu:#e4572e; --gold:#f2c94c; --ai:#1b1838; --ai2:#2b2760; --veil:rgba(18,16,40,.72);
+  --hp:#249b6b; --boss:#cb4b46; --sp:#7446b8; --muted:#8a8199; --ok:#2fa36b;
+  --f-body:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+  --f-disp:"Dela Gothic One","Hiragino Sans",sans-serif;
+  --f-sign:"Yuji Syuku","Hiragino Mincho ProN","Yu Mincho",serif;
+  --ui:1;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#1b1838;color:var(--paper);font-family:var(--f-body)}
+body{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+[hidden]{display:none!important}
+button{font-family:var(--f-body);font-weight:900;cursor:pointer;border:0;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* ---------- メニュー画面 ---------- */
+.screen{position:fixed;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;display:flex;align-items:flex-start;justify-content:center;
+  padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));
+  background:radial-gradient(120% 90% at 50% 0%,rgba(27,24,56,.15),rgba(12,10,28,.72))}
+.screen>.panel{margin:auto}
+.panel{background:var(--paper);color:var(--ink);border-radius:18px;padding:18px;width:min(560px,100%);display:flex;flex-direction:column;gap:12px;
+  box-shadow:0 0 0 3px var(--ink),0 0 0 6px var(--shu),0 14px 40px rgba(0,0,0,.45);position:relative;user-select:text;-webkit-user-select:text}
+.panel.wide{width:min(980px,100%)}
+.panel::before{content:"";position:absolute;inset:8px;border:1.5px dashed rgba(228,87,46,.35);border-radius:12px;pointer-events:none}
+.eyebrow{font-family:var(--f-sign);color:var(--shu);font-size:15px;letter-spacing:.12em}
+h1{font-family:var(--f-disp);font-weight:400;margin:0;font-size:clamp(30px,7.6vw,52px);line-height:1.08;text-wrap:balance}
+h1 .em{color:var(--shu)}
+h2{font-family:var(--f-disp);font-weight:400;margin:0;font-size:22px}
+h3{margin:0;font-size:15px;font-weight:900}
+p{margin:0;line-height:1.7;font-size:14px}
+.small{font-size:12px;color:#5d5570;line-height:1.6}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{padding:13px 18px;border-radius:14px;font-size:16px;border:2.5px solid var(--ink);box-shadow:0 3px 0 var(--ink);flex:1 1 150px;background:#fff;color:var(--ink);transition:transform .06s;min-height:48px}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.btn.main{background:var(--shu);color:#fff}
+.btn.gold{background:var(--gold)}
+.btn.ghost{background:transparent}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 12px;font-weight:900;font-size:13px;border:2px solid var(--ink);background:#fff;color:var(--ink);min-height:40px}
+.chip.on{background:var(--ink);color:var(--paper)}
+input[type=text]{font:900 18px var(--f-body);padding:11px 14px;border:2.5px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);width:100%;min-width:0}
+.status{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:#5d5570;line-height:1.55}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none;margin-top:4px}.dot.ok{background:var(--ok)}.dot.ng{background:var(--shu)}
+a{color:var(--shu)}
+
+/* タイトル */
+#title .panel{gap:14px}
+.titlebar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.lantern-badge{font-family:var(--f-sign);writing-mode:vertical-rl;background:var(--shu);color:#fff;border-radius:10px;padding:10px 6px;font-size:15px;line-height:1.2;box-shadow:0 0 18px rgba(255,140,60,.6)}
+.menu-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.menu-list .btn{flex:none}
+.menu-list .span{grid-column:1/-1}
+
+/* 編成 */
+.team{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px}
+@media (max-width:720px){.team{grid-template-columns:1fr}}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.slot{border:2.5px solid var(--ink);border-radius:12px;background:#fff;padding:6px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;position:relative;min-height:48px}
+.slot.sel{background:#fff1c9;box-shadow:0 0 0 3px var(--gold)}
+.slot img{width:56px;height:56px;object-fit:contain}
+.slot .nm{font-size:12px;font-weight:900;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pn{font-family:var(--f-disp);font-size:12px;color:#fff;border-radius:6px;padding:0 6px;line-height:1.5}
+.slot .pn{position:absolute;left:4px;top:4px}
+.slot .tag{font-size:10px;background:var(--muted);color:#fff;border-radius:6px;padding:0 6px}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+@media (max-width:480px){.cards{grid-template-columns:repeat(5,1fr)}}
+.card{border:2px solid #d9cfba;border-radius:12px;background:#fff;padding:3px 2px 5px;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;color:var(--ink);position:relative;min-height:48px}
+.card img{width:100%;aspect-ratio:1;object-fit:contain}
+.card .nm{font-size:10.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.card .el{font-size:10px;color:#fff;border-radius:5px;padding:0 5px}
+.card.cur{border-color:var(--ink);box-shadow:0 0 0 2px var(--gold)}
+.card .used{position:absolute;top:2px;right:2px;display:flex;gap:2px}
+.detail{background:#fff;border:2.5px solid var(--ink);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.detail .hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.detail .hd b{font-family:var(--f-disp);font-weight:400;font-size:20px}
+.stat{display:grid;grid-template-columns:5.5em 1fr;gap:4px 8px;align-items:center;font-size:12px}
+.bar{height:9px;background:#efe6d3;border-radius:6px;overflow:hidden;border:1.5px solid var(--ink)}
+.bar>i{display:block;height:100%}
+.moves{display:grid;grid-template-columns:auto 1fr;gap:5px 8px;font-size:12.5px;line-height:1.5}
+.k{font-family:var(--f-disp);font-size:12px;color:#fff;border-radius:6px;padding:1px 7px;text-align:center;align-self:start}
+.kA{background:#c27a14}.kX{background:#3f78d6}.kY{background:#187c80}.kS{background:#7446b8}.kP{background:#5d5570}
+.items{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.item{border:2px solid #d9cfba;border-radius:10px;background:#fff;padding:6px 2px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--ink);min-height:48px}
+.item.on{border-color:var(--ink);background:#e9f7ee}
+.item b{font-size:20px}
+
+/* データ一覧 */
+.dtable{width:100%;border-collapse:collapse;font-size:12px}
+.dtable th,.dtable td{border-bottom:1px solid #e6dcc6;padding:5px 4px;text-align:left;vertical-align:top}
+.dtable th{position:sticky;top:0;background:var(--paper2);font-size:11px}
+.badge{display:inline-block;border-radius:6px;padding:0 6px;font-size:10.5px;font-weight:900;color:#fff;white-space:nowrap}
+.b-doc{background:#2f6fb5}.b-approx{background:#c98a12}.b-meas{background:#2fa36b}.b-proto{background:#8a8199}
+.grp{font-family:var(--f-disp);font-weight:400;font-size:14px;padding-top:12px}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;pointer-events:none;font-family:var(--f-body)}
+#hud .hb{position:absolute;pointer-events:auto;touch-action:none;transition:opacity .3s}
+#hud.intro .btnc,#hud.intro .itm,#hud.intro .stick,#hud.intro #mebox{opacity:0!important;pointer-events:none}
+.bossbox{display:flex;flex-direction:column;gap:3px}
+.bossname{display:flex;align-items:baseline;gap:8px;font-weight:900;font-size:15px;text-shadow:0 1px 2px #000}
+.bossname .df{font-size:11px;background:var(--shu);border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
+.bossname .ph{font-size:11px;background:#7a1f3a;border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
+.bossname .st{font-size:11px;color:var(--gold)}
+.hpbar{position:relative;height:14px;border-radius:7px;background:rgba(10,8,24,.75);border:2px solid #0d0b1d;overflow:hidden}
+.hpbar i{position:absolute;inset:0 auto 0 0;border-radius:5px}
+.hpbar i.lag{background:#ffd9b0;transition:width .5s .4s}
+.hpbar i.fill{background:linear-gradient(#ef7a74,#cb4b46 55%,#8f2a26);transition:width .1s}
+.hpbar .third{position:absolute;top:0;bottom:0;left:33.3%;width:2px;background:rgba(255,255,255,.55)}
+.party{display:flex;flex-direction:column;gap:4px}
+.party.row{flex-direction:row;gap:8px}
+.pcard{display:flex;align-items:center;gap:6px;background:var(--veil);border:2px solid rgba(255,255,255,.12);border-radius:12px;padding:3px 6px 3px 3px;height:48px;min-width:0;position:relative}
+.party.row .pcard{flex:1;padding:2px 4px 2px 2px;gap:4px}
+.pcard.me{border-color:var(--gold)}
+@media (max-height:380px) and (orientation:landscape){.pcard{height:42px}.pcard .face{width:34px;height:34px}.party{gap:3px}}
+.pcard.tgt{box-shadow:0 0 0 2px #7dff9a}
+.pcard .face{width:40px;height:40px;border-radius:9px;background:#efe6d3;flex:none;overflow:hidden;position:relative}
+.party.row .pcard .face{width:30px;height:30px}
+.pcard .face img{width:100%;height:100%;object-fit:cover}
+.pcard .pn{position:absolute;left:-2px;top:-6px;font-size:11px;border:1.5px solid #0d0b1d}
+.pcard .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.pcard .nm{font-size:12.5px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;gap:4px;align-items:center}
+.pcard .ic{font-size:11px;line-height:1}
+.mini{height:7px;border-radius:4px;background:rgba(0,0,0,.6);overflow:hidden;position:relative}
+.mini i{position:absolute;inset:0 auto 0 0}
+.mini.hp i{background:#3fcf8e}.mini.hp.low i{background:#ff6a4a}
+.mini.sp i{background:#a77bff}.mini.sp.full i{background:linear-gradient(90deg,#f2c94c,#ffea9a)}
+.pcard.down .face img{filter:grayscale(1) brightness(.7)}
+.pcard .state{position:absolute;right:4px;top:3px;font-size:10px;font-weight:900;border-radius:5px;padding:0 4px;background:var(--shu);color:#fff}
+.pcard.gone .state{background:#555}
+.pcard .healtag{position:absolute;left:0;right:0;bottom:-8px;margin:auto;width:max-content;font-size:9.5px;background:#2fa36b;color:#fff;border-radius:5px;padding:0 5px}
+.mebox{display:flex;flex-direction:column;gap:3px}
+.mebox .hpbar{height:12px;border-radius:6px}
+.mebox .hpbar i.fill{background:linear-gradient(#6fe3a8,#249b6b 55%,#156b48)}
+.mebox.low .hpbar{box-shadow:0 0 0 2px #ff6a4a;animation:lowp .6s infinite alternate}
+@keyframes lowp{to{box-shadow:0 0 0 2px #ffb0a0}}
+.mebox .spbar{height:8px;border-radius:4px;background:rgba(0,0,0,.6);overflow:hidden;position:relative;border:1.5px solid #0d0b1d}
+.mebox .spbar i{position:absolute;inset:0 auto 0 0;background:#9a6bff}
+.mebox .spbar.full i{background:linear-gradient(90deg,#f2c94c,#fff1a8,#f2c94c);animation:shine 1s linear infinite;background-size:200% 100%}
+@keyframes shine{to{background-position:-200% 0}}
+.mebox .lbl{display:flex;gap:6px;align-items:center;font-size:11px;font-weight:900;text-shadow:0 1px 2px #000}
+.mebox .lbl .warn{color:#ff8a6a}
+.stamina{height:4px;border-radius:2px;background:rgba(0,0,0,.5);overflow:hidden}.stamina i{display:block;height:100%;background:#9fd8ff}
+#timer{font-family:var(--f-disp);font-size:17px;text-shadow:0 2px 3px #000;display:flex;gap:8px;align-items:center;white-space:nowrap}
+#timer .net{font-family:var(--f-body);font-size:11px;font-weight:900;background:var(--veil);border-radius:6px;padding:1px 6px}
+#map{border-radius:10px;background:rgba(12,10,30,.66);border:2px solid rgba(255,255,255,.18);overflow:hidden}
+#map canvas{width:100%;height:100%;display:block}
+#map.big{position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%);width:min(86vw,520px)!important;height:min(70vh,520px)!important;z-index:30}
+.btnc{border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border:2.5px solid rgba(255,255,255,.75);color:#fff;opacity:.68;position:absolute;line-height:1.05;text-shadow:0 1px 2px rgba(0,0,0,.6);box-shadow:0 3px 10px rgba(0,0,0,.35)}
+.btnc .key{font-family:var(--f-disp);font-size:calc(19px*var(--ui))}
+.btnc .lb{font-size:calc(10.5px*var(--ui));font-weight:900;max-width:92%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btnc.press{opacity:1;transform:scale(.94);border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.5)}
+.btnc.off{filter:grayscale(.6) brightness(.6)}
+.btnc svg.cd{position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);transform:rotate(-90deg);pointer-events:none}
+.btnc .cdt{position:absolute;bottom:-17px;font-size:11px;font-weight:900;background:rgba(0,0,0,.6);border-radius:5px;padding:0 4px}
+#bA{background:#e9a23b;color:#2a1a08;text-shadow:none}#bA .lb{color:#2a1a08}
+#bX{background:#3f78d6}#bY{background:#187c80}
+#bSP{background:#7446b8}#bSP.full{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold),0 0 18px var(--gold);opacity:.95}
+#bB{background:#475569}
+#bLock,#bCam,#bMenu,#bSig{background:rgba(18,16,40,.75)}
+#bLock.on{background:#cb4b46;border-color:#fff;opacity:.95}
+.itm{border-radius:12px;background:rgba(18,16,40,.75);border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:22px;position:absolute;opacity:.75}
+.itm .n{position:absolute;right:2px;bottom:0;font-size:11px;font-weight:900;font-family:var(--f-body)}
+.itm.empty{opacity:.35}
+.stick{position:absolute;border-radius:50%;background:radial-gradient(rgba(20,18,44,.55),rgba(20,18,44,.35));border:2px solid rgba(255,255,255,.45)}
+.stick .knob{position:absolute;left:50%;top:50%;border-radius:50%;background:rgba(255,255,255,.85);transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.stick .ar{position:absolute;color:rgba(255,255,255,.55);font-size:12px;font-weight:900}
+#touch{position:fixed;inset:0;pointer-events:auto;touch-action:none}
+.label3d{position:absolute;transform:translate(-50%,-100%);font-size:11px;font-weight:900;text-align:center;pointer-events:none;white-space:nowrap;text-shadow:0 1px 2px #000;display:flex;flex-direction:column;align-items:center;gap:1px}
+.label3d .pn{font-size:11px;border:1.5px solid #0d0b1d}
+.label3d .mini{width:40px;height:5px}
+.label3d .downt{font-size:11px;background:var(--shu);color:#fff;border-radius:5px;padding:0 5px}
+.label3d .prog{width:44px;height:6px;border-radius:3px;background:rgba(0,0,0,.6);overflow:hidden}.label3d .prog i{display:block;height:100%;background:#ffe27a}
+.dmg{position:absolute;font-family:var(--f-disp);font-size:18px;color:#fff;-webkit-text-stroke:1.2px #2a0f0a;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap}
+.dmg.crit{color:#ffeb6a;font-size:23px}.dmg.weak{color:#ffd28a}.dmg.resist{color:#c8c8d8;font-size:15px}
+.dmg.hurt{color:#ff7070;font-size:16px}.dmg.heal{color:#7dff9a}.dmg.sp{color:#ffe6a0;font-size:15px}
+.dmg.total{font-size:26px;color:#ffd84a;-webkit-text-stroke:1.6px #3a1a00}
+.dmg.total small{font-family:var(--f-body);font-size:12px;font-weight:900;-webkit-text-stroke:0;color:#fff;margin-right:4px}
+.edge{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.edge .tri{position:absolute;inset:0;clip-path:polygon(100% 50%,20% 10%,35% 50%,20% 90%)}
+.edge .t{position:relative;font-size:10px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
+.reticle{position:absolute;width:70px;height:70px;margin:-35px 0 0 -35px;border:2.5px dashed #ff6a5a;border-radius:50%;pointer-events:none;animation:spin 3s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#notice{position:absolute;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
+.nt{background:var(--veil);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;padding:4px 14px;font-size:13px;font-weight:900;animation:ntIn .2s ease-out;max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nt.boss{background:rgba(120,20,30,.85);font-family:var(--f-disp);font-weight:400;font-size:16px;border-radius:6px}
+.nt.sp{background:linear-gradient(90deg,rgba(116,70,184,.9),rgba(60,30,120,.9))}
+.nt.warn{background:rgba(200,60,40,.9)}
+@keyframes ntIn{from{opacity:0;transform:translateY(-6px)}}
+#cutin{position:fixed;right:0;top:34%;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 18px 6px 40px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(116,70,184,.92) 20%);transform:translateX(100%);opacity:0}
+#cutin.show{animation:cut .35s ease-out}
+@keyframes cut{0%{transform:translateX(100%);opacity:1}25%{transform:none;opacity:1}85%{transform:none;opacity:1}100%{transform:translateX(30%);opacity:0}}
+#cutin img{width:48px;height:48px}
+#cutin b{font-family:var(--f-disp);font-weight:400;font-size:22px}
+#banner{position:fixed;left:0;right:0;top:24%;text-align:center;pointer-events:none;font-family:var(--f-disp);font-size:clamp(24px,6vw,44px);padding:0 12px;color:#fff;text-shadow:0 0 16px rgba(255,120,60,.8),0 3px 0 #2a0f0a;opacity:0;transition:opacity .25s,transform .25s;transform:scale(.9)}
+#banner.show{opacity:1;transform:none}
+#banner small{display:block;font-family:var(--f-body);font-weight:900;font-size:15px;text-shadow:0 1px 3px #000;margin-top:4px}
+#bossCard{position:fixed;left:0;right:0;bottom:18%;text-align:center;pointer-events:none;opacity:0;transition:opacity .3s}
+#bossCard.show{opacity:1}
+#bossCard .s{display:inline-block;background:var(--shu);color:#fff;font-weight:900;font-size:13px;letter-spacing:.2em;padding:2px 12px;border-radius:4px}
+#bossCard .n{font-family:var(--f-disp);font-size:clamp(38px,11vw,72px);color:#fff;text-shadow:0 0 22px #ff6a3a,0 4px 0 #2a0f0a;line-height:1.15}
+#bossCard .d{font-size:13px;font-weight:900;background:rgba(18,16,40,.75);display:inline-block;padding:3px 12px;border-radius:8px}
+#sigmenu{position:absolute;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--veil);padding:8px;border-radius:14px;border:2px solid rgba(255,255,255,.2);pointer-events:auto}
+#sigmenu button{min-height:48px;min-width:96px;border-radius:10px;background:#2b2760;font-size:13px;border:2px solid rgba(255,255,255,.3)}
+#dev{position:absolute;left:8px;bottom:8px;max-width:min(96vw,640px);font:11px/1.35 ui-monospace,Menlo,monospace;background:rgba(0,0,0,.72);color:#bfffcf;padding:6px 8px;border-radius:8px;pointer-events:none;white-space:pre;overflow:hidden}
+#rotateHint{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 64px);transform:translateX(-50%);background:var(--veil);border:1.5px solid rgba(255,255,255,.25);border-radius:12px;padding:6px 12px;font-size:12px;font-weight:900;pointer-events:auto;display:flex;gap:8px;align-items:center;z-index:5}
+#rotateHint button{background:transparent;color:var(--gold);font-size:12px;min-height:32px}
+.ctxB{font-size:10px}
+.revring{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;pointer-events:none}
+.res-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:520px){.res-grid{grid-template-columns:repeat(2,1fr)}}
+.res-c{background:#fff;border:2px solid var(--ink);border-radius:12px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px}
+.res-c img{width:54px;height:54px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px}
+.set-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed #e0d4bb;min-height:48px}
+.set-row label{font-weight:900;font-size:14px}
+.set-row input[type=range]{width:min(220px,48vw)}
+.toggle{min-width:76px}
+.code-big{font-family:var(--f-disp);font-size:34px;letter-spacing:.2em;background:var(--ink);color:var(--gold);border-radius:12px;padding:4px 14px;text-align:center}
+.lob-slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:520px){.lob-slots{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<canvas id="gl" aria-label="3Dの戦闘画面"></canvas>
+
+<!-- タイトル -->
+<section class="screen" id="title" hidden>
+  <div class="panel">
+    <div class="titlebar">
+      <div>
+        <div class="eyebrow">足立区・北千住　宵町の夜</div>
+        <h1>北千住<br><span class="em">もののけ</span>夜警隊</h1>
+      </div>
+      <div class="lantern-badge">トバトーバン戦</div>
+    </div>
+    <p>駅前のアーケード通りに、古い大看板の付喪神「トバトーバン」が現れた。小さなもののけ4体で力を合わせ、祭り広場で鎮めよう。</p>
+    <div class="menu-list">
+      <button class="btn main span" id="btnSolo">ひとりで遊ぶ（AIの仲間3体）</button>
+      <button class="btn gold span" id="btnCoop">協力プレイ（2〜4人）</button>
+      <button class="btn" id="btnHow">遊び方</button>
+      <button class="btn" id="btnSet">設定</button>
+      <button class="btn span ghost" id="btnData">データと出典の一覧</button>
+    </div>
+    <p class="small">数値は公開資料の参考値と新作の仮値を区別しています（一覧で確認できます）。キャラクター・技名・音楽・効果音はこの作品用の新規制作です。</p>
+  </div>
+</section>
+
+<!-- 協力プレイの入口 -->
+<section class="screen" id="coop" hidden>
+  <div class="panel">
+    <div class="eyebrow">協力プレイ</div>
+    <h2>合言葉で部屋に集まる</h2>
+    <label class="small" for="nick">なまえ（10文字まで）</label>
+    <input type="text" id="nick" maxlength="10" autocomplete="off" placeholder="なまえ">
+    <div class="row"><button class="btn main" id="btnHost">部屋を作る</button></div>
+    <label class="small" for="code">友だちの合言葉（4けた）</label>
+    <div class="row"><input type="text" id="code" maxlength="8" inputmode="numeric" autocomplete="off" placeholder="1234" style="flex:1 1 120px"><button class="btn gold" id="btnJoin" style="flex:0 1 160px">部屋に入る</button></div>
+    <div class="status"><span class="dot" id="netDot"></span><span id="netMsg">通信の準備を確認しています…</span></div>
+    <p class="small">ホストの端末が戦闘を進め、他の人は入力を送ります。ホストが抜けると中断します。参加者が抜けたキャラはAIが引き継ぎます。</p>
+    <div class="row"><button class="btn ghost" id="btnCoopBack">もどる</button></div>
+  </div>
+</section>
+
+<!-- 編成（ソロ）／ロビー（協力） -->
+<section class="screen" id="team" hidden>
+  <div class="panel wide">
+    <div class="row" style="justify-content:space-between">
+      <div><div class="eyebrow" id="teamEyebrow">編成</div><h2 id="teamTitle">4体を選ぶ</h2></div>
+      <div id="lobCode" hidden></div>
+    </div>
+    <div id="lobStatus" class="small" hidden></div>
+    <div class="slots" id="slots"></div>
+    <div class="team">
+      <div><h3 style="margin-bottom:6px">もののけ（10体）</h3><div class="cards" id="cards"></div></div>
+      <div class="detail" id="detail"></div>
+    </div>
+    <div><h3 style="margin-bottom:6px">持ち込むアイテム（2つ）</h3><div class="items" id="items"></div></div>
+    <div id="diffRow"><h3 style="margin-bottom:6px">むずかしさ</h3><div class="row" id="diffs"></div></div>
+    <div class="row">
+      <button class="btn ghost" id="btnTeamBack">もどる</button>
+      <button class="btn main" id="btnGo">出撃する</button>
+    </div>
+  </div>
+</section>
+
+<!-- 遊び方 -->
+<section class="screen" id="how" hidden>
+  <div class="panel">
+    <div class="eyebrow">遊び方</div><h2>操作（横画面がおすすめ）</h2>
+    <div class="moves">
+      <span class="k kP">左</span><span>スティックで移動。Bを押している間は走る（スタミナを使う）</span>
+      <span class="k kA">A</span><span>通常攻撃。三連のキャラは続けて押すと2発目・3発目が出る</span>
+      <span class="k kX">X</span><span>技1。長押しでためるタイプは、離すと発動</span>
+      <span class="k kY">Y</span><span>技2。回避・ガード・回復などキャラごとに違う（回避がないキャラもいる）</span>
+      <span class="k kS">必殺</span><span>攻撃を当てる・受けるとたまる。満タンで金色に光ったら押す</span>
+      <span class="k kP">B</span><span>気絶した仲間の近くで押し続けると救助。灯籠の近くで押すと灯す</span>
+      <span class="k kP">注目</span><span>ボスや敵にカメラと向きを合わせる。もう一度押すと解除。ボスが飛ぶと外れる</span>
+      <span class="k kP">画面</span><span>右側の何もない所をドラッグするとカメラを回せる。「カメラ」で後ろに戻す</span>
+      <span class="k kP">仲間</span><span>ソロでは左上の仲間をタップで操作キャラを交代。回復をためている間は回復対象の指定になる</span>
+    </div>
+    <p class="small">赤い縞の範囲がボスの攻撃予兆。紫の帯は空中突進の通り道。4基の灯籠を30秒以内に灯すとボスが6秒止まる。仲間が気絶して30秒放置すると昇天し、その戦闘では戻らない。</p>
+    <p class="small">パソコン：WASD移動・J=A・K=X・L=Y・U=必殺・Space=B・F=注目・Q/E=カメラ・1/2=アイテム・Esc=メニュー</p>
+    <div class="row"><button class="btn main" data-back>とじる</button></div>
+  </div>
+</section>
+
+<!-- 設定 -->
+<section class="screen" id="settings" hidden>
+  <div class="panel">
+    <div class="eyebrow">設定</div><h2>見やすさと操作</h2>
+    <div class="set-row"><label for="sUi">ボタンの大きさ</label><div class="row"><input type="range" id="sUi" min="80" max="130" step="5"><span id="sUiV" class="small"></span></div></div>
+    <div class="set-row"><label>左右反転（左利き配置）</label><button class="chip toggle" id="sMirror"></button></div>
+    <div class="set-row"><label>スティック</label><button class="chip toggle" id="sStick"></button></div>
+    <div class="set-row"><label>画面の揺れ</label><button class="chip toggle" id="sShake"></button></div>
+    <div class="set-row"><label>演出を簡略化（判定は同じ）</label><button class="chip toggle" id="sSimple"></button></div>
+    <div class="set-row"><label>着地後に自動で注目し直す</label><button class="chip toggle" id="sRelock"></button></div>
+    <div class="set-row"><label>振動</label><button class="chip toggle" id="sVib"></button></div>
+    <div class="set-row"><label for="sBgm">BGM</label><input type="range" id="sBgm" min="0" max="100" step="5"></div>
+    <div class="set-row"><label for="sSfx">効果音</label><input type="range" id="sSfx" min="0" max="100" step="5"></div>
+    <div class="set-row"><label>開発用の計測表示</label><button class="chip toggle" id="sDev"></button></div>
+    <div class="row"><button class="btn main" data-back>とじる</button></div>
+  </div>
+</section>
+
+<!-- データ一覧 -->
+<section class="screen" id="data" hidden>
+  <div class="panel wide">
+    <div class="eyebrow">データと出典</div><h2>値・単位・状態・出典</h2>
+    <p class="small">「資料で確認」＝公開資料にある値、「資料の目安」＝攻略記事などの目安、「新作の仮値」＝この初版のための仮の値（原作の測定値ではありません）。原作と完全一致したとは表示しません。体力は画面に数値を出さない調整値です。</p>
+    <div class="row" id="dataProfile"></div>
+    <div id="dataTable" style="max-height:62vh;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y"></div>
+    <div class="row"><button class="btn main" data-back>とじる</button></div>
+  </div>
+</section>
+
+<!-- メニュー（一時停止） -->
+<section class="screen" id="pause" hidden>
+  <div class="panel">
+    <div class="eyebrow" id="pauseEyebrow">一時停止</div><h2>メニュー</h2>
+    <p class="small" id="pauseNote"></p>
+    <div class="menu-list">
+      <button class="btn main span" id="btnResume">つづける</button>
+      <button class="btn" id="btnPSet">設定</button>
+      <button class="btn" id="btnPHow">遊び方</button>
+      <button class="btn span" id="btnSkip" hidden>登場演出をとばす</button>
+      <button class="btn span ghost" id="btnQuit">タイトルへもどる</button>
+    </div>
+  </div>
+</section>
+
+<!-- リザルト -->
+<section class="screen" id="result" hidden>
+  <div class="panel wide">
+    <div class="eyebrow" id="resEyebrow">結果</div><h2 id="resTitle"></h2>
+    <div class="kv" id="resKv"></div>
+    <div class="res-grid" id="resGrid"></div>
+    <div class="small" id="resReward"></div>
+    <div class="row" id="resBtns">
+      <button class="btn main" id="btnRetry">もう一度</button>
+      <button class="btn" id="btnReteam">編成を変える</button>
+      <button class="btn ghost" id="btnResTitle">タイトルへ</button>
+    </div>
+  </div>
+</section>
+
+<!-- 通信の中断 -->
+<section class="screen" id="netlost" hidden>
+  <div class="panel">
+    <div class="eyebrow">通信</div><h2 id="lostTitle">ホストとの接続が切れました</h2>
+    <p id="lostMsg">戦闘は中断されました。合言葉を確認して、もう一度部屋に入ってください。</p>
+    <div class="row"><button class="btn main" id="btnLostOk">タイトルへ</button></div>
+  </div>
+</section>
+
+<!-- HUD -->
+<div id="hud" hidden>
+  <div id="touch"></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="df" id="bossDf">通常</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div></div>
+  <div class="hb party" id="party"></div>
+  <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
+  <div class="hb" id="map"><canvas id="mapc"></canvas></div>
+  <div class="hb mebox" id="mebox"><div class="lbl"><span id="meNm"></span><span class="warn" id="meWarn" hidden>⚠ HPが少ない</span></div><div class="hpbar"><i class="lag" id="meLag"></i><i class="fill" id="meFill"></i></div><div class="spbar" id="meSp"><i id="meSpFill"></i></div><div class="stamina"><i id="meStam"></i></div></div>
+  <div class="hb stick" id="stick"><div class="knob" id="knob"></div><span class="ar" style="left:50%;top:4px;transform:translateX(-50%)">▲</span><span class="ar" style="left:50%;bottom:4px;transform:translateX(-50%)">▼</span><span class="ar" style="left:5px;top:50%;transform:translateY(-50%)">◀</span><span class="ar" style="right:5px;top:50%;transform:translateY(-50%)">▶</span></div>
+  <button class="hb btnc" id="bA" aria-label="A 通常攻撃"><span class="key">A</span><span class="lb" id="lA">攻撃</span></button>
+  <button class="hb btnc" id="bX" aria-label="X 技1"><span class="key">X</span><span class="lb" id="lX"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cX"/></svg><span class="cdt" id="tX" hidden></span></button>
+  <button class="hb btnc" id="bY" aria-label="Y 技2"><span class="key">Y</span><span class="lb" id="lY"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cY"/></svg><span class="cdt" id="tY" hidden></span></button>
+  <button class="hb btnc" id="bSP" aria-label="必殺技"><span class="key" style="font-size:calc(15px*var(--ui))">必殺</span><span class="lb" id="lSP">0%</span></button>
+  <button class="hb btnc" id="bB" aria-label="B ダッシュ・救助"><span class="key">B</span><span class="lb ctxB" id="lB">走る</span></button>
+  <button class="hb btnc" id="bLock" aria-label="注目"><span class="key" style="font-size:calc(16px*var(--ui))">◎</span><span class="lb">注目</span></button>
+  <button class="hb btnc" id="bCam" aria-label="カメラを戻す"><span class="key" style="font-size:calc(15px*var(--ui))">↺</span><span class="lb">視点</span></button>
+  <button class="hb btnc" id="bMenu" aria-label="メニュー"><span class="key" style="font-size:calc(16px*var(--ui))">≡</span></button>
+  <button class="hb btnc" id="bSig" aria-label="合図"><span class="key" style="font-size:calc(14px*var(--ui))">合図</span></button>
+  <button class="hb itm" id="bI0" aria-label="アイテム1"></button>
+  <button class="hb itm" id="bI1" aria-label="アイテム2"></button>
+  <div id="sigmenu" hidden><button data-sig="help">助けて</button><button data-sig="heal">回復する</button><button data-sig="lantern">灯籠へ</button><button data-sig="sp">必殺準備</button></div>
+  <div id="labels"></div>
+  <div id="dmgs"></div>
+  <div id="edges"></div>
+  <div id="notice"></div>
+  <div id="dev" hidden></div>
+</div>
+<div id="cutin"><img id="cutImg" alt=""><div><small id="cutWho" style="display:block;font-size:11px;font-weight:900"></small><b id="cutNm"></b></div></div>
+<div id="banner"></div>
+<div id="bossCard"><div class="s">付喪神</div><div class="n">トバトーバン</div><div class="d">古い大看板と祭りの台座が、宵の広場で目を覚ました</div></div>
+<div id="rotateHint" hidden>📱↻ 横画面のほうが見やすく遊べます<button id="rotateX">とじる</button></div>
