@@ -47,7 +47,7 @@ def run(p, w, h, tag, steps):
     errs = []
     page.on('console', lambda m: errs.append(f'[{m.type}] {m.text}') if m.type in ('error', 'warning') else None)
     page.on('pageerror', lambda e: errs.append(f'[pageerror] {e}'))
-    page.goto(URL); page.wait_for_function('window.__tb && window.__tb.G.mode === "title"', timeout=30000)
+    page.goto(URL + ('?save=local' if tag == 'save' else '')); page.wait_for_function('window.__tb && window.__tb.G.mode === "title"', timeout=60000)
     time.sleep(1.0)
     res = {'tag': tag, 'errors': errs}
     for s in steps: s(page, res)

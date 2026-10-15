@@ -928,7 +928,15 @@ const SAVE = (() => {
    ・ログインはページを開いている間だけ（閉じたら次はまたログイン）
    FIREBASE_CONFIG が空のとき、または claude.ai の中では使わず、端末内のセーブ（save.js）になる。
    ===================================================================== */
-const FIREBASE_CONFIG = null; // ← Firebaseコンソール「マイアプリ」の firebaseConfig をここに入れる
+// Firebaseコンソール「マイアプリ」の firebaseConfig（公開してよい値。守りはルールとパスワード）
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyDSXGsbja8gKmLdHyiciIgO7OEDTs6jrVQ',
+  authDomain: 'tobatoban-35633.firebaseapp.com',
+  projectId: 'tobatoban-35633',
+  storageBucket: 'tobatoban-35633.firebasestorage.app',
+  messagingSenderId: '563921197497',
+  appId: '1:563921197497:web:44baf8d2600afe291d3e68',
+};
 const CLOUD = (() => {
   const SDK = 'https://www.gstatic.com/firebasejs/10.14.1/';
   const email = id => `p${id}@tobatoban.game`;
@@ -956,7 +964,8 @@ const CLOUD = (() => {
     if (/too-many-requests/.test(c)) return 'まちがいが続いたので、しばらく待ってからためしてください';
     if (/network-request-failed|unavailable|Failed to fetch|failed-precondition|deadline/.test(c)) return 'サーバーとつながりませんでした。電波のよい所でもう一度ためしてください';
     if (/weak-password/.test(c)) return 'パスワードは6文字以上にしてください';
-    if (/operation-not-allowed|admin-restricted/.test(c)) return 'サーバーの準備がまだです（Authenticationで「メール/パスワード」と「匿名」を有効にしてください）';
+    if (/api-key-not-valid|invalid-api-key|API key not valid/.test(c)) return 'サーバーの設定（apiKey）がちがいます。管理者に知らせてください';
+    if (/configuration-not-found|operation-not-allowed|admin-restricted/.test(c)) return 'サーバーの準備がまだです（Authenticationで「メール/パスワード」と「匿名」を有効にしてください）';
     if (/permission-denied|PERMISSION_DENIED/.test(c)) return 'サーバーの設定（Firestoreのルール）を確認してください';
     if (/full/.test(c)) return `アカウントがいっぱいです（${SAVE.ID_MAX}人まで）`;
     if (/import|Failed to load|dynamically imported/i.test(c)) return 'サーバーの部品を読み込めませんでした。電波のよい所でもう一度ためしてください';
@@ -1013,7 +1022,7 @@ const ACCT = {
   setup() {
     const inClaude = !!(window.claude && typeof window.claude.use === 'function');
     const T = window.__TB_CLOUD_TEST || null; // 画面の検査用（エミュレーターにつなぐ）。ふだんは無い
-    const cfg = FIREBASE_CONFIG || (T && T.cfg);
+    const cfg = (T && T.cfg) || FIREBASE_CONFIG;
     this.mode = cfg && !inClaude && !/[?&]save=local/.test(location.search) ? 'cloud' : 'local';
     if (this.mode === 'cloud') CLOUD.init(cfg, null, T && T.opt).catch(e => console.warn('firebase', e)); // 先に読み込んでおく
     return this.mode;
