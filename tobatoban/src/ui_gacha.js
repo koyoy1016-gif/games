@@ -26,11 +26,11 @@ function renderGachaInfo() {
   const a = gcAcc(), sim = a || G.guest;
   $('#gcTix').textContent = a ? String(a.tickets) : '−';
   const pg = $('#gcProg'); pg.textContent = '';
-  for (const [nm, w, per] of [['トバトーバン', sim.wins.tobatoban, 3], ['ヨシノシン', sim.wins.yoshinoshin, 2]]) {
+  for (const [nm, w, per] of [['トバトーバ', sim.wins.tobatoban, 3], ['ヨシノシン', sim.wins.yoshinoshin, 2]]) {
     const d = el('div', 'pg'); d.append(el('span', '', nm)); const pp = el('span', 'pips'); for (let i = 0; i < per; i++) pp.appendChild(el('i', i < w % per ? 'on' : '')); d.append(pp, el('span', 'small', `${w % per}/${per}勝で1枚`)); pg.appendChild(d);
   }
   const pool = SAVE.gachaPool(a || G.guest).length, done = pool === 0;
-  $('#gcNote').textContent = (a ? '' : 'ログインすると、チケットを使って引けます（いまは説明と演出見本だけ）。') + `トバトーバン3勝・ヨシノシン2勝ごとにチケット1枚。チケットは貯められます。まだ持っていない仲間から1体が出ます（未入手 ${pool} / 40体）。`;
+  $('#gcNote').textContent = (a ? '' : 'ログインすると、チケットを使って引けます（いまは説明と演出見本だけ）。') + `トバトーバ3勝・ヨシノシン2勝ごとにチケット1枚。チケットは貯められます。まだ持っていない仲間から1体が出ます（未入手 ${pool} / 40体）。`;
   const dr = $('#btnGcDraw'); dr.hidden = done; dr.textContent = !a ? 'ログインして引く' : '1回まわす（1枚）'; dr.disabled = !!a && (a.tickets < 1 || GC.busy);
   const ex = $('#gcEx'); ex.hidden = !(done && a); ex.textContent = '';
   if (done && a) { // 全40体を入手したら、1枚を選んだキャラのEXP10,000と交換
@@ -178,7 +178,7 @@ async function gcDraw() {
   const a = gcAcc();
   if (!a) { AUDIO.sfx('ui'); closeGacha('login'); openLogin('title', 'ログインすると、チケットを使ってガチャを引けます'); G.afterLoginTarget = 'gacha'; return; } // 一回限りの予約
   if (GC.busy) return;
-  if (a.tickets < 1) { mtoast('チケットがありません（トバトーバン3勝・ヨシノシン2勝ごとに1枚）', 2600); return; }
+  if (a.tickets < 1) { mtoast('チケットがありません（トバトーバ3勝・ヨシノシン2勝ごとに1枚）', 2600); return; }
   GC.busy = true; $('#btnGcDraw').disabled = true;
   const req = 'g' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
   STORE.set('gcPending', { id: a.id, req });

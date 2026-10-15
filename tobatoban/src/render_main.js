@@ -199,7 +199,7 @@ const R = (() => {
   let TW = null; const JT = { dist: 0, cutBoss: null, lcd: '', fadeK: 1 };
   const ensureTrain = () => TW || (TW = GFX.buildTrain(scene));
   const JSTART = [[-0.6, -4.2], [0.6, -4.2], [-0.6, -5.8], [0.6, -5.8]];
-  /** 始まりの演出での味方の位置：広場でトバトーバンが倒れる → 北千住のホームから3号車に乗る */
+  /** 始まりの演出での味方の位置：広場でトバトーバが倒れる → 北千住のホームから3号車に乗る */
   function introPose(t, i) {
     if (t < 3.5) return { x: [-1.8, 1.8, -0.6, 0.6][i], z: [7.2, 7.2, 6, 6][i], yaw: 0, moving: false, act: '', st: 'ok' };
     const p0 = [-4.4 - (i % 2) * 0.9, -3.5 + (i - 1.5) * 1.1], d = [-1.7, -3.5], f = JSTART[i], t0 = 4.3 + i * 0.45;
@@ -240,7 +240,7 @@ const R = (() => {
     const jb = v.stageId === 'joban', it = v.introWait ? 0 : v.stageT;
     const showTrain = jb && !(v.stage === 'intro' && it < 3.5);
     W.root.visible = !showTrain; if (jb) ensureTrain(); if (TW) TW.root.visible = showTrain;
-    // 演出用のトバトーバン（広場で倒れる）
+    // 演出用のトバトーバ（広場で倒れる）
     const wantBoss = jb && v.stage === 'intro' && it < 3.5;
     if (wantBoss && !JT.cutBoss) { JT.cutBoss = GFX.makeBoss(); W.root.add(JT.cutBoss.root); W.root.add(JT.cutBoss.shadow); }
     if (!wantBoss && JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; }
@@ -289,6 +289,9 @@ const R = (() => {
       if (a.ch === 'kemuridama' && Math.random() < 0.15) { const f = a.yaw; emit('norm', { x: a.x + Math.sin(f) * 0.35, y: 0.5, z: a.z + Math.cos(f) * 0.35, vy: 0.5, vx: (Math.random() - 0.5) * 0.2, life: 1.2, s0: 0.12, s1: 0.4, c: 0xe6e6ea, a: 0.5 }); }
       if (a.ch === 'kagetsubame' && a.moving && Math.random() < 0.4) emit('norm', { x: a.x, y: 0.4, z: a.z, vy: 0.2, life: 0.5, s0: 0.3, s1: 0.1, c: 0x1a1c3a, a: 0.45 });
       if (a.st === 'down' && Math.random() < 0.06) emit('add', { x: a.x, y: 0.6, z: a.z, vy: 0.6, life: 1.0, s0: 0.25, s1: 0.05, c: 0xaad0ff });
+      // G玉の強化中：金色の炎のオーラ（覚醒した敵の赤とは別の色）
+      if (!m.gAura) { const gm = new THREE.MeshBasicMaterial({ color: 0xffc83a, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }); m.gAura = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.62, 1.5, 18, 1, true), gm); m.gAura.position.y = 0.75; m.root.add(m.gAura); }
+      { const on = a.gT > 0 && a.st === 'ok'; m.gAura.visible = on; if (on) { m.gAura.material.opacity = 0.28 + Math.sin(T * 9 + i) * 0.1; m.gAura.rotation.y = T * 2; m.gAura.scale.setScalar(1 / (m.h || 1)); m.gAura.position.y = 0.75 / (m.h || 1); if (Math.random() < 0.6) emit('add', { x: a.x + (Math.random() - 0.5) * 0.7, y: 0.15, z: a.z + (Math.random() - 0.5) * 0.7, vy: 2.2, life: 0.5, s0: 0.22, s1: 0.04, c: Math.random() < 0.5 ? 0xffd84a : 0xff9a2a }); } }
       reviveRing(i, a, T);
       if (a.strBuff && Math.random() < 0.12) emit('add', { x: a.x + (Math.random() - 0.5) * 0.6, y: 0.2, z: a.z + (Math.random() - 0.5) * 0.6, vy: 1.2, life: 0.5, s0: 0.14, s1: 0.03, c: 0xff5a4a });
     });
@@ -323,7 +326,7 @@ const R = (() => {
       if (Math.random() < (p.kind === 'fire' ? 0.9 : 0.5)) emit('add', { x: p.x, y: 0.65, z: p.z, life: 0.25, s0: p.kind === 'fire' ? 0.5 : 0.25, s1: 0.02, c: { star: 0xffe27a, can: 0xbfd8ff, focus: 0xfff6c0, fire: 0xff7a2a, mark: 0xff4a2a, fuda: 0xff8a6a, reiko: 0xc8ff6a }[p.kind] || 0xffffff });
     }
     for (const [id, m] of projs) if (!seenP.has(id)) { scene.remove(m); projs.delete(id); }
-    // 重玉（紫紺の球に金の輪・残り3秒で明滅）
+    // G玉（紫紺の球に金の輪・残り3秒で明滅）
     const seenO = new Set();
     for (const ob of v.orbs || []) {
       seenO.add(ob.id); let m = orbs.get(ob.id);

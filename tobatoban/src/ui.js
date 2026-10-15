@@ -313,7 +313,7 @@ function openAccount(from) { if (!G.acct) { openLogin(from || 'title'); return; 
 function renderAccount() {
   const s = G.acct; $('#acTitle').textContent = `ID ${s.id}`;
   const kv = $('#acKv'); kv.textContent = '';
-  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['トバトーバン戦', (s.clear && s.clear.senju ? `クリア ${s.clear.senju}回` : 'まだ') + (s.rec.best ? `（最速 ${fmt(s.rec.best)}）` : '')], ['常磐線', s.clear && s.clear.joban ? `クリア ${s.clear.joban}回` : stageOpen('joban') ? 'まだ' : '🔒 トバトーバンを倒すと解放'], ['ヨシノシン', s.clear && s.clear.ueno ? `クリア ${s.clear.ueno}回` : stageOpen('ueno') ? 'まだ' : '🔒 電車をクリアすると解放'], ['チケット', `${s.tickets}枚（トバトーバン ${s.wins.tobatoban % 3}/3・ヨシノシン ${s.wins.yoshinoshin % 2}/2）`], ['所持', `${Object.keys(s.chars).length} / ${DATA.CHARS.length}体`]]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
+  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['トバトーバ戦', (s.clear && s.clear.senju ? `クリア ${s.clear.senju}回` : 'まだ') + (s.rec.best ? `（最速 ${fmt(s.rec.best)}）` : '')], ['常磐線', s.clear && s.clear.joban ? `クリア ${s.clear.joban}回` : stageOpen('joban') ? 'まだ' : '🔒 トバトーバを倒すと解放'], ['ヨシノシン', s.clear && s.clear.ueno ? `クリア ${s.clear.ueno}回` : stageOpen('ueno') ? 'まだ' : '🔒 電車をクリアすると解放'], ['チケット', `${s.tickets}枚（トバトーバ ${s.wins.tobatoban % 3}/3・ヨシノシン ${s.wins.yoshinoshin % 2}/2）`], ['所持', `${Object.keys(s.chars).length} / ${DATA.CHARS.length}体`]]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
   const ro = $('#acRoster'); ro.textContent = '';
   for (const c of DATA.CHARS) { if (!s.chars[c.id]) continue; const d = el('div'); const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; d.append(im, el('b', '', c.nm), el('span', 'lv', 'Lv.' + s.chars[c.id].lv)); ro.appendChild(d); }
   const cl = cloud(); $('#acCodeBox').hidden = cl; $('#btnAcCopy').hidden = cl; $('#acCloud').hidden = !cl;
@@ -417,7 +417,7 @@ function pause() {
   if (G.mode !== 'play') return; const S = G.session;
   $('#pauseNote').textContent = S && S.kind !== 'solo' ? '協力プレイ中はゲームは止まりません（メニュー中も戦闘は進みます）。' : 'ゲームは止まっています。';
   $('#btnSkip').hidden = !(S && S.kind === 'solo' && S.sim && S.sim.stage === 'intro');
-  if (S && S.kind === 'solo') S.paused = true; G.mode = 'pause'; G.back = 'pause'; show('pause');
+  if (S && S.kind === 'solo') S.paused = true; if (S && S.sim && S.sim.resetAutoRun) S.sim.resetAutoRun(); G.mode = 'pause'; G.back = 'pause'; show('pause'); // ポーズで自動ダッシュを残さない
 }
 function resume() { const S = G.session; if (S && S.kind === 'solo') S.paused = false; G.mode = 'play'; show(null); $('#hud').hidden = false; layoutHud(); }
 document.addEventListener('visibilitychange', () => { if (document.hidden && G.mode === 'play' && G.session && G.session.kind === 'solo') pause(); });
@@ -426,7 +426,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && G.m
 const LAYOUT = {
   land: { W: 844, H: 390,
     stick: { c: [92, 294], d: 120, ax: 'L', ay: 'B' }, bA: { c: [748, 294], d: 76, ax: 'R', ay: 'B' }, bX: { c: [663, 244], d: 64, ax: 'R', ay: 'B' }, bY: { c: [746, 207], d: 64, ax: 'R', ay: 'B' },
-    bSP: { c: [657, 324], d: 64, ax: 'R', ay: 'B' }, bOrb: { c: [582, 296], d: 60, ax: 'R', ay: 'B' }, bB: { c: [184, 316], d: 52, ax: 'L', ay: 'B' }, bLock: { c: [786, 140], d: 48, ax: 'R', ay: 'T' }, bCam: { c: [728, 140], d: 48, ax: 'R', ay: 'T' },
+    bSP: { c: [657, 324], d: 64, ax: 'R', ay: 'B' }, bB: { c: [184, 316], d: 52, ax: 'L', ay: 'B' }, bLock: { c: [786, 140], d: 48, ax: 'R', ay: 'T' }, bCam: { c: [728, 140], d: 48, ax: 'R', ay: 'T' },
     bI0: { c: [282, 266], d: 48, ax: 'L', ay: 'B' }, bI1: { c: [338, 266], d: 48, ax: 'L', ay: 'B' }, bSig: { c: [232, 206], d: 48, ax: 'L', ay: 'B' }, bMenu: { c: [656, 40], d: 48, ax: 'R', ay: 'T' },
     party: { r: [16, 16, 160, 204], ax: 'L', ay: 'T' }, bossbox: { r: [230, 10, 380, 40], ax: 'L', ay: 'T' }, mebox: { r: [260, 312, 260, 34], ax: 'L', ay: 'B' }, map: { r: [690, 16, 112, 92], ax: 'R', ay: 'T' }, timer: { r: [230, 54, 200, 24], ax: 'L', ay: 'T' },
     area: [0, 1] },
@@ -434,7 +434,7 @@ const LAYOUT = {
     bossbox: { r: [16, 10, 358, 40], ax: 'L', ay: 'T' }, party: { r: [16, 56, 358, 48], ax: 'L', ay: 'T', row: true }, map: { r: [278, 116, 96, 96], ax: 'R', ay: 'T' },
     bLock: { c: [246, 140], d: 48, ax: 'R', ay: 'T' }, bCam: { c: [190, 140], d: 48, ax: 'R', ay: 'T' }, bMenu: { c: [40, 140], d: 48, ax: 'L', ay: 'T' }, timer: { r: [72, 128, 120, 24], ax: 'L', ay: 'T' },
     stick: { c: [82, 742], d: 120, ax: 'L', ay: 'B' }, bA: { c: [314, 746], d: 76, ax: 'R', ay: 'B' }, bX: { c: [228, 690], d: 64, ax: 'R', ay: 'B' }, bY: { c: [314, 654], d: 64, ax: 'R', ay: 'B' },
-    bSP: { c: [230, 786], d: 64, ax: 'R', ay: 'B' }, bOrb: { c: [300, 572], d: 60, ax: 'R', ay: 'B' }, bB: { c: [168, 742], d: 48, ax: 'L', ay: 'B' }, bI0: { c: [172, 610], d: 48, ax: 'L', ay: 'B' }, bI1: { c: [228, 610], d: 48, ax: 'L', ay: 'B' },
+    bSP: { c: [230, 786], d: 64, ax: 'R', ay: 'B' }, bB: { c: [168, 742], d: 48, ax: 'L', ay: 'B' }, bI0: { c: [172, 610], d: 48, ax: 'L', ay: 'B' }, bI1: { c: [228, 610], d: 48, ax: 'L', ay: 'B' },
     bSig: { c: [44, 610], d: 48, ax: 'L', ay: 'B' }, mebox: { r: [16, 524, 220, 34], ax: 'L', ay: 'B' },
     area: [108, 604] },
 };
@@ -525,7 +525,6 @@ function bindHud() {
   btn('bX', () => press('X+', 'X'), () => release('X-', 'X'));
   btn('bY', () => press('Y+', 'Y'), () => release('Y-', 'Y'));
   btn('bSP', () => press('SP'));
-  btn('bOrb', () => press('O+'));
   btn('bB', () => press('B+', 'B'), () => release('B-', 'B'));
   btn('bLock', () => toggleLock());
   btn('bCam', () => { R.cam.reset = true; AUDIO.sfx('ui'); });
@@ -535,7 +534,7 @@ function bindHud() {
   document.querySelectorAll('#sigmenu button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); press('sig', undefined); const L = local(); if (L) { L.ev[L.ev.length - 1] = [L.evId, 'sig', b.dataset.sig]; } $('#sigmenu').hidden = true; AUDIO.sfx('ok'); }));
   $('#map').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); $('#map').classList.toggle('big'); sizeMapCanvas(); });
   // キーボード（パソコンでの確認用）
-  const KM = { KeyJ: ['A'], KeyK: ['X+', 'X', 'X-'], KeyL: ['Y+', 'Y', 'Y-'], KeyU: ['SP'], KeyO: ['O+'], Space: ['B+', 'B', 'B-'], Digit1: ['I0'], Digit2: ['I1'] };
+  const KM = { KeyJ: ['A'], KeyK: ['X+', 'X', 'X-'], KeyL: ['Y+', 'Y', 'Y-'], KeyU: ['SP'], Space: ['B+', 'B', 'B-'], Digit1: ['I0'], Digit2: ['I1'] };
   addEventListener('keydown', e => {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     if (e.code === 'Escape') { if (G.mode === 'play') pause(); else if (G.mode === 'pause') resume(); return; }
@@ -590,10 +589,10 @@ function buildPartyCards() {
     const info = el('div', 'info'); const nm = el('div', 'nm'); const lvT = el('span', 'lv', ''); const nmT = el('span', '', ''); const ic = el('span', 'ic', ''); nm.append(lvT, nmT, ic); info.appendChild(nm);
     const hp = el('div', 'mini hp'); const hpi = el('i'); hp.appendChild(hpi); info.appendChild(hp);
     const sp = el('div', 'mini sp'); const spi = el('i'); sp.appendChild(spi); info.appendChild(sp); c.appendChild(info);
-    const st = el('span', 'state', ''); st.hidden = true; c.appendChild(st);
+    const st = el('span', 'state', ''); st.hidden = true; c.appendChild(st); const gt = el('span', 'gtag', ''); gt.hidden = true; c.appendChild(gt);
     const ht = el('span', 'healtag', '回復対象'); ht.hidden = true; c.appendChild(ht);
     c.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); partyTap(i); });
-    box.appendChild(c); G.cards.push({ c, im, nmT, lvT, ic, hp, hpi, sp, spi, st, ht, ch: null });
+    box.appendChild(c); G.cards.push({ c, im, nmT, lvT, ic, hp, hpi, sp, spi, st, ht, gt, ch: null });
   }
 }
 function partyTap(i) {
@@ -614,9 +613,9 @@ function onNotice(o) {
   if (o.k === 'sp') {
     if (o.me) { const c = $('#cutin'); $('#cutImg').src = G.thumbs[v.allies[o.slot].ch] || ''; $('#cutWho').textContent = 'P' + (o.slot + 1) + '　必殺技'; $('#cutNm').textContent = o.nm; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show'); }
     else notice(`P${o.slot + 1}：${o.nm}！`, 'sp', 1300);
-  } else if (o.k === 'orb') { notice(o.slot === G.my ? '重玉を拾った！「重玉」ボタンで強化必殺（効果2倍）' : `P${o.slot + 1}が重玉を拾った`, 'sp', 2200);
+  } else if (o.k === 'orb') { notice(o.slot === G.my ? 'G玉！ 10秒だけ ちから・ようりょく×2' : `P${o.slot + 1}がG玉（10秒 ちから・ようりょく×2）`, 'sp', 2200);
   } else if (o.k === 'boss') { const M = (G.v && G.v.stageId === 'ueno' ? DATA.UENO.moves : DATA.BMOVES)[o.mv]; if (M && o.mv !== 'cmd') notice(M.nm, 'boss', 1100); }
-  else if (o.k === 'phase2') { banner('トバトーバンが本気を出した', '空を飛ぶ巡行が3回に増える。ミニマップと矢印を見よう', 2400); AUDIO.bgm('boss2'); }
+  else if (o.k === 'phase2') { banner('トバトーバが覚醒した！', '赤いオーラ：空の巡行が6回に増える。落下提灯に注意', 2400); AUDIO.bgm('boss2'); }
   else if (o.k === 'unlock') { if (G.lock === 'boss') { G.lock = null; G.relockWanted = SET.relock; } notice('ボスが飛んだ！ 注目が外れた', 'warn', 1500); }
   else if (o.k === 'sig') { const t = { help: '助けて！', heal: '回復する！', lantern: '灯籠へ！', sp: '必殺準備OK！', left: '通信が切れたためAIが引き継ぎます' }[o.code] || ''; notice(`P${o.slot + 1}：${t}`, o.code === 'left' ? 'warn' : '', 2000); }
   else if (o.k === 'stage') {
@@ -626,7 +625,7 @@ function onNotice(o) {
     if (o.s === 'train') { AUDIO.bgm('boss'); banner('ヨシノシンの部下が現れた！', '上野に着くまでに、車内の部下をすべて倒せ', 2400); }
     if (o.s === 'arrive') { banner('上野に到着！', 'ヨシノシンは上野で待っている……', 3000); }
     if (o.s === 'fight') { AUDIO.bgm('boss'); if (v && v.stageId === 'ueno') banner('ヨシノシンを鎮めよ！', '部下の予告を見切り、本体に近づこう', 2200); else banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
-    if (o.s === 'won') { AUDIO.jingle(true); if (v && v.stageId === 'joban') banner('ヨシノシンの部下を全員倒した！', '常磐線は無事に上野へ着いた', 3000); else if (v && v.stageId === 'ueno') banner('ヨシノシンを鎮めた！', '命令を失った部下たちが、ぱたりと倒れた', 3000); else banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
+    if (o.s === 'won') { AUDIO.jingle(true); if (v && v.stageId === 'joban') banner('ヨシノシンの部下を全員倒した！', '常磐線は無事に上野へ着いた', 3000); else if (v && v.stageId === 'ueno') banner('ヨシノシンを鎮めた！', '命令を失った部下たちが、ぱたりと倒れた', 3000); else banner('鎮まった！', 'トバトーバは静かな看板に戻った', 3000); }
     if (o.s === 'lost') { AUDIO.jingle(false); banner(G.v && G.v.result && G.v.result.why === 'time' ? '時間切れ' : '全滅', '', 2500); }
   }
 }
@@ -639,13 +638,13 @@ function onEvent(e, v) {
     case 'board': notice(`${DATA.JOBAN.stations[e.st]}：ホームから部下が${e.n}体乗ってくる！`, 'warn', 2200); break;
     case 'jev': if (e.id && e.id.startsWith('mid_')) notice(`前の車両に潜んでいた部下${e.n}体が出てくる！`, 'warn', 2200); break;
     case 'arriveSt': if (e.st < 4) notice(`${DATA.JOBAN.stations[e.st]}に到着`, 'info', 1500); break;
-    case 'sleepWarn': banner(`もうすぐ30分睡眠チャージ（${['75%', '50%', '25%'][e.i]}）`, `接近して必殺・重玉を準備しよう（10秒で${e.need.toLocaleString()}）`, 2600); break;
+    case 'sleepWarn': banner(`もうすぐ30分睡眠チャージ（${['75%', '50%', '25%'][e.i]}）`, `接近して必殺・G玉を準備しよう（10秒で${e.need.toLocaleString()}）`, 2600); break;
     case 'sleep': banner(`30分睡眠チャージ！（${e.i + 1}/3）`, `10秒以内に4体合計${e.need.toLocaleString()}ダメージを与えろ！`, 2000); break;
-    case 'sleepEnd': if (e.ok) banner(`阻止成功！（${e.i + 1}/3）`, `ヨシノシンがダウン（${e.dmg.toLocaleString()} / ${e.need.toLocaleString()}）`, 2400); else banner('阻止失敗…', `ヨシノシンがHP30,000まで全回復（${e.dmg.toLocaleString()} / ${e.need.toLocaleString()}）。3つの段階をやり直し`, 2800); break;
+    case 'sleepEnd': if (e.ok) banner(`阻止成功！（${e.i + 1}/3）`, `ヨシノシンがダウン（${e.dmg.toLocaleString()} / ${e.need.toLocaleString()}）`, 2400); else banner('阻止失敗…', `ヨシノシンがHP${DATA.UENO.hp.toLocaleString()}まで全回復（${e.dmg.toLocaleString()} / ${e.need.toLocaleString()}）。3つの段階をやり直し`, 2800); break;
     case 'barrier': if (e.on) notice('完全指揮バリア！ 射撃部下のビームを本体へ2回誘導して壊そう', 'boss', 3200); else if (e.broken) notice('バリアを破壊！ ヨシノシンがよろめいた', 'sp', 1800); else notice('バリアが消えた', 'info', 1200); break;
     case 'bhit': if (e.n < 2) notice(`バリアに命中 ${e.n}/2`, 'sp', 1300); break;
     case 'waveWarn': notice(`包囲動員：部下${e.n}体が広場の入口から来る！`, 'warn', 1800); break;
-    case 'tengaiWave': if (e.n === 1) notice('天蓋乱射・三十六光！ 番号の順に光が落ちる', 'boss', 1800); break;
+    case 'tengaiWave': if (e.n === 1) notice('天蓋乱射・三十六光！ 床の光から離れよう（3回に分けて落ちる）', 'boss', 1800); break;
     case 'gate': notice(e.n >= 3 ? '居酒屋通りの部下をすべて倒した！' : `暖簾の結界が開いた（${e.n}/3）。奥へ進もう`, 'info', 2000); break;
     case 'holdUeno': notice('上野進入待ち：車内の敵を倒すと上野に到着', 'warn', 2600); break;
     case 'heal': if (e.v > 0) dmgNum(e.x, 1.2, e.z, '+' + e.v, 'heal'); break;
@@ -653,7 +652,7 @@ function onEvent(e, v) {
     case 'ascend': notice(`P${e.slot + 1}が昇天した（この戦闘では戻らない）`, 'warn', 2400); break;
     case 'revive': notice(`P${e.slot + 1}が復活した`, '', 1400); break;
     case 'lantern': { const n = v.lan.lit.filter(Boolean).length; notice(`灯籠 ${n}/4${n < 4 ? `（残り${Math.ceil(v.lan.T)}秒）` : ''}`, '', 1600); break; }
-    case 'allLit': banner('灯籠がそろった', 'トバトーバンの動きが止まる！', 1800); break;
+    case 'allLit': banner('灯籠がそろった', 'トバトーバの動きが止まる！', 1800); break;
     case 'lanternFail': notice('灯籠の火が消えた（30秒以内に4基）', 'warn', 1800); break;
     case 'bossdown': banner('今だ！', '必殺技を重ねよう', 1400); break;
     case 'parry': if (e.slot === me) notice('受け流し成功！', 'sp', 1000); break;
@@ -688,7 +687,7 @@ function trainHud(v) {
   $('#fade').style.opacity = v.stage === 'intro' ? (t < 3.0 ? 0 : t < 3.5 ? (t - 3) / 0.5 : t < 4.0 ? 1 - (t - 3.5) / 0.5 : 0) : 0;
   if (v.stage === 'intro') {
     const C = G.cut || (G.cut = {});
-    if (t > 0.3 && !C.a) { C.a = 1; banner('トバトーバンを鎮めた！', 'そのころ、常磐線にヨシノシンの部下が現れたという知らせが……', 2600); }
+    if (t > 0.3 && !C.a) { C.a = 1; banner('トバトーバを鎮めた！', 'そのころ、常磐線にヨシノシンの部下が現れたという知らせが……', 2600); }
     if (t > 4.1 && !C.b) { C.b = 1; banner('北千住駅', '常磐線 上野行きに乗りこもう', 2200); }
     if (t > 9.4 && !C.c) { C.c = 1; AUDIO.sfx('trainChime'); AUDIO.sfx('doorClose'); notice('ドアが閉まります', 'info', 1400); }
   }
@@ -726,7 +725,7 @@ function updateHud(v, dt) {
   if (showBoss && !jb) {
     const b = v.boss; setBar($('#bossFill'), b.hpR); G.lagBoss = G.lagBoss > b.hpR ? Math.max(b.hpR, G.lagBoss - dt * 0.15) : b.hpR; setBar($('#bossLag'), G.lagBoss);
     $('#bossPh').hidden = b.phase !== 2 || ue;
-    $('#bossNm').textContent = ue ? 'ヨシノシン' : 'トバトーバン';
+    $('#bossNm').textContent = ue ? 'ヨシノシン' : 'トバトーバ';
     $('#bossSt').textContent = b.st === 'sleep' ? '睡眠中・被ダメージ×2.25' : ue && U && U.pend >= 0 ? '睡眠準備' : b.st === 'down' ? 'ダウン中' : b.stun ? (ue ? 'よろめき' : '麻痺') : b.st === 'fly' ? '飛行中' : ue && U && U.sleepNear ? '睡眠チャージが近い' : b.defDown ? '守り↓' : '';
     if (ue && U) {
       $('#ueMin').textContent = `部下${U.alive}/100${U.waveWait ? `(待${U.waveWait})` : ''}・増援${Math.ceil(U.waveIn)}秒`;
@@ -758,7 +757,6 @@ function updateHud(v, dt) {
     circ.setAttribute('stroke-dashoffset', String(113 * (1 - ratio)));
     t.hidden = !txt; t.textContent = txt;
   }
-  const ob = $('#bOrb'); ob.classList.toggle('on', !!me.orb); ob.classList.toggle('off', !me.orb || me.st !== 'ok'); $('#lOrb').textContent = me.orb ? '1' : 'なし';
   const spb = $('#bSP'); spb.classList.toggle('full', me.sp >= 100); $('#lSP').textContent = me.sp >= 100 ? '満タン' : me.sp + '%';
   if (me.sp >= 100 && !G.spReadyShown) { G.spReadyShown = true; AUDIO.sfx('ready'); } if (me.sp < 100) G.spReadyShown = false;
   $('#lB').textContent = me.ctx === 'lantern' ? '灯す' : '走る';
@@ -775,6 +773,7 @@ function updateHud(v, dt) {
     C.nmT.textContent = DATA.CHI[a.ch].nm + (a.ai && G.session.kind !== 'solo' ? '·AI' : ''); C.lvT.textContent = 'Lv' + (a.lv || 1);
     setBar(C.hpi, a.hpR); C.hp.classList.toggle('low', a.hpR < 0.3); setBar(C.spi, a.sp / 100); C.sp.classList.toggle('full', a.sp >= 100);
     C.ic.textContent = (a.strBuff ? '⚔' : '') + (a.defBuff ? '🛡' : '') + (a.stealth ? '👁' : '') + (a.taunt ? '❗' : '') + (a.sp >= 100 ? '★' : '');
+    C.gt.hidden = !(a.gT > 0); if (a.gT > 0) C.gt.textContent = 'G ' + Math.ceil(a.gT); C.c.classList.toggle('gbuff', a.gT > 0); // G玉の残り秒
     C.st.hidden = a.st === 'ok'; C.st.textContent = a.st === 'down' ? `気絶 ${Math.max(0, Math.ceil(DATA.SIM.ascendTime - a.downT))}` : '昇天';
     const healing = me.act === 'charge' && DATA.SKILLS[me.sk[me.actSlot]] && DATA.SKILLS[me.sk[me.actSlot]].kind === 'heal';
     C.ht.hidden = !(healing && G.session.local.healT === i); C.c.classList.toggle('tgt', healing && G.session.local.healT === i);
@@ -807,7 +806,7 @@ function overlays(v, me) {
     if (mo.dying) continue; const d = Math.hypot(mo.x - me.x, mo.z - me.z); if (d > 16 && G.lock !== mo.id) continue;
     put('m' + mo.id, mo.x, mo.akiba && DATA.AKIBA.foes[mo.kind] ? DATA.AKIBA.foes[mo.kind].h * (DATA.AKIBA.foes[mo.kind].scale || 1) + 0.3 : 1.15, mo.z, () => { const e = el('div', 'label3d'); const hp = el('div', 'mini hp'); hp.style.width = '34px'; const hi = el('i'); hi.style.background = '#ff6a5a'; hp.appendChild(hi); e.appendChild(hp); return { e, hi }; }, o => setBar(o.hi, mo.hpR));
   }
-  for (const h of v.hz) if (h.num && h.t < h.warn + 0.05) put('hz' + h.id, h.x, 0.2, h.z, () => { const e = el('div', 'hznum'); return { e }; }, o => { o.e.textContent = String(h.num); o.e.style.opacity = 0.6 + 0.4 * Math.min(1, h.t / h.warn); }); // 天蓋乱射の着弾順
+  // 天蓋乱射の着弾順の数字はv6で表示しない（床の予兆・攻撃は同じ）
   for (const ob of v.orbs || []) if (ob.life <= 3) put('ob' + ob.id, ob.x, 0.9, ob.z, () => ({ e: el('div', 'orbt') }), o => { o.e.textContent = Math.ceil(ob.life) + '秒'; });
   if (v.boss && (v.stage === 'boss') && v.boss.st !== 'dead') edge('boss', v.boss.x, v.boss.y + 2, v.boss.z, '#cb4b46', v.boss.st === 'fly' ? '飛行' : 'ボス');
   // 注目のレティクル
@@ -925,7 +924,7 @@ function showResult(v) {
   const jb = st === 'joban', ue = st === 'ueno', sr = st === 'ueno_street', ak = st.startsWith('akiba'), firstClear = win && !cleared(st);
   const res = checkpoint(v, true, '戦いが終わった');
   if (win) G.sessClear[st] = true;
-  const T = { senju: ['トバトーバンを鎮めた！', '北千住（トバトーバン）'], joban: ['上野に到着！', '常磐線（北千住→上野）'], ueno_street: ['居酒屋通りを突破！', '上野の居酒屋通り'], ueno: ['ヨシノシンを鎮めた！', '上野駅前（ヨシノシン）'], akiba_platform: ['ホームの2人を倒した！', '秋葉原駅ホーム（オガ・カエ）'], akiba_plaza: ['星と中を鎮めた！', '秋葉原駅前広場（星・中）'] }[st];
+  const T = { senju: ['トバトーバを鎮めた！', '北千住（トバトーバ）'], joban: ['上野に到着！', '常磐線（北千住→上野）'], ueno_street: ['居酒屋通りを突破！', '上野の居酒屋通り'], ueno: ['ヨシノシンを鎮めた！', '上野駅前（ヨシノシン）'], akiba_platform: ['ホームの2人を倒した！', '秋葉原駅ホーム（オガ・カエ）'], akiba_plaza: ['星と中を鎮めた！', '秋葉原駅前広場（星・中）'] }[st];
   $('#resEyebrow').textContent = win ? (jb ? '電車クリア' : '勝利') : '敗北'; $('#resTitle').textContent = win ? T[0] : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
   const kv = $('#resKv'); kv.textContent = '';
   const rows = [['ステージ', T[1]], ['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : `協力プレイ（${v.H || 1}人）`]];

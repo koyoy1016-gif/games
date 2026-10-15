@@ -63,7 +63,7 @@
   /* ---------- 被ダメージ・バリア・HP段階ロック ---------- */
   /** バリア中の本体には通常ダメージが通らない */
   P.uenoBlock = function (e) { if (e !== this.boss || !this.U || !this.U.barrier) return false; this.ev('bblock', { x: e.x, z: e.z }); return true; };
-  /** 睡眠中の本体は被ダメージ×2.25（Lv補正・重玉とは別に一度だけ） */
+  /** 睡眠中の本体は被ダメージ×2.25（Lv補正・G玉とは別に一度だけ） */
   P.uenoDmgMul = function (e) { return e === this.boss && this.U && this.U.sleep ? U().moves.sleep.mul : 1; };
   /** HP段階ロック：未判定のしきい値より下へは進めない（睡眠中は次の段階のしきい値で止める）。最後の段階のあとは0まで */
   P.capEnemyDmg = function (e, dmg) {
@@ -79,7 +79,7 @@
     if (Us.sleep) { Us.sleep.dmg += dmg; return; } // 本体へ実際に適用したダメージだけを数える（反射・味方への爆発・回復・部下へのダメージは入らない）
     this.uenoThresholds();
   };
-  /** しきい値の確認：予告（24,000／16,500／9,000）・睡眠の開始待ち・五十連の予約（22,500と7,500を初めて下回ったとき） */
+  /** しきい値の確認：予告（17,600／12,100／6,600）・睡眠の開始待ち（16,500／11,000／5,500）・五十連の予約（最大HPの75%と25%を初めて下回ったとき） */
   P.uenoThresholds = function () {
     const b = this.boss, Us = this.U, M = U().moves, S = M.sleep.stages; if (!b || b.hp <= 0) return;
     const k = this.sleepNext();
@@ -90,6 +90,32 @@
     for (const f of M.throw50.at) if (!Us.thrFlag[f] && b.hp < b.maxHp * f) { Us.thrFlag[f] = 1; Us.thrQ++; } // 全回復しても使用済みは戻さない
   };
 
+  /** 部下の攻撃（剣・パンチ・ビーム）の範囲がヨシノシン本体に重なったら本体に当たる（v6）。
+   *  1つの攻撃で1回だけ・手前の味方に当たって止まる攻撃（ビーム・パンチ）は背後へ届かない・バリア中は無効（ビームの誘導判定は hzHook）。
+   *  ダメージは部下の威力×ちから/ようりょく÷(120＋まもり150)。会心・特性・G玉・平均Lv補正は掛けない。睡眠中の倍率とHP段階ロックは通常どおり */
+  P.minionHitBoss = function (h) {
+    if (this.stageId !== 'ueno' || this.stage !== 'boss') return;
+    const b = this.boss, Us = this.U; if (!b || b.hp <= 0 || !this.bossHittable()) return;
+    const R = U().bossR;
+    let inside = false;
+    if (h.kind === 'fan') inside = inFan(b.x, b.z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, R);
+    else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(b.x, b.z, h.x, h.z, h.yaw, h.len, h.w / 2, R);
+    else if (h.kind === 'circle') inside = dist2(b.x, b.z, h.x, h.z) <= h.r + R;
+    if (!inside) return;
+    if (h.single) { // 手前の味方に当たって止まる（無敵中の味方は素通り）
+      const fx = Math.sin(h.yaw), fz = Math.cos(h.yaw), fb = (b.x - h.x) * fx + (b.z - h.z) * fz;
+      for (const o of this.allies) if (o.st === 'ok' && !(o.inv > 0) && inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR) && (o.x - h.x) * fx + (o.z - h.z) * fz < fb) { h.bossHit = 1; return; }
+    }
+    h.bossHit = 1;
+    if (Us && Us.barrier) return; // バリア中はダメージなし（ビーム2本の誘導で解除する仕組みはそのまま）
+    const S = h.srcStats || {}, atk = h.stat === 'yo' ? S.yo : S.str;
+    let dmg = Math.max(1, Math.round((h.pw || 0) * (atk || 0) / (DATA.SIM.defBase + b.def) * this.uenoDmgMul(b)));
+    dmg = this.capEnemyDmg(b, dmg); if (dmg <= 0) return;
+    b.hp -= dmg;
+    this.ev('dmg', { v: dmg, crit: 0, x: b.x, z: b.z, y: 1.0, src: -1, kind: 'mob', el: 0 });
+    this.uenoAfterHit(b, dmg);
+    if (b.hp <= 0) { b.hp = 0; this.bossDie(); }
+  };
   /** 射撃部下のビームが本体を通ったか（味方に当たって止まった場合は届かない） */
   P.hzHook = function (h) {
     if (h.hook !== 'yBeam' || this.stageId !== 'ueno') return;
@@ -155,7 +181,7 @@
       if (S.dmg >= st.need) { // 成功：その段階だけ成功済みにして4秒ダウン
         Us.done[S.i] = 1; Us.lastSleep = { ok: 1, i: S.i, dmg: S.dmg }; Us.sleep = null; b.st = 'down'; b.t = 0; b.downT = M.sleep.down; b.mv = null;
         this.ev('sleepEnd', { ok: 1, i: S.i, need: st.need, dmg: Math.round(S.dmg), cyc: Us.cyc }); this.ev('bossdown', {});
-      } else if (S.t >= M.sleep.dur) { // 失敗：HP30,000へ全回復し、3段階すべてを未判定へ戻す
+      } else if (S.t >= M.sleep.dur) { // 失敗：最大HP（22,000）へ全回復し、3段階すべてを未判定へ戻す
         Us.lastSleep = { ok: 0, i: S.i, dmg: S.dmg }; Us.sleep = null; Us.done = [0, 0, 0]; Us.pend = -1; Us.cyc++; b.hp = b.maxHp; b.st = 'idle'; b.t = 0; b.gap = 1.0; b.mv = null;
         this.ev('sleepEnd', { ok: 0, i: S.i, need: st.need, dmg: Math.round(S.dmg), cyc: Us.cyc });
       }

@@ -39,7 +39,7 @@ const PROFILE = 'prototype_playable';
 
 /* ---------------- シミュレーション全体 ---------------- */
 const SIM = {
-  orb: p('重玉', '出現（有効戦闘の間隔）・寿命・半径・速さ', { every: 50, life: 10, r: 0.28, spd: 4 }, 's/s/m/m/s', 'spec', null, '壁で反射する無害な球。拾うと強化必殺1回'),
+  orb: p('G玉', '出現（有効戦闘の間隔）・寿命・半径・速さ・強化時間・倍率', { every: 30, life: 10, r: 0.28, spd: 4, dur: 10, mul: 2 }, 's/s/m/m/s/s/倍', 'spec', null, '壁で反射する無害な球。拾うと10秒だけちから・ようりょく×2（HP・まもり・移動は変えない。重ねず残り時間を10秒へ更新）'),
   hz: p('全体', '固定シミュレーション周期', 60, 'Hz', 'proto', null, '原作が60fpsだったという意味ではない。描画fpsとは分離'),
   timeLimit: p('全体', 'ミッション制限時間', 20 * 60, 'seconds', 'proto'),
   walk: p('移動', '歩行速度', 4.0, 'm/s', 'proto', null, '原作の速度ではない'),
@@ -48,6 +48,7 @@ const SIM = {
   stamDrain: p('移動', 'ダッシュ中のスタミナ消費', 25, 'points/s', 'proto'),
   stamRegen: p('移動', 'スタミナ回復（歩行・停止時）', 20, 'points/s', 'proto'),
   stamRedash: p('移動', '息切れ後に再ダッシュできる量', 30, 'points', 'proto'),
+  autoRunT: p('移動', '自動ダッシュまでの歩き続け時間（人の操作のみ）', 1.0, 's', 'spec'), autoRunDot: 0.8, // 向きの変化が約37度を超えたら数え直す
   chargeMoveMul: p('移動', 'ため中の移動速度倍率', 0.5, 'ratio', 'proto'),
   inputBuffer: p('入力', '技の入力バッファ', 0.10, 'seconds', 'proto'),
   reviveTime: p('救助', '気絶した仲間のまわりの円に入って復活させるまで', 4.0, 'seconds', 'proto', null, 'ボタンは不要。円に誰もいないとゲージはゆっくり減る'),
@@ -90,11 +91,11 @@ const SIM = {
 /* ---------------- 難易度・ボス ---------------- */
 // むずかしさは1つだけ。旧「超」の強さを「通常」とし、体力は旧「超」(32000)の約70%
 const DIFF = {
-  normal: { nm: '通常', str: p('ボス', 'ちから', 440, 'points', 'doc', 13), yo: p('ボス', 'ようりょく', 500, 'points', 'doc', 13), def: p('ボス', 'まもり', 141, 'points', 'doc', 13), hp: p('ボス', '体力', 22400, 'points', 'proto', null, '旧「超」32000の70%。数値は画面に出さない', true), dmgMul: p('ボス', 'トバトーバンが与えるダメージの倍率', 0.7, 'ratio', 'proto', null, 'ちから・ようりょくに掛けて、すべての攻撃のダメージを30%減らす。攻撃の速さ・回数・パターンはそのまま'), mobHp: 480 },
+  normal: { nm: '通常', str: p('ボス', 'ちから', 250, 'points', 'spec'), yo: p('ボス', 'ようりょく', 250, 'points', 'spec'), def: p('ボス', 'まもり', 120, 'points', 'spec'), hp: p('ボス', '体力', 20000, 'points', 'spec', null, 'v6の基本能力。数値は画面に出さない', true), dmgMul: p('ボス', 'トバトーバが与えるダメージの倍率', 0.7, 'ratio', 'proto', null, '出現時にちから・ようりょくへ一度だけ掛ける（実効175／175）。ダメージ関数では掛けない'), mobHp: 480 },
 };
 const BOSS = {
-  nm: 'トバトーバン',
-  height: p('体格', 'トバトーバンの高さ（基準味方=1）', 5.0, 'units', 'proto', null, '新作の設計値。原作モデルの実測ではない'),
+  nm: 'トバトーバ',
+  height: p('体格', 'トバトーバの高さ（基準味方=1）', 5.0, 'units', 'proto', null, '新作の設計値。原作モデルの実測ではない'),
   shoulder: p('体格', 'ボスの肩幅', 2.8, 'units', 'proto'),
   footWidth: p('体格', 'ボスの接地幅', 2.2, 'units', 'proto'),
   // 当たり判定：見た目の脚2本＋胴の下（ダウン中は前に倒れた胴も）。移動の衝突も同じ形を使う
@@ -105,7 +106,7 @@ const BOSS = {
   gapMin: p('ボス行動', '後隙後に次の技を選ぶまで（最小）', 0.7, 'seconds', 'proto'),
   gapMax: p('ボス行動', '後隙後に次の技を選ぶまで（最大）', 1.1, 'seconds', 'proto'),
   introT: p('ボス行動', '登場演出の全体尺', 4.5, 'seconds', 'proto', null, 'オリジナル演出'),
-  phase2: p('ボス行動', '終盤段階へ移るHP割合', 1 / 3, 'ratio', 'doc', 6, 'HP約1/3以下で横切る飛行が3回'),
+  phase2: p('ボス行動', '終盤段階へ移るHP割合', 1 / 3, 'ratio', 'doc', 6, 'HP1/3以下で覚醒（赤いオーラ・横断6回）'),
   flyHittable: false,
 };
 // ボス技：wind=予兆/準備, act=攻撃期間, iv=同一対象への間隔, max=最大ヒット, rec=後隙, cd=最短再使用
@@ -115,7 +116,7 @@ const BMOVES = {
   otoshi: { nm: '提灯おとし', wind: p('ボス技', '提灯おとし：予兆', 1.0, 's', 'proto'), act: 0.12, rec: p('ボス技', '提灯おとし：後隙', 0.65, 's', 'proto'), cd: p('ボス技', '提灯おとし：再使用制限', 9, 's', 'proto'), pw: p('ボス技', '提灯おとし：仮威力', 70, 'power', 'proto'), stat: 'yo', r: 2.3 },
   kousen: { nm: '招福看板光線', wind: p('ボス技', '看板光線：予兆', 0.85, 's', 'proto'), act: p('ボス技', '看板光線：照射期間', 1.2, 's', 'proto'), iv: p('ボス技', '看板光線：同一対象への間隔', 0.30, 's', 'proto'), max: p('ボス技', '看板光線：最大ヒット', 4, 'hits', 'proto'), rec: p('ボス技', '看板光線：後隙', 0.8, 's', 'proto'), cd: p('ボス技', '看板光線：再使用制限', 10, 's', 'proto'), pw: p('ボス技', '看板光線：仮威力', 70, 'power', 'proto'), stat: 'yo', len: 24, w: 2.8 },
   harite: { nm: '商売繁盛張り手', wind: p('ボス技', '張り手：予兆', 0.45, 's', 'proto'), act: p('ボス技', '張り手：判定', 0.15, 's', 'proto'), rec: p('ボス技', '張り手：後隙', 0.9, 's', 'proto'), cd: p('ボス技', '張り手：再使用制限', 5, 's', 'proto'), pw: p('ボス技', '張り手：仮威力', 140, 'power', 'proto'), stat: 'str', start: 1.0, len: p('ボス技', '張り手：届く長さ', 3.4, 'm', 'proto', null, '手のひらと衝撃波が届く範囲'), w: 2.6 },
-  junkou: { nm: '千住大巡行', wind: p('ボス技', '大巡行：予兆', 1.1, 's', 'proto'), speed: p('ボス技', '大巡行：飛ぶ速さ', 27, 'm/s', 'proto', null, '横断1回はおよそ0.8〜1.4秒'), gap: p('ボス技', '大巡行：横断の間（最短の予兆）', 0.6, 's', 'proto', null, '外周を大きく回り込むときは長くなる'), rimSpeed: 38, n1: p('ボス技', '大巡行：前半の横断回数', 1, 'count', 'proto'), n2: p('ボス技', '大巡行：終盤の横断回数', 3, 'count', 'doc', 6, '計3回。横・斜め・縦など毎回ちがう向きから飛んでくる'), minTurn: p('ボス技', '大巡行：前の2回と変える向きの最小差', 0.55, 'rad', 'proto', null, '約31度'), minLen: 20, outer: 3.5, frontZ: 0.8, rec: p('ボス技', '大巡行：最終着地後の後隙', 1.5, 's', 'proto'), cd: p('ボス技', '大巡行：再使用制限', 22, 's', 'proto'), pw: p('ボス技', '大巡行：接触の仮威力', 140, 'power', 'proto'), bombPw: p('ボス技', '大巡行：落下提灯の仮威力', 70, 'power', 'proto'), bombR: 2.0, bombFall: 0.9, bombEvery: 0.24, bombSpread: 3.4, contactR: p('ボス技', '大巡行：体の当たり幅（片側）', 1.45, 'm', 'proto', null, '低く水平に飛ぶ体と同じ幅'), contactLen: 2.4, landR: 2.6, stat: 'str' },
+  junkou: { nm: '千住大巡行', wind: p('ボス技', '大巡行：予兆', 1.1, 's', 'proto'), speed: p('ボス技', '大巡行：飛ぶ速さ', 27, 'm/s', 'proto', null, '横断1回はおよそ0.8〜1.4秒'), gap: p('ボス技', '大巡行：横断の間（最短の予兆）', 0.6, 's', 'proto', null, '外周を大きく回り込むときは長くなる'), rimSpeed: 38, n1: p('ボス技', '大巡行：通常時の横断回数', 3, 'count', 'spec'), n2: p('ボス技', '大巡行：覚醒時の横断回数', 6, 'count', 'spec', null, '横・斜め・縦など毎回ちがう向き。飛行中は落下提灯を落とす'), minTurn: p('ボス技', '大巡行：前の2回と変える向きの最小差', 0.55, 'rad', 'proto', null, '約31度'), minLen: 20, outer: 3.5, frontZ: 0.8, rec: p('ボス技', '大巡行：最終着地後の後隙', 1.5, 's', 'proto'), cd: p('ボス技', '大巡行：再使用制限', 22, 's', 'proto'), pw: p('ボス技', '大巡行：接触の仮威力', 140, 'power', 'proto'), bombPw: p('ボス技', '大巡行：落下提灯の仮威力', 70, 'power', 'proto'), bombR: 2.0, bombFall: 0.9, bombEvery: 0.24, bombSpread: 3.4, contactR: p('ボス技', '大巡行：体の当たり幅（片側）', 1.45, 'm', 'proto', null, '低く水平に飛ぶ体と同じ幅'), contactLen: 2.4, landR: 2.6, stat: 'str' },
   zouen: { nm: '呼び込み札小僧', wind: p('ボス技', '増援：予兆', 0.8, 's', 'proto'), rec: p('ボス技', '増援：後隙', 0.5, 's', 'proto'), cd: p('ボス技', '増援：再使用制限', 25, 's', 'proto'), max: p('ボス技', '増援：同時存在上限', 2, 'count', 'doc', 6) },
 };
 const MOB = {
@@ -131,13 +132,16 @@ const MOB = {
 
 /* ---------------- 攻撃（A/X/Y/必殺） ---------------- */
 // kind: combo3 / melee1 / shot / charge / dodge / retreat / dot / stealth / parry / heavy / trap / protect / guard / taunt / mine / heal / healRing
+// Aボタンの通常攻撃：v6で時間をすべて旧値の70%（発生・各段・硬直終了・射撃の移動ロック）。ヒット数・威力・コンボの入力は同じ
+const A_TIME = p('攻撃', 'A通常攻撃の時間倍率（v6）', 0.70, 'ratio', 'spec', null, 'X/Y・回避・必殺・敵の攻撃には掛けない');
+const aT = v => Math.round(v * A_TIME * 1000) / 1000;
 const MOVES = {
-  combo3: { kind: 'combo3', nm: '三連', hits: [p('攻撃', '三連：1発目', 0.15, 's', 'proto'), p('攻撃', '三連：2発目（入力時）', 0.45, 's', 'proto'), p('攻撃', '三連：3発目（入力時）', 0.85, 's', 'proto')], end: p('攻撃', '三連：最後の硬直終了', 1.15, 's', 'proto'), range: p('当たり判定', '近接攻撃が届く距離（体の中心から）', 1.25, 'units', 'proto', null, '相手の体（脚）に触れたときだけ当たる'), arc: 1.25 },
-  melee1: { kind: 'melee1', nm: '近接打撃', start: p('攻撃', '単発近接：発生', 0.18, 's', 'proto'), active: p('攻撃', '単発近接：攻撃判定', 0.10, 's', 'proto'), end: p('攻撃', '単発近接：最短周期', 0.50, 's', 'proto'), range: 1.25, arc: 1.2 },
-  shot: { kind: 'shot', nm: '射撃', fire: 0.10, end: p('攻撃', '通常射撃：最短周期', 0.50, 's', 'proto'), lock: 0.25, speed: 18, life: 0.85, r: 0.35 },
+  combo3: { kind: 'combo3', nm: '三連', hits: [p('攻撃', '三連：1発目', aT(0.15), 's', 'spec'), p('攻撃', '三連：2発目（入力時）', aT(0.45), 's', 'spec'), p('攻撃', '三連：3発目（入力時）', aT(0.85), 's', 'spec')], end: p('攻撃', '三連：最後の硬直終了', aT(1.15), 's', 'spec'), range: p('当たり判定', '近接攻撃が届く距離（体の中心から）', 1.25, 'units', 'proto', null, '相手の体（脚）に触れたときだけ当たる'), arc: 1.25 },
+  melee1: { kind: 'melee1', nm: '近接打撃', start: p('攻撃', '単発近接：発生', aT(0.18), 's', 'spec'), active: p('攻撃', '単発近接：攻撃判定', aT(0.10), 's', 'spec'), end: p('攻撃', '単発近接：最短周期', aT(0.50), 's', 'spec'), range: 1.25, arc: 1.2 },
+  shot: { kind: 'shot', nm: '射撃', fire: aT(0.10), end: p('攻撃', '通常射撃：最短周期', aT(0.50), 's', 'spec'), lock: aT(0.25), speed: 18, life: 0.85, r: 0.35 },
 };
 const CHARGE = {
-  max: p('ため', '最大ため', 1.0, 's', 'proto'),
+  max: p('ため', '最大ため（X・Yのため攻撃）', 0.5, 's', 'spec', null, 'v6の依頼で旧1.0秒から50%短縮。最大ためで威力×2.5は同じ'),
   start: p('ため', '離してから発生', 0.15, 's', 'proto'),
   rec: p('ため', '後隙', 0.35, 's', 'proto'),
   cd: p('ため', '再使用', 7, 's', 'proto'),
@@ -223,7 +227,7 @@ const ITEMS = {
   ramune: { nm: '元気ラムネ', desc: 'スタミナ満タン＋10秒減らない', dur: 10, use: 0.4, icon: '🥤' },
   shibireFuda: { nm: 'しびれ札', desc: '足元に麻痺のワナ', use: 0.4, icon: '📜' },
   kemuriDama: { nm: '煙玉', desc: '6秒間狙われにくい', dur: 6, use: 0.3, icon: '💨' },
-  starburst_gun: { nm: '閃光銃800', desc: '1戦闘1発。最初に当たった敵1体へ固定800ダメージ（倍率なし・壁で止まる）', use: 0.8, icon: '🔫', dmg: p('アイテム', '閃光銃800の固定ダメージ', 800, 'points', 'spec', null, '能力・属性・会心・装備・Lv補正・睡眠・重玉の倍率は掛けない'), range: 16, speed: 24, r: 0.18, one: true },
+  starburst_gun: { nm: '閃光銃800', desc: '1戦闘1発。最初に当たった敵1体へ固定800ダメージ（倍率なし・壁で止まる）', use: 0.8, icon: '🔫', dmg: p('アイテム', '閃光銃800の固定ダメージ', 800, 'points', 'spec', null, '能力・属性・会心・装備・Lv補正・睡眠・G玉の倍率は掛けない'), range: 16, speed: 24, r: 0.18, one: true },
 };
 const ITEM_IDS = Object.keys(ITEMS);
 
@@ -263,10 +267,11 @@ const JOBAN = {
   ],
   midFrac: p('常磐線', '区間中央イベントの位置（区間走行距離の割合）', 0.5, 'ratio', 'spec', null, '残り時間ではなく走行距離50%の通過で一度だけ'),
   mix: p('ヨシノシンの部下', '各イベント内の内訳（剣・パンチ・ビーム）', { sword: 1 / 3, punch: 1 / 3, beam: 1 / 3 }, 'ratio', 'spec', null, 'おおむね均等。整数は最大剰余法で指定人数に合わせる'),
+  // 部下の歩く速さはv6で旧値の50%（剣・パンチ1.3／ビーム1.2m/秒）。予兆・周期・弾速・投げられて飛ぶ速さは変えない
   types: {
-    sword: { nm: '剣', wpn: 'sword', hp: 200, str: 192, yo: 209, def: 45, spd: 2.6, pw: 60, stat: 'str', warn: 0.70, period: 3.2 },
-    punch: { nm: 'パンチ', wpn: 'fist', hp: 200, str: 192, yo: 209, def: 45, spd: 2.6, pw: 71, stat: 'str', warn: 0.65, period: 3.5 },
-    beam: { nm: 'ビーム', wpn: 'beam', hp: 200, str: 192, yo: 209, def: 45, spd: 2.4, pw: 80, stat: 'yo', warn: 1.20, period: 5.0 },
+    sword: { nm: '剣', wpn: 'sword', hp: 200, str: 192, yo: 209, def: 45, spd: 1.3, pw: 60, stat: 'str', warn: 0.70, period: 3.2 },
+    punch: { nm: 'パンチ', wpn: 'fist', hp: 200, str: 192, yo: 209, def: 45, spd: 1.3, pw: 71, stat: 'str', warn: 0.65, period: 3.5 },
+    beam: { nm: 'ビーム', wpn: 'beam', hp: 200, str: 192, yo: 209, def: 45, spd: 1.2, pw: 80, stat: 'yo', warn: 1.20, period: 5.0 },
   },
   rights: p('ヨシノシンの部下', '同時に攻撃を始められる数（剣・パンチ／ビーム）', { melee: 4, beam: 2 }, '体', 'spec', null, '全員が動き、攻撃する権利だけを交代する'),
   r: 0.38,
@@ -277,7 +282,7 @@ const JOBAN = {
     beam: { nm: '大砲（ビーム）', reach: 9, keep: 6, wind: 0.9, act: 0.25, rec: 0.6, cd: [3.8, 4.8], len: 11, w: 0.7, knock: 0 },
     shield: { nm: '決裁板（防御）', reach: 1.3, wind: 0.6, act: 0.1, rec: 0.6, cd: [3.6, 4.4], len: 1.6, w: 1.1, knock: 3 },
   },
-  introT: p('常磐線', '始まりの演出（トバトーバンが倒れる→乗車→発車）', 12, 's', 'proto'), arriveT: 6,
+  introT: p('常磐線', '始まりの演出（トバトーバが倒れる→乗車→発車）', 12, 's', 'proto'), arriveT: 6,
   dropRate: 0.06,
 };
 /* ---------------- 上野編：居酒屋通り（電車の部下の1.25倍・30体） ---------------- */
@@ -297,14 +302,14 @@ const UENO = {
   halfX: p('上野', '戦闘領域の横幅', 34, 'm', 'spec', null, 'x=±17') / 2, zMax: p('上野', '戦闘領域の奥行き', 28, 'm', 'spec', null, '入口 z=0'),
   start: [[-1.5, 4.2], [1.5, 4.2], [-0.5, 3.0], [0.5, 3.0]], bossSpawn: [0, 23], center: [0, 14],
   bossScale: p('ヨシノシン', 'モデルの拡大率（基準3.2m）', 1.85, '倍', 'spec', null, '本体だけ。部下・技の判定半径は拡大しない'), bossR: p('ヨシノシン', '足元の被弾判定の半径', 1.5, 'm', 'proto', null, '足元に届けば当たる'), bossH: p('ヨシノシン', '身長', 5.92, 'm', 'spec', null, '3.2m×1.85・約5頭身'),
-  hp: p('ヨシノシン', '体力', 30000, 'points', 'spec'), str: p('ヨシノシン', 'ちから', 600, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 650, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 182, 'points', 'spec'),
+  hp: p('ヨシノシン', '体力', 22000, 'points', 'spec'), str: p('ヨシノシン', 'ちから', 500, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 500, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 150, 'points', 'spec'),
   introT: p('上野', '登場の演出（指を鳴らす→部下が走り出す）', 3.2, 's', 'spec', null, '最初の予告より前に攻撃しない'),
   minGap: p('ヨシノシン', '直接攻撃どうしの開始間隔（最低）', 3.0, 's', 'spec'),
   rec: 40,
   minions: { // 電車の部下の型別データから HP・ちから・ようりょくだけ×0.85（四捨五入）。技の威力・周期はそのまま
-    sword: { nm: '剣', wpn: 'sword', hp: 170, str: 163, yo: 178, def: 45, pw: 60, stat: 'str', warn: 0.70, period: 3.2, spd: 2.6, scale: 0.85 / U_H, r: 0.32 },
-    punch: { nm: 'パンチ', wpn: 'fist', hp: 170, str: 163, yo: 178, def: 45, pw: 71, stat: 'str', warn: 0.65, period: 3.5, spd: 2.6, scale: 0.9 / U_H, r: 0.33 },
-    beam: { nm: 'ビーム', wpn: 'beam', hp: 170, str: 163, yo: 178, def: 45, pw: 80, stat: 'yo', warn: 1.20, period: 5.0, spd: 2.4, scale: 0.85 / U_H, r: 0.32, len: 13 },
+    sword: { nm: '剣', wpn: 'sword', hp: 170, str: 163, yo: 178, def: 45, pw: 60, stat: 'str', warn: 0.70, period: 3.2, spd: 1.3, scale: 0.85 / U_H, r: 0.32 },
+    punch: { nm: 'パンチ', wpn: 'fist', hp: 170, str: 163, yo: 178, def: 45, pw: 71, stat: 'str', warn: 0.65, period: 3.5, spd: 1.3, scale: 0.9 / U_H, r: 0.33 },
+    beam: { nm: 'ビーム', wpn: 'beam', hp: 170, str: 163, yo: 178, def: 45, pw: 80, stat: 'yo', warn: 1.20, period: 5.0, spd: 1.2, scale: 0.85 / U_H, r: 0.32, len: 13 },
   },
   init: p('上野', '最初の部下（ビーム・剣・パンチ）', { beam: 22, sword: 7, punch: 7 }, '体', 'spec', null, '36体が同時に前進する'),
   cap: p('上野', '部下の生存上限（予約を含む）', 100, '体', 'spec'),
@@ -319,7 +324,7 @@ const UENO = {
     warp: { nm: '後方指揮ワープ', warn: 0.7, act: 0.25, rec: 0.5, cd: 10 },
     barrier: { nm: '完全指揮バリア', warn: 0.8, hits: 2, max: 8, cd: 35, stagger: 1.2 },
     throw50: { nm: '部下丸投げ五十連', n: 50, mix: { beam: 30, sword: 10, punch: 10 }, iv: 0.12, land: 1.1, warn: 1.5, rec: 1.5, r: 0.65, pw: 12, stat: 'yo', maxHits: 2, at: [0.75, 0.25], calm: 1.0, alive: 50 },
-    sleep: { nm: '30分睡眠チャージ', stages: [{ at: 22500, need: 2500, pre: 24000 }, { at: 15000, need: 3500, pre: 16500 }, { at: 7500, need: 4000, pre: 9000 }], dur: 10, mul: 2.25, down: 4 },
+    sleep: { nm: '30分睡眠チャージ', stages: [{ at: 16500, need: 2500, pre: 17600 }, { at: 11000, need: 3500, pre: 12100 }, { at: 5500, need: 4000, pre: 6600 }], dur: 10, mul: 2.25, down: 4 },
   },
   pick: p('ヨシノシン', '直接攻撃の選び方（ビーム系・霊光・スタンプ）', { beams: 0.7, reiko: 0.2, stamp: 0.1 }, 'ratio', 'spec', null, '近距離の連掌は別の反応'),
 };
@@ -347,13 +352,15 @@ const AKIBA = {
   rec: 60,
   platform: { halfX: p('秋葉原', 'ホームの安全幅', 18, 'm', 'spec') / 2, zMax: p('秋葉原', 'ホームの長さ', 26, 'm', 'spec'), start: [[-1.5, 3.4], [1.5, 3.4], [-0.5, 2.2], [0.5, 2.2]], foes: { oga: [-3.2, 17], kae: [3.2, 17] } },
   plaza: { half: p('秋葉原', '駅前広場（歩ける範囲・中心から）', 13, 'm', 'spec'), start: [[-1.5, -9.5], [1.5, -9.5], [-0.5, -10.7], [0.5, -10.7]], foes: { hoshi: [-2.4, 8], naka: [2.4, 8], oga: [-5.5, 4], kae: [5.5, 4] } },
-  // scale：見た目の拡大率（星・中2.0倍／オガ・カエ1.5倍。依頼による変更）。HP・能力・当たり判定の半径は変えない
+  // v6：ちから・ようりょく600。HPは依頼により星・中10,000／オガ・カエ5,000（指示書の8,000/4,000より依頼を優先）。
+  // scale：見た目の拡大率（星・中2.0倍／オガ・カエ1.5倍）。当たり判定の半径は変えない
   foes: {
-    hoshi: { nm: '星', hp: 8000, str: 750, yo: 813, def: 210, h: 1.60, r: 0.42, scale: 2.0, spd: 2.3, col: 0xf2c94c },
-    naka: { nm: '中', hp: 8000, str: 750, yo: 813, def: 210, h: 1.58, r: 0.42, scale: 2.0, spd: 2.3, col: 0x9ad0ff },
-    oga: { nm: 'オガ', hp: 4000, str: 750, yo: 813, def: 190, h: 1.48, r: 0.42, scale: 1.5, spd: 2.5, col: 0xff7a5a },
-    kae: { nm: 'カエ', hp: 4000, str: 750, yo: 813, def: 180, h: 1.50, r: 0.42, scale: 1.5, spd: 2.5, col: 0x6ad8a8 },
+    hoshi: { nm: '星', hp: 10000, str: 600, yo: 600, def: 170, h: 1.60, r: 0.42, scale: 2.0, spd: 2.3, col: 0xf2c94c },
+    naka: { nm: '中', hp: 10000, str: 600, yo: 600, def: 170, h: 1.58, r: 0.42, scale: 2.0, spd: 2.3, col: 0x9ad0ff },
+    oga: { nm: 'オガ', hp: 5000, str: 600, yo: 600, def: 150, h: 1.48, r: 0.42, scale: 1.5, spd: 2.5, col: 0xff7a5a },
+    kae: { nm: 'カエ', hp: 5000, str: 600, yo: 600, def: 150, h: 1.50, r: 0.42, scale: 1.5, spd: 2.5, col: 0x6ad8a8 },
   },
+  // オガ・カエの dmg：まもり120の相手への1発の目安（v6の依頼で150〜200）。技ごとに幅の中でランダム。威力 pw ＝ 平均×(120＋120)÷600
   moves: { // 威力・秒数は本作の初期調整値（原作の実測ではない）
     hoshizuna: { who: 'hoshi', nm: '星砂おとし', pw: 49, stat: 'yo', r: 1.4, warn: 1.1, act: 0.15, cd: 4.5, rng: 9, rec: 0.6 },
     hoshirai: { who: 'hoshi', nm: '星雷のしるし', pw: 65, stat: 'yo', r: 1.0, n: 3, delay: 0.65, warn: 1.3, act: 0.15, cd: 9, max: 2, rng: 10, rec: 0.8 },
@@ -361,11 +368,11 @@ const AKIBA = {
     shizuku: { who: 'naka', nm: '中の水しずく', pw: 49, stat: 'yo', w: 0.8, len: 12, speed: 8, warn: 0.9, cd: 4.5, rng: 11, rec: 0.5 },
     hyoutei: { who: 'naka', nm: '銀氷の小庭', pw: 65, stat: 'yo', r: 1.5, n: 3, warn: 1.4, act: 0.2, cd: 10, rng: 10, rec: 0.8 },
     mayoi: { who: 'naka', nm: '迷いの銀札', eff: 'spd', mul: 0.9, dur: 4, r: 1.0, warn: 1.2, act: 0.1, cd: 18, rng: 10, rec: 0.5 },
-    ougi: { who: 'oga', nm: '紅扇たたき', pw: 53, stat: 'str', r: 2.5, half: Math.PI / 4, warn: 0.75, act: 0.12, cd: 3.5, rng: 2.3, rec: 0.6 },
-    iki: { who: 'oga', nm: '灯りの息', pw: 49, stat: 'yo', r: 6, half: Math.PI / 6, warn: 1.2, act: 0.8, cd: 7, rng: 5, rec: 1.4 },
-    benibana: { who: 'oga', nm: '紅花おとし', pw: 70, stat: 'str', r: 2.0, warn: 1.5, act: 0.15, cd: 11, rng: 9, rec: 0.8 },
-    nagi: { who: 'kae', nm: '水杖なぎ', pw: 53, stat: 'str', r: 3.0, half: Math.PI * 55 / 180, warn: 0.85, act: 0.12, cd: 3.8, rng: 2.8, rec: 0.6 },
-    meguri: { who: 'kae', nm: '水環めぐり', pw: 49, stat: 'yo', w: 0.8, len: 8, sweep: Math.PI * 2 / 3, dur: 2.5, warn: 1.5, cd: 12, rng: 6, rec: 0.8 },
+    ougi: { who: 'oga', nm: '紅扇たたき', pw: 65, dmg: [150, 175], stat: 'str', r: 2.5, half: Math.PI / 4, warn: 0.75, act: 0.12, cd: 3.5, rng: 2.3, rec: 0.6 },
+    iki: { who: 'oga', nm: '灯りの息', pw: 64, dmg: [150, 170], stat: 'yo', r: 6, half: Math.PI / 6, warn: 1.2, act: 0.8, cd: 7, rng: 5, rec: 1.4 },
+    benibana: { who: 'oga', nm: '紅花おとし', pw: 75, dmg: [175, 200], stat: 'str', r: 2.0, warn: 1.5, act: 0.15, cd: 11, rng: 9, rec: 0.8 },
+    nagi: { who: 'kae', nm: '水杖なぎ', pw: 67, dmg: [155, 180], stat: 'str', r: 3.0, half: Math.PI * 55 / 180, warn: 0.85, act: 0.12, cd: 3.8, rng: 2.8, rec: 0.6 },
+    meguri: { who: 'kae', nm: '水環めぐり', pw: 69, dmg: [160, 185], stat: 'yo', w: 0.8, len: 8, sweep: Math.PI * 2 / 3, dur: 2.5, warn: 1.5, cd: 12, rng: 6, rec: 0.8 },
     kagami: { who: 'kae', nm: '水鏡の足どめ', r: 1.1, n: 2, life: 4, mul: 0.9, warn: 1.2, cd: 14, rng: 9, rec: 0.6 },
   },
   rights: p('秋葉原', '同時に通常攻撃する相手（全体）', 2, '人', 'spec'),
@@ -374,4 +381,5 @@ const AKIBA = {
   geo: { first: 12, every: 18, w: { 2: 0.40, 3: 0.35, 4: 0.25 }, minSep: 3, minArea: 8, maxCover: 0.45, edge: 2.5, reachT: 1.8, rec: 2,
     line: { nm: '二点結び', pw: 65, w: 1.2, warn: 1.5, act: 0.3 }, tri: { nm: '三角結界', pw: 75, warn: 2.0, act: 0.3 }, quad: { nm: '四角結界', pw: 22, warn: 2.5, dur: 3, iv: 0.75, max: 4 } },
 };
+MOVES.A_TIME = A_TIME;
 const DATA = { AKIBA, REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, STREET, UENO, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };

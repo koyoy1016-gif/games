@@ -117,7 +117,7 @@ with sync_playwright() as p:
             steps += [wait(0.55), shot(f'5{i}_fly'), ev("() => { const f=__tb.G.session.sim.boss.fl; return f ? f.ph + ' ' + Math.round(f.yaw*180/Math.PI) + '° i' + f.i : __tb.G.session.sim.boss.st; }", f'fly{i}')]
         results.append(run(p, 844, 390, 'fly', steps))
     if SCEN in ('joban', 'jobanport'):
-        # ステージ2：ステージ選択（ロック→解放）→ 演出（トバトーバンが倒れる→ホーム→乗車）→ 車内戦 → 駅 → 上野
+        # ステージ2：ステージ選択（ロック→解放）→ 演出（トバトーバが倒れる→ホーム→乗車）→ 車内戦 → 駅 → 上野
         vis = "() => [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',')"
         sim = "__tb.G.session.sim"
         port = SCEN == 'jobanport'

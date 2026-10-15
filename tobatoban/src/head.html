@@ -269,6 +269,8 @@ a{color:var(--shu)}
 .pcard.down .face img{filter:grayscale(1) brightness(.7)}
 .pcard .state{position:absolute;right:4px;top:3px;font-size:10px;font-weight:900;border-radius:5px;padding:0 4px;background:var(--shu);color:#fff}
 .pcard.gone .state{background:#555}
+.pcard .gtag{position:absolute;right:3px;bottom:2px;font-size:10px;font-weight:900;border-radius:5px;padding:0 4px;background:linear-gradient(90deg,#ffd84a,#ff9a2a);color:#3a1a00;line-height:14px}
+.pcard.gbuff{border-color:#ffd84a;box-shadow:0 0 10px rgba(255,200,60,.7)}
 .pcard .healtag{position:absolute;left:0;right:0;bottom:-8px;margin:auto;width:max-content;font-size:9.5px;background:#2fa36b;color:#fff;border-radius:5px;padding:0 5px}
 .mebox{display:flex;flex-direction:column;gap:3px}
 .mebox .hpbar{height:12px;border-radius:6px}
@@ -296,7 +298,6 @@ a{color:var(--shu)}
 .btnc .cdt{position:absolute;bottom:-17px;font-size:11px;font-weight:900;background:rgba(0,0,0,.6);border-radius:5px;padding:0 4px}
 #bA{background:#e9a23b;color:#2a1a08;text-shadow:none}#bA .lb{color:#2a1a08}
 #bX{background:#3f78d6}#bY{background:#187c80}
-#bOrb{background:#3a3260;opacity:.75}#bOrb.on{background:#2a1f5c;border-color:var(--gold);box-shadow:0 0 0 3px #e0b84e,0 0 14px #e0b84e;opacity:1}#bOrb.off{filter:grayscale(.8)}
 #bSP{background:#7446b8}#bSP.full{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold),0 0 18px var(--gold);opacity:.95}
 #bB{background:#475569}
 #bLock,#bCam,#bMenu,#bSig{background:rgba(18,16,40,.75)}
@@ -464,7 +465,7 @@ a{color:var(--shu)}
       </div>
       <div class="lantern-badge">拠点</div>
     </div>
-    <p class="lead">北千住の商店街にトバトーバン、常磐線の先の上野にはヨシノシン、そして秋葉原には星と中。小さなもののけ4体で力を合わせて鎮めよう。</p>
+    <p class="lead">北千住の商店街にトバトーバ、常磐線の先の上野にはヨシノシン、そして秋葉原には星と中。小さなもののけ4体で力を合わせて鎮めよう。</p>
     <div class="menu-list">
       <div class="acct-bar span" id="acctBar"><span class="who" id="acctWho">ログインしていません<small>セーブするにはログイン</small></span><button class="chip" id="btnTSave" type="button" hidden>セーブ</button><button class="chip" id="btnAcct" type="button">ログイン</button></div>
       <button class="btn main span" id="btnSolo">出動（キャラ選択→ステージ選択）</button>
@@ -569,7 +570,7 @@ a{color:var(--shu)}
       <div class="gc-main"><div class="gc-stage"><canvas id="gcCanvas" width="640" height="480"></canvas><button class="chip gc-skip" id="gcSkip" type="button" hidden>スキップ</button></div><div class="gc-res" id="gcRes" hidden></div></div>
       <div class="gc-side">
         <div class="gc-prog" id="gcProg"></div>
-        <p class="small" id="gcNote">トバトーバンに3勝、ヨシノシンに2勝するごとにチケット1枚。チケットは貯めておけます（自動では回しません）。</p>
+        <p class="small" id="gcNote">トバトーバに3勝、ヨシノシンに2勝するごとにチケット1枚。チケットは貯めておけます（自動では回しません）。</p>
         <div class="row" id="gcBtns">
           <button class="btn main" id="btnGcDraw" type="button">1回まわす（1枚）</button>
           <button class="btn" id="btnGcSample" type="button">演出見本</button>
@@ -732,7 +733,7 @@ a{color:var(--shu)}
 <div id="walk" hidden><div class="wk-cap" id="wkCap"></div><div class="wk-title" id="wkTitle">秋葉原編</div><button class="btn ghost wk-skip" id="btnWalkSkip" type="button">スキップ ▶</button></div>
 <div id="hud" hidden>
   <div id="touch"></div>
-  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="ak-grid" id="akGrid"></div><div class="ak-twin" id="akTwin" hidden></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span><span class="qm" style="left:25%"></span><span class="qm" style="left:50%"></span><span class="qm" style="left:75%"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバ</span><span class="ph" id="bossPh" hidden>覚醒</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="ak-grid" id="akGrid"></div><div class="ak-twin" id="akTwin" hidden></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span><span class="qm" style="left:25%"></span><span class="qm" style="left:50%"></span><span class="qm" style="left:75%"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
   <div class="hb party" id="party"></div>
   <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
   <div class="hb" id="map"><canvas id="mapc"></canvas></div>
@@ -741,7 +742,6 @@ a{color:var(--shu)}
   <button class="hb btnc" id="bA" aria-label="A 通常攻撃"><span class="key">A</span><span class="lb" id="lA">攻撃</span></button>
   <button class="hb btnc" id="bX" aria-label="X 技1"><span class="key">X</span><span class="lb" id="lX"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cX"/></svg><span class="cdt" id="tX" hidden></span></button>
   <button class="hb btnc" id="bY" aria-label="Y 技2"><span class="key">Y</span><span class="lb" id="lY"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cY"/></svg><span class="cdt" id="tY" hidden></span></button>
-  <button class="hb btnc" id="bOrb" aria-label="重玉（強化必殺）"><span class="key" style="font-size:calc(14px*var(--ui))">重玉</span><span class="lb" id="lOrb">なし</span></button>
   <button class="hb btnc" id="bSP" aria-label="必殺技"><span class="key" style="font-size:calc(15px*var(--ui))">必殺</span><span class="lb" id="lSP">0%</span></button>
   <button class="hb btnc" id="bB" aria-label="B ダッシュ・灯す"><span class="key">B</span><span class="lb ctxB" id="lB">走る</span></button>
   <button class="hb btnc" id="bLock" aria-label="注目"><span class="key" style="font-size:calc(16px*var(--ui))">◎</span><span class="lb">注目</span></button>
@@ -761,7 +761,7 @@ a{color:var(--shu)}
 <div id="banner"></div>
 <div id="sleepBox" hidden><div class="sl-t">💤 30分睡眠チャージ<span id="slStage"></span></div><div class="sl-m" id="slMsg">10秒以内に4体合計ダメージを与えろ！</div><div class="sl-row"><span>残り <b id="slTime">10.0</b>秒</span><div class="sl-bar"><i id="slTimeFill"></i></div></div><div class="sl-row"><span><b id="slDmg">0</b> / <span id="slNeed">0</span></span><div class="sl-bar dmg"><i id="slDmgFill"></i></div></div><div class="sl-x">隙だらけ・与ダメージ×2.25</div></div>
 <div id="fade"></div>
-<div id="bossCard"><div class="s">付喪神</div><div class="n">トバトーバン</div><div class="d">古い大看板と祭りの台座が、宵の広場で目を覚ました</div></div>
+<div id="bossCard"><div class="s">付喪神</div><div class="n">トバトーバ</div><div class="d">古い大看板と祭りの台座が、宵の広場で目を覚ました</div></div>
 <div id="rotateHint" hidden>📱↻ 横画面のほうが見やすく遊べます<button id="rotateX">とじる</button></div>
 <div id="turnHint" hidden><span class="ph">📱</span><b>スマホを横向きにしてください</b><small>縦持ちのままでも画面を横向きで表示しています</small></div>
 </div>

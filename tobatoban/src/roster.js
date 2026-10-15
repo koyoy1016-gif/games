@@ -65,7 +65,7 @@ const REWARD = {
   /** 最終EXP＝floor(基本×固定枠率) */
   exp(stage, win, H, rate) { const e = this.base[stage]; if (!e) return 0; const base = win ? e.win : e.loss; return Math.floor(base * Math.round((rate == null ? 1 : rate) * 100) / 100 + 1e-6); },
 };
-/** 勝利チケット：トバトーバン3勝ごと・ヨシノシン2勝ごとに1枚。電車・敗北・部下撃破では進まない */
+/** 勝利チケット：トバトーバ3勝ごと・ヨシノシン2勝ごとに1枚。電車・敗北・部下撃破では進まない */
 const TICKET = { senju: { key: 'tobatoban', per: 3 }, ueno: { key: 'yoshinoshin', per: 2 } };
 const GACHA = {
   weight: { C: 3.5, B: 3.5, A: 2.2, S: 0.8 }, // 未所持1体あたりの重み（各ランク10体＝35/35/22/8%）
@@ -86,8 +86,9 @@ for (const m of ROSTER_EXIST) {
 (() => {
   const D = DATA;
   // 通常攻撃（追加キャラ共通）：A50＝近接・発生0.15秒、A35＝単発射撃・射程8m・速度14m/s。どちらも0.50秒周期
-  D.MOVES.melee1n = { kind: 'melee1', nm: '近接打撃', start: 0.15, active: 0.10, end: 0.50, range: 1.5, arc: 1.2 };
-  D.MOVES.shotn = { kind: 'shot', nm: '射撃', fire: 0.15, end: 0.50, lock: 0.25, speed: 14, life: 8 / 14, r: 0.32 };
+  const at = v => Math.round(v * 0.70 * 1000) / 1000; // A通常攻撃は旧値の70%（v6）
+  D.MOVES.melee1n = { kind: 'melee1', nm: '近接打撃', start: at(0.15), active: at(0.10), end: at(0.50), range: 1.5, arc: 1.2 };
+  D.MOVES.shotn = { kind: 'shot', nm: '射撃', fire: at(0.15), end: at(0.50), lock: at(0.25), speed: 14, life: 8 / 14, r: 0.32 };
   const SHORT = { purify: 'おはらい', heal1: '恵み', healRing: '円陣', regen: 'やすらぎ', spell: '妖術', cshot: 'ため射ち', dodge: '回避', taunt: '誘い打ち', guard: 'ガード', bomb: '火薬玉', mine: '地雷' };
   const shortOf = (nm, k, stats) => {
     if (k === 'buff') return stats[0] === 'spd' ? '追い風' : stats[0] === 'str' ? '勇気' : '守り';
@@ -167,9 +168,13 @@ const CHAR_IDS = DATA.CHARS.map(c => c.id);
 const NEW_D_IDS = ROSTER_NEW.filter(n => n.rank === 'D').map(n => n.id);
 const GACHA_IDS = ROSTER_NEW.filter(n => n.gacha).map(n => n.id);
 /** 上野ボス（推奨Lv40）・秋葉原（推奨Lv60）だけのLv補正。P＝出動開始時の4体の平均Lv（切り捨て）。途中の操作交代では変えない */
+/** ステージごとのLv補正の基準（v6：秋葉原ホーム50・駅前広場60・ヨシノシン40）。推奨Lvの表示も同じ値を使う */
+const LV_BASE = { ueno: 40, akiba_platform: 50, akiba_plaza: 60, akiba: 60 };
+/** kind：ステージID（ueno / akiba_platform / akiba_plaza）。係数・上下限は上野用と秋葉原用の2種類 */
 function lvAdjust(kind, P) {
-  const R = kind === 'akiba' ? { rec: 60, upO: 0.015, hiO: 1.30, upI: 0.01, loI: 0.75 } : { rec: 40, upO: 0.02, hiO: 1.25, upI: 0.015, loI: 0.80 };
+  const ak = String(kind).startsWith('akiba'), rec = LV_BASE[kind] || (ak ? 60 : 40);
+  const R = ak ? { rec, upO: 0.015, hiO: 1.30, upI: 0.01, loI: 0.75 } : { rec, upO: 0.02, hiO: 1.25, upI: 0.015, loI: 0.80 };
   if (P < R.rec) return { out: Math.max(0.10, Math.pow(0.95, R.rec - P)), in: Math.min(4.0, Math.pow(1.04, R.rec - P)) };
   return { out: Math.min(R.hiO, 1 + R.upO * (P - R.rec)), in: Math.max(R.loI, 1 - R.upI * (P - R.rec)) };
 }
-Object.assign(DATA, { lvAdjust, EQUIP, EQUIP_I, GAME, RANKS, RANK_INFO, ROLES, ROLE_IDS, GROWTH, REWARD, TICKET, GACHA, CHAR_IDS, NEW_D_IDS, GACHA_IDS, EXP_CUM });
+Object.assign(DATA, { lvAdjust, LV_BASE, EQUIP, EQUIP_I, GAME, RANKS, RANK_INFO, ROLES, ROLE_IDS, GROWTH, REWARD, TICKET, GACHA, CHAR_IDS, NEW_D_IDS, GACHA_IDS, EXP_CUM });

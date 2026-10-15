@@ -24,7 +24,7 @@ const PROTO = (() => {
     if (a.buffs.def > 0) f |= 16; if (a.buffs.taunt > 0) f |= 32; if (a.hurtT > 0) f |= 64; if (a.dashing) f |= 128; if (a.tired) f |= 256;
     if (a.gLock.X) f |= 512; if (a.gLock.Y) f |= 1024; if (a.buffs.ramune > 0) f |= 2048; if (a.moving) f |= 4096; if (a.lan) f |= 8192; if (a.ctrlAI) f |= 16384;
     if (a.act && a.act.k === 'guard' && DATA.SKILLS[a.slots[a.act.slot]].reflect) f |= 32768;
-    if (a.orb) f |= 65536; if (a.act && a.act.k === 'sp' && a.act.heavy) f |= 131072;
+    if (a.gT > 0) f |= 65536;
     return f;
   }
   function encodeSnap(sim, o) {
@@ -35,7 +35,7 @@ const PROTO = (() => {
       IT_I[a.items[0].id], a.items[0].n, IT_I[a.items[1].id], a.items[1].n, CTX_I[a.ctx], a.st === 'down' ? Math.round(Math.min(1, a.rv) * 100) : 0, a.st === 'down' ? a.rvBy : -1,
       a.act && a.act.ratio != null ? Math.round(a.act.ratio * 100) : 0, a.act && a.act.slot ? (a.act.slot === 'X' ? 1 : 2) : 0, a.lastEv, r1(a.cdMax.X), r1(a.cdMax.Y),
       SK_I[a.slots.X], SK_I[a.slots.Y], a.lan ? Math.round(a.lan.t / DATA.SIM.lanternHold * 100) : 0, a.aq || 0,
-      a.act && a.act.k === 'item' ? IT_I[a.act.it] : -1, a.buffs.stealth > 0 ? r1(a.buffs.stealth) : 0, a.lv || 1, a.stats.kills,
+      a.act && a.act.k === 'item' ? IT_I[a.act.it] : -1, a.buffs.stealth > 0 ? r1(a.buffs.stealth) : 0, a.lv || 1, a.stats.kills, a.gT > 0 ? r1(a.gT) : 0,
     ]);
     const b = sim.boss;
     const B = b ? [r2(b.x), r2(b.z), r2(b.y), r2(b.yaw), Math.round(b.hp / b.maxHp * 1000), BST_I[b.st], b.mv ? BMV_I[b.mv] : 0, r2(b.t), b.phase, (b.defDown > 0 ? 1 : 0) | (b.st === 'stun' ? 2 : 0) | (b.dots && b.dots.length ? 4 : 0),
@@ -71,10 +71,10 @@ const PROTO = (() => {
     v.allies = s.a.map(r => ({
       slot: r[0], ch: CH_IDS[r[1]], x: r[2], z: r[3], yaw: r[4], st: ST[r[5]], act: ACTS[r[6]], actT: r[7], hpR: r[8] / 1000, sp: r[9], stam: r[10], f: r[11],
       guard: !!(r[11] & 1), stealth: !!(r[11] & 2), inv: !!(r[11] & 4), strBuff: !!(r[11] & 8), defBuff: !!(r[11] & 16), taunt: !!(r[11] & 32), hurt: !!(r[11] & 64), dash: !!(r[11] & 128), tired: !!(r[11] & 256),
-      gLockX: !!(r[11] & 512), gLockY: !!(r[11] & 1024), ramune: !!(r[11] & 2048), moving: !!(r[11] & 4096), lanHold: !!(r[11] & 8192), ai: !!(r[11] & 16384), reflect: !!(r[11] & 32768), orb: !!(r[11] & 65536), heavy: !!(r[11] & 131072),
+      gLockX: !!(r[11] & 512), gLockY: !!(r[11] & 1024), ramune: !!(r[11] & 2048), moving: !!(r[11] & 4096), lanHold: !!(r[11] & 8192), ai: !!(r[11] & 16384), reflect: !!(r[11] & 32768), gOn: !!(r[11] & 65536),
       downT: r[12], cdX: r[13], cdY: r[14], gX: r[15] / 100, gY: r[16] / 100, items: [{ id: DATA.ITEM_IDS[r[17]], n: r[18] }, { id: DATA.ITEM_IDS[r[19]], n: r[20] }],
       ctx: CTX[r[21]], revP: r[22] / 100, revT: r[23], chg: r[24] / 100, actSlot: r[25] === 1 ? 'X' : r[25] === 2 ? 'Y' : '', lastEv: r[26], cdMaxX: r[27], cdMaxY: r[28],
-      sk: { X: SK_IDS[r[29]], Y: SK_IDS[r[30]] }, lanP: r[31] / 100, aq: r[32], item: r[33] >= 0 ? DATA.ITEM_IDS[r[33]] : null, stealthT: r[34], lv: r[35] || 1, kills: r[36] || 0,
+      sk: { X: SK_IDS[r[29]], Y: SK_IDS[r[30]] }, lanP: r[31] / 100, aq: r[32], item: r[33] >= 0 ? DATA.ITEM_IDS[r[33]] : null, stealthT: r[34], lv: r[35] || 1, kills: r[36] || 0, gT: r[37] || 0,
     }));
     const b = s.b;
     v.boss = b ? { x: b[0], z: b[1], y: b[2], yaw: b[3], hpR: b[4] / 1000, st: BST[b[5]], mv: BMV[b[6]], t: b[7], phase: b[8], defDown: !!(b[9] & 1), stun: !!(b[9] & 2), dot: !!(b[9] & 4), fl: b[10] ? { ph: FLPH[b[10][0]], yaw: b[10][1], i: b[10][2], n: b[10][3], len: b[10][4], t: b[10][5] } : null, target: b[11], downT: b[12] } : null;

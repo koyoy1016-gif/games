@@ -1,4 +1,4 @@
-// 全キャラ（味方60体・トバトーバン・札小僧・常磐線の部下・ヨシノシンと上野の部下）の一覧（CHARACTERS.md）を作る
+// 全キャラ（味方60体・トバトーバ・札小僧・常磐線の部下・ヨシノシンと上野の部下）の一覧（CHARACTERS.md）を作る
 // 使い方: node tobatoban/tools/dump-chars.mjs
 import fs from 'fs'; import vm from 'vm'; import path from 'path'; import { fileURLToPath } from 'url';
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -12,7 +12,7 @@ const fmtS = s => `${s.hp}/${s.str}/${s.yo}/${s.def}`;
 const oldSkill = id => { const s = D.SKILLS[id]; return s ? s.nm : id; };
 let md = `# キャラクターの能力と攻撃の一覧（自動生成）\n\n\`src/data.js\`・\`src/roster_data.js\`・\`src/roster.js\` から \`node tools/dump-chars.mjs\` で作っています。\n\n`;
 md += `**ダメージの式**（敵味方共通）：max(1, 四捨五入(威力 × 攻撃側のちから〈物理〉または ようりょく〈妖術〉 ÷ (120 ＋ 受ける側のまもり) × 属性 × 会心 × 状態 × 上野のLv補正))。\n`;
-md += `会心は通常5%で1.5倍。トバトーバンは土×${S.elemGood}・雷×${S.elemBad}、ヨシノシンは全属性×1。AIが動かすキャラは HP・ちから・ようりょく・まもりが各90%（切り捨て）、移動も90%。威力・モーション・再使用時間は変えない。\n\n`;
+md += `会心は通常5%で1.5倍。トバトーバは土×${S.elemGood}・雷×${S.elemBad}、ヨシノシンは全属性×1。AIが動かすキャラは HP・ちから・ようりょく・まもりが各90%（切り捨て）、移動も90%。威力・モーション・再使用時間は変えない。\n\n`;
 md += `**成長**：HPの初期値＝四捨五入(Lv99値×0.60)、ほかは四捨五入(Lv99値×0.65)。能力(L)＝初期値＋floor((Lv99値−初期値)×(L−1)/98)。必要EXPはランクごとの表（D/Cが Lv99まで累計 ${GR.cum('D', 99).toLocaleString()}、Bが ${GR.cum('B', 99).toLocaleString()}、Aが ${GR.cum('A', 99).toLocaleString()}、Sが ${GR.cum('S', 99).toLocaleString()}）。\n\n`;
 md += `## 味方60体（HP/ちから/ようりょく/まもり）\n\n| ランク | キャラ | 役割 | 属性 | 得意 | Lv1 | Lv40 | Lv99 | 通常攻撃（A） | 技1（X） | 技2（Y） | 必殺 | 入手 |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|\n`;
 const order = { S: 0, A: 1, B: 2, C: 3, D: 4 };
@@ -23,7 +23,7 @@ for (const c of list) {
   const A = `${c.Anm || (c.A === 'combo3' ? '三連' : c.A.startsWith('shot') ? '射撃' : '近接')} ${c.Apw.join('/')}`;
   md += `| ${c.rank} | ${c.nm} | ${D.ROLES[c.roleId].label} | ${c.el} | ${(c.tags || []).join('・')} | ${fmtS(st(c, 1))} | ${fmtS(st(c, 40))} | ${fmtS(st(c, 99))} | ${A} | ${X} | ${Y} | ${SP} | ${c.isNew ? (c.gacha ? 'ガチャ' : '最初から（追加D）') : '最初から'} |\n`;
 }
-md += `\n## トバトーバン（北千住編のボス）\n\n| HP | ちから | ようりょく | まもり | 弱点 | 強い |\n|---:|---:|---:|---:|---|---|\n| ${B.hp} | ${bossStr} | ${bossYo} | ${bossDef} | ${D.BOSS.weak} | ${D.BOSS.strong} |\n\n`;
+md += `\n## トバトーバ（北千住編のボス）\n\n| HP | ちから | ようりょく | まもり | 弱点 | 強い |\n|---:|---:|---:|---:|---|---|\n| ${B.hp} | ${bossStr} | ${bossYo} | ${bossDef} | ${D.BOSS.weak} | ${D.BOSS.strong} |\n\n`;
 const ko40 = st(D.CHI.kogemaru, 40), nr40 = st(D.CHI.norenbou, 40);
 const M = D.BMOVES;
 md += `| 技 | 威力 | 使う能力 | Lv40コゲマル（まもり${ko40.def}）／Lv40ノレン坊（まもり${nr40.def}） | 予兆 |\n|---|---:|---|---|---:|\n`;

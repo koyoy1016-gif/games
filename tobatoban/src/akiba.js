@@ -16,7 +16,7 @@
   P.initAkiba = function (o) {
     const D = A(), plaza = this.stageId === 'akiba_plaza', C = plaza ? D.plaza : D.platform;
     this.stage = o.test ? 'boss' : 'intro'; this.barrier = 'none'; this.lanterns = []; this.kills = 0; this.total = 0; this.queue = null;
-    const Pl = Math.floor(this.allies.reduce((s, a) => s + a.lv, 0) / this.allies.length), k = DATA.lvAdjust('akiba', Pl);
+    const Pl = Math.floor(this.allies.reduce((s, a) => s + a.lv, 0) / this.allies.length), k = DATA.lvAdjust(this.stageId, Pl);
     this.akLv = Pl; this.lvOut = k.out; this.lvIn = k.in;
     this.AK = { plaza, twinT: -1, twinDown: null, twinFails: 0, geoT: D.geo.first, geo: null, geoN: 0, log: { hoshi: [], naka: [] }, gcd: { hoshi: 0, naka: 0 }, revived: false };
     for (const a of this.allies) { const q = C.start[a.slot]; a.x = a.px = q[0]; a.z = a.pz = q[1]; a.yaw = 0; a.ai.tx = a.x; a.ai.tz = a.z + 1; a.sp = Math.max(a.sp, 50); }
@@ -138,6 +138,7 @@
   /** 技の始まり：予兆は開始時に置く（対象の位置は予兆の開始で固定） */
   P.akibaStart = function (m, k, tg) {
     const M = A().moves[k], src = { str: m.str, yo: m.yo * m.yoMul }, base = { pw: M.pw || 0, stat: M.stat || 'yo', srcStats: src, src: 'akiba', srcEnt: m, srcId: m.id, dodge: true, max: 1, iv: 99 };
+    if (M.dmg) base.mul = this.rng.range(M.dmg[0], M.dmg[1]) / ((M.dmg[0] + M.dmg[1]) / 2); // オガ・カエ：1発ごとに幅の中でランダム（v6）
     m.cd[k] = M.cd; m.yaw = yawTo(tg.x - m.x, tg.z - m.z);
     const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), H = o => this.hz(Object.assign({}, base, o));
     let end = M.warn + (M.act || 0) + (M.rec || 0.6);
@@ -151,7 +152,7 @@
       case 'ougi': case 'nagi': H({ kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: M.r, half: M.half, warn: M.warn, act: M.act, fx: fxOf, knock: 3, kx: fx, kz: fz }); break;
       case 'iki': H({ kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: M.r, half: M.half, warn: M.warn, act: M.act, fx: fxOf }); break;
       case 'benibana': { const c = this.clampAkiba(tg.x, tg.z, tg.x, tg.z, 0.5); H({ kind: 'circle', x: c[0], z: c[1], r: M.r, warn: M.warn, act: M.act, fx: fxOf, knock: 4 }); m.jumpTo = [c[0], c[1]]; m.jumpFrom = [m.x, m.z]; break; }
-      case 'meguri': { const dir = this.rng.next() < 0.5 ? 1 : -1, y0 = m.yaw - dir * M.sweep / 2; H({ kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0.3, r1: M.len, half: M.sweep / 2, warn: M.warn, act: 0, fx: fxOf, dir }); m.spin = { dir, y0, hz: null }; end = M.warn + M.dur + M.rec; break; }
+      case 'meguri': { const dir = this.rng.next() < 0.5 ? 1 : -1, y0 = m.yaw - dir * M.sweep / 2; H({ kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0.3, r1: M.len, half: M.sweep / 2, warn: M.warn, act: 0, fx: fxOf, dir }); m.spin = { dir, y0, hz: null, mul: base.mul || 1 }; end = M.warn + M.dur + M.rec; break; }
       case 'kagami': { for (let i = 0; i < M.n; i++) { const a = this.rng.next() * TAU, rr = i === 0 ? 0.6 : 2.4; const c = this.clampAkiba(tg.x + Math.sin(a) * rr, tg.z + Math.cos(a) * rr, tg.x + Math.sin(a) * rr, tg.z + Math.cos(a) * rr, 1.1); H({ kind: 'circle', x: c[0], z: c[1], r: M.r, warn: M.warn, act: 0, keep: M.life, fx: 'water' }); } break; }
     }
     m.act = { k, t: 0, w: M.warn, end, tg: tg.slot, fired: false };
@@ -166,7 +167,7 @@
     if (A0.k === 'benibana' && m.jumpTo) { const k = Math.min(1, A0.t / M.warn); m.x = m.jumpFrom[0] + (m.jumpTo[0] - m.jumpFrom[0]) * k; m.z = m.jumpFrom[1] + (m.jumpTo[1] - m.jumpFrom[1]) * k; m.jump = Math.sin(k * Math.PI) * 2.2; if (k >= 1) { m.jump = 0; m.jumpTo = null; } }
     if (A0.k === 'meguri' && m.spin && A0.t >= M.warn) { // 水の光を2.5秒で120度回す（1人1回まで）
       const S = m.spin, k = Math.min(1, (A0.t - M.warn) / M.dur), yaw = S.y0 + S.dir * M.sweep * k;
-      if (!S.hz) S.hz = this.hz({ kind: 'line', x: m.x, z: m.z, yaw, len: M.len, w: M.w, warn: 0, act: M.dur, pw: M.pw, stat: 'yo', srcStats: { str: m.str, yo: m.yo * m.yoMul }, src: 'akiba', srcEnt: m, srcId: m.id, max: 1, iv: 99, fx: 'kae' });
+      if (!S.hz) S.hz = this.hz({ kind: 'line', x: m.x, z: m.z, yaw, len: M.len, w: M.w, warn: 0, act: M.dur, pw: M.pw, stat: 'yo', srcStats: { str: m.str, yo: m.yo * m.yoMul }, src: 'akiba', srcEnt: m, srcId: m.id, max: 1, iv: 99, fx: 'kae', mul: S.mul || 1 });
       S.hz.yaw = yaw; m.yaw = yaw;
       if (k >= 1) m.spin = null;
     }
@@ -240,7 +241,7 @@
     AK.geoWait = false; AK.geoT = 2; // 合う配置がない：取り消して少し後でもう一度
   };
   P.startGeo = function (foes, sh) {
-    const G = A().geo, AK = this.AK, src = { str: 750, yo: 813 }; // 共有のようりょく813（相方の強化は重ねない）
+    const G = A().geo, AK = this.AK, src = { str: A().foes.hoshi.str, yo: A().foes.hoshi.yo }; // 共有の能力（v6：600）。相方の強化は重ねない
     for (const m of foes) { m.geo = true; m.act = null; m.moving = 0; }
     const base = { src: 'akiba', srcStats: src, stat: 'yo', dodge: true, iv: 99, max: 1, geo: 1 };
     let h;

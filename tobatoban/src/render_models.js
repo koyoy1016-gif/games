@@ -1,5 +1,5 @@
 /* =====================================================================
-   render_models.js — もののけ10体・トバトーバン・札小僧（すべて新規の造形）
+   render_models.js — もののけ10体・トバトーバ・札小僧（すべて新規の造形）
    基準味方（コゲマル）の身長=1。ボスは同じ単位で高さ5.0。
    ===================================================================== */
 (() => {
@@ -188,9 +188,9 @@
     else { P.bodyY += Math.sin(T * 3 + a.slot) * 0.012; P.aLz = -0.12; P.aRz = 0.12; }
     m.glow.visible = false; m.shield.visible = !!(a.guard || (a.inv && act === 'cast'));
     switch (act) {
-      case 'combo': { const H = [0.15, 0.45, 0.85]; const i = t < 0.3 ? 0 : t < 0.65 ? 1 : 2; const k = sat(1 - Math.abs(t - H[i]) / 0.14); if (i === 0) P.aRx = -1.6 * k - 0.2; else if (i === 1) P.aLx = -1.6 * k - 0.2; else { P.aRx = P.aLx = -1.5 * k; P.lean = 0.25 * k; P.lR = -0.6 * k; } P.tw = (i === 1 ? 0.35 : -0.35) * k; P.lean += 0.12; break; }
-      case 'melee': { const k = sat(1 - Math.abs(t - 0.2) / 0.16); P.aRx = -1.7 * k; P.tw = -0.3 * k; P.lean = 0.2 * k; break; }
-      case 'shot': { const k = sat(1 - t / 0.35); P.aRx = -1.5; P.aLx = -0.4; P.lean = -0.08 * k; break; }
+      case 'combo': { const H = DATA.MOVES.combo3.hits, q = DATA.MOVES.A_TIME || 0.7; const i = t < (H[0] + H[1]) / 2 ? 0 : t < (H[1] + H[2]) / 2 ? 1 : 2; const k = sat(1 - Math.abs(t - H[i]) / (0.14 * q)); if (i === 0) P.aRx = -1.6 * k - 0.2; else if (i === 1) P.aLx = -1.6 * k - 0.2; else { P.aRx = P.aLx = -1.5 * k; P.lean = 0.25 * k; P.lR = -0.6 * k; } P.tw = (i === 1 ? 0.35 : -0.35) * k; P.lean += 0.12; break; }
+      case 'melee': { const q = DATA.MOVES.A_TIME || 0.7, k = sat(1 - Math.abs(t - 0.2 * q) / (0.16 * q)); P.aRx = -1.7 * k; P.tw = -0.3 * k; P.lean = 0.2 * k; break; }
+      case 'shot': { const k = sat(1 - t / (0.35 * (DATA.MOVES.A_TIME || 0.7))); P.aRx = -1.5; P.aLx = -0.4; P.lean = -0.08 * k; break; }
       case 'charge': { const c = a.chg; P.bodyY -= 0.04 + 0.03 * c; P.aRx = -1.2; P.aLx = -1.2; P.lean = 0.1; m.glow.visible = true; m.glow.material.color.set(m.c.id === 'momiji' ? 0x7dff9a : m.c.id === 'akaneten' ? 0xff7a3a : 0xffd070); const s = 0.25 + c * 0.45 + (c >= 1 ? Math.sin(T * 30) * 0.05 : 0); m.glow.scale.set(s, s, 1); m.glow.position.set(0, 0.45, 0.35); break; }
       case 'release': { const k = sat(1 - Math.abs(t - 0.15) / 0.2); P.aRx = -1.8 * k - 0.3; P.aLx = -1.4 * k; P.lean = 0.3 * k; break; }
       case 'dodge': { const k = sat(t / 0.32); P.roll = k * Math.PI * 2; P.bodyY -= 0.12 * Math.sin(k * Math.PI); P.aLx = P.aRx = -1.0; break; }
@@ -252,7 +252,7 @@
     }
   };
 
-  /* ---------- トバトーバン ---------- */
+  /* ---------- トバトーバ ---------- */
   GFX.makeBoss = () => {
     const wood = 0x8a5a36, woodD = 0x5c3a22, iron = 0x3a3a42, paper = 0xf3e6c8;
     const root = G(null), body = G(root, 0, 2.6, 0);
@@ -275,7 +275,7 @@
       g.fillStyle = '#2a1a12'; g.fillRect(0, 0, w, h); g.fillStyle = '#f1e2c2'; g.fillRect(18, 18, w - 36, h - 36);
       g.strokeStyle = '#8a2b1f'; g.lineWidth = 8; g.strokeRect(34, 34, w - 68, h - 68);
       g.fillStyle = '#b8222a'; g.font = `34px ${GFX.FONT_SIGN}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('大売出し', w / 2, 62);
-      g.fillStyle = '#1e1a18'; g.font = `68px ${GFX.FONT_DISP}`; g.fillText('トバトーバン', w / 2, 122, w - 80);
+      g.fillStyle = '#1e1a18'; g.font = `68px ${GFX.FONT_DISP}`; g.fillText('トバトーバ', w / 2, 122, w - 80);
       g.fillStyle = '#8a2b1f'; g.font = `24px ${GFX.FONT_SIGN}`; g.fillText('千住よいまち 商売繁盛', w / 2, 172);
     });
     const chestM = L(0xffffff, { map: chestT, emissive: 0xffffff, emissiveMap: chestT, emissiveIntensity: 0.0 });
@@ -317,7 +317,13 @@
     const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.25, 1, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff0a0, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
     beam.rotation.x = Math.PI / 2; beam.visible = false; root.add(beam);
     const mats = []; root.traverse(o => { if (o.material && !Array.isArray(o.material)) mats.push(o.material); });
-    return { root, body, waist, torso, head, legs, arms, ports, portM, chestM, lantM, rope, ropeTail, streamers, shadow, beam, back, mats };
+    // 覚醒（HP1/3以下）の赤いオーラ：半透明の加算で、予兆や範囲は隠さない
+    const auraM = new THREE.MeshBasicMaterial({ color: 0xff2a1a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide });
+    const aura = new THREE.Mesh(new THREE.SphereGeometry(1.0, 20, 14), auraM); aura.scale.set(1.9, 2.9, 1.9); aura.position.y = 2.3; root.add(aura);
+    const ringM = new THREE.MeshBasicMaterial({ color: 0xff3a20, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    const aRing = new THREE.Mesh(new THREE.RingGeometry(1.7, 2.1, 36), ringM); aRing.rotation.x = -Math.PI / 2; aRing.position.y = 0.04; root.add(aRing);
+    const emi = mats.filter(m => m.emissive).map(m => [m, m.emissive.clone()]);
+    return { root, body, waist, torso, head, legs, arms, ports, portM, chestM, lantM, rope, ropeTail, streamers, shadow, beam, back, mats, aura, auraM, ringM, emi };
   };
   GFX.animBoss = (m, b, T, dt, v) => {
     const r = m.root;
@@ -357,6 +363,10 @@
     m.arms[0].sh.rotation.set(aL[0], aL[1], aL[2]); m.arms[1].sh.rotation.set(aR[0], aR[1], aR[2]); m.arms[0].el.rotation.x = Math.min(0, aL[0]) * 0.3; m.arms[1].el.rotation.x = elR != null ? elR : Math.min(0, aR[0]) * 0.3;
     m.chestM.emissiveIntensity = chest * 0.9; m.lantM.emissiveIntensity = lant + (b.phase === 2 ? 0.25 + Math.sin(T * 8) * 0.1 : 0); m.portM.emissiveIntensity = port;
     m.streamers.forEach((p, i) => { p.rotation.z = Math.sin(T * 3 + i) * 0.25; p.rotation.x = st === 'fly' ? -1 : 0; });
+    // 覚醒の見た目：赤いオーラと体の赤い発光（全端末でスナップショットの phase から同じ表示）
+    const awake = b.phase === 2 && st !== 'dead', pul = 0.5 + Math.sin(T * 6) * 0.5;
+    if (m.auraM) { m.auraM.opacity = awake ? 0.16 + pul * 0.08 : 0; m.ringM.opacity = awake ? 0.35 + pul * 0.25 : 0; m.aura.visible = m.aura.parent && awake; }
+    if (m.emi && m.awakeOn !== awake) { m.awakeOn = awake; for (const [mt, c0] of m.emi) if (mt !== m.lantM && mt !== m.chestM && mt !== m.portM) mt.emissive.copy(awake ? new THREE.Color(0x5a0a06) : c0); }
     if (rope) { m.ropeTail.rotation.x = rope[0]; m.ropeTail.scale.y = rope[1]; } else { m.ropeTail.rotation.x = Math.sin(T * 2) * 0.1 + (st === 'fly' ? -1.2 : 0); m.ropeTail.scale.y = 1; }
   };
   /** 登場演出（4.5秒・オリジナル案）：右足→左足→手を添えて起き上がり→腕を開く→提灯点灯 */

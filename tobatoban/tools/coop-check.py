@@ -26,7 +26,7 @@ with sync_playwright() as p:
         pg.on('pageerror', lambda e, nm=nm: errs.append(f'{nm}: {e}'))
         pg.on('console', lambda m, nm=nm: errs.append(f'{nm} [{m.type}] {m.text}') if m.type == 'error' and 'ERR_FAILED' not in m.text else None)
         pg.goto(URL, wait_until='domcontentloaded', timeout=120000); pg.wait_for_function('window.__tb && window.__tb.G.mode === "title"', timeout=60000); print(nm, 'loaded', flush=True)
-    if os.environ.get('STAGE') == 'joban': A.evaluate("() => { __tb.G.sessClear.senju = true; }")  # ホストはトバトーバンを倒している
+    if os.environ.get('STAGE') == 'joban': A.evaluate("() => { __tb.G.sessClear.senju = true; }")  # ホストはトバトーバを倒している
     A.evaluate("() => { document.getElementById('btnCoop').click(); document.getElementById('nick').value='ホスト'; document.getElementById('btnHost').click(); }")
     A.wait_for_function('window.__tb.G.session && window.__tb.G.session.code', timeout=10000)
     code = A.evaluate('__tb.G.session.code'); print('code', code)
@@ -38,7 +38,7 @@ with sync_playwright() as p:
     print('host slots', A.evaluate("JSON.stringify(__tb.G.session.lobbyMsg().slots.map(s => s && [s.nick, s.ch]))"))
     print('clients before', A.evaluate("JSON.stringify([...__tb.G.session.clients.values()].map(c=>[c.slot, Math.round(performance.now()-c.lastSeen)]))"))
     JOBAN = os.environ.get('STAGE') == 'joban'
-    if JOBAN:  # ステージ2：ホストがトバトーバンを倒した扱いにして、部屋のステージを常磐線にする
+    if JOBAN:  # ステージ2：ホストがトバトーバを倒した扱いにして、部屋のステージを常磐線にする
         print('chips', A.evaluate("() => [...document.querySelectorAll('#stageChips button')].map(b => b.textContent + (b.disabled ? '(x)' : ''))"))
         A.evaluate("() => document.querySelectorAll('#stageChips button')[1].click()"); time.sleep(1.2)
         print('guest lobby stage', B.evaluate("() => __tb.G.session.lobby && __tb.G.session.lobby.stage"))

@@ -25,8 +25,8 @@ const k = D.CHI.kogemaru, k1 = D.GROWTH.stats(k, 1), k50 = D.GROWTH.stats(k, 50)
 ok(k1.hp === 534 && k1.str === 145 && k1.yo === 40 && k1.def === 81 && k50.hp === 712 && k50.str === 184 && k99.hp === 890 && k99.str === 223, `コゲマル Lv1 ${JSON.stringify(k1)} / Lv50 ${k50.hp}・${k50.str} / Lv99 ${k99.hp}・${k99.str}`);
 const ai = D.GROWTH.aiStats(k1); ok(ai.hp === 480 && ai.str === 130 && ai.def === 72, `AIは各能力×0.9の切り捨て（${JSON.stringify(ai)}）`);
 const R = D.REWARD;
-ok(R.exp('senju', true, 1, 1) === 10000 && R.exp('senju', true, 1, 0.8) === 8000, 'ソロでトバトーバン勝利：操作10,000・AI 8,000');
-ok(R.exp('senju', true, 4, 1) === 10000 && R.exp('ueno', true, 4, 1) === 50000, '4人で勝利しても人間は100%（トバトーバン10,000・ヨシノシン50,000。人数の上乗せなし）');
+ok(R.exp('senju', true, 1, 1) === 10000 && R.exp('senju', true, 1, 0.8) === 8000, 'ソロでトバトーバ勝利：操作10,000・AI 8,000');
+ok(R.exp('senju', true, 4, 1) === 10000 && R.exp('ueno', true, 4, 1) === 50000, '4人で勝利しても人間は100%（トバトーバ10,000・ヨシノシン50,000。人数の上乗せなし）');
 ok(R.exp('ueno', true, 2, 1) === 50000 && R.exp('ueno', true, 2, 0.8) === 40000 && R.exp('joban', true, 1, 0.8) === 16000, '2人＋AI2体：人間50,000・AI 40,000／電車のAI枠16,000');
 ok(R.exp('senju', false, 1, 1) === 2500 && R.exp('joban', true, 1, 1) === 20000 && R.exp('joban', false, 1, 1) === 5000 && R.exp('ueno', false, 1, 1) === 7000, '敗北・電車の報酬');
 ok(R.rate(false) === 0.8 && R.rate(true) === 1 && R.exp('ueno_street', true, 1, 1) === 12000 && R.exp('ueno_street', false, 1, 0.8) === 2400 && R.exp('akiba_platform', true, 1, 1) === 20000 && R.exp('akiba_plaza', true, 1, 1) === 70000 && R.exp('akiba_plaza', false, 1, 1) === 10000, '固定率（メイン100%・ほか80%）と、通り・秋葉原の報酬');

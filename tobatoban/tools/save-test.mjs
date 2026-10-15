@@ -30,10 +30,10 @@ ok(s.rec.b === 1 && s.rec.w === 1 && s.rec.mobs === 6 && s.rec.best === 201 && s
 ok(s.chars.kogemaru.exp === 10000 && s.chars.kogemaru.lv === 11 && s.chars.hoshisuzume.exp === 8000 && s.chars.momiji.exp === 8000, `操作キャラ10,000（Lv${s.chars.kogemaru.lv}）・AI 8,000`);
 ok(s.chars.akaneten.exp === 0, '控え（出動していないキャラ）は0');
 const op1b = solo(true, 'senju', 'b1'); SAVE.apply(s, op1b); ok(op1b.res.dup && s.chars.kogemaru.exp === 10000 && s.rec.w === 1, '同じ戦闘IDの報酬は二度出ない');
-ok(s.wins.tobatoban === 1 && s.tickets === 0, 'トバトーバン1勝ではチケットなし');
+ok(s.wins.tobatoban === 1 && s.tickets === 0, 'トバトーバ1勝ではチケットなし');
 SAVE.apply(s, solo(false, 'senju', 'b2')); ok(s.wins.tobatoban === 1 && s.chars.kogemaru.exp === 12500, '敗北は2,500・チケットの進捗は進まない');
 SAVE.apply(s, solo(true, 'senju', 'b3')); const op4 = solo(true, 'senju', 'b4'); SAVE.apply(s, op4);
-ok(s.wins.tobatoban === 3 && s.tickets === 1 && op4.res.ticket === 1, `トバトーバン3勝でチケット1枚（${s.tickets}枚）`);
+ok(s.wins.tobatoban === 3 && s.tickets === 1 && op4.res.ticket === 1, `トバトーバ3勝でチケット1枚（${s.tickets}枚）`);
 ok(SAVE.eqSlots(s) === 1 && SAVE.setEquip(s, 'kogemaru', 0, 'bracer_gold').ok && !SAVE.setEquip(s, 'kogemaru', 1, 'charm_gold').ok, '電車クリア前の装備は1枠');
 const op5 = solo(true, 'joban', 'b5'); SAVE.apply(s, op5); ok(s.tickets === 1 && !s.uenoOpen && s.clear.joban === 1 && op5.res.unlocked === 'ueno_street', '電車クリアはチケットに数えず、居酒屋通りが解放される（ボスはまだ）');
 ok(SAVE.eqSlots(s) === 2 && SAVE.setEquip(s, 'kogemaru', 1, 'bracer_purple').ok && !SAVE.setEquip(s, 'kogemaru', 1, 'bracer_gold').ok, '電車クリア後は2枠（同じ系統の別段階はOK・同じIDの二重は不可）');

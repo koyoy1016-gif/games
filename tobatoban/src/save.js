@@ -48,7 +48,7 @@ const SAVE = (() => {
     if (!s || typeof s !== 'object') return null;
     const f = fresh(s.id, s.pw), mig = Object.assign({}, s.mig || {});
     const o = Object.assign(f, s); o.rec = Object.assign(f.rec, s.rec || {}); o.clear = Object.assign(freshClear(), s.clear || {});
-    if (!s.clear && o.rec.w > 0) o.clear.senju = int(o.rec.w); // ステージが1つだった頃の勝ち＝トバトーバン戦
+    if (!s.clear && o.rec.w > 0) o.clear.senju = int(o.rec.w); // ステージが1つだった頃の勝ち＝トバトーバ戦
     for (const k in o.clear) o.clear[k] = int(o.clear[k]);
     o.wins = Object.assign({ tobatoban: 0, yoshinoshin: 0 }, s.wins || {}); o.tickets = int(s.tickets); o.prefs = Object.assign(freshPrefs(), s.prefs || {});
     if (!s.wins) o.wins.tobatoban = o.clear.senju; // 進捗は残す（過去の勝ちにチケットをまとめて配り直さない）
@@ -118,7 +118,7 @@ const SAVE = (() => {
   /** 戦いの記録を足す。op = { kills: {キャラID: 数}, fin: null | { bid, stage, win, time, H, retreat, slots: [{ ch, rate }] } }
       ・EXPは出動した各キャラへ（4等分しない）。操作100%／AI80%（途中で替えたら割合）、控え0%、協力は1人増えるごと+10%（最大+30%）
       ・同じ戦闘ID（bid）の報酬は一度だけ。撤退は報酬なし
-      ・チケット：トバトーバン3勝ごと・ヨシノシン2勝ごとに1枚（敗北・電車では進まない） */
+      ・チケット：トバトーバ3勝ごと・ヨシノシン2勝ごとに1枚（敗北・電車では進まない） */
   function apply(s, op) {
     for (const id in op.kills || {}) { const c = s.chars[id]; if (!c) continue; const k = op.kills[id] | 0; c.k += k; s.rec.mobs += k; }
     const f = op.fin; op.res = null;
