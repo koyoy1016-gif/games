@@ -223,6 +223,10 @@ a{color:var(--shu)}
 .nt.boss{background:rgba(120,20,30,.85);font-family:var(--f-disp);font-weight:400;font-size:16px;border-radius:6px}
 .nt.sp{background:linear-gradient(90deg,rgba(116,70,184,.9),rgba(60,30,120,.9))}
 .nt.warn{background:rgba(200,60,40,.9)}
+.nt.tip{background:rgba(242,201,76,.95);color:#2a1a08;border-color:#fff3c4;white-space:normal;text-align:center;max-width:min(calc(var(--aw)*80),460px);border-radius:14px}
+#party.tip .pcard{animation:tipPulse .7s ease-in-out infinite alternate}
+@keyframes tipPulse{from{box-shadow:0 0 0 2px #f2c94c}to{box-shadow:0 0 0 4px #ffe58a,0 0 16px 4px rgba(242,201,76,.8)}}
+@media (prefers-reduced-motion:reduce){#party.tip .pcard{animation:none;box-shadow:0 0 0 3px #f2c94c}}
 @keyframes ntIn{from{opacity:0;transform:translateY(-6px)}}
 #cutin{position:absolute;right:0;top:34%;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 18px 6px 40px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(116,70,184,.92) 20%);transform:translateX(100%);opacity:0}
 #cutin.show{animation:cut .35s ease-out}

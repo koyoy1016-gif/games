@@ -323,7 +323,7 @@
     m.shadow.position.set(b.x, 0.025, b.z); const sh = 1 - Math.min(0.5, b.y / 6); m.shadow.scale.setScalar(sh);
     const t = b.t || 0, M = b.mv ? DATA.BMOVES[b.mv] : null;
     let lean = 0, twist = 0, bodyY = 2.6, kneeL = 0, kneeR = 0, hipL = 0, hipR = 0, aL = [0, 0, 0], aR = [0, 0, 0], headX = 0;
-    let chest = 0, lant = 0.25, port = 0.3;
+    let chest = 0, lant = 0.25, port = 0.3, elR = null, rope = null;
     const walk = b.st === 'walk'; m.walkPh = (m.walkPh || 0) + (walk ? dt * 3.2 : 0);
     if (walk) { const s = Math.sin(m.walkPh); hipL = s * 0.35; hipR = -s * 0.35; kneeL = Math.max(0, -s) * 0.4; kneeR = Math.max(0, s) * 0.4; bodyY += Math.abs(Math.cos(m.walkPh)) * 0.08; aL[0] = -s * 0.15; aR[0] = s * 0.15; }
     else { bodyY += Math.sin(T * 1.6) * 0.03; aL[2] = -0.08; aR[2] = 0.08; }
@@ -332,15 +332,16 @@
       const kw = ph === 'w' ? Math.min(1, t / M.wind) : 1;
       switch (b.mv) {
         case 'fubuki': { const k = ph === 'w' ? kw : ph === 'a' ? 1 : Math.max(0, 1 - t / 0.4); aL = [-1.2 * k, 0, -0.9 * k]; aR = [-1.2 * k, 0, 0.9 * k]; if (ph === 'a') { aL[1] = Math.sin(T * 30) * 0.08; aR[1] = -aL[1]; } break; }
-        case 'shime': { const k = ph === 'w' ? kw : 0; twist = ph === 'w' ? 0.7 * k : ph === 'a' ? 0.7 - Math.min(1, t / 0.4) * 2.6 : -1.9 * Math.max(0, 1 - t / 0.6); m.ropeTail.rotation.x = ph === 'a' ? -1.2 : -0.2; break; }
+        case 'shime': { const k = ph === 'w' ? kw : 0; twist = ph === 'w' ? 0.7 * k : ph === 'a' ? 0.7 - Math.min(1, t / 0.8) * 2.6 : -1.9 * Math.max(0, 1 - t / 0.6); rope = ph === 'w' ? [0.4 + 0.5 * k, 1 + k] : ph === 'a' ? [1.12, 6.4] : [1.12 * Math.max(0, 1 - t / 0.5), 1 + 5.4 * Math.max(0, 1 - t / 0.4)]; break; } // 縄を背後の扇の端まで伸ばして振る
         case 'otoshi': { port = ph === 'w' ? 0.3 + kw * 1.5 : 0.6; lean = -0.15 * (ph === 'w' ? kw : 1); aL[2] = -0.6; aR[2] = 0.6; break; }
         case 'kousen': { chest = ph === 'w' ? kw : ph === 'a' ? 1 : Math.max(0, 1 - t / 0.5); lean = -0.12 * chest; aL[2] = -0.5 * chest; aR[2] = 0.5 * chest; break; }
-        case 'harite': { if (ph === 'w') { aR = [0.9 * kw, 0, 0.3]; twist = 0.35 * kw; lean = -0.1 * kw; } else if (ph === 'a') { aR = [-1.7, 0, 0]; twist = -0.35; lean = 0.35; } else { const k = Math.max(0, 1 - t / 0.9); aR = [-1.7 * k, 0, 0]; lean = 0.35 * k; twist = -0.35 * k; } break; }
+        case 'harite': { if (ph === 'w') { aR = [0.9 * kw, 0, 0.3]; twist = 0.35 * kw; lean = -0.1 * kw; elR = -0.3 * kw; } else if (ph === 'a') { aR = [-1.55, 0, 0]; twist = -0.2; lean = 0.95; elR = 0.75; bodyY -= 0.35; } else { const k = Math.max(0, 1 - t / 0.9); aR = [-1.55 * k, 0, 0]; lean = 0.95 * k; twist = -0.2 * k; elR = 0.75 * k; bodyY -= 0.35 * k; } break; } // 深くかがんで手のひらを地面へ
         case 'zouen': { const k = ph === 'w' ? Math.abs(Math.sin(t * 10)) : 0; aL = [-1.4, 0, 0.5 * k]; aR = [-1.4, 0, -0.5 * k]; break; }
       }
     }
     if (st === 'fly' && b.fl) {
       const f = b.fl, k = f.ph === 'rise' ? Math.min(1, f.t / DATA.BMOVES.junkou.wind) : f.ph === 'land' ? 1 - Math.min(1, f.t / 0.6) : 1;
+      r.position.y = b.y - 4.0 * k; // 水平の姿勢では胴を味方の背の高さまで下げ、当たる範囲と見た目を合わせる
       lean = 1.25 * k; hipL = hipR = 1.0 * k; kneeL = kneeR = 0.6 * k; aL = [-2.6 * k, 0, 0.2]; aR = [-2.6 * k, 0, -0.2]; headX = -0.9 * k; port = 1.2;
     }
     if (st === 'down') { bodyY = 1.75 + Math.sin(T * 2) * 0.02; kneeL = kneeR = 1.3; hipL = hipR = -1.0; lean = 0.35; headX = 0.4; aL = [0, 0, -0.3]; aR = [0, 0, 0.3]; lant = 0.08; }
@@ -351,10 +352,10 @@
     m.legs[0].hip.rotation.x = hipL; m.legs[1].hip.rotation.x = hipR; m.legs[0].knee.rotation.x = kneeL; m.legs[1].knee.rotation.x = kneeR;
     m.legs[0].foot.rotation.x = -(hipL + kneeL) * (st === 'fly' ? 0 : 0.6); m.legs[1].foot.rotation.x = -(hipR + kneeR) * (st === 'fly' ? 0 : 0.6);
     for (const l of m.legs) l.wheel.rotation.x = m.walkPh * 1.5;
-    m.arms[0].sh.rotation.set(aL[0], aL[1], aL[2]); m.arms[1].sh.rotation.set(aR[0], aR[1], aR[2]); m.arms[0].el.rotation.x = Math.min(0, aL[0]) * 0.3; m.arms[1].el.rotation.x = Math.min(0, aR[0]) * 0.3;
+    m.arms[0].sh.rotation.set(aL[0], aL[1], aL[2]); m.arms[1].sh.rotation.set(aR[0], aR[1], aR[2]); m.arms[0].el.rotation.x = Math.min(0, aL[0]) * 0.3; m.arms[1].el.rotation.x = elR != null ? elR : Math.min(0, aR[0]) * 0.3;
     m.chestM.emissiveIntensity = chest * 0.9; m.lantM.emissiveIntensity = lant + (b.phase === 2 ? 0.25 + Math.sin(T * 8) * 0.1 : 0); m.portM.emissiveIntensity = port;
     m.streamers.forEach((p, i) => { p.rotation.z = Math.sin(T * 3 + i) * 0.25; p.rotation.x = st === 'fly' ? -1 : 0; });
-    if (st !== 'wind' || b.mv !== 'shime') m.ropeTail.rotation.x = Math.sin(T * 2) * 0.1 + (st === 'fly' ? -1.2 : 0);
+    if (rope) { m.ropeTail.rotation.x = rope[0]; m.ropeTail.scale.y = rope[1]; } else { m.ropeTail.rotation.x = Math.sin(T * 2) * 0.1 + (st === 'fly' ? -1.2 : 0); m.ropeTail.scale.y = 1; }
   };
   /** 登場演出（4.5秒・オリジナル案）：右足→左足→手を添えて起き上がり→腕を開く→提灯点灯 */
   GFX.bossIntroPose = (m, b, v) => {

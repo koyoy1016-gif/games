@@ -14,7 +14,7 @@ function testSim(ch, extra) {
   const s = new Sim({ party, diff: 'normal', seed: 7, test: true });
   s.boss.hp = s.boss.maxHp = 1e9; s.boss.x = 0; s.boss.z = 10;
   s.allies.forEach((a, i) => { a.x = 30 + i; a.z = 30; }); // 他の味方は遠くへ
-  const a = s.allies[0]; a.x = 0; a.z = 10 - 3.3; a.yaw = 0;
+  const a = s.allies[0]; a.x = 0; a.z = 10 - 1.75; a.yaw = 0;
   Object.assign(s, extra || {});
   return s;
 }
@@ -120,6 +120,32 @@ for (const [ch, n] of [['kogemaru', 10], ['hoshisuzume', 8], ['akaneten', 4], ['
   ok(o.st === 'gone', '30秒放置で昇天');
   s.allies[0].sp = 100; run(s, 0, [[0, 'SP']], 2);
   ok(o.st === 'gone', '昇天済みは必殺でも蘇生しない');
+}
+// 8) 接触してから当たる（離れた所からの空振りは当たらない）
+{
+  const s = testSim('kogemaru'); const a = s.allies[0]; a.z = 10 - 3.0;
+  run(s, 0, [[0, 'A'], [0.2, 'A'], [0.5, 'A']], 1.5);
+  const L = s.mlog.find(l => l.nm === '三連');
+  ok(L && L.hits.length === 0, `体に届かない距離（表面まで${(3.0 - 0.75).toFixed(2)}）では三連が当たらない（${L && L.hits.length}）`);
+}
+{
+  const s = testSim('kogemaru'); s.mobs = []; const m = s.spawnMob(0, 0, true); m.fireT = 99; m.para = 99; const a = s.allies[0]; a.x = 0; a.z = -1.8;
+  run(s, 0, [[0, 'A']], 0.6); const n1 = s.mlog[0].hits.length;
+  a.z = -1.1; run(s, 0, [[0.7, 'A']], 1.3); const n2 = s.mlog[1] ? s.mlog[1].hits.length : 0;
+  ok(n1 === 0 && n2 === 1, `札小僧：離れていると空振り（${n1}）、触れる距離で当たる（${n2}）`);
+}
+{
+  const s = testSim('hoshisuzume'); const a = s.allies[0]; a.z = 10 - 8;
+  run(s, 0, [[0, 'A']], 1.0);
+  const e = s.events.find(e => e.type === 'dmg');
+  const r = e ? Math.hypot(e.x - s.boss.x, e.z - s.boss.z) : -1;
+  ok(e && r <= 0.8 && r >= 0.4, `弾は体の表面に当たり、そこにダメージが出る（中心から${r.toFixed(2)}）`);
+}
+{
+  const s = testSim('kogemaru'); s.boss.testIdle = false; s.boss.st = 'idle'; s.boss.gap = 99; const a = s.allies[0]; a.inv = 0;
+  a.z = 10 - 5.2; const hp0 = a.hp; s.bossStart('harite', a); for (let i = 0; i < 60; i++) s.step(); const far = a.hp === hp0;
+  s.boss.st = 'idle'; s.boss.gap = 99; s.boss.cds = {}; a.act = null; a.z = 10 - 2.6; const hp1 = a.hp; s.bossStart('harite', a); for (let i = 0; i < 60; i++) s.step();
+  ok(far && a.hp < hp1, `張り手：届かない所では当たらず（${far}）、手の届く所で当たる（${hp1}→${a.hp}）`);
 }
 if (PROTO) {
   const party = ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(c => ({ ch: c }));

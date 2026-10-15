@@ -64,6 +64,12 @@ const R = (() => {
     // 自分の足元の印（ボスの体に隠れても見える）
     cam.ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.55, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthTest: false })); cam.ring.rotation.x = -Math.PI / 2; cam.ring.renderOrder = 20; scene.add(cam.ring);
     cam.arrow = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.3, 3), new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.9 })); cam.arrow.rotation.x = Math.PI / 2; cam.arrow.renderOrder = 21; scene.add(cam.arrow);
+    // 先に進むときの小さな黄色い矢印（足元）
+    const sh = new THREE.Shape(); sh.moveTo(0, 0.42); sh.lineTo(0.3, 0.06); sh.lineTo(0.11, 0.06); sh.lineTo(0.11, -0.32); sh.lineTo(-0.11, -0.32); sh.lineTo(-0.11, 0.06); sh.lineTo(-0.3, 0.06); sh.closePath();
+    const ag = new THREE.ShapeGeometry(sh); ag.rotateX(-Math.PI / 2); ag.rotateY(Math.PI);
+    W.goArrow = new THREE.Group(); W.goArrow.visible = false; W.goArrow.renderOrder = 19; scene.add(W.goArrow);
+    const back = new THREE.Mesh(ag, new THREE.MeshBasicMaterial({ color: 0x5a3a00, transparent: true, opacity: 0.85, depthTest: false })); back.scale.setScalar(1.25); back.position.y = 0.01; back.renderOrder = 19; W.goArrow.add(back);
+    const front = new THREE.Mesh(ag, new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.98, depthTest: false })); front.position.y = 0.02; front.renderOrder = 20; W.goArrow.add(front);
     // ボスの光線（招福看板光線）
     const bm = new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false });
     W.kousen = new THREE.Group(); scene.add(W.kousen); W.kousen.visible = false;
@@ -211,6 +217,17 @@ const R = (() => {
     const seenK = new Set();
     for (const p of v.pickups) { seenK.add(p.id); let m = picks.get(p.id); if (!m) { m = pickMesh(p.kind); picks.set(p.id, m); } m.position.set(p.x, 0.1 + Math.sin(T * 4 + p.id) * 0.08, p.z); m.rotation.y = T * 1.5; if (Math.random() < 0.05) emit('add', { x: p.x, y: 0.6, z: p.z, vy: 0.6, life: 0.6, s0: 0.15, s1: 0.02, c: 0xfff6c0 }); }
     for (const [id, m] of picks) if (!seenK.has(id)) { scene.remove(m); picks.delete(id); }
+    // 先に進むべきとき：黄色い小さな矢印で行き先を示す
+    {
+      const a = v.allies[me]; let tgt = null;
+      if (a && a.st === 'ok' && v.stage === 'street') {
+        const ms = v.mobs.filter(q => !q.dying);
+        if (!ms.length && v.barrier === 'none') tgt = [0, 4];
+        else if (ms.length) { let bd = 1e9, bm = null; for (const q of ms) { const d = Math.hypot(q.x - a.x, q.z - a.z); if (d < bd) { bd = d; bm = q; } } if (bd > 13) tgt = [bm.x, bm.z]; }
+      }
+      W.goArrow.visible = !!tgt;
+      if (tgt) { const yaw = Math.atan2(tgt[0] - a.x, tgt[1] - a.z), bob = 1.45 + Math.sin(T * 6) * 0.18; W.goArrow.position.set(a.x + Math.sin(yaw) * bob, 0.05, a.z + Math.cos(yaw) * bob); W.goArrow.rotation.y = yaw; }
+    }
     // 灯籠・提灯・結界
     const bossStage = v.stage === 'boss';
     W.toro.forEach((o, i) => {
@@ -338,7 +355,7 @@ const R = (() => {
       case 'hzfire': {
         if (e.fx === 'otoshi' || e.fx === 'bomb') { A('boom', e.x, e.z, 0.7); burst('add', 18, { x: e.x, y: 0.3, z: e.z, spd: 5, up: 1.5, life: 0.4, s0: 0.6, s1: 0.1, c: 0xff8a3a }); burst('norm', 6, { x: e.x, y: 0.3, z: e.z, spd: 1.5, life: 0.8, s0: 0.7, s1: 1.4, c: 0x5a5060, a: 0.5 }); shake(0.08); }
         if (e.fx === 'land') { A('land', e.x, e.z); for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI * 2; emit('norm', { x: e.x + Math.cos(a) * 1.5, y: 0.2, z: e.z + Math.sin(a) * 1.5, vx: Math.cos(a) * 7, vz: Math.sin(a) * 7, life: 0.8, s0: 0.6, s1: 1.4, c: 0xc8b8a0, a: 0.6 }); } shake(0.4); }
-        if (e.fx === 'harite') burst('norm', 18, { x: e.x + Math.sin(e.yaw) * 3, y: 0.2, z: e.z + Math.cos(e.yaw) * 3, spd: 4, life: 0.6, s0: 0.6, s1: 1.2, c: 0xc8b8a0, a: 0.6 });
+        if (e.fx === 'harite') { for (let d = 0.2; d < DATA.BMOVES.harite.len; d += 0.35) for (const s of [-1, 0, 1]) emit('norm', { x: e.x + Math.sin(e.yaw) * d + Math.cos(e.yaw) * s * 0.9, y: 0.25, z: e.z + Math.cos(e.yaw) * d - Math.sin(e.yaw) * s * 0.9, vx: Math.sin(e.yaw) * 3, vz: Math.cos(e.yaw) * 3, vy: 1.2, life: 0.55, s0: 0.5, s1: 1.2, c: 0xc8b8a0, a: 0.65 }); burst('add', 14, { x: e.x + Math.sin(e.yaw) * 1.2, y: 0.4, z: e.z + Math.cos(e.yaw) * 1.2, spd: 4, life: 0.3, s0: 0.5, s1: 0.05, c: 0xfff0c0 }); }
         break;
       }
       case 'cross': A('flyPass', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); break;

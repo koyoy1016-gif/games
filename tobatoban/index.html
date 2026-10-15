@@ -223,6 +223,10 @@ a{color:var(--shu)}
 .nt.boss{background:rgba(120,20,30,.85);font-family:var(--f-disp);font-weight:400;font-size:16px;border-radius:6px}
 .nt.sp{background:linear-gradient(90deg,rgba(116,70,184,.9),rgba(60,30,120,.9))}
 .nt.warn{background:rgba(200,60,40,.9)}
+.nt.tip{background:rgba(242,201,76,.95);color:#2a1a08;border-color:#fff3c4;white-space:normal;text-align:center;max-width:min(calc(var(--aw)*80),460px);border-radius:14px}
+#party.tip .pcard{animation:tipPulse .7s ease-in-out infinite alternate}
+@keyframes tipPulse{from{box-shadow:0 0 0 2px #f2c94c}to{box-shadow:0 0 0 4px #ffe58a,0 0 16px 4px rgba(242,201,76,.8)}}
+@media (prefers-reduced-motion:reduce){#party.tip .pcard{animation:none;box-shadow:0 0 0 3px #f2c94c}}
 @keyframes ntIn{from{opacity:0;transform:translateY(-6px)}}
 #cutin{position:absolute;right:0;top:34%;pointer-events:none;display:flex;align-items:center;gap:8px;padding:6px 18px 6px 40px;background:linear-gradient(90deg,rgba(0,0,0,0),rgba(116,70,184,.92) 20%);transform:translateX(100%);opacity:0}
 #cutin.show{animation:cut .35s ease-out}
@@ -542,7 +546,10 @@ const BOSS = {
   height: p('体格', 'トバトーバンの高さ（基準味方=1）', 5.0, 'units', 'proto', null, '新作の設計値。原作モデルの実測ではない'),
   shoulder: p('体格', 'ボスの肩幅', 2.8, 'units', 'proto'),
   footWidth: p('体格', 'ボスの接地幅', 2.2, 'units', 'proto'),
-  bodyR: 1.25, hurtR: 1.9, walk: 1.6, turn: 1.4,
+  // 当たり判定：見た目の脚2本＋胴の下（ダウン中は前に倒れた胴も）。移動の衝突も同じ形を使う
+  legX: p('当たり判定', 'ボスの脚の左右位置', 0.62, 'units', 'proto'), legR: p('当たり判定', 'ボスの脚の当たり半径', 0.52, 'units', 'proto', null, '足元の地上判定に届くように見た目の脚より少し太い'),
+  coreR: p('当たり判定', 'ボスの胴の下の当たり半径', 0.75, 'units', 'proto'),
+  bodyR: 1.25, walk: 1.6, turn: 1.4,
   weak: '土', strong: '雷',
   gapMin: p('ボス行動', '後隙後に次の技を選ぶまで（最小）', 0.7, 'seconds', 'proto'),
   gapMax: p('ボス行動', '後隙後に次の技を選ぶまで（最大）', 1.1, 'seconds', 'proto'),
@@ -552,13 +559,13 @@ const BOSS = {
 };
 // ボス技：wind=予兆/準備, act=攻撃期間, iv=同一対象への間隔, max=最大ヒット, rec=後隙, cd=最短再使用
 const BMOVES = {
-  fubuki: { nm: '大売出し札吹雪', ref: 'ツインガトリング砲', wind: p('ボス技', '札吹雪：予兆', 0.65, 's', 'proto'), act: p('ボス技', '札吹雪：攻撃期間', 1.0, 's', 'proto'), iv: p('ボス技', '札吹雪：同一対象への間隔', 0.20, 's', 'proto'), max: p('ボス技', '札吹雪：最大ヒット', 5, 'hits', 'proto'), rec: p('ボス技', '札吹雪：後隙', 0.55, 's', 'proto'), cd: p('ボス技', '札吹雪：再使用制限', 6, 's', 'proto'), pw: p('ボス技', '札吹雪：仮威力', 12, 'power', 'proto', null, '原作の技威力ではない'), stat: 'str', r: 10, fanYaw: 0.56, fanHalf: 0.33 },
-  shime: { nm: 'しめ縄ぶん回し', ref: '猫又ドリル', wind: p('ボス技', 'しめ縄：予兆', 0.55, 's', 'proto'), act: p('ボス技', 'しめ縄：攻撃期間', 0.8, 's', 'proto'), iv: 0.20, max: p('ボス技', 'しめ縄：最大ヒット', 4, 'hits', 'proto'), rec: p('ボス技', 'しめ縄：後隙', 0.65, 's', 'proto'), cd: p('ボス技', 'しめ縄：再使用制限', 7, 's', 'proto'), pw: p('ボス技', 'しめ縄：仮威力', 16, 'power', 'proto'), stat: 'str', r: 7.5, half: 1.15 },
-  otoshi: { nm: '提灯おとし', ref: '腹巻ミサイル', wind: p('ボス技', '提灯おとし：予兆', 1.0, 's', 'proto'), act: 0.12, rec: p('ボス技', '提灯おとし：後隙', 0.65, 's', 'proto'), cd: p('ボス技', '提灯おとし：再使用制限', 9, 's', 'proto'), pw: p('ボス技', '提灯おとし：仮威力', 70, 'power', 'proto'), stat: 'yo', r: 2.3 },
-  kousen: { nm: '招福看板光線', ref: 'デストロイビーム', wind: p('ボス技', '看板光線：予兆', 0.85, 's', 'proto'), act: p('ボス技', '看板光線：照射期間', 1.2, 's', 'proto'), iv: p('ボス技', '看板光線：同一対象への間隔', 0.30, 's', 'proto'), max: p('ボス技', '看板光線：最大ヒット', 4, 'hits', 'proto'), rec: p('ボス技', '看板光線：後隙', 0.8, 's', 'proto'), cd: p('ボス技', '看板光線：再使用制限', 10, 's', 'proto'), pw: p('ボス技', '看板光線：仮威力', 70, 'power', 'proto'), stat: 'yo', len: 24, w: 2.8 },
-  harite: { nm: '商売繁盛張り手', ref: '電動ネコパンチ', wind: p('ボス技', '張り手：予兆', 0.45, 's', 'proto'), act: p('ボス技', '張り手：判定', 0.15, 's', 'proto'), rec: p('ボス技', '張り手：後隙', 0.9, 's', 'proto'), cd: p('ボス技', '張り手：再使用制限', 5, 's', 'proto'), pw: p('ボス技', '張り手：仮威力', 140, 'power', 'proto'), stat: 'str', len: 4.8, w: 3.4 },
-  junkou: { nm: '千住大巡行', ref: '超電動Zデンジャー', wind: p('ボス技', '大巡行：予兆', 1.1, 's', 'proto'), cross: p('ボス技', '大巡行：1回の横断', 1.2, 's', 'proto'), gap: p('ボス技', '大巡行：横断の間', 0.6, 's', 'proto'), n1: p('ボス技', '大巡行：前半の横断回数', 1, 'count', 'proto'), n2: p('ボス技', '大巡行：終盤の横断回数', 3, 'count', 'doc', 6, '1往復半＝計3横断'), rec: p('ボス技', '大巡行：最終着地後の後隙', 1.5, 's', 'proto'), cd: p('ボス技', '大巡行：再使用制限', 22, 's', 'proto'), pw: p('ボス技', '大巡行：接触の仮威力', 140, 'power', 'proto'), bombPw: p('ボス技', '大巡行：落下提灯の仮威力', 70, 'power', 'proto'), bombR: 2.0, bombFall: 0.9, bombEvery: 0.24, contactR: 2.0, stat: 'str' },
-  zouen: { nm: '呼び込み札小僧', ref: 'ロボニャンの増援', wind: p('ボス技', '増援：予兆', 0.8, 's', 'proto'), rec: p('ボス技', '増援：後隙', 0.5, 's', 'proto'), cd: p('ボス技', '増援：再使用制限', 25, 's', 'proto'), max: p('ボス技', '増援：同時存在上限', 2, 'count', 'doc', 6) },
+  fubuki: { nm: '大売出し札吹雪', wind: p('ボス技', '札吹雪：予兆', 0.65, 's', 'proto'), act: p('ボス技', '札吹雪：攻撃期間', 1.0, 's', 'proto'), iv: p('ボス技', '札吹雪：同一対象への間隔', 0.20, 's', 'proto'), max: p('ボス技', '札吹雪：最大ヒット', 5, 'hits', 'proto'), rec: p('ボス技', '札吹雪：後隙', 0.55, 's', 'proto'), cd: p('ボス技', '札吹雪：再使用制限', 6, 's', 'proto'), pw: p('ボス技', '札吹雪：仮威力', 12, 'power', 'proto', null, '原作の技威力ではない'), stat: 'str', r: 10, fanYaw: 0.56, fanHalf: 0.33 },
+  shime: { nm: 'しめ縄ぶん回し', wind: p('ボス技', 'しめ縄：予兆', 0.55, 's', 'proto'), act: p('ボス技', 'しめ縄：攻撃期間', 0.8, 's', 'proto'), iv: 0.20, max: p('ボス技', 'しめ縄：最大ヒット', 4, 'hits', 'proto'), rec: p('ボス技', 'しめ縄：後隙', 0.65, 's', 'proto'), cd: p('ボス技', 'しめ縄：再使用制限', 7, 's', 'proto'), pw: p('ボス技', 'しめ縄：仮威力', 16, 'power', 'proto'), stat: 'str', r: 7.5, half: 1.15 },
+  otoshi: { nm: '提灯おとし', wind: p('ボス技', '提灯おとし：予兆', 1.0, 's', 'proto'), act: 0.12, rec: p('ボス技', '提灯おとし：後隙', 0.65, 's', 'proto'), cd: p('ボス技', '提灯おとし：再使用制限', 9, 's', 'proto'), pw: p('ボス技', '提灯おとし：仮威力', 70, 'power', 'proto'), stat: 'yo', r: 2.3 },
+  kousen: { nm: '招福看板光線', wind: p('ボス技', '看板光線：予兆', 0.85, 's', 'proto'), act: p('ボス技', '看板光線：照射期間', 1.2, 's', 'proto'), iv: p('ボス技', '看板光線：同一対象への間隔', 0.30, 's', 'proto'), max: p('ボス技', '看板光線：最大ヒット', 4, 'hits', 'proto'), rec: p('ボス技', '看板光線：後隙', 0.8, 's', 'proto'), cd: p('ボス技', '看板光線：再使用制限', 10, 's', 'proto'), pw: p('ボス技', '看板光線：仮威力', 70, 'power', 'proto'), stat: 'yo', len: 24, w: 2.8 },
+  harite: { nm: '商売繁盛張り手', wind: p('ボス技', '張り手：予兆', 0.45, 's', 'proto'), act: p('ボス技', '張り手：判定', 0.15, 's', 'proto'), rec: p('ボス技', '張り手：後隙', 0.9, 's', 'proto'), cd: p('ボス技', '張り手：再使用制限', 5, 's', 'proto'), pw: p('ボス技', '張り手：仮威力', 140, 'power', 'proto'), stat: 'str', start: 1.0, len: p('ボス技', '張り手：届く長さ', 3.4, 'm', 'proto', null, '手のひらと衝撃波が届く範囲'), w: 2.6 },
+  junkou: { nm: '千住大巡行', wind: p('ボス技', '大巡行：予兆', 1.1, 's', 'proto'), cross: p('ボス技', '大巡行：1回の横断', 1.2, 's', 'proto'), gap: p('ボス技', '大巡行：横断の間', 0.6, 's', 'proto'), n1: p('ボス技', '大巡行：前半の横断回数', 1, 'count', 'proto'), n2: p('ボス技', '大巡行：終盤の横断回数', 3, 'count', 'doc', 6, '1往復半＝計3横断'), rec: p('ボス技', '大巡行：最終着地後の後隙', 1.5, 's', 'proto'), cd: p('ボス技', '大巡行：再使用制限', 22, 's', 'proto'), pw: p('ボス技', '大巡行：接触の仮威力', 140, 'power', 'proto'), bombPw: p('ボス技', '大巡行：落下提灯の仮威力', 70, 'power', 'proto'), bombR: 2.0, bombFall: 0.9, bombEvery: 0.24, contactR: p('ボス技', '大巡行：体の当たり幅（片側）', 1.45, 'm', 'proto', null, '低く水平に飛ぶ体と同じ幅'), contactLen: 2.4, landR: 2.6, stat: 'str' },
+  zouen: { nm: '呼び込み札小僧', wind: p('ボス技', '増援：予兆', 0.8, 's', 'proto'), rec: p('ボス技', '増援：後隙', 0.5, 's', 'proto'), cd: p('ボス技', '増援：再使用制限', 25, 's', 'proto'), max: p('ボス技', '増援：同時存在上限', 2, 'count', 'doc', 6) },
 };
 const MOB = {
   nm: '札小僧',
@@ -568,14 +575,14 @@ const MOB = {
   def: p('札小僧', 'まもり', 60, 'points', 'proto'),
   shotPw: p('札小僧', '遠隔攻撃の仮威力', 35, 'power', 'proto'),
   shotPeriod: p('札小僧', '発射周期', 1.5, 's', 'proto'),
-  shotSpeed: 9, speed: 2.6, r: 0.45,
+  shotSpeed: 9, speed: 2.6, r: p('当たり判定', '札小僧の当たり半径', 0.32, 'units', 'proto'), shotR: 0.22, allyR: p('当たり判定', '味方が攻撃を受ける半径', 0.32, 'units', 'proto'),
 };
 
 /* ---------------- 攻撃（A/X/Y/必殺） ---------------- */
 // kind: combo3 / melee1 / shot / charge / dodge / retreat / dot / stealth / parry / heavy / trap / protect / guard / taunt / mine / heal / healRing
 const MOVES = {
-  combo3: { kind: 'combo3', nm: '三連', hits: [p('攻撃', '三連：1発目', 0.15, 's', 'proto'), p('攻撃', '三連：2発目（入力時）', 0.45, 's', 'proto'), p('攻撃', '三連：3発目（入力時）', 0.85, 's', 'proto')], end: p('攻撃', '三連：最後の硬直終了', 1.15, 's', 'proto'), range: 1.5, arc: 1.25 },
-  melee1: { kind: 'melee1', nm: '近接打撃', start: p('攻撃', '単発近接：発生', 0.18, 's', 'proto'), active: p('攻撃', '単発近接：攻撃判定', 0.10, 's', 'proto'), end: p('攻撃', '単発近接：最短周期', 0.50, 's', 'proto'), range: 1.5, arc: 1.2 },
+  combo3: { kind: 'combo3', nm: '三連', hits: [p('攻撃', '三連：1発目', 0.15, 's', 'proto'), p('攻撃', '三連：2発目（入力時）', 0.45, 's', 'proto'), p('攻撃', '三連：3発目（入力時）', 0.85, 's', 'proto')], end: p('攻撃', '三連：最後の硬直終了', 1.15, 's', 'proto'), range: p('当たり判定', '近接攻撃が届く距離（体の中心から）', 1.25, 'units', 'proto', null, '相手の体（脚）に触れたときだけ当たる'), arc: 1.25 },
+  melee1: { kind: 'melee1', nm: '近接打撃', start: p('攻撃', '単発近接：発生', 0.18, 's', 'proto'), active: p('攻撃', '単発近接：攻撃判定', 0.10, 's', 'proto'), end: p('攻撃', '単発近接：最短周期', 0.50, 's', 'proto'), range: 1.25, arc: 1.2 },
   shot: { kind: 'shot', nm: '射撃', fire: 0.10, end: p('攻撃', '通常射撃：最短周期', 0.50, 's', 'proto'), lock: 0.25, speed: 18, life: 0.85, r: 0.35 },
 };
 const CHARGE = {
@@ -592,7 +599,7 @@ const DODGE = {
 };
 const RETREAT = { hit: p('後退攻撃', '発生', 0.12, 's', 'proto'), dist: p('後退攻撃', '後退距離', 2.0, 'm', 'proto'), end: p('後退攻撃', '動作終了', 0.55, 's', 'proto'), iv0: 0.10, iv1: p('後退攻撃', '無敵終了', 0.35, 's', 'proto'), cd: p('後退攻撃', '再使用', 5, 's', 'proto') };
 const SKILLS = {
-  kogeShou: { kind: 'charge', nm: 'ため掌', short: 'ため掌', pw: 80, stat: 'str', form: 'melee', range: 1.8, arc: 1.1, attack: true },
+  kogeShou: { kind: 'charge', nm: 'ため掌', short: 'ため掌', pw: 80, stat: 'str', form: 'melee', range: 1.4, arc: 1.1, attack: true },
   hoshiShot: { kind: 'charge', nm: '集光ショット', short: '集光', pw: 50, stat: 'str', form: 'shot', speed: 22, attack: true },
   akaneFire: { kind: 'charge', nm: '茜火', short: '茜火', pw: 50, stat: 'yo', form: 'blast', speed: 14, blastR: 1.6, attack: true },
   dodge: { kind: 'dodge', nm: '回避', short: '回避' },
@@ -601,19 +608,19 @@ const SKILLS = {
   kageKakure: { kind: 'stealth', nm: '影隠れ', short: '影隠れ', dur: p('隠密', '持続', 8, 's', 'proto'), cd: p('隠密', '再使用', 20, 's', 'proto') },
   ukenagashi: { kind: 'parry', nm: '受け流し', short: '受流し', win: p('受け流し', '受付', 1.0, 's', 'proto'), cd: p('受け流し', '再使用', 7, 's', 'proto'), pw: p('受け流し', '反撃の仮威力', 150, 'power', 'proto'), stat: 'str', attack: true },
   hikiGiri: { kind: 'retreat', nm: '退き斬り', short: '退き斬', pw: 70, stat: 'str', attack: true },
-  konshin: { kind: 'heavy', nm: '渾身太鼓打ち', short: '渾身', pw: 400, stat: 'str', start: p('渾身の一撃', '発生', 1.10, 's', 'proto'), active: p('渾身の一撃', '判定', 0.15, 's', 'proto'), rec: p('渾身の一撃', '後隙', 0.65, 's', 'proto'), cd: p('渾身の一撃', '再使用', 10, 's', 'proto'), range: 2.1, arc: 1.2, attack: true },
+  konshin: { kind: 'heavy', nm: '渾身太鼓打ち', short: '渾身', pw: 400, stat: 'str', start: p('渾身の一撃', '発生', 1.10, 's', 'proto'), active: p('渾身の一撃', '判定', 0.15, 's', 'proto'), rec: p('渾身の一撃', '後隙', 0.65, 's', 'proto'), cd: p('渾身の一撃', '再使用', 10, 's', 'proto'), range: 1.6, arc: 1.2, attack: true },
   shibire: { kind: 'trap', nm: 'しびれ囃子', short: 'しびれ', arm: p('麻痺のワナ', '作動可能まで', 0.8, 's', 'proto'), para: p('麻痺のワナ', '麻痺時間', 3, 's', 'proto'), cd: p('麻痺のワナ', '再使用', 15, 's', 'proto'), life: 20, r: 1.3, bossMul: p('麻痺のワナ', 'ボスへの麻痺時間倍率', 0.5, 'ratio', 'proto'), bossImmune: p('麻痺のワナ', 'ボスの麻痺耐性時間', 15, 's', 'proto') },
   daihigo: { kind: 'protect', nm: '大庇護', short: '大庇護', r: p('大庇護', '範囲', 3, 'm', 'proto'), inv: p('大庇護', '無敵時間', 0.45, 's', 'proto'), cd: p('大庇護', '再使用', 15, 's', 'proto') },
   guard: { kind: 'guard', nm: 'ガード', short: 'ガード', max: p('ガード', '最大持続', 8, 's', 'approx', 25, '当時の目安'), refill: p('ガード', '空からの再充填', 20, 's', 'approx', 25), threshold: p('ガード', '再使用できるゲージ量', 0.15, 'ratio', 'proto', null, '少しでも使うと20秒使えない仕様にはしない'), mul: SIM.guardMul },
-  yobikomi: { kind: 'taunt', nm: '呼び込み打ち', short: '呼込み', pw: 80, stat: 'str', threat: p('敵視', '呼び込み打ちの敵視', 300, 'points', 'proto'), cd: p('呼び込み打ち', '再使用', 6, 's', 'proto'), start: 0.22, end: 0.55, range: 1.7, arc: 1.2, attack: true },
+  yobikomi: { kind: 'taunt', nm: '呼び込み打ち', short: '呼込み', pw: 80, stat: 'str', threat: p('敵視', '呼び込み打ちの敵視', 300, 'points', 'proto'), cd: p('呼び込み打ち', '再使用', 6, 's', 'proto'), start: 0.22, end: 0.55, range: 1.35, arc: 1.2, attack: true },
   hansha: { kind: 'guard', nm: '反射暖簾', short: '反射', max: p('反射ガード', '最大持続', 6, 's', 'proto'), refill: p('反射ガード', '使い切って再使用まで', 20, 's', 'proto'), threshold: 0.15, mul: SIM.guardMul, reflect: p('反射ガード', '反射率', 0.3, 'ratio', 'proto', null, '原作未確認の独立係数') },
-  suiKemuri: { kind: 'charge', nm: '吸い煙', short: '吸い煙', pw: 30, stat: 'yo', form: 'drain', range: 3.2, arc: 0.9, drain: p('吸収', '吸収率', 0.5, 'ratio', 'proto'), attack: true },
+  suiKemuri: { kind: 'charge', nm: '吸い煙', short: '吸い煙', pw: 30, stat: 'yo', form: 'drain', range: 3.0, arc: 0.9, drain: p('吸収', '吸収率', 0.5, 'ratio', 'proto'), attack: true },
   okiKayaku: { kind: 'mine', nm: '置き火薬', short: '火薬', pw: 600, stat: 'mix', arm: p('地雷', '作動可能まで', 1.0, 's', 'proto'), cd: p('地雷', '再使用', 12, 's', 'proto'), trig: 1.2, r: 2.4, allyMul: p('地雷', '味方が巻き込まれたときの倍率', 0.3, 'ratio', 'proto', null, '敵味方どちらでも起爆'), life: 30, attack: true },
   megumi: { kind: 'heal', nm: '恵みの葉', short: '恵み', pw: 80, max: p('回復技', '最大ため', 1.3, 's', 'approx', 26, '同名技の攻略記事の目安'), cd: p('回復技', '再使用', 9, 's', 'approx', 26), mul: p('回復技', 'ため最大の回復倍率', 2.0, 'ratio', 'proto'), range: 14 },
   kaedeWa: { kind: 'healRing', nm: '楓の輪', short: '楓の輪', pw: 80, max: 1.3, cd: 9, r0: p('回復技', '楓の輪：最小範囲', 3, 'm', 'proto'), r1: p('回復技', '楓の輪：最大範囲', 6, 'm', 'proto') },
 };
 const SPECIALS = {
-  hits10: { nm: '十連', type: 'multi', n: 10, pw: 40, prep: p('必殺', '40×10型：準備', 0.35, 's', 'proto'), iv: p('必殺', '40×10型：間隔', 0.12, 's', 'proto'), tail: p('必殺', '40×10型：終了まで', 0.35, 's', 'proto'), shape: 'fan', range: 2.4, arc: 1.3 },
+  hits10: { nm: '十連', type: 'multi', n: 10, pw: 40, prep: p('必殺', '40×10型：準備', 0.35, 's', 'proto'), iv: p('必殺', '40×10型：間隔', 0.12, 's', 'proto'), tail: p('必殺', '40×10型：終了まで', 0.35, 's', 'proto'), shape: 'fan', range: 1.8, arc: 1.3 },
   hits8: { nm: '八連光', type: 'multi', n: 8, pw: 60, prep: p('必殺', '60×8型：準備', 0.45, 's', 'proto'), iv: p('必殺', '60×8型：間隔', 0.16, 's', 'proto'), tail: 0.35, shape: 'line', len: 15, w: 1.8 },
   hits4: { nm: '四重陣', type: 'multi', n: 4, pw: 100, prep: p('必殺', '100×4型：準備', 0.50, 's', 'proto'), iv: p('必殺', '100×4型：間隔', 0.25, 's', 'proto'), tail: p('必殺', '100×4型：終了まで', 0.40, 's', 'proto'), shape: 'fan', range: 7.5, arc: 0.95 },
   one400: { nm: '一閃', type: 'multi', n: 1, pw: 400, prep: p('必殺', '400単発型：準備', 0.80, 's', 'proto'), iv: 0, tail: p('必殺', '400単発型：後隙', 0.65, 's', 'proto'), shape: 'line', len: 6, w: 2.8 },
@@ -628,21 +635,21 @@ const SP_INVULN = p('必殺', '本人の無敵区間', '発動〜動作終了', 
 // col=体の主色, acc=差し色, h=身長(基準味方=1), el=属性（新作の仮割当）
 function ch(o) { return o; }
 const CHARS = [
-  ch({ id: 'kogemaru', nm: 'コゲマル', role: '近接', blurb: '炭の小狸。三連と、ためた掌で押し込む', ref: 'ジバニャン', src: 15, h: 1.0, el: '火', str: 223, yo: 61, def: 124, A: 'combo3', Apw: [30, 30, 60], X: 'kogeShou', Y: 'dodge', sp: 'hits10', spNm: '炭火十連掌', passive: 'dodgePlus', psv: '回避の無敵が少し長い', col: 0x3b3a40, acc: 0xff7a2a, ai: 'melee' }),
-  ch({ id: 'hoshisuzume', nm: 'ホシスズメ', role: '射撃', blurb: '真鍮の星灯を持つ雀。離れて撃つ', ref: 'USAピョン', src: 16, h: 0.9, el: '風', str: 229, yo: 81, def: 132, A: 'shot', Apw: [35], X: 'hoshiShot', Y: 'dodge', sp: 'hits8', spNm: '星灯大放射', passive: 'xPower', psv: 'X技の威力が上がる', col: 0x9a6a3e, acc: 0xf2c94c, ai: 'ranged' }),
-  ch({ id: 'akaneten', nm: 'アカネテン', role: '炎・継続', blurb: '夕焼け色のテン。妖術の炎と焦げつき印', ref: 'キュウビ', src: 17, h: 1.15, el: '火', str: 143, yo: 241, def: 176, A: 'melee1', Apw: [50], X: 'akaneFire', Y: 'kogetsuki', sp: 'hits4', spNm: '紅灯四重陣', passive: 'fullHp', psv: 'HP満タンで攻撃が上がる', col: 0xe8683a, acc: 0xffe0b0, ai: 'mage' }),
-  ch({ id: 'kagetsubame', nm: 'カゲツバメ', role: '隠密', blurb: '影をまとう燕。狙われていない間は会心', ref: 'オロチ', src: 18, h: 1.05, el: '風', str: 240, yo: 146, def: 167, A: 'combo3', Apw: [30, 30, 60], X: 'kaeshiBane', Y: 'kageKakure', sp: 'hits10', spNm: '影羽十連', passive: 'stealthCrit', psv: '見つかっていない間の攻撃が必ず会心', col: 0x2a2f55, acc: 0xc9d4ff, ai: 'melee' }),
-  ch({ id: 'sayanosuke', nm: 'サヤノスケ', role: '反撃', blurb: '古い刀の鞘の付喪神。受け流して返す', ref: 'くさなぎ', src: 19, h: 1.15, el: '土', str: 246, yo: 144, def: 152, A: 'combo3', Apw: [30, 30, 60], X: 'ukenagashi', Y: 'hikiGiri', sp: 'one400', spNm: '鞘の一閃', passive: 'critPower', psv: '会心の威力が上がる', col: 0x2b1d1a, acc: 0xd8b04a, ai: 'melee' }),
-  ch({ id: 'taiko', nm: 'タイコ番長', role: '強打・支援', blurb: '太鼓を背負う小熊。重い一撃と麻痺のワナ', ref: 'ブリー隊長', src: 20, h: 1.25, el: '土', str: 255, yo: 81, def: 158, A: 'melee1', Apw: [50], X: 'konshin', Y: 'shibire', sp: 'buff', spNm: '囃子の大号令', passive: 'partyStr', psv: '味方全員のちからが上がる', col: 0x7b4a2a, acc: 0xd23a3a, ai: 'melee' }),
-  ch({ id: 'burikidon', nm: 'ブリキドン', role: '射撃・防御', blurb: 'ブリキ缶の店番人形。ガードで敵を引きつける', ref: 'ロボニャン', src: 21, h: 1.1, el: '雷', str: 191, yo: 112, def: 213, A: 'shot', Apw: [70], X: 'daihigo', Y: 'guard', sp: 'guardup', spNm: '鉄壁店番', passive: 'food', psv: '30秒に一度、回復の食べ物を出す', col: 0xb9c2c9, acc: 0x2f6fb5, ai: 'tank' }),
-  ch({ id: 'norenbou', nm: 'ノレン坊', role: '誘導・反射', blurb: '暖簾をまとう付喪神。呼び込んで跳ね返す', ref: 'から傘魔人', src: 22, h: 1.2, el: '水', str: 196, yo: 119, def: 241, A: 'melee1', Apw: [50], X: 'yobikomi', Y: 'hansha', sp: 'guardup', spNm: '暖簾大結界', passive: 'guardPlus', psv: 'ガードの効果が上がる', col: 0x23407a, acc: 0xf4efe2, ai: 'tank' }),
-  ch({ id: 'kemuridama', nm: 'ケムリダマ', role: '吸収・地雷', blurb: '小さな煙のやかん。吸い取りと置き火薬', ref: 'ウィスパー', src: 23, h: 0.95, el: '風', str: 83, yo: 215, def: 131, A: 'melee1', Apw: [50], X: 'suiKemuri', Y: 'okiKayaku', sp: 'weaken', spNm: '煙払いの息', passive: 'partyCrit', psv: '味方全員の会心が出やすい', col: 0x8f9aa3, acc: 0xeae6dc, ai: 'mage' }),
-  ch({ id: 'momiji', nm: 'モミジ翁', role: '回復・蘇生', blurb: '楓の葉をまとう翁。ためて回復、救助が速い', ref: '花さか爺', src: 24, h: 1.05, el: '土', str: 117, yo: 256, def: 157, A: 'melee1', Apw: [50], X: 'megumi', Y: 'kaedeWa', sp: 'healall', spNm: '楓舞う祝福', passive: 'reviver', psv: '救助が速く、復活時のHPも多い', col: 0xc8452a, acc: 0xf6e6c8, ai: 'healer' }),
+  ch({ id: 'kogemaru', nm: 'コゲマル', role: '近接', blurb: '炭の小狸。三連と、ためた掌で押し込む', src: 15, h: 1.0, el: '火', str: 223, yo: 61, def: 124, A: 'combo3', Apw: [30, 30, 60], X: 'kogeShou', Y: 'dodge', sp: 'hits10', spNm: '炭火十連掌', passive: 'dodgePlus', psv: '回避の無敵が少し長い', col: 0x3b3a40, acc: 0xff7a2a, ai: 'melee' }),
+  ch({ id: 'hoshisuzume', nm: 'ホシスズメ', role: '射撃', blurb: '真鍮の星灯を持つ雀。離れて撃つ', src: 16, h: 0.9, el: '風', str: 229, yo: 81, def: 132, A: 'shot', Apw: [35], X: 'hoshiShot', Y: 'dodge', sp: 'hits8', spNm: '星灯大放射', passive: 'xPower', psv: 'X技の威力が上がる', col: 0x9a6a3e, acc: 0xf2c94c, ai: 'ranged' }),
+  ch({ id: 'akaneten', nm: 'アカネテン', role: '炎・継続', blurb: '夕焼け色のテン。妖術の炎と焦げつき印', src: 17, h: 1.15, el: '火', str: 143, yo: 241, def: 176, A: 'melee1', Apw: [50], X: 'akaneFire', Y: 'kogetsuki', sp: 'hits4', spNm: '紅灯四重陣', passive: 'fullHp', psv: 'HP満タンで攻撃が上がる', col: 0xe8683a, acc: 0xffe0b0, ai: 'mage' }),
+  ch({ id: 'kagetsubame', nm: 'カゲツバメ', role: '隠密', blurb: '影をまとう燕。狙われていない間は会心', src: 18, h: 1.05, el: '風', str: 240, yo: 146, def: 167, A: 'combo3', Apw: [30, 30, 60], X: 'kaeshiBane', Y: 'kageKakure', sp: 'hits10', spNm: '影羽十連', passive: 'stealthCrit', psv: '見つかっていない間の攻撃が必ず会心', col: 0x2a2f55, acc: 0xc9d4ff, ai: 'melee' }),
+  ch({ id: 'sayanosuke', nm: 'サヤノスケ', role: '反撃', blurb: '古い刀の鞘の付喪神。受け流して返す', src: 19, h: 1.15, el: '土', str: 246, yo: 144, def: 152, A: 'combo3', Apw: [30, 30, 60], X: 'ukenagashi', Y: 'hikiGiri', sp: 'one400', spNm: '鞘の一閃', passive: 'critPower', psv: '会心の威力が上がる', col: 0x2b1d1a, acc: 0xd8b04a, ai: 'melee' }),
+  ch({ id: 'taiko', nm: 'タイコ番長', role: '強打・支援', blurb: '太鼓を背負う小熊。重い一撃と麻痺のワナ', src: 20, h: 1.25, el: '土', str: 255, yo: 81, def: 158, A: 'melee1', Apw: [50], X: 'konshin', Y: 'shibire', sp: 'buff', spNm: '囃子の大号令', passive: 'partyStr', psv: '味方全員のちからが上がる', col: 0x7b4a2a, acc: 0xd23a3a, ai: 'melee' }),
+  ch({ id: 'burikidon', nm: 'ブリキドン', role: '射撃・防御', blurb: 'ブリキ缶の店番人形。ガードで敵を引きつける', src: 21, h: 1.1, el: '雷', str: 191, yo: 112, def: 213, A: 'shot', Apw: [70], X: 'daihigo', Y: 'guard', sp: 'guardup', spNm: '鉄壁店番', passive: 'food', psv: '30秒に一度、回復の食べ物を出す', col: 0xb9c2c9, acc: 0x2f6fb5, ai: 'tank' }),
+  ch({ id: 'norenbou', nm: 'ノレン坊', role: '誘導・反射', blurb: '暖簾をまとう付喪神。呼び込んで跳ね返す', src: 22, h: 1.2, el: '水', str: 196, yo: 119, def: 241, A: 'melee1', Apw: [50], X: 'yobikomi', Y: 'hansha', sp: 'guardup', spNm: '暖簾大結界', passive: 'guardPlus', psv: 'ガードの効果が上がる', col: 0x23407a, acc: 0xf4efe2, ai: 'tank' }),
+  ch({ id: 'kemuridama', nm: 'ケムリダマ', role: '吸収・地雷', blurb: '小さな煙のやかん。吸い取りと置き火薬', src: 23, h: 0.95, el: '風', str: 83, yo: 215, def: 131, A: 'melee1', Apw: [50], X: 'suiKemuri', Y: 'okiKayaku', sp: 'weaken', spNm: '煙払いの息', passive: 'partyCrit', psv: '味方全員の会心が出やすい', col: 0x8f9aa3, acc: 0xeae6dc, ai: 'mage' }),
+  ch({ id: 'momiji', nm: 'モミジ翁', role: '回復・蘇生', blurb: '楓の葉をまとう翁。ためて回復、救助が速い', src: 24, h: 1.05, el: '土', str: 117, yo: 256, def: 157, A: 'melee1', Apw: [50], X: 'megumi', Y: 'kaedeWa', sp: 'healall', spNm: '楓舞う祝福', passive: 'reviver', psv: '救助が速く、復活時のHPも多い', col: 0xc8452a, acc: 0xf6e6c8, ai: 'healer' }),
 ];
 const CHI = Object.fromEntries(CHARS.map(c => [c.id, c]));
 for (const c of CHARS) {
-  p('キャラ', c.nm + '：ちから/ようりょく/まもり', `${c.str} / ${c.yo} / ${c.def}`, 'points', 'doc', c.src, 'レベル99・装備なしの公開参考値（個体差あり）。参考:' + c.ref);
-  p('キャラ', c.nm + '：身長', c.h, 'units', 'proto', null, '判別しやすさのための値。参考妖怪の身長表ではない');
+  p('キャラ', c.nm + '：ちから/ようりょく/まもり', `${c.str} / ${c.yo} / ${c.def}`, 'points', 'doc', c.src, 'レベル99・装備なしの公開値（個体差あり）');
+  p('キャラ', c.nm + '：身長', c.h, 'units', 'proto', null, '判別しやすさのための値');
   c.hp = p('キャラ', c.nm + '：体力', Math.round((700 + c.def * 1.5) / 10) * 10, 'points', 'proto', null, '画面に数値は出さない', true);
 }
 p('技', '三連通常攻撃の威力', '30 / 30 / 60', 'power', 'doc', 27);
@@ -737,6 +744,14 @@ function inLine(px, pz, ox, oz, yaw, len, halfW, tr) {
   return f >= -tr && f <= len + tr && Math.abs(s) <= halfW + tr;
 }
 
+/** ボスの当たり判定と衝突の形（脚2本＋胴の下）。クライアント予測からも使う */
+function bossParts(b) {
+  const B = DATA.BOSS, c = Math.cos(b.yaw), s = Math.sin(b.yaw);
+  const p = [{ x: b.x + c * B.legX, z: b.z - s * B.legX, r: B.legR }, { x: b.x - c * B.legX, z: b.z + s * B.legX, r: B.legR }, { x: b.x, z: b.z, r: B.coreR }];
+  if (b.st === 'down') p.push({ x: b.x + Math.sin(b.yaw) * 0.7, z: b.z + Math.cos(b.yaw) * 0.7, r: 1.2 });
+  return p;
+}
+function contactPt(q, ox, oz) { const d = dist2(ox, oz, q.x, q.z); if (d < 1e-4) return { x: q.x, z: q.z }; return { x: q.x + (ox - q.x) / d * q.r, z: q.z + (oz - q.z) / d * q.r }; }
 class Sim {
   constructor(o) {
     const D = DATA;
@@ -810,14 +825,25 @@ class Sim {
   }
   enemiesAlive() { const r = []; if (this.boss && this.bossHittable()) r.push(this.boss); for (const m of this.mobs) if (m.st === 'ok') r.push(m); return r; }
   bossHittable() { const b = this.boss; return b && b.st !== 'intro' && b.st !== 'dead' && b.st !== 'fly' && b.st !== 'hidden' && !(b.st === 'rec' && b.mv === 'junkou' && b.y > 0.3); }
+  hurtParts(e) { return e === this.boss ? bossParts(e) : [{ x: e.x, z: e.z, r: DATA.MOB.r }]; }
+  /** 体の表面までの距離（いちばん近い部位） */
+  gapTo(x, z, e) { let g = 1e9, q0 = null; for (const q of this.hurtParts(e)) { const d = dist2(x, z, q.x, q.z) - q.r; if (d < g) { g = d; q0 = q; } } return { g, q: q0 }; }
+  /** 攻撃の形が体のどこかに触れたら、その接触点を返す（触れなければ null） */
+  hitFan(e, ox, oz, yaw, r0, r1, half) { for (const q of this.hurtParts(e)) if (inFan(q.x, q.z, ox, oz, yaw, r0, r1, half, q.r)) return contactPt(q, ox, oz); return null; }
+  hitLine(e, ox, oz, yaw, len, halfW) {
+    const fx = Math.sin(yaw), fz = Math.cos(yaw);
+    for (const q of this.hurtParts(e)) if (inLine(q.x, q.z, ox, oz, yaw, len, halfW, q.r)) { const f = clamp((q.x - ox) * fx + (q.z - oz) * fz, 0, len); return contactPt(q, ox + fx * f, oz + fz * f); }
+    return null;
+  }
+  hitCircle(e, x, z, r) { for (const q of this.hurtParts(e)) if (dist2(x, z, q.x, q.z) <= r + q.r) return contactPt(q, x, z); return null; }
   findTarget(id) { if (id === 'boss') return this.bossHittable() ? this.boss : null; return this.mobs.find(m => m.id === id && m.st === 'ok') || null; }
   faceForAttack(a, inp) {
     const lock = inp.lock && this.findTarget(inp.lock);
-    if (lock) { a.yaw = yawTo(lock.x - a.x, lock.z - a.z); return; }
+    if (lock) { const { q } = this.gapTo(a.x, a.z, lock); a.yaw = yawTo(q.x - a.x, q.z - a.z); return; }
     if (Math.abs(inp.mx) + Math.abs(inp.mz) > 0.2) { a.yaw = yawTo(inp.mx, inp.mz); return; }
-    let best = null, bd = 5.5; // 近くの敵へ自動で向く（新作の操作補助）
-    for (const e of this.enemiesAlive()) { const d = dist2(a.x, a.z, e.x, e.z) - (e === this.boss ? DATA.BOSS.hurtR : 0); if (d < bd) { bd = d; best = e; } }
-    if (best) a.yaw = yawTo(best.x - a.x, best.z - a.z);
+    let bq = null, bd = 5.5; // 近くの敵の体へ自動で向く（新作の操作補助）
+    for (const e of this.enemiesAlive()) { const { g, q } = this.gapTo(a.x, a.z, e); if (g < bd) { bd = g; bq = q; } }
+    if (bq) a.yaw = yawTo(bq.x - a.x, bq.z - a.z);
   }
   updateAlly(a, inp, dt) {
     const S = DATA.SIM;
@@ -884,9 +910,11 @@ class Sim {
     }
     // ボスの体
     const b = this.boss;
-    if (b && b.st !== 'fly' && b.st !== 'hidden' && b.y < 1.2) {
-      const dx = nx - b.x, dz = nz - b.z, d = Math.hypot(dx, dz), m = DATA.BOSS.bodyR + rad;
-      if (d < m) { if (d < 1e-4) { nx = b.x + m; } else { nx = b.x + dx / d * m; nz = b.z + dz / d * m; } }
+    if (b && b.st !== 'fly' && b.st !== 'hidden' && b.st !== 'dead' && b.y < 1.2) {
+      for (let it = 0; it < 2; it++) for (const q of bossParts(b)) {
+        const dx = nx - q.x, dz = nz - q.z, d = Math.hypot(dx, dz), m = q.r + rad;
+        if (d < m) { if (d < 1e-4) { nx = q.x + m; } else { nx = q.x + dx / d * m; nz = q.z + dz / d * m; } }
+      }
     }
     return [nx, nz];
   }
@@ -1133,8 +1161,8 @@ class Sim {
   meleeHit(a, pw, stat, range, arc, kind, log, fx, extra) {
     let total = 0, n = 0;
     for (const e of this.enemiesAlive()) {
-      const tr = e === this.boss ? DATA.BOSS.hurtR : DATA.MOB.r;
-      if (inFan(e.x, e.z, a.x, a.z, a.yaw, 0, range, arc, tr)) { const d = this.dealToEnemy(a, e, pw, stat, kind, log); total += d; n++; }
+      const h = this.hitFan(e, a.x, a.z, a.yaw, 0, range, arc);
+      if (h) { const d = this.dealToEnemy(a, e, pw, stat, kind, log, h); total += d; n++; }
     }
     this.ev('swing', { slot: a.slot, fx, x: a.x, z: a.z, yaw: a.yaw, hit: n > 0 ? 1 : 0 });
     if (n > 0) this.spForHit(a, kind, log);
@@ -1147,7 +1175,7 @@ class Sim {
   }
   undetected(a) { return a.buffs.stealth > 0 || (!(this.boss && this.boss.st !== 'dead' && this.boss.target === a.slot) && !this.mobs.some(m => m.st === 'ok' && m.tgt === a.slot)); }
   partyHas(pass) { return this.allies.some(o => o.c.passive === pass && o.st !== 'gone'); }
-  dealToEnemy(a, e, pw, stat, kind, log, opt) {
+  dealToEnemy(a, e, pw, stat, kind, log, hit) {
     if (e === this.boss && !this.bossHittable()) return 0;
     if (e.st && e.st !== 'ok' && e !== this.boss) return 0;
     const S = DATA.SIM, P = DATA.PASSIVE;
@@ -1165,7 +1193,7 @@ class Sim {
     const dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm));
     e.hp -= dmg; a.threat += dmg; a.stats.dmg += dmg;
     if (log) { log.hits.push(+this.t.toFixed(3)); log.dmg.push(dmg); log.def = Math.round(def); log.buff = (state !== 1 ? '×' + state.toFixed(2) : '') + (crit ? ' 会心' : '') + (elem !== 1 ? ' 属性×' + elem : ''); }
-    this.ev('dmg', { v: dmg, crit: crit ? 1 : 0, x: e.x, z: e.z, y: e === this.boss ? 2.4 : 0.8, src: a.slot, kind, el: elem > 1 ? 1 : elem < 1 ? -1 : 0 });
+    this.ev('dmg', { v: dmg, crit: crit ? 1 : 0, x: hit ? hit.x : e.x, z: hit ? hit.z : e.z, y: e === this.boss ? (e.st === 'down' ? 1.6 : 1.0) : 0.6, src: a.slot, kind, el: elem > 1 ? 1 : elem < 1 ? -1 : 0 });
     if (e.hp <= 0) { e.hp = 0; if (e === this.boss) this.bossDie(); else this.mobDie(e, a); }
     return dmg;
   }
@@ -1178,7 +1206,7 @@ class Sim {
       const sk = o.act.sk; o.act = { k: 'counter', t: 0 }; o.inv = 0.45;
       this.ev('parry', { slot: o.slot, x: o.x, z: o.z });
       const src = opt.src === 'none' ? null : (opt.src || this.boss);
-      if (src && src.hp > 0 && (src !== this.boss || this.bossHittable())) { o.yaw = yawTo(src.x - o.x, src.z - o.z); this.dealToEnemy(o, src, sk.pw, sk.stat, 'skill', null); }
+      if (src && src.hp > 0 && (src !== this.boss || this.bossHittable())) { const { q } = this.gapTo(o.x, o.z, src); o.yaw = yawTo(q.x - o.x, q.z - o.z); this.dealToEnemy(o, src, sk.pw, sk.stat, 'skill', null, contactPt(q, o.x, o.z)); }
       return 0;
     }
     const atk = stat === 'yo' ? srcStats.yo : srcStats.str;
@@ -1215,9 +1243,8 @@ class Sim {
         A.n++;
         let hits = 0;
         for (const e of this.enemiesAlive()) {
-          const tr = e === this.boss ? DATA.BOSS.hurtR : DATA.MOB.r;
-          const inside = S.shape === 'fan' ? inFan(e.x, e.z, a.x, a.z, a.yaw, 0, S.range, S.arc, tr) : inLine(e.x, e.z, a.x, a.z, a.yaw, S.len, S.w / 2, tr);
-          if (inside) { this.dealToEnemy(a, e, S.pw, a.c.id === 'akaneten' || a.c.id === 'kemuridama' ? 'yo' : 'str', 'sp', A.log); hits++; if (S.defDown) { e.defDown = S.defDownT; this.ev('defdown', { x: e.x, z: e.z }); } }
+          const inside = S.shape === 'fan' ? this.hitFan(e, a.x, a.z, a.yaw, 0, S.range, S.arc) : this.hitLine(e, a.x, a.z, a.yaw, S.len, S.w / 2);
+          if (inside) { this.dealToEnemy(a, e, S.pw, a.c.id === 'akaneten' || a.c.id === 'kemuridama' ? 'yo' : 'str', 'sp', A.log, inside); hits++; if (S.defDown) { e.defDown = S.defDownT; this.ev('defdown', { x: e.x, z: e.z }); } }
         }
         this.ev('sphit', { slot: a.slot, n: A.n, ch: a.c.id, x: a.x, z: a.z, yaw: a.yaw, hit: hits });
       }
@@ -1261,13 +1288,13 @@ class Sim {
         const a = this.allies[p.owner];
         for (const e of this.enemiesAlive()) {
           if (p.hit.has(e.id)) continue;
-          const tr = e === this.boss ? DATA.BOSS.hurtR : DATA.MOB.r;
-          if (dist2(p.x, p.z, e.x, e.z) <= tr + p.r) {
+          const h = this.hitCircle(e, p.x, p.z, p.r);
+          if (h) {
             p.hit.add(e.id);
             if (p.kind === 'mark') { (e.dots || (e.dots = [])).push({ src: p.owner, left: p.ex.dur, next: p.ex.tick, pw: p.ex.pw, stat: p.ex.stat }); this.ev('mark', { x: e.x, z: e.z }); this.spForHit(a, 'skill', p.log); p.life = 0; break; }
             if (p.ex && p.ex.blast) { this.blast(a, p.x, p.z, p.ex.blast, p.pw, p.stat, p.hk, p.log); p.life = 0; break; }
-            this.dealToEnemy(a, e, p.pw, p.stat, p.hk, p.log); this.spForHit(a, p.hk, p.log);
-            this.ev('phit', { x: p.x, z: p.z, k: p.kind });
+            this.dealToEnemy(a, e, p.pw, p.stat, p.hk, p.log, h); this.spForHit(a, p.hk, p.log);
+            this.ev('phit', { x: h.x, z: h.z, k: p.kind });
             if (p.kind !== 'focus') { p.life = 0; break; }
           }
         }
@@ -1275,7 +1302,7 @@ class Sim {
       } else {
         for (const o of this.allies) {
           if (o.st !== 'ok' || p.hit.has(o.id)) continue;
-          if (dist2(p.x, p.z, o.x, o.z) <= 0.4 + p.r) { p.hit.add(o.id); this.dealToAlly(o, p.pw, p.stat, p.src, { src: p.srcEnt }); p.life = 0; break; }
+          if (dist2(p.x, p.z, o.x, o.z) <= DATA.MOB.allyR + p.r) { p.hit.add(o.id); this.dealToAlly(o, p.pw, p.stat, p.src, { src: p.srcEnt }); p.life = 0; break; }
         }
       }
       if (Math.abs(p.x) > 40 || p.z < -80 || p.z > 50) p.life = 0;
@@ -1291,7 +1318,7 @@ class Sim {
   }
   blast(a, x, z, r, pw, stat, hk, log) {
     let n = 0;
-    for (const e of this.enemiesAlive()) { const tr = e === this.boss ? DATA.BOSS.hurtR : DATA.MOB.r; if (dist2(x, z, e.x, e.z) <= r + tr) { this.dealToEnemy(a, e, pw, stat, hk, log); n++; } }
+    for (const e of this.enemiesAlive()) { const h = this.hitCircle(e, x, z, r); if (h) { this.dealToEnemy(a, e, pw, stat, hk, log, h); n++; } }
     if (n) this.spForHit(a, hk, log);
     this.ev('boom', { x, z, r, k: 'fire' });
   }
@@ -1307,8 +1334,7 @@ class Sim {
       const sk = tr.sk, a = this.allies[tr.owner];
       if (tr.kind === 'para') {
         for (const e of this.enemiesAlive()) {
-          const rr = e === this.boss ? DATA.BOSS.bodyR + 0.6 : DATA.MOB.r;
-          if (dist2(tr.x, tr.z, e.x, e.z) <= sk.r + rr) {
+          if (this.hitCircle(e, tr.x, tr.z, sk.r)) {
             if (e === this.boss) { if (e.paraImm > 0 || e.st === 'fly' || e.st === 'down') continue; this.bossStun(sk.para * sk.bossMul); e.paraImm = sk.bossImmune; }
             else { e.para = sk.para; }
             this.ev('para', { x: e.x, z: e.z }); tr.dead = 1; break;
@@ -1316,11 +1342,11 @@ class Sim {
         }
       } else if (tr.kind === 'mine') {
         let trig = false;
-        for (const e of this.enemiesAlive()) { const rr = e === this.boss ? DATA.BOSS.bodyR + 0.4 : DATA.MOB.r; if (dist2(tr.x, tr.z, e.x, e.z) <= sk.trig + rr) trig = true; }
+        for (const e of this.enemiesAlive()) if (this.hitCircle(e, tr.x, tr.z, sk.trig)) trig = true;
         for (const o of this.allies) if (o.st === 'ok' && o.slot !== tr.owner && dist2(tr.x, tr.z, o.x, o.z) <= 0.7) trig = true;
         if (trig) {
           tr.dead = 1; const hitSet = new Set();
-          for (const e of this.enemiesAlive()) { const rr = e === this.boss ? DATA.BOSS.hurtR : DATA.MOB.r; if (!hitSet.has(e.id) && dist2(tr.x, tr.z, e.x, e.z) <= sk.r + rr) { hitSet.add(e.id); this.dealToEnemy(a, e, sk.pw, 'mix', 'skill', null); } }
+          for (const e of this.enemiesAlive()) { const h = !hitSet.has(e.id) && this.hitCircle(e, tr.x, tr.z, sk.r); if (h) { hitSet.add(e.id); this.dealToEnemy(a, e, sk.pw, 'mix', 'skill', null, h); } }
           for (const o of this.allies) if (o.st === 'ok' && dist2(tr.x, tr.z, o.x, o.z) <= sk.r) { // 味方も巻き込む（1爆発につき1回）
             const dx = o.x - tr.x, dz = o.z - tr.z; this.dealToAlly(o, sk.pw * sk.allyMul, 'str', { str: (a.c.str + a.c.yo) / 2, yo: a.c.yo }, { knock: 4, kx: dx, kz: dz, src: 'none' });
           }
@@ -1428,7 +1454,7 @@ class Sim {
   }
   mobFire(m, tg) {
     const yaw = yawTo(tg.x - m.x, tg.z - m.z), fx = Math.sin(yaw), fz = Math.cos(yaw), s = DATA.MOB.shotSpeed;
-    this.projs.push({ id: this.id(), kind: 'fuda', team: 'enemy', x: m.x + fx * 0.5, y: 0.55, z: m.z + fz * 0.5, vx: fx * s, vz: fz * s, life: 1.7, r: 0.3, pw: DATA.MOB.shotPw, stat: 'str', src: { str: m.str, yo: m.yo }, srcEnt: m, hit: new Set(), yaw });
+    this.projs.push({ id: this.id(), kind: 'fuda', team: 'enemy', x: m.x + fx * 0.5, y: 0.55, z: m.z + fz * 0.5, vx: fx * s, vz: fz * s, life: 1.7, r: DATA.MOB.shotR, pw: DATA.MOB.shotPw, stat: 'str', src: { str: m.str, yo: m.yo }, srcEnt: m, hit: new Set(), yaw });
     this.ev('sfx', { s: 'fudaShot', x: m.x, z: m.z });
   }
   mobDie(m, by) {
@@ -1529,7 +1555,7 @@ class Sim {
         for (const o of this.allies) if (o.st === 'ok') this.hz({ kind: 'circle', x: o.x, z: o.z, yaw: 0, r: M.r, warn: M.wind, act: M.act, pw: M.pw, stat: M.stat, fx: 'otoshi', knock: 3 });
         break;
       case 'kousen': this.hz({ kind: 'line', x: b.x + fx * 1.2, z: b.z + fz * 1.2, yaw: b.yaw, len: M.len, w: M.w, warn: M.wind, act: M.act, iv: M.iv, max: M.max, pw: M.pw, stat: M.stat, fx: 'kousen' }); break;
-      case 'harite': this.hz({ kind: 'rect', x: b.x + fx * 0.8, z: b.z + fz * 0.8, yaw: b.yaw, len: M.len, w: M.w, warn: M.wind, act: M.act, pw: M.pw, stat: M.stat, fx: 'harite', brief: 0.22, knock: 5 }); break;
+      case 'harite': this.hz({ kind: 'rect', x: b.x + fx * M.start, z: b.z + fz * M.start, yaw: b.yaw, len: M.len, w: M.w, warn: M.wind, act: M.act, pw: M.pw, stat: M.stat, fx: 'harite', brief: 0.22, knock: 5 }); break;
       case 'junkou': {
         const n = b.phase === 2 ? M.n2 : M.n1;
         b.st = 'fly'; b.fl = { ph: 'rise', t: 0, n, i: 0, dir: b.x > 0 ? -1 : 1, z: 0, bombT: 0, sx: b.x, sz: b.z };
@@ -1562,13 +1588,13 @@ class Sim {
       b.x = -f.dir * W + f.dir * 2 * W * Math.min(1, f.t / M.cross); b.y = 2.6; b.yaw = f.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
       for (const o of this.allies) {
         if (o.st !== 'ok' || f.hit[o.slot]) continue;
-        if (Math.abs(o.z - b.z) <= M.contactR + 0.4 && Math.abs(o.x - b.x) <= 1.6) { f.hit[o.slot] = 1; this.dealToAlly(o, M.pw, 'str', b, { knock: 6, kx: 0, kz: o.z >= b.z ? 1 : -1, src: b }); }
+        if (Math.abs(o.z - b.z) <= M.contactR + DATA.MOB.allyR && Math.abs(o.x - b.x) <= M.contactLen + DATA.MOB.allyR) { f.hit[o.slot] = 1; this.dealToAlly(o, M.pw, 'str', b, { knock: 6, kx: 0, kz: o.z >= b.z ? 1 : -1, src: b }); }
       }
       f.bombT -= dt;
       if (f.bombT <= 0 && Math.abs(b.x) < DATA.STAGE.plazaHalfW - 1) { f.bombT = M.bombEvery; this.hz({ kind: 'circle', x: b.x, z: clamp(b.z + (this.rng.next() * 2 - 1) * 4.5, 1.5, DATA.STAGE.plazaZ1 - 1.5), yaw: 0, r: M.bombR, warn: M.bombFall, act: 0.12, pw: M.bombPw, stat: 'yo', fx: 'bomb', knock: 3 }); }
       if (f.t >= M.cross) {
         f.i++;
-        if (f.i >= f.n) { f.ph = 'land'; f.t = 0; f.lx = clamp(b.x * 0.3, -8, 8); f.lz = 17; f.ox = b.x; f.oz = b.z; this.hz({ kind: 'circle', x: f.lx, z: f.lz, yaw: 0, r: 3.2, warn: 0.6, act: 0.12, pw: 70, stat: 'str', fx: 'land', knock: 5 }); }
+        if (f.i >= f.n) { f.ph = 'land'; f.t = 0; f.lx = clamp(b.x * 0.3, -8, 8); f.lz = 17; f.ox = b.x; f.oz = b.z; this.hz({ kind: 'circle', x: f.lx, z: f.lz, yaw: 0, r: M.landR, warn: 0.6, act: 0.12, pw: 70, stat: 'str', fx: 'land', knock: 5 }); }
         else { f.ph = 'gap'; f.t = 0; f.dir *= -1; f.z = this.junkouZ(); f.pathH = this.junkouPath(f.dir, f.z, M.gap); }
       }
     } else if (f.ph === 'gap') {
@@ -1593,9 +1619,9 @@ class Sim {
         const rec = h.hits[o.slot];
         if (rec && (rec.n >= h.max || h.t - rec.last < h.iv - 1e-6)) continue;
         let inside = false;
-        if (h.kind === 'fan') inside = inFan(o.x, o.z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, 0.35);
-        else if (h.kind === 'circle') inside = dist2(o.x, o.z, h.x, h.z) <= h.r + 0.35;
-        else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, 0.35);
+        if (h.kind === 'fan') inside = inFan(o.x, o.z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, DATA.MOB.allyR);
+        else if (h.kind === 'circle') inside = dist2(o.x, o.z, h.x, h.z) <= h.r + DATA.MOB.allyR;
+        else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR);
         if (!inside) continue;
         h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t };
         this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: o.x - h.x, kz: o.z - h.z, src: h.src === 'boss' ? b : null });
@@ -1694,7 +1720,7 @@ class Sim {
       if (S.type === 'heal') use = this.allies.some(o => o.st === 'down') || this.allies.filter(o => o.st === 'ok' && o.hp / o.maxHp < 0.5).length >= 2;
       else if (S.type === 'buff') use = bossOpen || this.allies.filter(o => o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) < S.r).length >= 3;
       else if (S.type === 'guardup') use = b && b.st !== 'fly' && b.target !== a.slot;
-      else if (tgtE) { const rr = tgtE === b ? DATA.BOSS.hurtR : 0.5; const reach = S.shape === 'line' ? S.len : S.range; use = dist2(a.x, a.z, tgtE.x, tgtE.z) - rr < reach * 0.8 && (bossOpen || this.rng.next() < 0.35 || tgtE !== b); }
+      else if (tgtE) { const reach = S.shape === 'line' ? S.len : S.range; use = this.gapTo(a.x, a.z, tgtE).g < reach * 0.8 && (bossOpen || this.rng.next() < 0.35 || tgtE !== b); }
       if (use) { if (tgtE) out.lock = tgtE.id; push('SP'); return; }
     }
     // 5) 灯籠
@@ -1719,7 +1745,7 @@ class Sim {
       return;
     }
     out.lock = e.id;
-    const isBoss = e === b, er = isBoss ? DATA.BOSS.hurtR : DATA.MOB.r, d = dist2(a.x, a.z, e.x, e.z);
+    const isBoss = e === b, d = dist2(a.x, a.z, e.x, e.z), gap = this.gapTo(a.x, a.z, e).g;
     const bf = isBoss ? Math.abs(angDiff(b.yaw, yawTo(a.x - b.x, a.z - b.z))) : 0;
     if (role === 'ranged' || (role === 'mage' && a.c.id === 'akaneten') || (role === 'tank' && a.c.A === 'shot')) {
       const want = role === 'tank' ? 5.5 : 8;
@@ -1727,7 +1753,7 @@ class Sim {
       if (role === 'tank' && isBoss) ang = b.yaw + (a.slot % 2 ? 0.25 : -0.25);
       const px = e.x + Math.sin(ang) * want, pz = e.z + Math.cos(ang) * want;
       const p = this.clampPos(a.x, a.z, px, pz, 0.4); ai.tx = p[0]; ai.tz = p[1];
-      if (d < want + 4) { if (Math.abs(d - want) < 2.5) ai.stay = true; this.aiSkills(a, out, push, e, d - er); if (this.free(a) || (a.act && a.act.k === 'shot')) ai.wantA = true; }
+      if (d < want + 4) { if (Math.abs(d - want) < 2.5) ai.stay = true; this.aiSkills(a, out, push, e, gap); if (this.free(a) || (a.act && a.act.k === 'shot')) ai.wantA = true; }
       return;
     }
     // 近接・タンク・回復の近接
@@ -1737,12 +1763,12 @@ class Sim {
       else if (role === 'healer') ang = b.yaw + (a.slot % 2 ? 2.2 : -2.2);
       else ang = b.yaw + (a.slot % 2 ? 1.75 : -1.75) + (this.rng.next() - 0.5) * 0.3;
     } else ang = yawTo(a.x - e.x, a.z - e.z);
-    const reach = isBoss ? er + (role === 'healer' ? 4 : 0.9) : 1.1;
+    const reach = isBoss ? (role === 'healer' ? 5 : 1.5) : 0.8; // 体に触れる距離まで寄る
     const p = this.clampPos(a.x, a.z, e.x + Math.sin(ang) * reach, e.z + Math.cos(ang) * reach, 0.4);
     ai.tx = p[0]; ai.tz = p[1];
-    const inReach = d - er < 1.45;
-    if (inReach) { ai.stay = role !== 'healer'; ai.wantA = role !== 'healer' || this.rng.next() < 0.5; this.aiSkills(a, out, push, e, d - er); }
-    else if (role === 'healer' && d - er < 6) this.aiSkills(a, out, push, e, d - er);
+    const inReach = gap < DATA.MOVES.melee1.range - 0.3; // 当たる距離（体に触れている）になってから振る
+    if (inReach) { ai.stay = role !== 'healer'; ai.wantA = role !== 'healer' || this.rng.next() < 0.5; this.aiSkills(a, out, push, e, gap); }
+    else if (role === 'healer' && gap < 6) this.aiSkills(a, out, push, e, gap);
   }
   aiEnemy(a) {
     const mobs = this.mobs.filter(m => m.st === 'ok');
@@ -1757,12 +1783,12 @@ class Sim {
       if (sk.kind === 'guard' || sk.kind === 'dodge' || sk.kind === 'heal' || sk.kind === 'healRing') continue;
       if (a.cd[k] > 0 || this.rng.next() < 0.45) continue;
       switch (sk.kind) {
-        case 'charge': if (sk.form === 'melee' || sk.form === 'drain' ? gap < 1.5 : gap < 12) { push(k + '+'); out.hold[k] = 1; a.ai.hold = { k, t: 0.5 + this.rng.next() * 0.5, stay: true }; return; } break;
+        case 'charge': if (sk.form === 'melee' ? gap < 1.05 : sk.form === 'drain' ? gap < 2.4 : gap < 12) { push(k + '+'); out.hold[k] = 1; a.ai.hold = { k, t: 0.5 + this.rng.next() * 0.5, stay: true }; return; } break;
         case 'dot': if (gap < 12) { push(k + '+'); return; } break;
-        case 'retreat': case 'heavy': case 'taunt': if (gap < 1.4) { if (sk.kind === 'heavy' && b && e === b && b.st !== 'down' && b.st !== 'stun' && b.st !== 'rec' && this.rng.next() < 0.6) break; push(k + '+'); return; } break;
+        case 'retreat': case 'heavy': case 'taunt': if (gap < 1.0) { if (sk.kind === 'heavy' && b && e === b && b.st !== 'down' && b.st !== 'stun' && b.st !== 'rec' && this.rng.next() < 0.6) break; push(k + '+'); return; } break;
         case 'stealth': if (b && b.target === a.slot) { push(k + '+'); return; } break;
         case 'parry': if (b && e === b && b.st === 'wind' && b.target === a.slot && gap < 3) { push(k + '+'); return; } break;
-        case 'trap': case 'mine': if (gap < 2.2) { push(k + '+'); return; } break;
+        case 'trap': case 'mine': if (gap < 1.4) { push(k + '+'); return; } break;
         case 'protect': if (this.allies.filter(o => o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) < 3).length >= 2 && this.inDanger(a.x, a.z, 1, 0.6)) { push(k + '+'); return; } break;
       }
     }
@@ -1782,7 +1808,7 @@ class Sim {
     return best;
   }
 }
-const SIMLIB = { Sim, ACTS, ACT_I, BST, BST_I, BMV, BMV_I, HZ, HZ_I, PJ, PJ_I, angDiff, yawTo, clamp, dist2, inFan, inLine, RNG };
+const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I, HZ, HZ_I, PJ, PJ_I, angDiff, yawTo, clamp, dist2, inFan, inLine, RNG };
 
 /* ===== proto.js ===== */
 /* =====================================================================
@@ -3039,7 +3065,7 @@ const GFX = {};
     m.shadow.position.set(b.x, 0.025, b.z); const sh = 1 - Math.min(0.5, b.y / 6); m.shadow.scale.setScalar(sh);
     const t = b.t || 0, M = b.mv ? DATA.BMOVES[b.mv] : null;
     let lean = 0, twist = 0, bodyY = 2.6, kneeL = 0, kneeR = 0, hipL = 0, hipR = 0, aL = [0, 0, 0], aR = [0, 0, 0], headX = 0;
-    let chest = 0, lant = 0.25, port = 0.3;
+    let chest = 0, lant = 0.25, port = 0.3, elR = null, rope = null;
     const walk = b.st === 'walk'; m.walkPh = (m.walkPh || 0) + (walk ? dt * 3.2 : 0);
     if (walk) { const s = Math.sin(m.walkPh); hipL = s * 0.35; hipR = -s * 0.35; kneeL = Math.max(0, -s) * 0.4; kneeR = Math.max(0, s) * 0.4; bodyY += Math.abs(Math.cos(m.walkPh)) * 0.08; aL[0] = -s * 0.15; aR[0] = s * 0.15; }
     else { bodyY += Math.sin(T * 1.6) * 0.03; aL[2] = -0.08; aR[2] = 0.08; }
@@ -3048,15 +3074,16 @@ const GFX = {};
       const kw = ph === 'w' ? Math.min(1, t / M.wind) : 1;
       switch (b.mv) {
         case 'fubuki': { const k = ph === 'w' ? kw : ph === 'a' ? 1 : Math.max(0, 1 - t / 0.4); aL = [-1.2 * k, 0, -0.9 * k]; aR = [-1.2 * k, 0, 0.9 * k]; if (ph === 'a') { aL[1] = Math.sin(T * 30) * 0.08; aR[1] = -aL[1]; } break; }
-        case 'shime': { const k = ph === 'w' ? kw : 0; twist = ph === 'w' ? 0.7 * k : ph === 'a' ? 0.7 - Math.min(1, t / 0.4) * 2.6 : -1.9 * Math.max(0, 1 - t / 0.6); m.ropeTail.rotation.x = ph === 'a' ? -1.2 : -0.2; break; }
+        case 'shime': { const k = ph === 'w' ? kw : 0; twist = ph === 'w' ? 0.7 * k : ph === 'a' ? 0.7 - Math.min(1, t / 0.8) * 2.6 : -1.9 * Math.max(0, 1 - t / 0.6); rope = ph === 'w' ? [0.4 + 0.5 * k, 1 + k] : ph === 'a' ? [1.12, 6.4] : [1.12 * Math.max(0, 1 - t / 0.5), 1 + 5.4 * Math.max(0, 1 - t / 0.4)]; break; } // 縄を背後の扇の端まで伸ばして振る
         case 'otoshi': { port = ph === 'w' ? 0.3 + kw * 1.5 : 0.6; lean = -0.15 * (ph === 'w' ? kw : 1); aL[2] = -0.6; aR[2] = 0.6; break; }
         case 'kousen': { chest = ph === 'w' ? kw : ph === 'a' ? 1 : Math.max(0, 1 - t / 0.5); lean = -0.12 * chest; aL[2] = -0.5 * chest; aR[2] = 0.5 * chest; break; }
-        case 'harite': { if (ph === 'w') { aR = [0.9 * kw, 0, 0.3]; twist = 0.35 * kw; lean = -0.1 * kw; } else if (ph === 'a') { aR = [-1.7, 0, 0]; twist = -0.35; lean = 0.35; } else { const k = Math.max(0, 1 - t / 0.9); aR = [-1.7 * k, 0, 0]; lean = 0.35 * k; twist = -0.35 * k; } break; }
+        case 'harite': { if (ph === 'w') { aR = [0.9 * kw, 0, 0.3]; twist = 0.35 * kw; lean = -0.1 * kw; elR = -0.3 * kw; } else if (ph === 'a') { aR = [-1.55, 0, 0]; twist = -0.2; lean = 0.95; elR = 0.75; bodyY -= 0.35; } else { const k = Math.max(0, 1 - t / 0.9); aR = [-1.55 * k, 0, 0]; lean = 0.95 * k; twist = -0.2 * k; elR = 0.75 * k; bodyY -= 0.35 * k; } break; } // 深くかがんで手のひらを地面へ
         case 'zouen': { const k = ph === 'w' ? Math.abs(Math.sin(t * 10)) : 0; aL = [-1.4, 0, 0.5 * k]; aR = [-1.4, 0, -0.5 * k]; break; }
       }
     }
     if (st === 'fly' && b.fl) {
       const f = b.fl, k = f.ph === 'rise' ? Math.min(1, f.t / DATA.BMOVES.junkou.wind) : f.ph === 'land' ? 1 - Math.min(1, f.t / 0.6) : 1;
+      r.position.y = b.y - 4.0 * k; // 水平の姿勢では胴を味方の背の高さまで下げ、当たる範囲と見た目を合わせる
       lean = 1.25 * k; hipL = hipR = 1.0 * k; kneeL = kneeR = 0.6 * k; aL = [-2.6 * k, 0, 0.2]; aR = [-2.6 * k, 0, -0.2]; headX = -0.9 * k; port = 1.2;
     }
     if (st === 'down') { bodyY = 1.75 + Math.sin(T * 2) * 0.02; kneeL = kneeR = 1.3; hipL = hipR = -1.0; lean = 0.35; headX = 0.4; aL = [0, 0, -0.3]; aR = [0, 0, 0.3]; lant = 0.08; }
@@ -3067,10 +3094,10 @@ const GFX = {};
     m.legs[0].hip.rotation.x = hipL; m.legs[1].hip.rotation.x = hipR; m.legs[0].knee.rotation.x = kneeL; m.legs[1].knee.rotation.x = kneeR;
     m.legs[0].foot.rotation.x = -(hipL + kneeL) * (st === 'fly' ? 0 : 0.6); m.legs[1].foot.rotation.x = -(hipR + kneeR) * (st === 'fly' ? 0 : 0.6);
     for (const l of m.legs) l.wheel.rotation.x = m.walkPh * 1.5;
-    m.arms[0].sh.rotation.set(aL[0], aL[1], aL[2]); m.arms[1].sh.rotation.set(aR[0], aR[1], aR[2]); m.arms[0].el.rotation.x = Math.min(0, aL[0]) * 0.3; m.arms[1].el.rotation.x = Math.min(0, aR[0]) * 0.3;
+    m.arms[0].sh.rotation.set(aL[0], aL[1], aL[2]); m.arms[1].sh.rotation.set(aR[0], aR[1], aR[2]); m.arms[0].el.rotation.x = Math.min(0, aL[0]) * 0.3; m.arms[1].el.rotation.x = elR != null ? elR : Math.min(0, aR[0]) * 0.3;
     m.chestM.emissiveIntensity = chest * 0.9; m.lantM.emissiveIntensity = lant + (b.phase === 2 ? 0.25 + Math.sin(T * 8) * 0.1 : 0); m.portM.emissiveIntensity = port;
     m.streamers.forEach((p, i) => { p.rotation.z = Math.sin(T * 3 + i) * 0.25; p.rotation.x = st === 'fly' ? -1 : 0; });
-    if (st !== 'wind' || b.mv !== 'shime') m.ropeTail.rotation.x = Math.sin(T * 2) * 0.1 + (st === 'fly' ? -1.2 : 0);
+    if (rope) { m.ropeTail.rotation.x = rope[0]; m.ropeTail.scale.y = rope[1]; } else { m.ropeTail.rotation.x = Math.sin(T * 2) * 0.1 + (st === 'fly' ? -1.2 : 0); m.ropeTail.scale.y = 1; }
   };
   /** 登場演出（4.5秒・オリジナル案）：右足→左足→手を添えて起き上がり→腕を開く→提灯点灯 */
   GFX.bossIntroPose = (m, b, v) => {
@@ -3182,6 +3209,12 @@ const R = (() => {
     // 自分の足元の印（ボスの体に隠れても見える）
     cam.ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.55, 28), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthTest: false })); cam.ring.rotation.x = -Math.PI / 2; cam.ring.renderOrder = 20; scene.add(cam.ring);
     cam.arrow = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.3, 3), new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.9 })); cam.arrow.rotation.x = Math.PI / 2; cam.arrow.renderOrder = 21; scene.add(cam.arrow);
+    // 先に進むときの小さな黄色い矢印（足元）
+    const sh = new THREE.Shape(); sh.moveTo(0, 0.42); sh.lineTo(0.3, 0.06); sh.lineTo(0.11, 0.06); sh.lineTo(0.11, -0.32); sh.lineTo(-0.11, -0.32); sh.lineTo(-0.11, 0.06); sh.lineTo(-0.3, 0.06); sh.closePath();
+    const ag = new THREE.ShapeGeometry(sh); ag.rotateX(-Math.PI / 2); ag.rotateY(Math.PI);
+    W.goArrow = new THREE.Group(); W.goArrow.visible = false; W.goArrow.renderOrder = 19; scene.add(W.goArrow);
+    const back = new THREE.Mesh(ag, new THREE.MeshBasicMaterial({ color: 0x5a3a00, transparent: true, opacity: 0.85, depthTest: false })); back.scale.setScalar(1.25); back.position.y = 0.01; back.renderOrder = 19; W.goArrow.add(back);
+    const front = new THREE.Mesh(ag, new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.98, depthTest: false })); front.position.y = 0.02; front.renderOrder = 20; W.goArrow.add(front);
     // ボスの光線（招福看板光線）
     const bm = new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false });
     W.kousen = new THREE.Group(); scene.add(W.kousen); W.kousen.visible = false;
@@ -3329,6 +3362,17 @@ const R = (() => {
     const seenK = new Set();
     for (const p of v.pickups) { seenK.add(p.id); let m = picks.get(p.id); if (!m) { m = pickMesh(p.kind); picks.set(p.id, m); } m.position.set(p.x, 0.1 + Math.sin(T * 4 + p.id) * 0.08, p.z); m.rotation.y = T * 1.5; if (Math.random() < 0.05) emit('add', { x: p.x, y: 0.6, z: p.z, vy: 0.6, life: 0.6, s0: 0.15, s1: 0.02, c: 0xfff6c0 }); }
     for (const [id, m] of picks) if (!seenK.has(id)) { scene.remove(m); picks.delete(id); }
+    // 先に進むべきとき：黄色い小さな矢印で行き先を示す
+    {
+      const a = v.allies[me]; let tgt = null;
+      if (a && a.st === 'ok' && v.stage === 'street') {
+        const ms = v.mobs.filter(q => !q.dying);
+        if (!ms.length && v.barrier === 'none') tgt = [0, 4];
+        else if (ms.length) { let bd = 1e9, bm = null; for (const q of ms) { const d = Math.hypot(q.x - a.x, q.z - a.z); if (d < bd) { bd = d; bm = q; } } if (bd > 13) tgt = [bm.x, bm.z]; }
+      }
+      W.goArrow.visible = !!tgt;
+      if (tgt) { const yaw = Math.atan2(tgt[0] - a.x, tgt[1] - a.z), bob = 1.45 + Math.sin(T * 6) * 0.18; W.goArrow.position.set(a.x + Math.sin(yaw) * bob, 0.05, a.z + Math.cos(yaw) * bob); W.goArrow.rotation.y = yaw; }
+    }
     // 灯籠・提灯・結界
     const bossStage = v.stage === 'boss';
     W.toro.forEach((o, i) => {
@@ -3456,7 +3500,7 @@ const R = (() => {
       case 'hzfire': {
         if (e.fx === 'otoshi' || e.fx === 'bomb') { A('boom', e.x, e.z, 0.7); burst('add', 18, { x: e.x, y: 0.3, z: e.z, spd: 5, up: 1.5, life: 0.4, s0: 0.6, s1: 0.1, c: 0xff8a3a }); burst('norm', 6, { x: e.x, y: 0.3, z: e.z, spd: 1.5, life: 0.8, s0: 0.7, s1: 1.4, c: 0x5a5060, a: 0.5 }); shake(0.08); }
         if (e.fx === 'land') { A('land', e.x, e.z); for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI * 2; emit('norm', { x: e.x + Math.cos(a) * 1.5, y: 0.2, z: e.z + Math.sin(a) * 1.5, vx: Math.cos(a) * 7, vz: Math.sin(a) * 7, life: 0.8, s0: 0.6, s1: 1.4, c: 0xc8b8a0, a: 0.6 }); } shake(0.4); }
-        if (e.fx === 'harite') burst('norm', 18, { x: e.x + Math.sin(e.yaw) * 3, y: 0.2, z: e.z + Math.cos(e.yaw) * 3, spd: 4, life: 0.6, s0: 0.6, s1: 1.2, c: 0xc8b8a0, a: 0.6 });
+        if (e.fx === 'harite') { for (let d = 0.2; d < DATA.BMOVES.harite.len; d += 0.35) for (const s of [-1, 0, 1]) emit('norm', { x: e.x + Math.sin(e.yaw) * d + Math.cos(e.yaw) * s * 0.9, y: 0.25, z: e.z + Math.cos(e.yaw) * d - Math.sin(e.yaw) * s * 0.9, vx: Math.sin(e.yaw) * 3, vz: Math.cos(e.yaw) * 3, vy: 1.2, life: 0.55, s0: 0.5, s1: 1.2, c: 0xc8b8a0, a: 0.65 }); burst('add', 14, { x: e.x + Math.sin(e.yaw) * 1.2, y: 0.4, z: e.z + Math.cos(e.yaw) * 1.2, spd: 4, life: 0.3, s0: 0.5, s1: 0.05, c: 0xfff0c0 }); }
         break;
       }
       case 'cross': A('flyPass', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); break;
@@ -3800,7 +3844,7 @@ function renderTeam() {
 function renderDetail() {
   const c = DATA.CHI[G.focus] || DATA.CHARS[0], d = $('#detail'); d.textContent = '';
   const hd = el('div', 'hd'); hd.appendChild(el('b', '', c.nm)); const r = el('span', 'chip', c.role); hd.appendChild(r); const e = el('span', 'badge', c.el + '属性'); e.style.background = DATA.ELEM_COL[c.el]; hd.appendChild(e); d.appendChild(hd);
-  d.appendChild(el('p', 'small', c.blurb + `（参考にした数値：${c.ref}・レベル99装備なしの公開値）`));
+  d.appendChild(el('p', 'small', c.blurb));
   const st = el('div', 'stat');
   for (const [l, v, col] of [['ちから', c.str, '#e4572e'], ['ようりょく', c.yo, '#7446b8'], ['まもり', c.def, '#3f78d6']]) { st.appendChild(el('span', '', `${l} ${v}`)); const b = el('div', 'bar'); const i = el('i'); i.style.width = Math.round(v / 260 * 100) + '%'; i.style.background = col; b.appendChild(i); st.appendChild(b); }
   d.appendChild(st);
@@ -3911,7 +3955,10 @@ function enterGame() {
   AUDIO.bgm('street');
   try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => { }); } catch (e) { }
   G.snapNext = true;
-  if (G.firstRun && !G.coop) { setTimeout(() => notice('スティックで移動・Aで攻撃。札小僧をやっつけよう', 'info', 4000), 600); setTimeout(() => notice('Xは技1、Yは技2。ためる技は長押しして離す', 'info', 4000), 5000); STORE.set('played', true); G.firstRun = false; }
+  if (!G.coop) { // 最初に：仲間アイコンをタップで操作キャラを切り替えられる
+    setTimeout(() => { if (G.mode !== 'play') return; notice((curLayout && curLayout.portrait ? '上' : '左上') + 'の仲間アイコンをタップすると、そのキャラに切り替えられます', 'tip', 5200); const p = $('#party'); p.classList.add('tip'); setTimeout(() => p.classList.remove('tip'), 5200); }, 700);
+  }
+  if (G.firstRun && !G.coop) { setTimeout(() => notice('スティックで移動・Aで攻撃。札小僧をやっつけよう', 'info', 4000), 6200); setTimeout(() => notice('Xは技1、Yは技2。ためる技は長押しして離す', 'info', 4000), 10400); STORE.set('played', true); G.firstRun = false; }
 }
 function pause() {
   if (G.mode !== 'play') return; const S = G.session;

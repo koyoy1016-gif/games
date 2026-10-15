@@ -35,6 +35,14 @@ function inLine(px, pz, ox, oz, yaw, len, halfW, tr) {
   return f >= -tr && f <= len + tr && Math.abs(s) <= halfW + tr;
 }
 
+/** ボスの当たり判定と衝突の形（脚2本＋胴の下）。クライアント予測からも使う */
+function bossParts(b) {
+  const B = DATA.BOSS, c = Math.cos(b.yaw), s = Math.sin(b.yaw);
+  const p = [{ x: b.x + c * B.legX, z: b.z - s * B.legX, r: B.legR }, { x: b.x - c * B.legX, z: b.z + s * B.legX, r: B.legR }, { x: b.x, z: b.z, r: B.coreR }];
+  if (b.st === 'down') p.push({ x: b.x + Math.sin(b.yaw) * 0.7, z: b.z + Math.cos(b.yaw) * 0.7, r: 1.2 });
+  return p;
+}
+function contactPt(q, ox, oz) { const d = dist2(ox, oz, q.x, q.z); if (d < 1e-4) return { x: q.x, z: q.z }; return { x: q.x + (ox - q.x) / d * q.r, z: q.z + (oz - q.z) / d * q.r }; }
 class Sim {
   constructor(o) {
     const D = DATA;
@@ -108,14 +116,25 @@ class Sim {
   }
   enemiesAlive() { const r = []; if (this.boss && this.bossHittable()) r.push(this.boss); for (const m of this.mobs) if (m.st === 'ok') r.push(m); return r; }
   bossHittable() { const b = this.boss; return b && b.st !== 'intro' && b.st !== 'dead' && b.st !== 'fly' && b.st !== 'hidden' && !(b.st === 'rec' && b.mv === 'junkou' && b.y > 0.3); }
+  hurtParts(e) { return e === this.boss ? bossParts(e) : [{ x: e.x, z: e.z, r: DATA.MOB.r }]; }
+  /** 体の表面までの距離（いちばん近い部位） */
+  gapTo(x, z, e) { let g = 1e9, q0 = null; for (const q of this.hurtParts(e)) { const d = dist2(x, z, q.x, q.z) - q.r; if (d < g) { g = d; q0 = q; } } return { g, q: q0 }; }
+  /** 攻撃の形が体のどこかに触れたら、その接触点を返す（触れなければ null） */
+  hitFan(e, ox, oz, yaw, r0, r1, half) { for (const q of this.hurtParts(e)) if (inFan(q.x, q.z, ox, oz, yaw, r0, r1, half, q.r)) return contactPt(q, ox, oz); return null; }
+  hitLine(e, ox, oz, yaw, len, halfW) {
+    const fx = Math.sin(yaw), fz = Math.cos(yaw);
+    for (const q of this.hurtParts(e)) if (inLine(q.x, q.z, ox, oz, yaw, len, halfW, q.r)) { const f = clamp((q.x - ox) * fx + (q.z - oz) * fz, 0, len); return contactPt(q, ox + fx * f, oz + fz * f); }
+    return null;
+  }
+  hitCircle(e, x, z, r) { for (const q of this.hurtParts(e)) if (dist2(x, z, q.x, q.z) <= r + q.r) return contactPt(q, x, z); return null; }
   findTarget(id) { if (id === 'boss') return this.bossHittable() ? this.boss : null; return this.mobs.find(m => m.id === id && m.st === 'ok') || null; }
   faceForAttack(a, inp) {
     const lock = inp.lock && this.findTarget(inp.lock);
-    if (lock) { a.yaw = yawTo(lock.x - a.x, lock.z - a.z); return; }
+    if (lock) { const { q } = this.gapTo(a.x, a.z, lock); a.yaw = yawTo(q.x - a.x, q.z - a.z); return; }
     if (Math.abs(inp.mx) + Math.abs(inp.mz) > 0.2) { a.yaw = yawTo(inp.mx, inp.mz); return; }
-    let best = null, bd = 5.5; // 近くの敵へ自動で向く（新作の操作補助）
-    for (const e of this.enemiesAlive()) { const d = dist2(a.x, a.z, e.x, e.z) - (e === this.boss ? DATA.BOSS.hurtR : 0); if (d < bd) { bd = d; best = e; } }
-    if (best) a.yaw = yawTo(best.x - a.x, best.z - a.z);
+    let bq = null, bd = 5.5; // 近くの敵の体へ自動で向く（新作の操作補助）
+    for (const e of this.enemiesAlive()) { const { g, q } = this.gapTo(a.x, a.z, e); if (g < bd) { bd = g; bq = q; } }
+    if (bq) a.yaw = yawTo(bq.x - a.x, bq.z - a.z);
   }
   updateAlly(a, inp, dt) {
     const S = DATA.SIM;
@@ -182,9 +201,11 @@ class Sim {
     }
     // ボスの体
     const b = this.boss;
-    if (b && b.st !== 'fly' && b.st !== 'hidden' && b.y < 1.2) {
-      const dx = nx - b.x, dz = nz - b.z, d = Math.hypot(dx, dz), m = DATA.BOSS.bodyR + rad;
-      if (d < m) { if (d < 1e-4) { nx = b.x + m; } else { nx = b.x + dx / d * m; nz = b.z + dz / d * m; } }
+    if (b && b.st !== 'fly' && b.st !== 'hidden' && b.st !== 'dead' && b.y < 1.2) {
+      for (let it = 0; it < 2; it++) for (const q of bossParts(b)) {
+        const dx = nx - q.x, dz = nz - q.z, d = Math.hypot(dx, dz), m = q.r + rad;
+        if (d < m) { if (d < 1e-4) { nx = q.x + m; } else { nx = q.x + dx / d * m; nz = q.z + dz / d * m; } }
+      }
     }
     return [nx, nz];
   }
@@ -431,8 +452,8 @@ class Sim {
   meleeHit(a, pw, stat, range, arc, kind, log, fx, extra) {
     let total = 0, n = 0;
     for (const e of this.enemiesAlive()) {
-      const tr = e === this.boss ? DATA.BOSS.hurtR : DATA.MOB.r;
-      if (inFan(e.x, e.z, a.x, a.z, a.yaw, 0, range, arc, tr)) { const d = this.dealToEnemy(a, e, pw, stat, kind, log); total += d; n++; }
+      const h = this.hitFan(e, a.x, a.z, a.yaw, 0, range, arc);
+      if (h) { const d = this.dealToEnemy(a, e, pw, stat, kind, log, h); total += d; n++; }
     }
     this.ev('swing', { slot: a.slot, fx, x: a.x, z: a.z, yaw: a.yaw, hit: n > 0 ? 1 : 0 });
     if (n > 0) this.spForHit(a, kind, log);
@@ -445,7 +466,7 @@ class Sim {
   }
   undetected(a) { return a.buffs.stealth > 0 || (!(this.boss && this.boss.st !== 'dead' && this.boss.target === a.slot) && !this.mobs.some(m => m.st === 'ok' && m.tgt === a.slot)); }
   partyHas(pass) { return this.allies.some(o => o.c.passive === pass && o.st !== 'gone'); }
-  dealToEnemy(a, e, pw, stat, kind, log, opt) {
+  dealToEnemy(a, e, pw, stat, kind, log, hit) {
     if (e === this.boss && !this.bossHittable()) return 0;
     if (e.st && e.st !== 'ok' && e !== this.boss) return 0;
     const S = DATA.SIM, P = DATA.PASSIVE;
@@ -463,7 +484,7 @@ class Sim {
     const dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm));
     e.hp -= dmg; a.threat += dmg; a.stats.dmg += dmg;
     if (log) { log.hits.push(+this.t.toFixed(3)); log.dmg.push(dmg); log.def = Math.round(def); log.buff = (state !== 1 ? '×' + state.toFixed(2) : '') + (crit ? ' 会心' : '') + (elem !== 1 ? ' 属性×' + elem : ''); }
-    this.ev('dmg', { v: dmg, crit: crit ? 1 : 0, x: e.x, z: e.z, y: e === this.boss ? 2.4 : 0.8, src: a.slot, kind, el: elem > 1 ? 1 : elem < 1 ? -1 : 0 });
+    this.ev('dmg', { v: dmg, crit: crit ? 1 : 0, x: hit ? hit.x : e.x, z: hit ? hit.z : e.z, y: e === this.boss ? (e.st === 'down' ? 1.6 : 1.0) : 0.6, src: a.slot, kind, el: elem > 1 ? 1 : elem < 1 ? -1 : 0 });
     if (e.hp <= 0) { e.hp = 0; if (e === this.boss) this.bossDie(); else this.mobDie(e, a); }
     return dmg;
   }
@@ -476,7 +497,7 @@ class Sim {
       const sk = o.act.sk; o.act = { k: 'counter', t: 0 }; o.inv = 0.45;
       this.ev('parry', { slot: o.slot, x: o.x, z: o.z });
       const src = opt.src === 'none' ? null : (opt.src || this.boss);
-      if (src && src.hp > 0 && (src !== this.boss || this.bossHittable())) { o.yaw = yawTo(src.x - o.x, src.z - o.z); this.dealToEnemy(o, src, sk.pw, sk.stat, 'skill', null); }
+      if (src && src.hp > 0 && (src !== this.boss || this.bossHittable())) { const { q } = this.gapTo(o.x, o.z, src); o.yaw = yawTo(q.x - o.x, q.z - o.z); this.dealToEnemy(o, src, sk.pw, sk.stat, 'skill', null, contactPt(q, o.x, o.z)); }
       return 0;
     }
     const atk = stat === 'yo' ? srcStats.yo : srcStats.str;
@@ -513,9 +534,8 @@ class Sim {
         A.n++;
         let hits = 0;
         for (const e of this.enemiesAlive()) {
-          const tr = e === this.boss ? DATA.BOSS.hurtR : DATA.MOB.r;
-          const inside = S.shape === 'fan' ? inFan(e.x, e.z, a.x, a.z, a.yaw, 0, S.range, S.arc, tr) : inLine(e.x, e.z, a.x, a.z, a.yaw, S.len, S.w / 2, tr);
-          if (inside) { this.dealToEnemy(a, e, S.pw, a.c.id === 'akaneten' || a.c.id === 'kemuridama' ? 'yo' : 'str', 'sp', A.log); hits++; if (S.defDown) { e.defDown = S.defDownT; this.ev('defdown', { x: e.x, z: e.z }); } }
+          const inside = S.shape === 'fan' ? this.hitFan(e, a.x, a.z, a.yaw, 0, S.range, S.arc) : this.hitLine(e, a.x, a.z, a.yaw, S.len, S.w / 2);
+          if (inside) { this.dealToEnemy(a, e, S.pw, a.c.id === 'akaneten' || a.c.id === 'kemuridama' ? 'yo' : 'str', 'sp', A.log, inside); hits++; if (S.defDown) { e.defDown = S.defDownT; this.ev('defdown', { x: e.x, z: e.z }); } }
         }
         this.ev('sphit', { slot: a.slot, n: A.n, ch: a.c.id, x: a.x, z: a.z, yaw: a.yaw, hit: hits });
       }
@@ -559,13 +579,13 @@ class Sim {
         const a = this.allies[p.owner];
         for (const e of this.enemiesAlive()) {
           if (p.hit.has(e.id)) continue;
-          const tr = e === this.boss ? DATA.BOSS.hurtR : DATA.MOB.r;
-          if (dist2(p.x, p.z, e.x, e.z) <= tr + p.r) {
+          const h = this.hitCircle(e, p.x, p.z, p.r);
+          if (h) {
             p.hit.add(e.id);
             if (p.kind === 'mark') { (e.dots || (e.dots = [])).push({ src: p.owner, left: p.ex.dur, next: p.ex.tick, pw: p.ex.pw, stat: p.ex.stat }); this.ev('mark', { x: e.x, z: e.z }); this.spForHit(a, 'skill', p.log); p.life = 0; break; }
             if (p.ex && p.ex.blast) { this.blast(a, p.x, p.z, p.ex.blast, p.pw, p.stat, p.hk, p.log); p.life = 0; break; }
-            this.dealToEnemy(a, e, p.pw, p.stat, p.hk, p.log); this.spForHit(a, p.hk, p.log);
-            this.ev('phit', { x: p.x, z: p.z, k: p.kind });
+            this.dealToEnemy(a, e, p.pw, p.stat, p.hk, p.log, h); this.spForHit(a, p.hk, p.log);
+            this.ev('phit', { x: h.x, z: h.z, k: p.kind });
             if (p.kind !== 'focus') { p.life = 0; break; }
           }
         }
@@ -573,7 +593,7 @@ class Sim {
       } else {
         for (const o of this.allies) {
           if (o.st !== 'ok' || p.hit.has(o.id)) continue;
-          if (dist2(p.x, p.z, o.x, o.z) <= 0.4 + p.r) { p.hit.add(o.id); this.dealToAlly(o, p.pw, p.stat, p.src, { src: p.srcEnt }); p.life = 0; break; }
+          if (dist2(p.x, p.z, o.x, o.z) <= DATA.MOB.allyR + p.r) { p.hit.add(o.id); this.dealToAlly(o, p.pw, p.stat, p.src, { src: p.srcEnt }); p.life = 0; break; }
         }
       }
       if (Math.abs(p.x) > 40 || p.z < -80 || p.z > 50) p.life = 0;
@@ -589,7 +609,7 @@ class Sim {
   }
   blast(a, x, z, r, pw, stat, hk, log) {
     let n = 0;
-    for (const e of this.enemiesAlive()) { const tr = e === this.boss ? DATA.BOSS.hurtR : DATA.MOB.r; if (dist2(x, z, e.x, e.z) <= r + tr) { this.dealToEnemy(a, e, pw, stat, hk, log); n++; } }
+    for (const e of this.enemiesAlive()) { const h = this.hitCircle(e, x, z, r); if (h) { this.dealToEnemy(a, e, pw, stat, hk, log, h); n++; } }
     if (n) this.spForHit(a, hk, log);
     this.ev('boom', { x, z, r, k: 'fire' });
   }
@@ -605,8 +625,7 @@ class Sim {
       const sk = tr.sk, a = this.allies[tr.owner];
       if (tr.kind === 'para') {
         for (const e of this.enemiesAlive()) {
-          const rr = e === this.boss ? DATA.BOSS.bodyR + 0.6 : DATA.MOB.r;
-          if (dist2(tr.x, tr.z, e.x, e.z) <= sk.r + rr) {
+          if (this.hitCircle(e, tr.x, tr.z, sk.r)) {
             if (e === this.boss) { if (e.paraImm > 0 || e.st === 'fly' || e.st === 'down') continue; this.bossStun(sk.para * sk.bossMul); e.paraImm = sk.bossImmune; }
             else { e.para = sk.para; }
             this.ev('para', { x: e.x, z: e.z }); tr.dead = 1; break;
@@ -614,11 +633,11 @@ class Sim {
         }
       } else if (tr.kind === 'mine') {
         let trig = false;
-        for (const e of this.enemiesAlive()) { const rr = e === this.boss ? DATA.BOSS.bodyR + 0.4 : DATA.MOB.r; if (dist2(tr.x, tr.z, e.x, e.z) <= sk.trig + rr) trig = true; }
+        for (const e of this.enemiesAlive()) if (this.hitCircle(e, tr.x, tr.z, sk.trig)) trig = true;
         for (const o of this.allies) if (o.st === 'ok' && o.slot !== tr.owner && dist2(tr.x, tr.z, o.x, o.z) <= 0.7) trig = true;
         if (trig) {
           tr.dead = 1; const hitSet = new Set();
-          for (const e of this.enemiesAlive()) { const rr = e === this.boss ? DATA.BOSS.hurtR : DATA.MOB.r; if (!hitSet.has(e.id) && dist2(tr.x, tr.z, e.x, e.z) <= sk.r + rr) { hitSet.add(e.id); this.dealToEnemy(a, e, sk.pw, 'mix', 'skill', null); } }
+          for (const e of this.enemiesAlive()) { const h = !hitSet.has(e.id) && this.hitCircle(e, tr.x, tr.z, sk.r); if (h) { hitSet.add(e.id); this.dealToEnemy(a, e, sk.pw, 'mix', 'skill', null, h); } }
           for (const o of this.allies) if (o.st === 'ok' && dist2(tr.x, tr.z, o.x, o.z) <= sk.r) { // 味方も巻き込む（1爆発につき1回）
             const dx = o.x - tr.x, dz = o.z - tr.z; this.dealToAlly(o, sk.pw * sk.allyMul, 'str', { str: (a.c.str + a.c.yo) / 2, yo: a.c.yo }, { knock: 4, kx: dx, kz: dz, src: 'none' });
           }
@@ -726,7 +745,7 @@ class Sim {
   }
   mobFire(m, tg) {
     const yaw = yawTo(tg.x - m.x, tg.z - m.z), fx = Math.sin(yaw), fz = Math.cos(yaw), s = DATA.MOB.shotSpeed;
-    this.projs.push({ id: this.id(), kind: 'fuda', team: 'enemy', x: m.x + fx * 0.5, y: 0.55, z: m.z + fz * 0.5, vx: fx * s, vz: fz * s, life: 1.7, r: 0.3, pw: DATA.MOB.shotPw, stat: 'str', src: { str: m.str, yo: m.yo }, srcEnt: m, hit: new Set(), yaw });
+    this.projs.push({ id: this.id(), kind: 'fuda', team: 'enemy', x: m.x + fx * 0.5, y: 0.55, z: m.z + fz * 0.5, vx: fx * s, vz: fz * s, life: 1.7, r: DATA.MOB.shotR, pw: DATA.MOB.shotPw, stat: 'str', src: { str: m.str, yo: m.yo }, srcEnt: m, hit: new Set(), yaw });
     this.ev('sfx', { s: 'fudaShot', x: m.x, z: m.z });
   }
   mobDie(m, by) {
@@ -827,7 +846,7 @@ class Sim {
         for (const o of this.allies) if (o.st === 'ok') this.hz({ kind: 'circle', x: o.x, z: o.z, yaw: 0, r: M.r, warn: M.wind, act: M.act, pw: M.pw, stat: M.stat, fx: 'otoshi', knock: 3 });
         break;
       case 'kousen': this.hz({ kind: 'line', x: b.x + fx * 1.2, z: b.z + fz * 1.2, yaw: b.yaw, len: M.len, w: M.w, warn: M.wind, act: M.act, iv: M.iv, max: M.max, pw: M.pw, stat: M.stat, fx: 'kousen' }); break;
-      case 'harite': this.hz({ kind: 'rect', x: b.x + fx * 0.8, z: b.z + fz * 0.8, yaw: b.yaw, len: M.len, w: M.w, warn: M.wind, act: M.act, pw: M.pw, stat: M.stat, fx: 'harite', brief: 0.22, knock: 5 }); break;
+      case 'harite': this.hz({ kind: 'rect', x: b.x + fx * M.start, z: b.z + fz * M.start, yaw: b.yaw, len: M.len, w: M.w, warn: M.wind, act: M.act, pw: M.pw, stat: M.stat, fx: 'harite', brief: 0.22, knock: 5 }); break;
       case 'junkou': {
         const n = b.phase === 2 ? M.n2 : M.n1;
         b.st = 'fly'; b.fl = { ph: 'rise', t: 0, n, i: 0, dir: b.x > 0 ? -1 : 1, z: 0, bombT: 0, sx: b.x, sz: b.z };
@@ -860,13 +879,13 @@ class Sim {
       b.x = -f.dir * W + f.dir * 2 * W * Math.min(1, f.t / M.cross); b.y = 2.6; b.yaw = f.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
       for (const o of this.allies) {
         if (o.st !== 'ok' || f.hit[o.slot]) continue;
-        if (Math.abs(o.z - b.z) <= M.contactR + 0.4 && Math.abs(o.x - b.x) <= 1.6) { f.hit[o.slot] = 1; this.dealToAlly(o, M.pw, 'str', b, { knock: 6, kx: 0, kz: o.z >= b.z ? 1 : -1, src: b }); }
+        if (Math.abs(o.z - b.z) <= M.contactR + DATA.MOB.allyR && Math.abs(o.x - b.x) <= M.contactLen + DATA.MOB.allyR) { f.hit[o.slot] = 1; this.dealToAlly(o, M.pw, 'str', b, { knock: 6, kx: 0, kz: o.z >= b.z ? 1 : -1, src: b }); }
       }
       f.bombT -= dt;
       if (f.bombT <= 0 && Math.abs(b.x) < DATA.STAGE.plazaHalfW - 1) { f.bombT = M.bombEvery; this.hz({ kind: 'circle', x: b.x, z: clamp(b.z + (this.rng.next() * 2 - 1) * 4.5, 1.5, DATA.STAGE.plazaZ1 - 1.5), yaw: 0, r: M.bombR, warn: M.bombFall, act: 0.12, pw: M.bombPw, stat: 'yo', fx: 'bomb', knock: 3 }); }
       if (f.t >= M.cross) {
         f.i++;
-        if (f.i >= f.n) { f.ph = 'land'; f.t = 0; f.lx = clamp(b.x * 0.3, -8, 8); f.lz = 17; f.ox = b.x; f.oz = b.z; this.hz({ kind: 'circle', x: f.lx, z: f.lz, yaw: 0, r: 3.2, warn: 0.6, act: 0.12, pw: 70, stat: 'str', fx: 'land', knock: 5 }); }
+        if (f.i >= f.n) { f.ph = 'land'; f.t = 0; f.lx = clamp(b.x * 0.3, -8, 8); f.lz = 17; f.ox = b.x; f.oz = b.z; this.hz({ kind: 'circle', x: f.lx, z: f.lz, yaw: 0, r: M.landR, warn: 0.6, act: 0.12, pw: 70, stat: 'str', fx: 'land', knock: 5 }); }
         else { f.ph = 'gap'; f.t = 0; f.dir *= -1; f.z = this.junkouZ(); f.pathH = this.junkouPath(f.dir, f.z, M.gap); }
       }
     } else if (f.ph === 'gap') {
@@ -891,9 +910,9 @@ class Sim {
         const rec = h.hits[o.slot];
         if (rec && (rec.n >= h.max || h.t - rec.last < h.iv - 1e-6)) continue;
         let inside = false;
-        if (h.kind === 'fan') inside = inFan(o.x, o.z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, 0.35);
-        else if (h.kind === 'circle') inside = dist2(o.x, o.z, h.x, h.z) <= h.r + 0.35;
-        else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, 0.35);
+        if (h.kind === 'fan') inside = inFan(o.x, o.z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, DATA.MOB.allyR);
+        else if (h.kind === 'circle') inside = dist2(o.x, o.z, h.x, h.z) <= h.r + DATA.MOB.allyR;
+        else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR);
         if (!inside) continue;
         h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t };
         this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: o.x - h.x, kz: o.z - h.z, src: h.src === 'boss' ? b : null });
@@ -992,7 +1011,7 @@ class Sim {
       if (S.type === 'heal') use = this.allies.some(o => o.st === 'down') || this.allies.filter(o => o.st === 'ok' && o.hp / o.maxHp < 0.5).length >= 2;
       else if (S.type === 'buff') use = bossOpen || this.allies.filter(o => o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) < S.r).length >= 3;
       else if (S.type === 'guardup') use = b && b.st !== 'fly' && b.target !== a.slot;
-      else if (tgtE) { const rr = tgtE === b ? DATA.BOSS.hurtR : 0.5; const reach = S.shape === 'line' ? S.len : S.range; use = dist2(a.x, a.z, tgtE.x, tgtE.z) - rr < reach * 0.8 && (bossOpen || this.rng.next() < 0.35 || tgtE !== b); }
+      else if (tgtE) { const reach = S.shape === 'line' ? S.len : S.range; use = this.gapTo(a.x, a.z, tgtE).g < reach * 0.8 && (bossOpen || this.rng.next() < 0.35 || tgtE !== b); }
       if (use) { if (tgtE) out.lock = tgtE.id; push('SP'); return; }
     }
     // 5) 灯籠
@@ -1017,7 +1036,7 @@ class Sim {
       return;
     }
     out.lock = e.id;
-    const isBoss = e === b, er = isBoss ? DATA.BOSS.hurtR : DATA.MOB.r, d = dist2(a.x, a.z, e.x, e.z);
+    const isBoss = e === b, d = dist2(a.x, a.z, e.x, e.z), gap = this.gapTo(a.x, a.z, e).g;
     const bf = isBoss ? Math.abs(angDiff(b.yaw, yawTo(a.x - b.x, a.z - b.z))) : 0;
     if (role === 'ranged' || (role === 'mage' && a.c.id === 'akaneten') || (role === 'tank' && a.c.A === 'shot')) {
       const want = role === 'tank' ? 5.5 : 8;
@@ -1025,7 +1044,7 @@ class Sim {
       if (role === 'tank' && isBoss) ang = b.yaw + (a.slot % 2 ? 0.25 : -0.25);
       const px = e.x + Math.sin(ang) * want, pz = e.z + Math.cos(ang) * want;
       const p = this.clampPos(a.x, a.z, px, pz, 0.4); ai.tx = p[0]; ai.tz = p[1];
-      if (d < want + 4) { if (Math.abs(d - want) < 2.5) ai.stay = true; this.aiSkills(a, out, push, e, d - er); if (this.free(a) || (a.act && a.act.k === 'shot')) ai.wantA = true; }
+      if (d < want + 4) { if (Math.abs(d - want) < 2.5) ai.stay = true; this.aiSkills(a, out, push, e, gap); if (this.free(a) || (a.act && a.act.k === 'shot')) ai.wantA = true; }
       return;
     }
     // 近接・タンク・回復の近接
@@ -1035,12 +1054,12 @@ class Sim {
       else if (role === 'healer') ang = b.yaw + (a.slot % 2 ? 2.2 : -2.2);
       else ang = b.yaw + (a.slot % 2 ? 1.75 : -1.75) + (this.rng.next() - 0.5) * 0.3;
     } else ang = yawTo(a.x - e.x, a.z - e.z);
-    const reach = isBoss ? er + (role === 'healer' ? 4 : 0.9) : 1.1;
+    const reach = isBoss ? (role === 'healer' ? 5 : 1.5) : 0.8; // 体に触れる距離まで寄る
     const p = this.clampPos(a.x, a.z, e.x + Math.sin(ang) * reach, e.z + Math.cos(ang) * reach, 0.4);
     ai.tx = p[0]; ai.tz = p[1];
-    const inReach = d - er < 1.45;
-    if (inReach) { ai.stay = role !== 'healer'; ai.wantA = role !== 'healer' || this.rng.next() < 0.5; this.aiSkills(a, out, push, e, d - er); }
-    else if (role === 'healer' && d - er < 6) this.aiSkills(a, out, push, e, d - er);
+    const inReach = gap < DATA.MOVES.melee1.range - 0.3; // 当たる距離（体に触れている）になってから振る
+    if (inReach) { ai.stay = role !== 'healer'; ai.wantA = role !== 'healer' || this.rng.next() < 0.5; this.aiSkills(a, out, push, e, gap); }
+    else if (role === 'healer' && gap < 6) this.aiSkills(a, out, push, e, gap);
   }
   aiEnemy(a) {
     const mobs = this.mobs.filter(m => m.st === 'ok');
@@ -1055,12 +1074,12 @@ class Sim {
       if (sk.kind === 'guard' || sk.kind === 'dodge' || sk.kind === 'heal' || sk.kind === 'healRing') continue;
       if (a.cd[k] > 0 || this.rng.next() < 0.45) continue;
       switch (sk.kind) {
-        case 'charge': if (sk.form === 'melee' || sk.form === 'drain' ? gap < 1.5 : gap < 12) { push(k + '+'); out.hold[k] = 1; a.ai.hold = { k, t: 0.5 + this.rng.next() * 0.5, stay: true }; return; } break;
+        case 'charge': if (sk.form === 'melee' ? gap < 1.05 : sk.form === 'drain' ? gap < 2.4 : gap < 12) { push(k + '+'); out.hold[k] = 1; a.ai.hold = { k, t: 0.5 + this.rng.next() * 0.5, stay: true }; return; } break;
         case 'dot': if (gap < 12) { push(k + '+'); return; } break;
-        case 'retreat': case 'heavy': case 'taunt': if (gap < 1.4) { if (sk.kind === 'heavy' && b && e === b && b.st !== 'down' && b.st !== 'stun' && b.st !== 'rec' && this.rng.next() < 0.6) break; push(k + '+'); return; } break;
+        case 'retreat': case 'heavy': case 'taunt': if (gap < 1.0) { if (sk.kind === 'heavy' && b && e === b && b.st !== 'down' && b.st !== 'stun' && b.st !== 'rec' && this.rng.next() < 0.6) break; push(k + '+'); return; } break;
         case 'stealth': if (b && b.target === a.slot) { push(k + '+'); return; } break;
         case 'parry': if (b && e === b && b.st === 'wind' && b.target === a.slot && gap < 3) { push(k + '+'); return; } break;
-        case 'trap': case 'mine': if (gap < 2.2) { push(k + '+'); return; } break;
+        case 'trap': case 'mine': if (gap < 1.4) { push(k + '+'); return; } break;
         case 'protect': if (this.allies.filter(o => o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) < 3).length >= 2 && this.inDanger(a.x, a.z, 1, 0.6)) { push(k + '+'); return; } break;
       }
     }
@@ -1080,4 +1099,4 @@ class Sim {
     return best;
   }
 }
-const SIMLIB = { Sim, ACTS, ACT_I, BST, BST_I, BMV, BMV_I, HZ, HZ_I, PJ, PJ_I, angDiff, yawTo, clamp, dist2, inFan, inLine, RNG };
+const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I, HZ, HZ_I, PJ, PJ_I, angDiff, yawTo, clamp, dist2, inFan, inLine, RNG };

@@ -21,7 +21,7 @@ function scenario(lat, dup, drop) {
   // 戦闘場面を作る（テスト用にボス前へ）
   const party = host.sim.allies.map(a => ({ ch: a.ch }));
   const s = new Sim({ party, diff: 'normal', seed: 5, test: true });
-  s.allies.forEach((a, i) => { a.ctrlAI = host.sim.allies[i].ctrlAI; a.x = [-2.2, 0, 2.5, 6][i]; a.z = 19 - 3.4; });
+  s.allies.forEach((a, i) => { a.ctrlAI = host.sim.allies[i].ctrlAI; a.x = [-0.3, 0.9, 2.2, 6][i]; a.z = 19 - 1.75; });
   s.boss.hp = s.boss.maxHp = 1e6; host.sim = s;
   run(1.5);
   const cs1 = cli.mySlot, cs2 = cli2.mySlot;

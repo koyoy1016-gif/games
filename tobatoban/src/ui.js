@@ -247,7 +247,7 @@ function renderTeam() {
 function renderDetail() {
   const c = DATA.CHI[G.focus] || DATA.CHARS[0], d = $('#detail'); d.textContent = '';
   const hd = el('div', 'hd'); hd.appendChild(el('b', '', c.nm)); const r = el('span', 'chip', c.role); hd.appendChild(r); const e = el('span', 'badge', c.el + '属性'); e.style.background = DATA.ELEM_COL[c.el]; hd.appendChild(e); d.appendChild(hd);
-  d.appendChild(el('p', 'small', c.blurb + `（参考にした数値：${c.ref}・レベル99装備なしの公開値）`));
+  d.appendChild(el('p', 'small', c.blurb));
   const st = el('div', 'stat');
   for (const [l, v, col] of [['ちから', c.str, '#e4572e'], ['ようりょく', c.yo, '#7446b8'], ['まもり', c.def, '#3f78d6']]) { st.appendChild(el('span', '', `${l} ${v}`)); const b = el('div', 'bar'); const i = el('i'); i.style.width = Math.round(v / 260 * 100) + '%'; i.style.background = col; b.appendChild(i); st.appendChild(b); }
   d.appendChild(st);
@@ -358,7 +358,10 @@ function enterGame() {
   AUDIO.bgm('street');
   try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => { }); } catch (e) { }
   G.snapNext = true;
-  if (G.firstRun && !G.coop) { setTimeout(() => notice('スティックで移動・Aで攻撃。札小僧をやっつけよう', 'info', 4000), 600); setTimeout(() => notice('Xは技1、Yは技2。ためる技は長押しして離す', 'info', 4000), 5000); STORE.set('played', true); G.firstRun = false; }
+  if (!G.coop) { // 最初に：仲間アイコンをタップで操作キャラを切り替えられる
+    setTimeout(() => { if (G.mode !== 'play') return; notice((curLayout && curLayout.portrait ? '上' : '左上') + 'の仲間アイコンをタップすると、そのキャラに切り替えられます', 'tip', 5200); const p = $('#party'); p.classList.add('tip'); setTimeout(() => p.classList.remove('tip'), 5200); }, 700);
+  }
+  if (G.firstRun && !G.coop) { setTimeout(() => notice('スティックで移動・Aで攻撃。札小僧をやっつけよう', 'info', 4000), 6200); setTimeout(() => notice('Xは技1、Yは技2。ためる技は長押しして離す', 'info', 4000), 10400); STORE.set('played', true); G.firstRun = false; }
 }
 function pause() {
   if (G.mode !== 'play') return; const S = G.session;
