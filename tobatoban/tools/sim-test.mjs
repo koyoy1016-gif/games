@@ -165,19 +165,19 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   for (let i = 0; i < 60 * (J.introT + 0.2); i++) s.step();
   const ys = s.mobs.filter(m => m.kind === 'yoshi');
   ok(s.stage === 'train' && ys.length === J.waves[0] && ys.every(m => m.z > 1), `発車すると2号車に部下が${J.waves[0]}体（${ys.length}）`);
-  ok(ys.every(m => m.maxHp >= 650 && m.maxHp <= 700), `部下の体力は650〜700（${Math.min(...ys.map(m => m.maxHp))}〜${Math.max(...ys.map(m => m.maxHp))}）`);
+  ok(ys.every(m => m.maxHp >= 600 && m.maxHp <= 700), `部下の体力は600〜700（${Math.min(...ys.map(m => m.maxHp))}〜${Math.max(...ys.map(m => m.maxHp))}）`);
   ok(new Set(ys.map(m => m.wpn)).size >= 2, `武器は剣・拳・大砲がまざる（${[...new Set(ys.map(m => m.wpn))].join('・')}）`);
   // 1発のダメージ
   const o = s.allies[0]; o.ctrlAI = false; const dmgs = [];
   for (let k = 0; k < 40; k++) { o.hp = o.maxHp; o.inv = 0; o.act = null; o.st = 'ok'; const h = s.hz({ kind: 'circle', x: o.x, z: o.z, r: 1, warn: 0, act: 0.1, pw: 0, stat: 'str', fixed: J.dmg, src: 'mob' }); const hp0 = o.hp; s.updateHazards(1 / 60); dmgs.push(hp0 - o.hp); s.hazards = []; }
-  ok(Math.min(...dmgs) >= 85 && Math.max(...dmgs) <= 120, `部下の1発は85〜120（${Math.min(...dmgs)}〜${Math.max(...dmgs)}）`);
+  ok(Math.min(...dmgs) >= 50 && Math.max(...dmgs) <= 80, `部下の1発は50〜80（${Math.min(...dmgs)}〜${Math.max(...dmgs)}）`);
   // 車内の壁と連結部
   const c1 = s.clampTrain(0, -5, 3, -5, 0.35), c2 = s.clampTrain(1.2, -3, 1.2, 0, 0.35), c3 = s.clampTrain(0, 19, 0, 30, 0.35);
   ok(Math.abs(c1[0]) <= J.halfW && c2[1] <= -1.3 && c3[1] < J.zMax, '車内の壁・連結部の細い通路・1号車へは行けない');
-  // 波：10体倒すと20体、20体倒すと30体
+  // 波：5体倒すと10体、10体倒すと15体
   const kill = n => { for (const m of s.mobs.filter(m => m.st === 'ok' && m.kind === 'yoshi').slice(0, n)) s.dealToEnemy(s.allies[1], m, 1e6, 'str', 'A', null); };
-  kill(10); s.step();
-  ok(s.phase === 2 && s.queue.filter(q => q.grp === 'p2').length >= 19, `10体倒すと1号車から20体（第${s.phase}波・待ち${s.queue.length}）`);
+  kill(5); s.step();
+  ok(s.phase === 2 && s.queue.filter(q => q.grp === 'p2').length >= 9, `5体倒すと1号車から10体（第${s.phase}波・待ち${s.queue.length}）`);
   const allies = s.allies; allies.forEach(a => { a.inv = 1e9; });
   let stations = [], boarded = 0;
   for (let i = 0; i < 60 * 600 && s.stage !== 'won'; i++) {
@@ -185,8 +185,8 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
     if (i % 30 === 0) kill(3); // どんどん倒す
   }
   ok(stations.join('→') === '南千住→三河島→日暮里→上野', `停車駅：${stations.join('→')}`);
-  ok(boarded === 30, `途中駅で10体ずつ乗ってくる（合計${boarded}）`);
-  ok(s.kills === s.total && s.total === 90, `全部で${s.total}体（60体＋駅の30体）を倒した（${s.kills}）`);
+  ok(boarded === 15, `途中駅で5体ずつ乗ってくる（合計${boarded}）`);
+  ok(s.kills === s.total && s.total === 45, `全部で${s.total}体（30体＋駅の15体）を倒した（${s.kills}）`);
   ok(s.stage === 'won' && s.result.why === 'ueno', `全部倒すと上野に到着して勝ち（${s.stage}）`);
 }
 { // 部下が残っている間は上野に着かない

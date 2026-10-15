@@ -289,7 +289,7 @@ const cleared = id => !!((G.acct && G.acct.clear && G.acct.clear[id] > 0) || G.s
 const stageOpen = id => id !== 'joban' || cleared('senju');
 const STAGES = [
   { id: 'senju', cls: 's1', ic: '🏮', no: 'ステージ1', nm: '北千住 祭り広場', en: 'トバトーバン（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。' },
-  { id: 'joban', cls: 's2', ic: '🚃', no: 'ステージ2', nm: '常磐線 北千住→上野', en: 'ヨシノシの部下 90体', d: '青い常磐線の2号車・3号車で戦う。1号車から次々に来る部下と、南千住・三河島・日暮里で乗ってくる部下を倒して上野へ。' },
+  { id: 'joban', cls: 's2', ic: '🚃', no: 'ステージ2', nm: '常磐線 北千住→上野', en: `ヨシノシの部下 ${DATA.JOBAN.waves.reduce((a, b) => a + b, 0) + DATA.JOBAN.boardN * 3}体`, d: '青い常磐線の2号車・3号車で戦う。1号車から次々に来る部下と、南千住・三河島・日暮里で乗ってくる部下を倒して上野へ。' },
 ];
 function openStage() { renderStages(); show('stage'); }
 function renderStages() {

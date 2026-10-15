@@ -33,7 +33,7 @@
   P.startTrain = function () {
     this.stage = 'train'; this.stageT = 0; this.introWait = false;
     const tr = this.tr; tr.ph = 'run'; tr.at = 0; tr.d = 0; tr.v = 0; tr.t = 0; tr.doors = 0;
-    // 第1波：2号車にすでに10体
+    // 第1波：2号車にすでに5体
     this.phase = 1;
     for (let i = 0; i < DATA.JOBAN.waves[0]; i++) this.spawnYoshi(this.rng.range(-1.1, 1.1), this.rng.range(9, 19), 'p1', 'in');
     this.ev('stage', { k: 'train' }); this.ev('wave', { n: 1, cnt: DATA.JOBAN.waves[0] });
@@ -71,14 +71,14 @@
     }
   };
 
-  /** 途中駅：左側のドアから10体が乗ってくる */
+  /** 途中駅：左側のドアから5体が乗ってくる */
   P.boardAt = function (st) {
     const J = DATA.JOBAN;
     for (let i = 0; i < J.boardN; i++) this.queue.push({ grp: 'st', from: 'door' });
     this.boardedSt = Math.max(this.boardedSt, st);
     this.ev('board', { st, n: J.boardN });
   };
-  /** 10体倒すと1号車から20体、その20体を倒すと30体 */
+  /** 最初の5体を倒すと1号車から10体、その10体を倒すと15体 */
   P.checkPhases = function () {
     const J = DATA.JOBAN;
     if (this.phase === 1 && this.phaseKills[0] >= J.waves[0]) { this.phase = 2; for (let i = 0; i < J.waves[1]; i++) this.queue.push({ grp: 'p2', from: 'front' }); this.ev('wave', { n: 2, cnt: J.waves[1] }); }
@@ -104,12 +104,12 @@
     let r = rng.next(), wi = 0; while (wi < 2 && r > WPN_W[wi]) { r -= WPN_W[wi]; wi++; }
     const hp = Math.round(J.hp[0] + rng.next() * (J.hp[1] - J.hp[0]));
     const m = { id: 'm' + this.id(), kind: 'yoshi', wpn: WPNS[wi], grp, from, x, z, yaw: from === 'door' ? Math.PI / 2 : Math.PI, hp, maxHp: hp, def: J.def, str: 0, yo: 0, r: J.r, st: 'ok', t: 0, para: 0, defDown: 0, dots: [],
-      spd: rng.range(J.speed[0], J.speed[1]), cd: 0.6 + rng.next() * 1.2, act: null, tgt: -1, retT: 0, eng: -1, enterT: from === 'in' ? 0.7 : 0.55, wind: 0, moving: 0, fireT: 99, strafe: 1 };
+      spd: rng.range(J.speed[0], J.speed[1]), cd: 0.6 + rng.next() * 1.2, act: null, tgt: -1, retT: 0, enterT: from === 'in' ? 0.7 : 0.55, wind: 0, moving: 0, fireT: 99, strafe: 1 };
     this.mobs.push(m); this.ev('ySpawn', { x, z, from });
     return m;
   };
 
-  /** ヨシノシの部下：一番近い味方を集団でねらう。剣・拳は最大5体まで殴りかかり、残りはまわりで待つ。大砲は離れてビーム */
+  /** ヨシノシの部下：一番近い味方を集団でねらう。近くにいれば何体でも攻撃してくる。大砲は離れてビーム */
   P.updateYoshi = function (m, dt) {
     const J = DATA.JOBAN, W = J.wpn[m.wpn];
     m.wind = m.act && m.act.t < m.act.w ? 1 : 0; m.moving = 0;
@@ -126,20 +126,14 @@
     if (m.retT <= 0 || !tg || tg.st !== 'ok') {
       m.retT = 0.4; let best = null, bd = 1e9;
       for (const o of this.allies) { if (o.st !== 'ok') continue; let d = dist2(m.x, m.z, o.x, o.z); if (o.buffs.stealth > 0) d += 6; if (o.buffs.taunt > 0) d -= 4; if (d < bd) { bd = d; best = o; } }
-      if (!best || best.slot !== m.tgt) m.eng = -1;
       m.tgt = best ? best.slot : -1; tg = best;
     }
     if (!tg) return;
     const dx = tg.x - m.x, dz = tg.z - m.z, d = Math.hypot(dx, dz) || 1e-3, ty = yawTo(dx, dz);
     m.yaw += clamp(angDiff(m.yaw, ty), -6 * dt, 6 * dt);
     const melee = m.wpn !== 'beam';
-    let engaged = true;
-    if (melee && m.eng !== tg.slot) { // 殴りかかれる枠が空いているか
-      let n = 0; for (const o of this.mobs) if (o !== m && o.st === 'ok' && o.eng === tg.slot) n++;
-      if (n < J.meleeTokens) m.eng = tg.slot; else engaged = false;
-    }
     let gx = null, gz = null;
-    if (melee) { const stop = engaged ? W.reach * 0.75 : 2.6; if (Math.abs(d - stop) > 0.15) { gx = tg.x - dx / d * stop; gz = tg.z - dz / d * stop; } }
+    if (melee) { const stop = W.reach * 0.75; if (Math.abs(d - stop) > 0.15) { gx = tg.x - dx / d * stop; gz = tg.z - dz / d * stop; } }
     else if (d > W.keep + 1.5) { gx = tg.x - dx / d * W.keep; gz = tg.z - dz / d * W.keep; }
     else if (d < 3.6) { gx = m.x - dx / d * 2; gz = m.z - dz / d * 2; }
     let vx = 0, vz = 0;
@@ -152,12 +146,12 @@
     const vl = Math.hypot(vx, vz);
     if (vl > 0.05) { const sp = m.spd * Math.min(1, vl); const c = this.clampTrain(m.x, m.z, m.x + vx / vl * sp * dt, m.z + vz / vl * sp * dt, m.r); m.x = c[0]; m.z = c[1]; m.moving = 1; }
     if (m.cd <= 0 && Math.abs(angDiff(m.yaw, ty)) < 0.45) {
-      if (melee && engaged && d <= W.reach) this.yoshiAttack(m, tg);
-      else if (!melee && d <= W.reach && d >= 1.6 && this.mobs.filter(o => o.st === 'ok' && o.wpn === 'beam' && o.act).length < J.beamTokens) this.yoshiAttack(m, tg);
+      if (melee && d <= W.reach) this.yoshiAttack(m, tg); // 届く所にいれば何体でも
+      else if (!melee && d <= W.reach && d >= 1.6) this.yoshiAttack(m, tg);
     }
   };
 
-  /** 攻撃：予兆を出してから当たる。ダメージはまもりに関係なく85〜120 */
+  /** 攻撃：予兆を出してから当たる。ダメージはまもりに関係なく50〜80 */
   P.yoshiAttack = function (m, tg) {
     const J = DATA.JOBAN, W = J.wpn[m.wpn];
     m.yaw = yawTo(tg.x - m.x, tg.z - m.z);
