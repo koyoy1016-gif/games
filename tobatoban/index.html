@@ -73,6 +73,9 @@ textarea{font:900 15px ui-monospace,Menlo,monospace;letter-spacing:.06em;resize:
 .lg-cols,.lg-l,.lg-r{display:flex;flex-direction:column;gap:12px;min-width:0}
 .lg-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center}
 .lg-grid label{font-weight:900;font-size:14px;white-space:nowrap}
+.lg-done{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:3px solid var(--gold);border-radius:14px;padding:8px 12px;text-align:center}
+.lg-done>span:first-child{font-weight:900;font-size:13px}
+.lg-done b{font-family:var(--f-disp);font-weight:400;font-size:44px;line-height:1.1;color:var(--shu);letter-spacing:.04em}
 .lg-msg{min-height:1.6em;font-size:13px;font-weight:900;color:var(--shu);line-height:1.5}
 .lg-msg.ok{color:#1f7a4a}
 details{border:2px solid #e6dcc6;border-radius:12px;padding:6px 10px;background:#fffaf0}
@@ -369,7 +372,7 @@ a{color:var(--shu)}
     </div>
     <p class="small">このゲームは横画面で遊びます。スマホを縦に持っていても画面は横向きで表示されるので、スマホを左に倒して（上側を左へ）遊んでください。逆向きに持つ場合は設定の「横向きの回転方向」で変えられます。</p>
     <p class="small">赤い縞の範囲がボスの攻撃予兆。紫の帯は空中突進の通り道（横・斜め・縦など毎回ちがう向きから飛んでくる）。4基の灯籠を30秒以内に灯すとボスが6秒止まる。仲間が気絶して30秒放置すると昇天し、その戦闘では戻らない。</p>
-    <p class="small">セーブ：配られたID（1001〜10100）と自分で決めたパスワードでログインします。開くたびにログインをたずねます。ログイン中はタイトルや一時停止メニューの「セーブ」を押すだけで保存でき、祭り広場に着いたときと戦いが終わったときは自動でセーブします。別の端末で続けるときは「アカウント」の引き継ぎコードを使います。</p>
+    <p class="small">セーブ：「新しくアカウントを作る」でパスワードを自分で決めると、ID（1〜10000）が作った順に自動で決まります。次からはIDとパスワードでログインします（開くたびにたずねます）。ログイン中はタイトルや一時停止メニューの「セーブ」を押すだけで保存でき、戦いが終わったときは自動でセーブします。別の端末で続けるときは「アカウント」の引き継ぎコードを使います。</p>
     <p class="small">パソコン：WASD移動・J=A・K=X・L=Y・U=必殺・Space=B・F=注目・Q/E=カメラ・1/2=アイテム・Esc=メニュー</p>
     <div class="row"><button class="btn main" data-back>とじる</button></div>
   </div>
@@ -400,9 +403,10 @@ a{color:var(--shu)}
 <section class="screen" id="login" hidden>
   <div class="panel"><div class="lg-cols"><div class="lg-l">
     <div class="eyebrow">セーブデータ</div><h2 id="lgTitle">ログイン</h2>
-    <p class="small" id="lgLead">配られたID（1001〜10100）と、自分で決めたパスワードを入れてください。ログインしている間は「セーブ」を押すだけで続きを保存できます。</p>
-    <div class="lg-grid">
-      <label for="lgId">ID</label><input type="text" id="lgId" inputmode="numeric" maxlength="6" autocomplete="username" placeholder="1001〜10100">
+    <p class="small" id="lgLead">IDと、自分で決めたパスワードを入れてください。ログインしている間は「セーブ」を押すだけで続きを保存できます。</p>
+    <div class="lg-done" id="lgDone" hidden><span>あなたのID</span><b id="lgDoneId">1</b><span class="small">ログインに使います。パスワードといっしょにメモしておいてください。</span></div>
+    <div class="lg-grid" id="lgGrid">
+      <label for="lgId" id="lgIdL">ID</label><input type="text" id="lgId" inputmode="numeric" maxlength="6" autocomplete="username" placeholder="1〜10000">
       <label for="lgPw">パスワード</label><input type="password" id="lgPw" maxlength="16" autocomplete="current-password" placeholder="4〜16文字">
       <label for="lgPw2" id="lgPw2L" hidden>もう一度</label><input type="password" id="lgPw2" maxlength="16" autocomplete="new-password" placeholder="確認のためもう一度" hidden>
     </div>
@@ -410,7 +414,8 @@ a{color:var(--shu)}
     </div><div class="lg-r">
     <div class="row">
       <button class="btn main" id="btnLogin" type="button">ログイン</button>
-      <button class="btn gold" id="btnRegister" type="button">はじめて使うIDで登録</button>
+      <button class="btn gold" id="btnRegister" type="button">新しくアカウントを作る</button>
+      <button class="btn main" id="btnDoneOk" type="button" hidden>メモした・はじめる</button>
     </div>
     <details id="lgMove"><summary>別の端末から続きを持ってくる（引き継ぎコード）</summary>
       <p class="small">前の端末の「アカウント」画面にある引き継ぎコードを入れてください。上のIDとパスワードも必要です。</p>
@@ -775,9 +780,19 @@ const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, M
    サーバーなし：データはこの端末のブラウザ（localStorage）に保存する。
    パスワードそのものは保存せず、IDとまぜたハッシュだけを持つ。
    別の端末へは「引き継ぎコード」＋ID＋パスワードで移す。three.js 非依存。
+   IDは1〜10000。アカウントを作った順に自動で決まる（いまはこの端末の中での順番）。
    ===================================================================== */
 const SAVE = (() => {
-  const ID_MIN = 1001, ID_MAX = 10100, VER = 1, KEY = 'tb.acct.', PW_MIN = 4, PW_MAX = 16;
+  const ID_MIN = 1, ID_MAX = 10000, VER = 1, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 4, PW_MAX = 16;
+  // 以前の形式（ID 1001〜）のセーブはいったん消す（1回だけ）
+  (function migrate() {
+    try {
+      if (localStorage.getItem(STORE_VER) === '2') return;
+      const del = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && (k.indexOf(KEY) === 0 || k === 'tb.lastId')) del.push(k); }
+      for (const k of del) localStorage.removeItem(k);
+      localStorage.setItem(STORE_VER, '2');
+    } catch (e) { }
+  })();
   const ALPHA = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // 見まちがえやすい I L O U を使わない
   function cyrb53(str, seed) {
     let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
@@ -805,15 +820,21 @@ const SAVE = (() => {
   function load(id) { try { const j = localStorage.getItem(KEY + id); return j ? normalize(JSON.parse(j)) : null; } catch (e) { return null; } }
   function write(s) { try { s.saved = Date.now(); localStorage.setItem(KEY + s.id, JSON.stringify(s)); return true; } catch (e) { return false; } }
 
-  /** 登録：はじめて使うID */
-  function register(id, pw, pw2) {
-    if (!validId(id)) return { ok: false, msg: `IDは${ID_MIN}〜${ID_MAX}の番号です` };
+  /** 次に割り当てるID（作った順に 1, 2, 3…） */
+  function nextId() {
+    let n = 1; try { n = Math.max(1, parseInt(localStorage.getItem(NEXT) || '1', 10) || 1); } catch (e) { }
+    while (n <= ID_MAX && load(n)) n++;
+    return n;
+  }
+  /** アカウントを作る：IDは自動、パスワードだけ本人が決める */
+  function register(pw, pw2) {
     const e = checkPw(pw); if (e) return { ok: false, msg: e };
     if (pw !== pw2) return { ok: false, msg: '2回入れたパスワードが同じではありません' };
     if (!storageOk()) return { ok: false, msg: 'この画面ではセーブできません（プライベートブラウズなど）' };
-    if (load(id)) return { ok: false, msg: `ID ${id} はこの端末ですでに登録されています。ログインしてください` };
+    const id = nextId(); if (id > ID_MAX) return { ok: false, msg: `アカウントがいっぱいです（${ID_MAX}人まで）` };
     const s = fresh(id, pwHash(id, pw)); if (!write(s)) return { ok: false, msg: 'セーブできませんでした' };
-    return { ok: true, save: s, msg: `ID ${id} を登録しました` };
+    try { localStorage.setItem(NEXT, String(id + 1)); } catch (e) { }
+    return { ok: true, save: s, id, msg: `アカウントを作りました。あなたのIDは ${id} です` };
   }
   /** ログイン：IDとパスワードで認証 */
   function login(id, pw) {
@@ -821,7 +842,7 @@ const SAVE = (() => {
     if (!pw) return { ok: false, msg: 'パスワードを入れてください' };
     if (!storageOk()) return { ok: false, msg: 'この画面ではセーブを読み込めません（プライベートブラウズなど）' };
     const s = load(id);
-    if (!s) return { ok: false, none: true, msg: `ID ${id} はこの端末ではまだ登録されていません。はじめてなら「はじめて使うIDで登録」、別の端末で使っていたなら引き継ぎコードを使ってください` };
+    if (!s) return { ok: false, none: true, msg: `ID ${id} のアカウントはこの端末にありません。はじめてなら「新しくアカウントを作る」、別の端末で作ったなら引き継ぎコードを使ってください` };
     if (s.pw !== pwHash(id, pw)) return { ok: false, msg: 'IDかパスワードがちがいます' };
     return { ok: true, save: s, msg: `ID ${id} でログインしました` };
   }
@@ -889,9 +910,10 @@ const SAVE = (() => {
     if (cur && !overwrite) return { ok: false, confirm: true, msg: `この端末にもID ${id} のセーブがあります。もう一度押すとコードの内容で上書きします` };
     const s = d.save; if (cur) { s.party = cur.party; s.swap = cur.swap; s.items = cur.items; s.nick = cur.nick; s.created = cur.created; }
     if (!write(s)) return { ok: false, msg: 'セーブできませんでした' };
+    try { if (id >= nextId()) localStorage.setItem(NEXT, String(id + 1)); } catch (e) { }
     return { ok: true, save: s, msg: `ID ${id} の続きを引き継ぎました` };
   }
-  return { ID_MIN, ID_MAX, PW_MIN, PW_MAX, pwHash, validId, parseId, checkPw, storageOk, fresh, normalize, load, write, register, login, apply, encode, decode, restore };
+  return { ID_MIN, ID_MAX, PW_MIN, PW_MAX, pwHash, validId, parseId, checkPw, storageOk, fresh, normalize, load, write, nextId, register, login, apply, encode, decode, restore };
 })();
 
 /* ===== sim.js ===== */
@@ -4121,7 +4143,8 @@ function sendMine() {
 
 /* ---------- セーブ（配られたID＋自分で決めたパスワード） ----------
    ログインはこの画面を開いている間だけ有効。開き直すたびにログインをたずねる。
-   ログイン中は「セーブ」を押すだけで保存。祭り広場に着いたときと戦いの終わりに自動セーブ。 */
+   IDは作った順に自動で決まり、パスワードだけ本人が決める。
+   ログイン中は「セーブ」を押すだけで保存。戦いが終わったときに自動セーブ。 */
 G.acct = null; G.pending = []; G.run = null;
 const lvOf = id => (G.acct && G.acct.chars[id] ? G.acct.chars[id].lv : 1);
 const fmtDate = ts => { if (!ts) return 'まだ'; const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
@@ -4133,13 +4156,21 @@ function updateAcctBar() {
 }
 function lgMsg(t, ok) { const m = $('#lgMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
 function setRegMode(on) {
-  G.regMode = on; $('#lgPw2').hidden = $('#lgPw2L').hidden = !on;
-  $('#btnRegister').textContent = on ? 'このパスワードで登録する' : 'はじめて使うIDで登録'; $('#btnLogin').textContent = on ? '登録済みのIDでログイン' : 'ログイン'; $('#btnLogin').classList.toggle('main', !on);
-  $('#lgTitle').textContent = on ? 'はじめて使うIDの登録' : 'ログイン';
+  G.regMode = on; $('#lgPw2').hidden = $('#lgPw2L').hidden = !on; $('#lgId').hidden = $('#lgIdL').hidden = on;
+  $('#btnRegister').textContent = on ? 'アカウントを作る（IDは自動で決まります）' : '新しくアカウントを作る'; $('#btnLogin').textContent = on ? 'IDを持っている人はログイン' : 'ログイン'; $('#btnLogin').classList.toggle('main', !on);
+  $('#lgTitle').textContent = on ? '新しくアカウントを作る' : 'ログイン';
+  $('#lgLead').textContent = on ? 'パスワードを自分で決めて2回入れてください（4〜16文字）。IDは作った順に自動で決まります。' : 'IDと、自分で決めたパスワードを入れてください。ログインしている間は「セーブ」を押すだけで続きを保存できます。';
   $('#lgPw').setAttribute('autocomplete', on ? 'new-password' : 'current-password');
 }
+/** アカウントを作った直後：決まったIDを大きく見せる */
+function showDone(on, id) {
+  $('#lgDone').hidden = !on; if (on) $('#lgDoneId').textContent = String(id);
+  for (const q of ['#lgGrid', '#btnLogin', '#btnRegister', '#lgMove', '#btnGuest']) $(q).hidden = on;
+  $('#btnDoneOk').hidden = !on;
+  if (on) { $('#lgTitle').textContent = 'アカウントができました'; $('#lgLead').textContent = 'これからはこのIDと、いま決めたパスワードでログインします。'; }
+}
 function openLogin(back, msg) {
-  G.loginBack = back || 'title'; setRegMode(false);
+  G.loginBack = back || 'title'; showDone(false); setRegMode(false);
   const last = STORE.get('lastId', ''); if (!$('#lgId').value && last) $('#lgId').value = last;
   $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg(msg || '', false); G.restoreConfirm = null;
   $('#btnGuest').textContent = G.loginBack === 'title' ? 'ログインせずに遊ぶ（セーブなし）' : 'もどる';
@@ -4174,7 +4205,7 @@ function runOp(v, fin) {
   if (fin) op.fin = { ids: slots.map(i => v.allies[i] && v.allies[i].ch).filter(Boolean), win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0 };
   return op;
 }
-/** 自動セーブの区切り（祭り広場に着いた・戦いが終わった） */
+/** 自動セーブ（戦いが終わったとき） */
 function checkpoint(v, fin, label) {
   const op = runOp(v, fin); if (!op) return;
   if (G.acct) {
@@ -4208,10 +4239,13 @@ function bindAccount() {
     loginOk(r.save, r.msg);
   };
   $('#btnRegister').onclick = () => {
-    if (!G.regMode) { setRegMode(true); $('#lgPw2').value = ''; lgMsg('配られたIDと、自分で決めたパスワード（4〜16文字）を2回入れてください', true); AUDIO.sfx('ui'); return; }
-    const id = SAVE.parseId($('#lgId').value), r = SAVE.register(id, $('#lgPw').value, $('#lgPw2').value);
+    if (!G.regMode) { setRegMode(true); $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg(''); AUDIO.sfx('ui'); return; }
+    const r = SAVE.register($('#lgPw').value, $('#lgPw2').value);
     if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); return; }
-    loginOk(r.save, r.msg + '。全員Lv.1からスタート');
+    // ここでログイン済みにして、IDを大きく見せる（「はじめる」で元の画面へ）
+    $('#lgId').value = String(r.id); $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg('');
+    G.acct = r.save; G.lgFail = 0; STORE.set('lastId', String(r.id)); persist(); updateAcctBar(); AUDIO.sfx('ok');
+    showDone(true, r.id);
   };
   $('#btnRestore').onclick = () => {
     const id = SAVE.parseId($('#lgId').value), code = $('#lgCode').value, key = id + '|' + code;
@@ -4220,6 +4254,7 @@ function bindAccount() {
     G.restoreConfirm = null; $('#lgCode').value = ''; loginOk(r.save, r.msg);
   };
   $('#btnGuest').onclick = () => { AUDIO.sfx('back'); show(G.loginBack || 'title'); };
+  $('#btnDoneOk').onclick = () => { const s = G.acct; showDone(false); setRegMode(false); if (s) loginOk(s, `ID ${s.id} でログインしました。全員Lv.1からスタート`); };
   for (const id of ['#lgId', '#lgPw', '#lgPw2']) $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); (G.regMode ? $('#btnRegister') : $('#btnLogin')).click(); } });
   $('#btnAcSave').onclick = () => { doSave('account'); renderAccount(); };
   $('#btnAcCopy').onclick = async () => { const t = $('#acCode').textContent; try { await navigator.clipboard.writeText(t); mtoast('引き継ぎコードをコピーしました'); } catch (e) { mtoast('コピーできませんでした。コードを長押しして選んでください', 3000); } };
@@ -4465,7 +4500,7 @@ function onNotice(o) {
   else if (o.k === 'stage') {
     if (o.s === 'wave2') notice('札小僧がまた出た！', 'info', 1500);
     if (o.s === 'open') { banner('結界が解けた', '奥の祭り広場へ進もう', 2200); AUDIO.sfx('lantern'); }
-    if (o.s === 'intro') { checkpoint(G.v, false, '祭り広場に着いた'); AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
+    if (o.s === 'intro') { AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
     if (o.s === 'fight') { AUDIO.bgm('boss'); banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
     if (o.s === 'won') { AUDIO.jingle(true); banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
     if (o.s === 'lost') { AUDIO.jingle(false); banner(G.v && G.v.result && G.v.result.why === 'time' ? '時間切れ' : '全滅', '', 2500); }

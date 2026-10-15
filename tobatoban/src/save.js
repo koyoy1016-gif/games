@@ -3,9 +3,19 @@
    サーバーなし：データはこの端末のブラウザ（localStorage）に保存する。
    パスワードそのものは保存せず、IDとまぜたハッシュだけを持つ。
    別の端末へは「引き継ぎコード」＋ID＋パスワードで移す。three.js 非依存。
+   IDは1〜10000。アカウントを作った順に自動で決まる（いまはこの端末の中での順番）。
    ===================================================================== */
 const SAVE = (() => {
-  const ID_MIN = 1001, ID_MAX = 10100, VER = 1, KEY = 'tb.acct.', PW_MIN = 4, PW_MAX = 16;
+  const ID_MIN = 1, ID_MAX = 10000, VER = 1, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 4, PW_MAX = 16;
+  // 以前の形式（ID 1001〜）のセーブはいったん消す（1回だけ）
+  (function migrate() {
+    try {
+      if (localStorage.getItem(STORE_VER) === '2') return;
+      const del = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && (k.indexOf(KEY) === 0 || k === 'tb.lastId')) del.push(k); }
+      for (const k of del) localStorage.removeItem(k);
+      localStorage.setItem(STORE_VER, '2');
+    } catch (e) { }
+  })();
   const ALPHA = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // 見まちがえやすい I L O U を使わない
   function cyrb53(str, seed) {
     let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
@@ -33,15 +43,21 @@ const SAVE = (() => {
   function load(id) { try { const j = localStorage.getItem(KEY + id); return j ? normalize(JSON.parse(j)) : null; } catch (e) { return null; } }
   function write(s) { try { s.saved = Date.now(); localStorage.setItem(KEY + s.id, JSON.stringify(s)); return true; } catch (e) { return false; } }
 
-  /** 登録：はじめて使うID */
-  function register(id, pw, pw2) {
-    if (!validId(id)) return { ok: false, msg: `IDは${ID_MIN}〜${ID_MAX}の番号です` };
+  /** 次に割り当てるID（作った順に 1, 2, 3…） */
+  function nextId() {
+    let n = 1; try { n = Math.max(1, parseInt(localStorage.getItem(NEXT) || '1', 10) || 1); } catch (e) { }
+    while (n <= ID_MAX && load(n)) n++;
+    return n;
+  }
+  /** アカウントを作る：IDは自動、パスワードだけ本人が決める */
+  function register(pw, pw2) {
     const e = checkPw(pw); if (e) return { ok: false, msg: e };
     if (pw !== pw2) return { ok: false, msg: '2回入れたパスワードが同じではありません' };
     if (!storageOk()) return { ok: false, msg: 'この画面ではセーブできません（プライベートブラウズなど）' };
-    if (load(id)) return { ok: false, msg: `ID ${id} はこの端末ですでに登録されています。ログインしてください` };
+    const id = nextId(); if (id > ID_MAX) return { ok: false, msg: `アカウントがいっぱいです（${ID_MAX}人まで）` };
     const s = fresh(id, pwHash(id, pw)); if (!write(s)) return { ok: false, msg: 'セーブできませんでした' };
-    return { ok: true, save: s, msg: `ID ${id} を登録しました` };
+    try { localStorage.setItem(NEXT, String(id + 1)); } catch (e) { }
+    return { ok: true, save: s, id, msg: `アカウントを作りました。あなたのIDは ${id} です` };
   }
   /** ログイン：IDとパスワードで認証 */
   function login(id, pw) {
@@ -49,7 +65,7 @@ const SAVE = (() => {
     if (!pw) return { ok: false, msg: 'パスワードを入れてください' };
     if (!storageOk()) return { ok: false, msg: 'この画面ではセーブを読み込めません（プライベートブラウズなど）' };
     const s = load(id);
-    if (!s) return { ok: false, none: true, msg: `ID ${id} はこの端末ではまだ登録されていません。はじめてなら「はじめて使うIDで登録」、別の端末で使っていたなら引き継ぎコードを使ってください` };
+    if (!s) return { ok: false, none: true, msg: `ID ${id} のアカウントはこの端末にありません。はじめてなら「新しくアカウントを作る」、別の端末で作ったなら引き継ぎコードを使ってください` };
     if (s.pw !== pwHash(id, pw)) return { ok: false, msg: 'IDかパスワードがちがいます' };
     return { ok: true, save: s, msg: `ID ${id} でログインしました` };
   }
@@ -117,7 +133,8 @@ const SAVE = (() => {
     if (cur && !overwrite) return { ok: false, confirm: true, msg: `この端末にもID ${id} のセーブがあります。もう一度押すとコードの内容で上書きします` };
     const s = d.save; if (cur) { s.party = cur.party; s.swap = cur.swap; s.items = cur.items; s.nick = cur.nick; s.created = cur.created; }
     if (!write(s)) return { ok: false, msg: 'セーブできませんでした' };
+    try { if (id >= nextId()) localStorage.setItem(NEXT, String(id + 1)); } catch (e) { }
     return { ok: true, save: s, msg: `ID ${id} の続きを引き継ぎました` };
   }
-  return { ID_MIN, ID_MAX, PW_MIN, PW_MAX, pwHash, validId, parseId, checkPw, storageOk, fresh, normalize, load, write, register, login, apply, encode, decode, restore };
+  return { ID_MIN, ID_MAX, PW_MIN, PW_MAX, pwHash, validId, parseId, checkPw, storageOk, fresh, normalize, load, write, nextId, register, login, apply, encode, decode, restore };
 })();

@@ -125,17 +125,16 @@ with sync_playwright() as p:
         txt = lambda sel, key: ev("() => document.querySelector('%s').textContent" % sel, key)
         results.append(run(p, 844, 390, 'save', [
             ev(vis, 'boot_screen'), shot('80_login'),
-            typ('#lgId', '1001'), typ('#lgPw', 'neko'), click('#btnLogin'), txt('#lgMsg', 'login_unregistered'),
-            click('#btnRegister'), typ('#lgPw', 'neko22'), typ('#lgPw2', 'neko22'), shot('81_register'), click('#btnRegister'), wait(0.3), ev(vis, 'after_register'), txt('#acctWho', 'acct_bar'), shot('82_title_login'),
-            click('#btnSolo'), wait(0.4), txt('#cards', 'cards_text'), shot('83_team_lv'), click('#btnGo'), wait(2.0),
+            click('#btnRegister'), typ('#lgPw', 'neko22'), typ('#lgPw2', 'neko22'), shot('81_register'), click('#btnRegister'), wait(0.3), txt('#lgDoneId', 'assigned_id'), shot('81b_done'), click('#btnDoneOk'), wait(0.3), ev(vis, 'after_register'), txt('#acctWho', 'acct_bar'), shot('82_title_login'),
+            click('#btnSolo'), wait(0.4), shot('83_team_lv'), click('#btnGo'), wait(2.0),
             ev("() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); return s.allies[0].stats.kills; }", 'kills'), wait(1.5),
-            ev(TO_BOSS), wait(1.0), ev("() => { const a = __tb.G.acct; return a ? [a.rec.mobs, a.chars.kogemaru.k] : null; }", 'autosave_plaza'), shot('84_hud_lv'), wait(6.0),
-            ev("() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); return s.stage; }"), wait(5), txt('#resSave', 'result_save'), shot('85_result_save'),
-            click('#btnResTitle'), wait(0.3), click('#btnAcct'), wait(0.3), txt('#acKv', 'account_kv'), txt('#acCode', 'code'), shot('86_account'), click('#btnAcBack'),
+            ev(TO_BOSS), wait(1.5), ev("() => JSON.parse(localStorage.getItem('tb.acct.1')).rec.mobs", 'stored_mobs_at_plaza(0=no autosave)'), wait(5.5),
+            ev("() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); return s.stage; }"), wait(5), txt('#resSave', 'result_save'), ev("() => JSON.parse(localStorage.getItem('tb.acct.1')).rec", 'stored_after_battle'), shot('85_result_save'),
+            click('#btnResTitle'), wait(0.3), click('#btnLogout'), click('#btnAcct'), wait(0.2), click('#btnRegister'), typ('#lgPw', 'inu333'), typ('#lgPw2', 'inu333'), click('#btnRegister'), wait(0.2), txt('#lgDoneId', 'second_id'), click('#btnDoneOk'),
             reload, ev(vis, 'after_reload'), ev("() => !!__tb.G.acct", 'logged_in_after_reload'),
-            typ('#lgPw', 'wrong'), click('#btnLogin'), txt('#lgMsg', 'wrong_pw'),
+            typ('#lgId', '1'), typ('#lgPw', 'inu333'), click('#btnLogin'), txt('#lgMsg', 'id1_with_id2_password'),
             typ('#lgPw', 'neko22'), click('#btnLogin'), wait(0.3), ev("() => { const a = __tb.G.acct; return a ? [a.id, a.rec.b, a.rec.w, a.rec.mobs] : null; }", 'restored'),
-            click('#btnSolo'), click('#btnGo'), wait(1.5), ev("() => { document.dispatchEvent(new KeyboardEvent('keydown', {code:'Escape'})); window.dispatchEvent(new KeyboardEvent('keydown', {code:'Escape'})); return __tb.G.mode; }", 'paused'), wait(0.3), click('#btnPSave'), wait(0.3), txt('#mtoast', 'pause_save_toast'), shot('87_pause_save'),
+            ev("() => { localStorage.setItem('tb.saveVer','1'); localStorage.setItem('tb.acct.1001','{}'); return 1; }"), reload, ev("() => Object.keys(localStorage).filter(k => k.startsWith('tb.acct.'))", 'after_wipe_keys'),
         ]))
     if SCEN in ('menus',):
         results.append(run(p, 844, 390, 'menus', [ev("() => { document.getElementById('btnGuest').click(); return 1; }"), ev("() => { document.getElementById('btnHow').click(); return 1; }"), wait(0.4), shot('40_how'), ev("() => { document.querySelector('#how [data-back]').click(); document.getElementById('btnSet').click(); return 1; }"), wait(0.3), shot('41_settings'), ev("() => { document.querySelector('#settings [data-back]').click(); document.getElementById('btnCoop').click(); return 1; }"), wait(0.3), shot('42_coop')]))

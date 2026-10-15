@@ -73,6 +73,9 @@ textarea{font:900 15px ui-monospace,Menlo,monospace;letter-spacing:.06em;resize:
 .lg-cols,.lg-l,.lg-r{display:flex;flex-direction:column;gap:12px;min-width:0}
 .lg-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center}
 .lg-grid label{font-weight:900;font-size:14px;white-space:nowrap}
+.lg-done{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:3px solid var(--gold);border-radius:14px;padding:8px 12px;text-align:center}
+.lg-done>span:first-child{font-weight:900;font-size:13px}
+.lg-done b{font-family:var(--f-disp);font-weight:400;font-size:44px;line-height:1.1;color:var(--shu);letter-spacing:.04em}
 .lg-msg{min-height:1.6em;font-size:13px;font-weight:900;color:var(--shu);line-height:1.5}
 .lg-msg.ok{color:#1f7a4a}
 details{border:2px solid #e6dcc6;border-radius:12px;padding:6px 10px;background:#fffaf0}
@@ -369,7 +372,7 @@ a{color:var(--shu)}
     </div>
     <p class="small">このゲームは横画面で遊びます。スマホを縦に持っていても画面は横向きで表示されるので、スマホを左に倒して（上側を左へ）遊んでください。逆向きに持つ場合は設定の「横向きの回転方向」で変えられます。</p>
     <p class="small">赤い縞の範囲がボスの攻撃予兆。紫の帯は空中突進の通り道（横・斜め・縦など毎回ちがう向きから飛んでくる）。4基の灯籠を30秒以内に灯すとボスが6秒止まる。仲間が気絶して30秒放置すると昇天し、その戦闘では戻らない。</p>
-    <p class="small">セーブ：配られたID（1001〜10100）と自分で決めたパスワードでログインします。開くたびにログインをたずねます。ログイン中はタイトルや一時停止メニューの「セーブ」を押すだけで保存でき、祭り広場に着いたときと戦いが終わったときは自動でセーブします。別の端末で続けるときは「アカウント」の引き継ぎコードを使います。</p>
+    <p class="small">セーブ：「新しくアカウントを作る」でパスワードを自分で決めると、ID（1〜10000）が作った順に自動で決まります。次からはIDとパスワードでログインします（開くたびにたずねます）。ログイン中はタイトルや一時停止メニューの「セーブ」を押すだけで保存でき、戦いが終わったときは自動でセーブします。別の端末で続けるときは「アカウント」の引き継ぎコードを使います。</p>
     <p class="small">パソコン：WASD移動・J=A・K=X・L=Y・U=必殺・Space=B・F=注目・Q/E=カメラ・1/2=アイテム・Esc=メニュー</p>
     <div class="row"><button class="btn main" data-back>とじる</button></div>
   </div>
@@ -400,9 +403,10 @@ a{color:var(--shu)}
 <section class="screen" id="login" hidden>
   <div class="panel"><div class="lg-cols"><div class="lg-l">
     <div class="eyebrow">セーブデータ</div><h2 id="lgTitle">ログイン</h2>
-    <p class="small" id="lgLead">配られたID（1001〜10100）と、自分で決めたパスワードを入れてください。ログインしている間は「セーブ」を押すだけで続きを保存できます。</p>
-    <div class="lg-grid">
-      <label for="lgId">ID</label><input type="text" id="lgId" inputmode="numeric" maxlength="6" autocomplete="username" placeholder="1001〜10100">
+    <p class="small" id="lgLead">IDと、自分で決めたパスワードを入れてください。ログインしている間は「セーブ」を押すだけで続きを保存できます。</p>
+    <div class="lg-done" id="lgDone" hidden><span>あなたのID</span><b id="lgDoneId">1</b><span class="small">ログインに使います。パスワードといっしょにメモしておいてください。</span></div>
+    <div class="lg-grid" id="lgGrid">
+      <label for="lgId" id="lgIdL">ID</label><input type="text" id="lgId" inputmode="numeric" maxlength="6" autocomplete="username" placeholder="1〜10000">
       <label for="lgPw">パスワード</label><input type="password" id="lgPw" maxlength="16" autocomplete="current-password" placeholder="4〜16文字">
       <label for="lgPw2" id="lgPw2L" hidden>もう一度</label><input type="password" id="lgPw2" maxlength="16" autocomplete="new-password" placeholder="確認のためもう一度" hidden>
     </div>
@@ -410,7 +414,8 @@ a{color:var(--shu)}
     </div><div class="lg-r">
     <div class="row">
       <button class="btn main" id="btnLogin" type="button">ログイン</button>
-      <button class="btn gold" id="btnRegister" type="button">はじめて使うIDで登録</button>
+      <button class="btn gold" id="btnRegister" type="button">新しくアカウントを作る</button>
+      <button class="btn main" id="btnDoneOk" type="button" hidden>メモした・はじめる</button>
     </div>
     <details id="lgMove"><summary>別の端末から続きを持ってくる（引き継ぎコード）</summary>
       <p class="small">前の端末の「アカウント」画面にある引き継ぎコードを入れてください。上のIDとパスワードも必要です。</p>

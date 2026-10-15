@@ -268,7 +268,8 @@ function sendMine() {
 
 /* ---------- セーブ（配られたID＋自分で決めたパスワード） ----------
    ログインはこの画面を開いている間だけ有効。開き直すたびにログインをたずねる。
-   ログイン中は「セーブ」を押すだけで保存。祭り広場に着いたときと戦いの終わりに自動セーブ。 */
+   IDは作った順に自動で決まり、パスワードだけ本人が決める。
+   ログイン中は「セーブ」を押すだけで保存。戦いが終わったときに自動セーブ。 */
 G.acct = null; G.pending = []; G.run = null;
 const lvOf = id => (G.acct && G.acct.chars[id] ? G.acct.chars[id].lv : 1);
 const fmtDate = ts => { if (!ts) return 'まだ'; const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
@@ -280,13 +281,21 @@ function updateAcctBar() {
 }
 function lgMsg(t, ok) { const m = $('#lgMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
 function setRegMode(on) {
-  G.regMode = on; $('#lgPw2').hidden = $('#lgPw2L').hidden = !on;
-  $('#btnRegister').textContent = on ? 'このパスワードで登録する' : 'はじめて使うIDで登録'; $('#btnLogin').textContent = on ? '登録済みのIDでログイン' : 'ログイン'; $('#btnLogin').classList.toggle('main', !on);
-  $('#lgTitle').textContent = on ? 'はじめて使うIDの登録' : 'ログイン';
+  G.regMode = on; $('#lgPw2').hidden = $('#lgPw2L').hidden = !on; $('#lgId').hidden = $('#lgIdL').hidden = on;
+  $('#btnRegister').textContent = on ? 'アカウントを作る（IDは自動で決まります）' : '新しくアカウントを作る'; $('#btnLogin').textContent = on ? 'IDを持っている人はログイン' : 'ログイン'; $('#btnLogin').classList.toggle('main', !on);
+  $('#lgTitle').textContent = on ? '新しくアカウントを作る' : 'ログイン';
+  $('#lgLead').textContent = on ? 'パスワードを自分で決めて2回入れてください（4〜16文字）。IDは作った順に自動で決まります。' : 'IDと、自分で決めたパスワードを入れてください。ログインしている間は「セーブ」を押すだけで続きを保存できます。';
   $('#lgPw').setAttribute('autocomplete', on ? 'new-password' : 'current-password');
 }
+/** アカウントを作った直後：決まったIDを大きく見せる */
+function showDone(on, id) {
+  $('#lgDone').hidden = !on; if (on) $('#lgDoneId').textContent = String(id);
+  for (const q of ['#lgGrid', '#btnLogin', '#btnRegister', '#lgMove', '#btnGuest']) $(q).hidden = on;
+  $('#btnDoneOk').hidden = !on;
+  if (on) { $('#lgTitle').textContent = 'アカウントができました'; $('#lgLead').textContent = 'これからはこのIDと、いま決めたパスワードでログインします。'; }
+}
 function openLogin(back, msg) {
-  G.loginBack = back || 'title'; setRegMode(false);
+  G.loginBack = back || 'title'; showDone(false); setRegMode(false);
   const last = STORE.get('lastId', ''); if (!$('#lgId').value && last) $('#lgId').value = last;
   $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg(msg || '', false); G.restoreConfirm = null;
   $('#btnGuest').textContent = G.loginBack === 'title' ? 'ログインせずに遊ぶ（セーブなし）' : 'もどる';
@@ -321,7 +330,7 @@ function runOp(v, fin) {
   if (fin) op.fin = { ids: slots.map(i => v.allies[i] && v.allies[i].ch).filter(Boolean), win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0 };
   return op;
 }
-/** 自動セーブの区切り（祭り広場に着いた・戦いが終わった） */
+/** 自動セーブ（戦いが終わったとき） */
 function checkpoint(v, fin, label) {
   const op = runOp(v, fin); if (!op) return;
   if (G.acct) {
@@ -355,10 +364,13 @@ function bindAccount() {
     loginOk(r.save, r.msg);
   };
   $('#btnRegister').onclick = () => {
-    if (!G.regMode) { setRegMode(true); $('#lgPw2').value = ''; lgMsg('配られたIDと、自分で決めたパスワード（4〜16文字）を2回入れてください', true); AUDIO.sfx('ui'); return; }
-    const id = SAVE.parseId($('#lgId').value), r = SAVE.register(id, $('#lgPw').value, $('#lgPw2').value);
+    if (!G.regMode) { setRegMode(true); $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg(''); AUDIO.sfx('ui'); return; }
+    const r = SAVE.register($('#lgPw').value, $('#lgPw2').value);
     if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); return; }
-    loginOk(r.save, r.msg + '。全員Lv.1からスタート');
+    // ここでログイン済みにして、IDを大きく見せる（「はじめる」で元の画面へ）
+    $('#lgId').value = String(r.id); $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg('');
+    G.acct = r.save; G.lgFail = 0; STORE.set('lastId', String(r.id)); persist(); updateAcctBar(); AUDIO.sfx('ok');
+    showDone(true, r.id);
   };
   $('#btnRestore').onclick = () => {
     const id = SAVE.parseId($('#lgId').value), code = $('#lgCode').value, key = id + '|' + code;
@@ -367,6 +379,7 @@ function bindAccount() {
     G.restoreConfirm = null; $('#lgCode').value = ''; loginOk(r.save, r.msg);
   };
   $('#btnGuest').onclick = () => { AUDIO.sfx('back'); show(G.loginBack || 'title'); };
+  $('#btnDoneOk').onclick = () => { const s = G.acct; showDone(false); setRegMode(false); if (s) loginOk(s, `ID ${s.id} でログインしました。全員Lv.1からスタート`); };
   for (const id of ['#lgId', '#lgPw', '#lgPw2']) $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); (G.regMode ? $('#btnRegister') : $('#btnLogin')).click(); } });
   $('#btnAcSave').onclick = () => { doSave('account'); renderAccount(); };
   $('#btnAcCopy').onclick = async () => { const t = $('#acCode').textContent; try { await navigator.clipboard.writeText(t); mtoast('引き継ぎコードをコピーしました'); } catch (e) { mtoast('コピーできませんでした。コードを長押しして選んでください', 3000); } };
@@ -612,7 +625,7 @@ function onNotice(o) {
   else if (o.k === 'stage') {
     if (o.s === 'wave2') notice('札小僧がまた出た！', 'info', 1500);
     if (o.s === 'open') { banner('結界が解けた', '奥の祭り広場へ進もう', 2200); AUDIO.sfx('lantern'); }
-    if (o.s === 'intro') { checkpoint(G.v, false, '祭り広場に着いた'); AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
+    if (o.s === 'intro') { AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
     if (o.s === 'fight') { AUDIO.bgm('boss'); banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
     if (o.s === 'won') { AUDIO.jingle(true); banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
     if (o.s === 'lost') { AUDIO.jingle(false); banner(G.v && G.v.result && G.v.result.why === 'time' ? '時間切れ' : '全滅', '', 2500); }
