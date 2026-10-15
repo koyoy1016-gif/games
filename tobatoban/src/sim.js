@@ -50,6 +50,7 @@ class Sim {
     this.rng = new RNG(o.seed || 12345);
     this.diffKey = D.DIFF[o.diff] ? o.diff : 'normal'; this.diff = D.DIFF[this.diffKey]; // むずかしさは「通常」の1つだけ
     this.nextId = 1; this.evId = 0; this.events = []; this.mlog = [];
+    this.stageId = o.stageId === 'joban' ? 'joban' : 'senju'; // senju＝北千住（トバトーバン）、joban＝常磐線（ヨシノシの部下）
     this.stage = o.test ? 'boss' : 'street'; this.stageT = 0; this.timeLeft = D.SIM.timeLimit;
     this.allies = o.party.map((pp, i) => this.makeAlly(pp, i));
     this.inputs = this.allies.map(() => Sim.emptyInput());
@@ -58,7 +59,8 @@ class Sim {
     this.lanternT = 0; this.lanternCool = 0; this.lanternOrder = 0; this.candyT = D.SIM.candyPeriod;
     this.wave = 0; this.waveSpawned = false; this.barrier = 'street'; this.introWait = false; this.result = null;
     this.test = !!o.test;
-    if (o.test) this.spawnBoss(true);
+    if (this.stageId === 'joban') this.initJoban(o);
+    else if (o.test) this.spawnBoss(true);
     else this.spawnWave(0);
   }
   static emptyInput() { return { mx: 0, mz: 0, hold: { A: 0, X: 0, Y: 0, B: 0 }, ev: [], lock: null, healT: null }; }
@@ -91,7 +93,7 @@ class Sim {
     const dt = this.dt;
     this.tick++; this.t += dt; this.stageT += dt;
     if (this.stage === 'won' || this.stage === 'lost') { this.cleanupEvents(); return; }
-    const active = this.stage === 'street' || this.stage === 'boss';
+    const active = this.stage === 'street' || this.stage === 'boss' || this.stage === 'train';
     if (active && !this.test) { this.timeLeft -= dt; if (this.timeLeft <= 0) { this.timeLeft = 0; this.finish(false, 'time'); } }
     for (const a of this.allies) { a.px = a.x; a.pz = a.z; }
     if (this.stage !== 'intro') for (const a of this.allies) this.updateAlly(a, this.inputs[a.slot], dt);
@@ -120,7 +122,7 @@ class Sim {
   }
   enemiesAlive() { const r = []; if (this.boss && this.bossHittable()) r.push(this.boss); for (const m of this.mobs) if (m.st === 'ok') r.push(m); return r; }
   bossHittable() { const b = this.boss; return b && b.st !== 'intro' && b.st !== 'dead' && b.st !== 'fly' && b.st !== 'hidden' && !(b.st === 'rec' && b.mv === 'junkou' && b.y > 0.3); }
-  hurtParts(e) { return e === this.boss ? bossParts(e) : [{ x: e.x, z: e.z, r: DATA.MOB.r }]; }
+  hurtParts(e) { return e === this.boss ? bossParts(e) : [{ x: e.x, z: e.z, r: e.r || DATA.MOB.r }]; }
   /** 体の表面までの距離（いちばん近い部位） */
   gapTo(x, z, e) { let g = 1e9, q0 = null; for (const q of this.hurtParts(e)) { const d = dist2(x, z, q.x, q.z) - q.r; if (d < g) { g = d; q0 = q; } } return { g, q: q0 }; }
   /** 攻撃の形が体のどこかに触れたら、その接触点を返す（触れなければ null） */
@@ -154,7 +156,7 @@ class Sim {
     if (a.hurtT > 0) a.hurtT -= dt;
     for (const k of ['str', 'def', 'taunt', 'stealth', 'ramune']) if (a.buffs[k] > 0) a.buffs[k] = Math.max(0, a.buffs[k] - dt);
     a.threat *= (1 - S.threatDecay * dt);
-    if (a.c.passive === 'food' && a.st === 'ok' && (this.stage === 'boss' || this.stage === 'street')) {
+    if (a.c.passive === 'food' && a.st === 'ok' && (this.stage === 'boss' || this.stage === 'street' || this.stage === 'train')) {
       a.foodT -= dt; if (a.foodT <= 0) { a.foodT = S.foodPeriod; this.spawnPickup('food', a.x + Math.sin(a.yaw) * 1.2, a.z + Math.cos(a.yaw) * 1.2); this.ev('sfx', { s: 'food', x: a.x, z: a.z }); }
     }
     if (a.st === 'down') {
@@ -191,6 +193,7 @@ class Sim {
   }
   moveAlly(a, dx, dz) { const r = this.clampPos(a.x, a.z, a.x + dx, a.z + dz, 0.35); a.x = r[0]; a.z = r[1]; }
   clampPos(ox, oz, nx, nz, rad) {
+    if (this.stageId === 'joban') return this.clampTrain(ox, oz, nx, nz, rad);
     const ST = DATA.STAGE, hw = ST.streetHalfW - rad, pw = ST.plazaHalfW - rad;
     if (nz < 0) {
       if (Math.abs(nx) > hw) { if (oz >= 0 && Math.abs(ox) > hw) nz = 0; else nx = clamp(nx, -hw, hw); }
@@ -513,14 +516,15 @@ class Sim {
       if (src && src.hp > 0 && (src !== this.boss || this.bossHittable())) { const { q } = this.gapTo(o.x, o.z, src); o.yaw = yawTo(q.x - o.x, q.z - o.z); this.dealToEnemy(o, src, sk.pw, sk.stat, 'skill', null, contactPt(q, o.x, o.z)); }
       return 0;
     }
-    const atk = stat === 'yo' ? srcStats.yo : srcStats.str;
+    const fixed = opt.fixed != null; // ヨシノシの部下：まもりに関係なく決まったダメージ
+    const atk = fixed ? 0 : stat === 'yo' ? srcStats.yo : srcStats.str;
     const def = this.stat(o, 'def') * (o.buffs.def > 0 ? o.buffs.defMul : 1);
-    let dmg = pw * atk / (DATA.SIM.defBase + def) / this.aiK(o); // AIが動かすキャラは体力も90%相当
+    let dmg = (fixed ? opt.fixed : pw * atk / (DATA.SIM.defBase + def)) / this.aiK(o); // AIが動かすキャラは体力も90%相当
     const guarding = o.act && o.act.k === 'guard';
     if (guarding) {
       dmg *= o.c.passive === 'guardPlus' ? DATA.PASSIVE.guardPlus : o.act.sk.mul;
       this.ev('block', { slot: o.slot, x: o.x, z: o.z });
-      if (o.act.sk.reflect && opt.src && opt.src.hp > 0) { const rv = Math.max(1, Math.round(pw * atk / (DATA.SIM.defBase + def) * o.act.sk.reflect * this.aiK(o))); this.reflectTo(o, opt.src, rv); }
+      if (o.act.sk.reflect && opt.src && opt.src.hp > 0) { const rv = Math.max(1, Math.round((fixed ? opt.fixed : pw * atk / (DATA.SIM.defBase + def)) * o.act.sk.reflect * this.aiK(o))); this.reflectTo(o, opt.src, rv); }
     }
     dmg = Math.max(1, Math.round(dmg));
     o.hp -= dmg; o.hurtT = 0.25; o.rev = null; o.lan = null;
@@ -664,13 +668,14 @@ class Sim {
   /** キャンディー：20秒ごとに、いま遊んでいる場所のどこかへ1つ（取ると全回復） */
   updateCandy(dt) {
     const S = DATA.SIM, ST = DATA.STAGE;
-    if (this.stage !== 'street' && this.stage !== 'boss') return;
+    if (this.stage !== 'street' && this.stage !== 'boss' && this.stage !== 'train') return;
     this.candyT -= dt; if (this.candyT > 0) return;
     this.candyT = S.candyPeriod;
     if (this.pickups.filter(p => p.kind === 'candy').length >= S.candyMax) return;
     for (let k = 0; k < 12; k++) {
       let x, z;
-      if (this.stage === 'street') { x = this.rng.range(-7, 7); z = this.rng.range(ST.streetZ0 + 4, -3); }
+      if (this.stage === 'train') { const J = DATA.JOBAN; x = this.rng.range(-J.halfW + 0.5, J.halfW - 0.5); z = this.rng.range(J.zMin + 1, J.zMax - 1); if (Math.abs(z) < J.gwHalf + 0.6) continue; }
+      else if (this.stage === 'street') { x = this.rng.range(-7, 7); z = this.rng.range(ST.streetZ0 + 4, -3); }
       else { x = this.rng.range(-ST.plazaHalfW + 1.5, ST.plazaHalfW - 1.5); z = this.rng.range(1.5, ST.plazaZ1 - 1.5); }
       const r = this.clampPos(x, z, x, z, 0.3);
       if (Math.abs(r[0] - x) > 0.05 || Math.abs(r[1] - z) > 0.05) continue; // ボスの体などに重なる所は避ける
@@ -719,7 +724,9 @@ class Sim {
     for (const [x, z] of W) this.spawnMob(x, z, true);
     this.wave = i; this.waveSpawned = true;
   }
+  introLen() { return this.stageId === 'joban' ? DATA.JOBAN.introT : DATA.BOSS.introT; }
   updateStage(dt) {
+    if (this.stageId === 'joban') { this.updateJoban(dt); return; }
     if (this.stage === 'street') {
       const alive = this.mobs.filter(m => m.st === 'ok').length;
       if (alive === 0) {
@@ -757,6 +764,7 @@ class Sim {
     m.t += dt;
     if (m.st === 'dying') { m.dieT -= dt; if (m.dieT <= 0) m.st = 'gone'; return; }
     if (m.st !== 'ok') return;
+    if (m.kind === 'yoshi') return this.updateYoshi(m, dt);
     if (m.para > 0) { m.para -= dt; return; }
     if (this.stage === 'intro') return;
     const tg = this.mobTarget(m); if (!tg) { m.tgt = -1; return; }
@@ -782,6 +790,7 @@ class Sim {
   mobDie(m, by) {
     m.st = 'dying'; m.dieT = 0.6; this.ev('mobdie', { x: m.x, z: m.z });
     if (by && by.stats) by.stats.kills++; // セーブの記録（倒した敵の数）
+    if (m.kind === 'yoshi') { this.yoshiDie(m); return; }
     if (this.rng.next() < 0.4) this.spawnPickup('bag', m.x, m.z, DATA.ITEM_IDS[(this.rng.next() * DATA.ITEM_IDS.length) | 0]);
   }
 
@@ -992,12 +1001,17 @@ class Sim {
   }
   updateHazards(dt) {
     for (const h of this.hazards) {
+      if (h.dead) continue;
       h.t += dt;
       if (h.act <= 0) { if (h.t >= h.warn + (h.keep || 0)) h.dead = 1; continue; }
       if (h.t < h.warn || h.t > h.warn + h.act) { if (h.t > h.warn + h.act + 0.05) h.dead = 1; continue; }
       if (h.t - dt < h.warn) this.ev('hzfire', { fx: h.fx, x: h.x, z: h.z, yaw: h.yaw, r: h.r || 0 });
       const b = this.boss, srcStats = h.src === 'boss' ? b : h.srcStats;
+      // single：最初に当たった1人だけ（ヨシノシの部下のビームは手前の1人で止まる）
+      let only = null;
+      if (h.single) { let bd = 1e9; const fx = Math.sin(h.yaw), fz = Math.cos(h.yaw); for (const o of this.allies) { if (o.st !== 'ok' || !inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR)) continue; const f = (o.x - h.x) * fx + (o.z - h.z) * fz; if (f < bd) { bd = f; only = o; } } }
       for (const o of this.allies) {
+        if (h.single && o !== only) continue;
         if (o.st !== 'ok') continue;
         const rec = h.hits[o.slot];
         if (rec && (rec.n >= h.max || h.t - rec.last < h.iv - 1e-6)) continue;
@@ -1007,7 +1021,8 @@ class Sim {
         else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR);
         if (!inside) continue;
         h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t };
-        this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: o.x - h.x, kz: o.z - h.z, src: h.src === 'boss' ? b : null });
+        const fixed = h.fixed ? Math.round(h.fixed[0] + this.rng.next() * (h.fixed[1] - h.fixed[0])) : null;
+        this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: h.kx != null ? h.kx : o.x - h.x, kz: h.kz != null ? h.kz : o.z - h.z, src: h.src === 'boss' ? b : (h.srcEnt || null), fixed });
       }
     }
     this.hazards = this.hazards.filter(h => !h.dead);
@@ -1034,7 +1049,7 @@ class Sim {
   }
   inDanger(x, z, margin, horizon) {
     for (const h of this.hazards) {
-      if (h.src !== 'boss' || h.act <= 0 && h.kind !== 'path') continue;
+      if ((h.src !== 'boss' && !h.dodge) || h.act <= 0 && h.kind !== 'path') continue;
       const until = h.warn - h.t; if (until > horizon && h.kind !== 'path') continue;
       if (h.t > h.warn + h.act) continue;
       let inside = false;

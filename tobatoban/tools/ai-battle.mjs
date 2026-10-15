@@ -1,7 +1,7 @@
 // AIだけで1戦を走らせ、進行が詰まらないかを確認する
 import fs from 'fs'; import vm from 'vm'; import path from 'path'; import { fileURLToPath } from 'url';
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
-const src = ['data.js', 'sim.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+const src = ['data.js', 'sim.js', 'joban.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console, Math, Set, Map, JSON, Object, Array, Number, String, Date });
 vm.runInContext(src + ';globalThis.__={DATA,SIMLIB}', ctx);
 const { DATA, SIMLIB } = ctx.__;

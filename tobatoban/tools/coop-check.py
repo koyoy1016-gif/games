@@ -26,6 +26,7 @@ with sync_playwright() as p:
         pg.on('pageerror', lambda e, nm=nm: errs.append(f'{nm}: {e}'))
         pg.on('console', lambda m, nm=nm: errs.append(f'{nm} [{m.type}] {m.text}') if m.type == 'error' and 'ERR_FAILED' not in m.text else None)
         pg.goto(URL, wait_until='domcontentloaded', timeout=120000); pg.wait_for_function('window.__tb && window.__tb.G.mode === "title"', timeout=60000); print(nm, 'loaded', flush=True)
+    if os.environ.get('STAGE') == 'joban': A.evaluate("() => { __tb.G.sessClear.senju = true; }")  # ホストはトバトーバンを倒している
     A.evaluate("() => { document.getElementById('btnCoop').click(); document.getElementById('nick').value='ホスト'; document.getElementById('btnHost').click(); }")
     A.wait_for_function('window.__tb.G.session && window.__tb.G.session.code', timeout=10000)
     code = A.evaluate('__tb.G.session.code'); print('code', code)
@@ -36,10 +37,26 @@ with sync_playwright() as p:
     A.screenshot(path=os.path.join(OUT, '50_lobby_host.png')); B.screenshot(path=os.path.join(OUT, '51_lobby_guest.png'))
     print('host slots', A.evaluate("JSON.stringify(__tb.G.session.lobbyMsg().slots.map(s => s && [s.nick, s.ch]))"))
     print('clients before', A.evaluate("JSON.stringify([...__tb.G.session.clients.values()].map(c=>[c.slot, Math.round(performance.now()-c.lastSeen)]))"))
+    JOBAN = os.environ.get('STAGE') == 'joban'
+    if JOBAN:  # ステージ2：ホストがトバトーバンを倒した扱いにして、部屋のステージを常磐線にする
+        print('chips', A.evaluate("() => [...document.querySelectorAll('#stageChips button')].map(b => b.textContent + (b.disabled ? '(x)' : ''))"))
+        A.evaluate("() => document.querySelectorAll('#stageChips button')[1].click()"); time.sleep(1.2)
+        print('guest lobby stage', B.evaluate("() => __tb.G.session.lobby && __tb.G.session.lobby.stage"))
+        B.screenshot(path=os.path.join(OUT, '51b_lobby_guest_joban.png'))
     A.evaluate("() => document.getElementById('btnGo').click()")
     print('ctrlAI at start', A.evaluate("JSON.stringify(__tb.G.session.sim.allies.map(a=>!!a.ctrlAI))"))
     B.wait_for_function('window.__tb.G.mode === "play"', timeout=15000)
     time.sleep(3)
+    if JOBAN:
+        A.screenshot(path=os.path.join(OUT, '51c_cut_host.png')); B.screenshot(path=os.path.join(OUT, '51d_cut_guest.png'))
+        for _ in range(60):
+            st = A.evaluate("() => { const s = __tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, s.introWait, __tb.G.session.paused, Math.round(s.t)]; }")
+            if st[0] == 'train': break
+            time.sleep(2)
+        print('host stage', st); time.sleep(2)
+        print('guest fps', B.evaluate("() => new Promise(r => { let n = 0; const t0 = performance.now(); const f = () => { n++; if (performance.now() - t0 < 3000) requestAnimationFrame(f); else r(n / 3); }; requestAnimationFrame(f); })"), 'host fps', A.evaluate("() => new Promise(r => { let n = 0; const t0 = performance.now(); const f = () => { n++; if (performance.now() - t0 < 3000) requestAnimationFrame(f); else r(n / 3); }; requestAnimationFrame(f); })"))
+        print('clients mid', A.evaluate("JSON.stringify([...__tb.G.session.clients.values()].map(c=>[c.slot, Math.round(performance.now()-c.lastSeen)]))"))
+        print('guest train view', B.evaluate("(() => { const v = __tb.G.session.view(); return JSON.stringify({stage: v.stage, stageId: v.stageId, tr: v.tr, kills: v.kills, total: v.total, mobs: v.mobs.length, yoshi: v.mobs.filter(m => m.yoshi).map(m => m.kind).slice(0, 5)}); })()"))
     print('clients in game', A.evaluate("JSON.stringify([...__tb.G.session.clients.values()].map(c=>[c.slot, Math.round(performance.now()-c.lastSeen), c.q, c.loaded]))"), 'ctrlAI', A.evaluate("JSON.stringify(__tb.G.session.sim.allies.map(a=>!!a.ctrlAI))"))
     B.evaluate("() => { const L = __tb.G.session.local; L.push('A'); L.push('A'); }")
     time.sleep(1.5)

@@ -120,14 +120,15 @@ function bindMenus() {
   $('#btnHost').onclick = () => startHost();
   $('#btnJoin').onclick = () => startJoin();
   $('#btnTeamBack').onclick = () => { AUDIO.sfx('back'); if (G.coop) goTitle(); else show('title'); };
-  $('#btnGo').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session && G.session.kind === 'host') { G.session.lobby.diff = G.diff; G.session.startGame(); enterGame(); } } else startSolo(); };
+  $('#btnGo').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session && G.session.kind === 'host') { const S = G.session; S.lobby.diff = G.diff; if (!stageOpen(S.lobby.stage)) S.lobby.stage = 'senju'; S.startGame(); enterGame(); } } else openStage(); };
+  $('#btnStageBack').onclick = () => { AUDIO.sfx('back'); show('team'); };
   $('#btnResume').onclick = () => resume();
   $('#btnPSet').onclick = () => openSub('settings', 'pause');
   $('#btnPHow').onclick = () => openSub('how', 'pause');
   $('#btnPSave').onclick = () => doSave('pause');
   $('#btnQuit').onclick = () => { AUDIO.sfx('back'); goTitle(); };
-  $('#btnSkip').onclick = () => { const s = G.session; if (s && s.sim && s.sim.stage === 'intro' && s.kind === 'solo') s.sim.stageT = DATA.BOSS.introT; resume(); };
-  $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else startSolo(); };
+  $('#btnSkip').onclick = () => { const s = G.session; if (s && s.sim && s.sim.stage === 'intro' && s.kind === 'solo') s.sim.stageT = s.sim.introLen(); resume(); };
+  $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else startSolo(G.stageId || 'senju'); };
   $('#btnReteam').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') G.session.backToLobby(); openLobby(); } else openTeam(); };
   $('#btnResTitle').onclick = () => { AUDIO.sfx('back'); goTitle(); };
   $('#btnLostOk').onclick = () => goTitle();
@@ -229,6 +230,16 @@ function renderTeam() {
     b.onclick = () => { AUDIO.sfx('ui'); if (on) { if (G.items.length > 1) G.items = G.items.filter(x => x !== id); } else { G.items.push(id); if (G.items.length > 2) G.items.shift(); } if (G.items.length < 2) G.items.push(DATA.ITEM_IDS.find(x => !G.items.includes(x))); STORE.set('items', G.items); sendMine(); renderTeam(); };
     it.appendChild(b);
   }
+  // 協力プレイ：ステージ（ホストが選ぶ）
+  $('#stageRow').hidden = !coop;
+  if (coop && S) {
+    const sc = $('#stageChips'); sc.textContent = ''; const cur = (lob && lob.stage) || 'senju', host = S.kind === 'host';
+    for (const st of STAGES) {
+      const open = host ? stageOpen(st.id) : true, b = el('button', 'chip' + (cur === st.id ? ' on' : ''), (open ? st.ic + ' ' : '🔒 ') + st.nm); b.type = 'button'; b.disabled = !host || !open;
+      if (host) b.onclick = () => { S.lobby.stage = st.id; S.dirtyLobby = true; AUDIO.sfx('ui'); renderTeam(); };
+      sc.appendChild(b);
+    }
+  }
   if (coop && S) {
     $('#lobCode').textContent = ''; const cb = el('div', 'code-big', S.code); $('#lobCode').appendChild(cb);
     const st = $('#lobStatus');
@@ -272,6 +283,27 @@ function sendMine() {
    ログイン中は「セーブ」を押すだけで保存。戦いが終わったときに自動セーブ。 */
 G.acct = null; G.pending = []; G.run = null;
 const lvOf = id => (G.acct && G.acct.chars[id] ? G.acct.chars[id].lv : 1);
+/* ---------- ステージ（2はトバトーバンを1回倒すと解放） ---------- */
+G.sessClear = {};
+const cleared = id => !!((G.acct && G.acct.clear && G.acct.clear[id] > 0) || G.sessClear[id]);
+const stageOpen = id => id !== 'joban' || cleared('senju');
+const STAGES = [
+  { id: 'senju', cls: 's1', ic: '🏮', no: 'ステージ1', nm: '北千住 祭り広場', en: 'トバトーバン（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。' },
+  { id: 'joban', cls: 's2', ic: '🚃', no: 'ステージ2', nm: '常磐線 北千住→上野', en: 'ヨシノシの部下 90体', d: '青い常磐線の2号車・3号車で戦う。1号車から次々に来る部下と、南千住・三河島・日暮里で乗ってくる部下を倒して上野へ。' },
+];
+function openStage() { renderStages(); show('stage'); }
+function renderStages() {
+  const box = $('#stages'); box.textContent = '';
+  for (const s of STAGES) {
+    const open = stageOpen(s.id), b = el('button', 'stage-card ' + s.cls + (open ? '' : ' locked')); b.type = 'button';
+    const top = el('div', 'sc-top'); top.append(el('span', 'ic', s.ic)); const tt = el('div'); tt.append(el('small', '', s.no), el('b', '', s.nm)); top.appendChild(tt);
+    const body = el('div', 'sc-body'); body.append(el('span', 'en', '敵：' + s.en), el('span', '', s.d)); if (cleared(s.id)) body.appendChild(el('span', 'clr', 'クリア済み'));
+    b.append(top, body);
+    if (!open) { const lk = el('div', 'lock'); lk.append(el('span', 'lk', '🔒'), el('span', '', 'トバトーバンを1回倒すと解放')); b.appendChild(lk); }
+    b.onclick = () => { if (!open) { AUDIO.sfx('back'); mtoast('ステージ1でトバトーバンを倒すと遊べます'); return; } AUDIO.sfx('ok'); startSolo(s.id); };
+    box.appendChild(b);
+  }
+}
 const fmtDate = ts => { if (!ts) return 'まだ'; const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const cloud = () => ACCT.mode === 'cloud';
 function mtoast(t, ms) { const m = $('#mtoast'); m.textContent = t; m.classList.add('show'); clearTimeout(G.mtT); G.mtT = setTimeout(() => m.classList.remove('show'), ms || 2400); }
@@ -343,7 +375,7 @@ function runOp(v, fin) {
   if (!G.run || !v) return null;
   const slots = G.coop ? [G.my] : [0, 1, 2, 3], op = { kills: {}, fin: null };
   for (const i of slots) { const a = v.allies[i]; if (!a) continue; const k = Math.max(0, (a.kills || 0) - G.run.applied[i]); if (k) { op.kills[a.ch] = (op.kills[a.ch] || 0) + k; G.run.applied[i] += k; } }
-  if (fin) op.fin = { ids: slots.map(i => v.allies[i] && v.allies[i].ch).filter(Boolean), win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0 };
+  if (fin) op.fin = { ids: slots.map(i => v.allies[i] && v.allies[i].ch).filter(Boolean), win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0, stage: v.stageId || 'senju' };
   return op;
 }
 /** 自動セーブ（戦いが終わったとき） */
@@ -365,7 +397,7 @@ function openAccount(from) { if (!G.acct) { openLogin(from || 'title'); return; 
 function renderAccount() {
   const s = G.acct; $('#acTitle').textContent = `ID ${s.id}`;
   const kv = $('#acKv'); kv.textContent = '';
-  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['最速クリア', s.rec.best ? fmt(s.rec.best) : 'まだ']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
+  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['トバトーバン戦', (s.clear && s.clear.senju ? `クリア ${s.clear.senju}回` : 'まだ') + (s.rec.best ? `（最速 ${fmt(s.rec.best)}）` : '')], ['常磐線', s.clear && s.clear.joban ? `クリア ${s.clear.joban}回` : stageOpen('joban') ? 'まだ' : '🔒 トバトーバンを倒すと解放']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
   const ro = $('#acRoster'); ro.textContent = '';
   for (const c of DATA.CHARS) { const d = el('div'); const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; d.append(im, el('b', '', c.nm), el('span', 'lv', 'Lv.' + s.chars[c.id].lv)); ro.appendChild(d); }
   const cl = cloud(); $('#acCodeBox').hidden = cl; $('#btnAcCopy').hidden = cl; $('#acCloud').hidden = !cl;
@@ -442,25 +474,27 @@ async function startJoin() {
 function toast(s) { const n = $('#netMsg'); n.textContent = s; }
 
 /* ---------- ゲーム開始 ---------- */
-function startSolo() {
+function startSolo(stageId) {
   AUDIO.init();
+  G.stageId = stageOpen(stageId) ? stageId : 'senju';
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
-  S.lobby.diff = G.diff;
-  S.startGame({ party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
+  S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
+  S.startGame({ stageId: G.stageId, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {
-  G.run = { applied: [0, 0, 0, 0] }; G.lastAuto = null; // この戦いでセーブ済みの記録
+  G.run = { applied: [0, 0, 0, 0] }; G.lastAuto = null; G.cut = {}; // この戦いでセーブ済みの記録・演出の字幕
   G.mode = 'play'; G.lock = null; G.resultShown = false; G.lagBoss = 1; G.lagMe = 1; G.spTotals = {}; G.lastStage = ''; G.hint = 0;
   R.clearEntities(); R.cam.lock = null; R.cam.yaw = 0; R.cam.introDone = false;
   show(null); $('#hud').hidden = false; layoutHud(); buildPartyCards();
   AUDIO.bgm('street');
   try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => { }); } catch (e) { }
   G.snapNext = true;
+  const jb = G.session && G.session.sim && G.session.sim.stageId === 'joban', d0 = jb ? DATA.JOBAN.introT * 1000 + 1200 : 0; // 常磐線は演出のあとに出す
   if (!G.coop) { // 最初に：仲間アイコンをタップで操作キャラを切り替えられる
-    setTimeout(() => { if (G.mode !== 'play') return; notice((curLayout && curLayout.portrait ? '上' : '左上') + 'の仲間アイコンをタップすると、そのキャラに切り替えられます', 'tip', 5200); const p = $('#party'); p.classList.add('tip'); setTimeout(() => p.classList.remove('tip'), 5200); }, 700);
+    setTimeout(() => { if (G.mode !== 'play') return; notice((curLayout && curLayout.portrait ? '上' : '左上') + 'の仲間アイコンをタップすると、そのキャラに切り替えられます', 'tip', 5200); const p = $('#party'); p.classList.add('tip'); setTimeout(() => p.classList.remove('tip'), 5200); }, 700 + d0);
   }
-  if (G.firstRun && !G.coop) { setTimeout(() => notice('スティックで移動・Aで攻撃。札小僧をやっつけよう', 'info', 4000), 6200); setTimeout(() => notice('Xは技1、Yは技2。ためる技は長押しして離す', 'info', 4000), 10400); STORE.set('played', true); G.firstRun = false; }
+  if (G.firstRun && !G.coop) { setTimeout(() => notice('スティックで移動・Aで攻撃。' + (jb ? 'ヨシノシの部下' : '札小僧') + 'をやっつけよう', 'info', 4000), 6200 + d0); setTimeout(() => notice('Xは技1、Yは技2。ためる技は長押しして離す', 'info', 4000), 10400 + d0); STORE.set('played', true); G.firstRun = false; }
 }
 function pause() {
   if (G.mode !== 'play') return; const S = G.session;
@@ -648,8 +682,10 @@ function onNotice(o) {
     if (o.s === 'wave2') notice('札小僧がまた出た！', 'info', 1500);
     if (o.s === 'open') { banner('結界が解けた', '奥の祭り広場へ進もう', 2200); AUDIO.sfx('lantern'); }
     if (o.s === 'intro') { AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
+    if (o.s === 'train') { AUDIO.bgm('boss'); banner('ヨシノシの部下が現れた！', '上野に着くまでに、車内の部下をすべて倒せ', 2400); }
+    if (o.s === 'arrive') { banner('上野に到着！', 'ヨシノシは上野で待っている……', 3000); }
     if (o.s === 'fight') { AUDIO.bgm('boss'); banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
-    if (o.s === 'won') { AUDIO.jingle(true); banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
+    if (o.s === 'won') { AUDIO.jingle(true); if (v && v.stageId === 'joban') banner('ヨシノシの部下を全員倒した！', '常磐線は無事に上野へ着いた', 3000); else banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
     if (o.s === 'lost') { AUDIO.jingle(false); banner(G.v && G.v.result && G.v.result.why === 'time' ? '時間切れ' : '全滅', '', 2500); }
   }
 }
@@ -658,6 +694,9 @@ function onEvent(e, v) {
   switch (e.type) {
     case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.kind === 'sp' ? 'sp' : e.crit ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e); break;
     case 'hurt': dmgNum(e.x, 1.2, e.z, e.v, 'hurt'); if (e.slot === me) vib(25); break;
+    case 'wave': if (e.n >= 2) notice(`1号車から${e.cnt}体が来る！（第${e.n}波）`, 'warn', 2200); break;
+    case 'board': notice(`${DATA.JOBAN.stations[e.st]}：部下が${e.n}体乗ってきた！`, 'warn', 2200); break;
+    case 'arriveSt': if (e.st < 4) notice(`${DATA.JOBAN.stations[e.st]}に到着`, 'info', 1500); break;
     case 'heal': if (e.v > 0) dmgNum(e.x, 1.2, e.z, '+' + e.v, 'heal'); break;
     case 'down': notice(`P${e.slot + 1}が気絶した${e.slot === me ? '…' : '（まわりの円に入って4秒で救助）'}`, 'warn', 2200); if (e.slot === me && G.session.kind === 'solo') setTimeout(() => notice('仲間のカードを押すと操作を交代できます', 'info', 2600), 900); break;
     case 'ascend': notice(`P${e.slot + 1}が昇天した（この戦闘では戻らない）`, 'warn', 2400); break;
@@ -690,15 +729,43 @@ function stepDmg(dt) {
   for (const k in G.spTotals) { const T = G.spTotals[k]; T.t -= dt; if (T.t <= 0) { if (T.d) T.d.remove(); delete G.spTotals[k]; continue; } const p = R.project(T.x, 4.2, T.z); T.d.style.left = p.x + 'px'; T.d.style.top = Math.max(60, p.y) + 'px'; T.d.style.opacity = Math.min(1, T.t * 3); }
 }
 
+/* ---------- ステージ2のHUD：路線図・撃破数・暗転・字幕 ---------- */
+function trainHud(v) {
+  const J = DATA.JOBAN, tr = v.tr, t = v.introWait ? 0 : v.stageT;
+  // 暗転（広場→北千住のホーム）
+  $('#fade').style.opacity = v.stage === 'intro' ? (t < 3.0 ? 0 : t < 3.5 ? (t - 3) / 0.5 : t < 4.0 ? 1 - (t - 3.5) / 0.5 : 0) : 0;
+  if (v.stage === 'intro') {
+    const C = G.cut || (G.cut = {});
+    if (t > 0.3 && !C.a) { C.a = 1; banner('トバトーバンを鎮めた！', 'そのころ、常磐線にヨシノシの部下が現れたという知らせが……', 2600); }
+    if (t > 4.1 && !C.b) { C.b = 1; banner('北千住駅', '常磐線 上野行きに乗りこもう', 2200); }
+    if (t > 9.4 && !C.c) { C.c = 1; AUDIO.sfx('trainChime'); AUDIO.sfx('doorClose'); notice('ドアが閉まります', 'info', 1400); }
+  }
+  if (!tr) return;
+  // 路線：北千住〜上野の5駅
+  const bar = $('#rtBar');
+  const at = k => `calc(9px + ${k.toFixed(4)} * (100% - 18px))`;
+  if (!bar.dataset.built) { bar.dataset.built = 1; J.stations.forEach((n, i) => { const s = el('span', 'rt-s' + (i === 0 ? ' first' : i === J.stations.length - 1 ? ' last' : ''), n); s.style.left = at(i / (J.stations.length - 1)); bar.insertBefore(s, $('#rtTr')); }); }
+  const L = J.segLen[Math.min(3, tr.at)], frac = tr.ph === 'stop' ? 0 : Math.max(0, Math.min(1, (L - tr.rem) / L));
+  const pos = Math.min(4, tr.at + frac) / 4; $('#rtFill').style.width = `calc(${pos.toFixed(4)} * (100% - 18px))`; $('#rtTr').style.left = at(pos);
+  const nx = Math.min(4, tr.at + 1);
+  $('#rtNext').textContent = v.stage === 'arrive' || tr.at >= 4 ? '上野 到着' : tr.ph === 'stop' ? `${J.stations[tr.at]} 停車中` : tr.at === 3 && tr.rem > 300 && v.kills < v.total ? `次は 上野（全部倒すと到着）` : `次は ${J.stations[nx]}`;
+  $('#rtKills').textContent = `撃破 ${v.kills}/${v.total}` + (v.phase ? `・第${v.phase}波` : '');
+}
+
 /* ---------- HUD更新 ---------- */
 const fmt = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 function setBar(i, r) { i.style.width = Math.max(0, Math.min(1, r)) * 100 + '%'; }
 function updateHud(v, dt) {
   const me = v.allies[G.my]; if (!me) return;
+  // ステージ2：路線と撃破数・始まりの演出
+  const jb = v.stageId === 'joban';
+  $('#bossbox').classList.toggle('train', jb); $('#route').hidden = !jb;
+  if (jb) trainHud(v);
+  else $('#fade').style.opacity = 0;
   // ボス
-  const showBoss = v.boss && (v.stage === 'boss' || v.stage === 'won' || v.stage === 'lost');
+  const showBoss = jb ? v.stage !== 'intro' : v.boss && (v.stage === 'boss' || v.stage === 'won' || v.stage === 'lost');
   $('#bossbox').hidden = !showBoss;
-  if (showBoss) {
+  if (showBoss && !jb) {
     const b = v.boss; setBar($('#bossFill'), b.hpR); G.lagBoss = G.lagBoss > b.hpR ? Math.max(b.hpR, G.lagBoss - dt * 0.15) : b.hpR; setBar($('#bossLag'), G.lagBoss);
     $('#bossPh').hidden = b.phase !== 2;
     $('#bossSt').textContent = b.st === 'down' ? 'ダウン中' : b.stun ? '麻痺' : b.st === 'fly' ? '飛行中' : b.defDown ? '守り↓' : '';
@@ -789,6 +856,7 @@ function devOverlay(v) {
 /* ---------- ミニマップ（ワールド座標から描く。+zが上、カメラの向きに合わせて+xは左） ---------- */
 function drawMap(v) {
   const c = $('#mapc'); const g = c.getContext('2d'); const W = c.width, H = c.height; g.clearRect(0, 0, W, H);
+  if (v.stageId === 'joban') return drawTrainMap(v, g, W, H);
   const big = $('#map').classList.contains('big');
   const me = v.allies[G.my];
   const inPlaza = v.stage !== 'street';
@@ -824,18 +892,39 @@ function drawMap(v) {
   const [mx, mz] = P(me.x, me.z), cy = R.cam.yaw; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy - 0.45) * 28, mz - Math.cos(cy - 0.45) * 28); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy + 0.45) * 28, mz - Math.cos(cy + 0.45) * 28); g.stroke();
 }
 
+/** 車内のミニマップ：左が3号車（後ろ）、右が2号車（前・上野方面）。右端から部下が来る */
+function drawTrainMap(v, g, W, H) {
+  const J = DATA.JOBAN, me = v.allies[G.my];
+  const zx = z => W * 0.04 + (z - (J.zMin - 0.4)) / (J.zMax - J.zMin + 0.8) * W * 0.92, xy = x => H * 0.5 + x / (J.halfW + 0.45) * H * 0.27;
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, W, H);
+  const fs = Math.max(10, Math.round(W / 11)); g.font = `900 ${fs}px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const [z0, z1, nm] of [[-21, -1, '3号車'], [1, 21, '2号車']]) { g.fillStyle = '#4a5468'; g.fillRect(zx(z0), xy(-J.halfW - 0.45), zx(z1) - zx(z0), xy(J.halfW + 0.45) - xy(-J.halfW - 0.45)); g.fillStyle = '#2c58a8'; g.fillRect(zx(z0), xy(-J.halfW - 0.45), zx(z1) - zx(z0), H * 0.04); g.fillRect(zx(z0), xy(J.halfW + 0.45) - H * 0.04, zx(z1) - zx(z0), H * 0.04); g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText(nm, (zx(z0) + zx(z1)) / 2, H * 0.12); }
+  g.fillStyle = '#4a5468'; g.fillRect(zx(-1), xy(-J.gwHalfW), zx(1) - zx(-1), xy(J.gwHalfW) - xy(-J.gwHalfW));
+  g.fillStyle = '#ff6a4a'; g.fillRect(zx(21) - 2, xy(-0.6), 5, xy(0.6) - xy(-0.6)); g.fillStyle = 'rgba(255,255,255,.7)'; g.fillText('1号車', zx(21) - fs * 0.2, H * 0.9);
+  if (v.tr && v.tr.doors === 1) { g.fillStyle = '#ffd23a'; for (const z of J.carDoors) g.fillRect(zx(z) - 4, xy(-J.halfW - 0.45) - 2, 8, 4); }
+  for (const h of v.hz) if (h.fx === 'ybeam') { const [x0, z0] = [h.x, h.z], x1 = h.x + Math.sin(h.yaw) * h.a, z1 = h.z + Math.cos(h.yaw) * h.a; g.strokeStyle = 'rgba(200,255,120,.8)'; g.lineWidth = 2; g.beginPath(); g.moveTo(zx(z0), xy(x0)); g.lineTo(zx(z1), xy(x1)); g.stroke(); }
+  for (const p of v.pickups) { g.fillStyle = p.kind === 'candy' ? '#ff5fa8' : '#d07aa0'; g.beginPath(); g.arc(zx(p.z), xy(p.x), p.kind === 'candy' ? 5 : 3.5, 0, 7); g.fill(); }
+  for (const m of v.mobs) { if (m.dying) continue; g.fillStyle = m.kind === 'beam' ? '#c8ff6a' : '#ff5a4a'; g.beginPath(); g.arc(zx(m.z), xy(m.x), 3.6, 0, 7); g.fill(); }
+  v.allies.forEach((a, i) => { if (a.st === 'gone') return; const x = zx(a.z), y = xy(a.x); g.fillStyle = i === G.my ? '#fff' : pcol(i); g.beginPath(); g.arc(x, y, i === G.my ? 6.5 : 5.5, 0, 7); g.fill(); if (a.st === 'down') { g.strokeStyle = '#7dffb0'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 9, 0, 7); g.stroke(); } g.fillStyle = i === G.my ? '#1b1838' : '#fff'; g.font = `900 ${Math.round(fs * 0.75)}px ${GFX.FONT_UI}`; g.fillText(String(i + 1), x, y + 1); g.font = `900 ${fs}px ${GFX.FONT_UI}`; });
+}
+
 /* ---------- 結果 ---------- */
 function showResult(v) {
   if (G.resultShown) return; G.resultShown = true; G.mode = 'result';
   const S = G.session, win = v.result && v.result.win;
-  $('#resEyebrow').textContent = win ? '勝利' : '敗北'; $('#resTitle').textContent = win ? 'トバトーバンを鎮めた！' : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
+  const jb = v.stageId === 'joban', firstClear = win && !cleared(v.stageId);
+  if (win) G.sessClear[v.stageId] = true;
+  $('#resEyebrow').textContent = win ? (jb ? 'クリア' : '勝利') : '敗北'; $('#resTitle').textContent = win ? (jb ? '上野に到着！' : 'トバトーバンを鎮めた！') : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
   const kv = $('#resKv'); kv.textContent = '';
-  for (const [k, val] of [['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : '協力プレイ']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
+  const rows = [['ステージ', jb ? '常磐線（北千住→上野）' : '北千住（トバトーバン）'], ['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : '協力プレイ']];
+  if (jb) rows.splice(2, 0, ['倒した部下', `${v.kills} / ${v.total}`]);
+  for (const [k, val] of rows) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
   const grid = $('#resGrid'); grid.textContent = '';
   const stats = S.sim ? S.sim.allies.map(a => a.stats) : null;
   v.allies.forEach((a, i) => { const c = el('div', 'res-c'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const im = el('img'); im.src = G.thumbs[a.ch] || ''; im.alt = ''; c.append(pn, im, el('b', '', DATA.CHI[a.ch].nm), el('span', 'lv', 'Lv.' + (a.lv || 1))); if (stats) { c.appendChild(el('span', '', `与えたダメージ ${stats[i].dmg}`)); c.appendChild(el('span', '', `救助 ${stats[i].revives}・必殺 ${stats[i].specials}`)); } c.appendChild(el('span', 'small', a.st === 'ok' ? '元気' : a.st === 'down' ? '気絶' : '昇天')); grid.appendChild(c); });
   const rw = '金の提灯芯';
-  $('#resReward').textContent = win ? `獲得：${rw} ×${v.result.time < 240 ? 3 : v.result.time < 480 ? 2 : 1}（育成は今後の拡張で使う予定です）` : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
+  $('#resReward').textContent = jb ? (win ? 'ヨシノシは上野で待っている……（つづく）' : 'もう一度挑戦できます。狭い車内では囲まれないように、救助の円とキャンディーを使おう。')
+    : win ? `獲得：${rw} ×${v.result.time < 240 ? 3 : v.result.time < 480 ? 2 : 1}（育成は今後の拡張で使う予定です）${firstClear ? '　🔓 ステージ2「常磐線」が解放された！' : ''}` : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
   const host = S.kind !== 'client';
   $('#btnRetry').hidden = !host; $('#btnReteam').hidden = !host && G.coop;
   $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : 'もう一度';
@@ -869,7 +958,7 @@ function frame(ts) {
         R.sync(v, dt, G.T, G.my);
         const evs = R.events(v, G.my); for (const e of evs) onEvent(e, v);
         R.updateCamera(v, G.my, dt, S.local, gameArea());
-        $('#hud').classList.toggle('intro', v.stage === 'intro');
+        $('#hud').classList.toggle('intro', v.stage === 'intro'); $('#hud').classList.toggle('cine', (v.stage === 'intro' && v.stageId === 'joban') || R.outroT(v) > 1.2);
         if (G.mode === 'play') { updateHud(v, dt); G.mapT = (G.mapT || 0) + dt; if (G.mapT > 0.05) { G.mapT = 0; drawMap(v); } }
         stepDmg(dt);
         if ((v.stage === 'won' || v.stage === 'lost') && v.stageT > (v.stage === 'won' ? 3.4 : 2.6) && G.mode === 'play') showResult(v);

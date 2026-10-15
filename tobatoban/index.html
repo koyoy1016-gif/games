@@ -164,11 +164,43 @@ a{color:var(--shu)}
 #hud{position:absolute;inset:0;pointer-events:none;font-family:var(--f-body)}
 #hud .hb{position:absolute;pointer-events:auto;touch-action:none;transition:opacity .3s}
 #hud.intro .btnc,#hud.intro .itm,#hud.intro .stick,#hud.intro #mebox{opacity:0!important;pointer-events:none}
+#hud.cine>*:not(#bMenu):not(#notice):not(#touch){opacity:0!important;pointer-events:none}
+#hud.cine #bMenu{opacity:.7!important;pointer-events:auto}
 .bossbox{display:flex;flex-direction:column;gap:3px}
 .bossname{display:flex;align-items:baseline;gap:8px;font-weight:900;font-size:15px;text-shadow:0 1px 2px #000}
 .bossname .df{font-size:11px;background:var(--shu);border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
 .bossname .ph{font-size:11px;background:#7a1f3a;border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
 .bossname .st{font-size:11px;color:var(--gold)}
+.bossbox .route{display:flex;flex-direction:column;gap:3px}
+.bossbox.train .bossname,.bossbox.train .hpbar{display:none}
+.rt-top{display:flex;align-items:baseline;gap:8px;font-weight:900;font-size:13px;line-height:16px;text-shadow:0 1px 2px #000;white-space:nowrap;overflow:hidden}
+.rt-top b{font-size:11px;background:#1d56b8;border-radius:5px;padding:0 6px;text-shadow:none}
+.rt-top .rt-k{margin-left:auto;color:var(--gold)}
+.rt-bar{position:relative;height:24px;border-radius:8px;background:rgba(10,8,24,.78);border:2px solid #0d0b1d;overflow:hidden}
+.rt-bar::before{content:'';position:absolute;left:9px;right:9px;bottom:5px;height:4px;border-radius:2px;background:rgba(255,255,255,.2)}
+.rt-bar i{position:absolute;left:9px;bottom:5px;height:4px;border-radius:2px;background:linear-gradient(90deg,#3c8cff,#19d6b8);width:0}
+.rt-bar .rt-s{position:absolute;top:0;font-size:9.5px;font-weight:900;line-height:11px;color:#fff;transform:translateX(-50%);white-space:nowrap;text-shadow:0 1px 1px #000}
+.rt-bar .rt-s::after{content:'';position:absolute;left:50%;top:13px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#fff;box-shadow:0 0 0 1.5px #0d0b1d}
+.rt-bar .rt-s.first{transform:translateX(-9px)}.rt-bar .rt-s.first::after{left:9px}
+.rt-bar .rt-s.last{transform:translateX(calc(-100% + 9px))}.rt-bar .rt-s.last::after{left:calc(100% - 9px)}
+.rt-bar .rt-tr{position:absolute;bottom:0;font-size:13px;line-height:14px;transform:translateX(-50%);filter:drop-shadow(0 0 2px #fff);z-index:2}
+#fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:4}
+.stages{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@container app (max-width:600px){.stages{grid-template-columns:1fr}}
+.stage-card{position:relative;text-align:left;border:3px solid var(--ink);border-radius:16px;background:#fff;color:var(--ink);padding:0;overflow:hidden;display:flex;flex-direction:column;min-height:48px;box-shadow:0 4px 0 var(--ink)}
+.stage-card .sc-top{padding:12px 14px 10px;color:#fff;display:flex;align-items:center;gap:10px}
+.stage-card .sc-top .ic{font-size:30px;line-height:1}
+.stage-card .sc-top b{font-family:var(--f-disp);font-weight:400;font-size:20px;display:block;line-height:1.2}
+.stage-card .sc-top small{font-size:11px;font-weight:900;opacity:.9;letter-spacing:.08em}
+.stage-card .sc-body{padding:10px 14px 12px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;line-height:1.55}
+.stage-card .sc-body .en{font-weight:900}
+.stage-card.s1 .sc-top{background:linear-gradient(120deg,#e4572e,#9a2f4a)}
+.stage-card.s2 .sc-top{background:linear-gradient(120deg,#1d56b8,#19a596)}
+.stage-card.locked{filter:grayscale(.85)}
+.stage-card .lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:rgba(20,18,32,.8);color:#fff;font-weight:900;font-size:15px;text-align:center;padding:12px}
+.stage-card .lock .lk{font-size:34px;line-height:1}
+.stage-card .clr{align-self:flex-start;font-size:11px;font-weight:900;background:#2fa36b;color:#fff;border-radius:6px;padding:0 6px}
+#stageRow .chip[disabled]{opacity:.5}
 .hpbar{position:relative;height:14px;border-radius:7px;background:rgba(10,8,24,.75);border:2px solid #0d0b1d;overflow:hidden}
 .hpbar i{position:absolute;inset:0 auto 0 0;border-radius:5px}
 .hpbar i.lag{background:#ffd9b0;transition:width .5s .4s}
@@ -350,10 +382,20 @@ a{color:var(--shu)}
       <div class="detail" id="detail"></div>
     </div>
     <div><h3 style="margin-bottom:6px">持ち込むアイテム（2つ）</h3><div class="items" id="items"></div></div>
+    <div id="stageRow" hidden><h3 style="margin-bottom:6px">ステージ（ホストが選ぶ）</h3><div class="row" id="stageChips"></div></div>
     <div class="row sticky-actions">
       <button class="btn ghost" id="btnTeamBack">もどる</button>
       <button class="btn main" id="btnGo">出撃する</button>
     </div>
+  </div>
+</section>
+
+<!-- ステージ選択（ソロ：編成のあと） -->
+<section class="screen" id="stage" hidden>
+  <div class="panel wide">
+    <div class="eyebrow">ステージ選択</div><h2>どこで戦う？</h2>
+    <div class="stages" id="stages"></div>
+    <div class="row"><button class="btn ghost" id="btnStageBack" type="button">編成にもどる</button></div>
   </div>
 </section>
 
@@ -498,7 +540,7 @@ a{color:var(--shu)}
 <!-- HUD -->
 <div id="hud" hidden>
   <div id="touch"></div>
-  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/90</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
   <div class="hb party" id="party"></div>
   <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
   <div class="hb" id="map"><canvas id="mapc"></canvas></div>
@@ -524,6 +566,7 @@ a{color:var(--shu)}
 </div>
 <div id="cutin"><img id="cutImg" alt=""><div><small id="cutWho" style="display:block;font-size:11px;font-weight:900"></small><b id="cutNm"></b></div></div>
 <div id="banner"></div>
+<div id="fade"></div>
 <div id="bossCard"><div class="s">付喪神</div><div class="n">トバトーバン</div><div class="d">古い大看板と祭りの台座が、宵の広場で目を覚ました</div></div>
 <div id="rotateHint" hidden>📱↻ 横画面のほうが見やすく遊べます<button id="rotateX">とじる</button></div>
 <div id="turnHint" hidden><span class="ph">📱</span><b>スマホを横向きにしてください</b><small>縦持ちのままでも画面を横向きで表示しています</small></div>
@@ -767,6 +810,34 @@ const STAGE = {
   bossSpawn: [0, 13.3],
   waves: [[[-3, -44], [3, -46]], [[-5, -24], [0, -22], [5, -25]]],
 };
+/* ---------------- ステージ2：常磐線（北千住→上野）ヨシノシの部下 ---------------- */
+// 車内の座標：x＝左右（通路の幅）、z＝前後（+zが上野方面＝前）。3号車 z -21〜-1、連結部 -1〜1、2号車 1〜21（その先の1号車には入れない）
+const JOBAN = {
+  nm: '常磐線', boss: 'ヨシノシ', minion: 'ヨシノシの部下',
+  halfW: p('常磐線', '車内の通路の半幅', 1.5, 'm', 'proto', null, '遊びやすさのため実物より少し広い'),
+  gwHalf: 1.0, gwHalfW: 0.8, zMin: -20.6, zMax: 20.6, frontZ: 20.3,
+  carDoors: [-18.5, -13.5, -8.5, -3.5, 3.5, 8.5, 13.5, 18.5], // 乗り降りのドア（左右）
+  stations: ['北千住', '南千住', '三河島', '日暮里', '上野'],
+  stationsEn: ['Kita-Senju', 'Minami-Senju', 'Mikawashima', 'Nippori', 'Ueno'],
+  segLen: p('常磐線', '駅と駅の間（ゲーム内の距離）', [800, 700, 700, 900], 'm', 'proto', null, '北千住→南千住→三河島→日暮里→上野'),
+  vmax: p('常磐線', '電車の最高速度', 24, 'm/s', 'proto'), acc: 2.0,
+  stopT: p('常磐線', '途中駅の停車時間', 8, 's', 'proto'),
+  boardN: p('常磐線', '途中駅（南千住・三河島・日暮里）で乗ってくる部下', 10, '体/駅', 'proto'),
+  waves: p('常磐線', '1号車から来る部下（3段階）', [10, 20, 30], '体', 'proto', null, '最初に10体。10体倒すと20体、その20体を倒すと30体'),
+  hp: p('ヨシノシの部下', '体力（1体ごとにこの間で決まる）', [650, 700], 'points', 'proto'),
+  dmg: p('ヨシノシの部下', '1発のダメージ（この間で決まる）', [85, 120], 'points', 'proto', null, 'まもりに関係なくこのダメージ（ガード・AIの体力90%は反映）'),
+  def: p('ヨシノシの部下', 'まもり', 70, 'points', 'proto'), r: 0.38,
+  speed: [2.4, 2.9], maxActive: p('ヨシノシの部下', '同時に車内にいる最大数', 20, '体', 'proto', null, '多いときは1号車で待ち、空いた分だけ出てくる'),
+  meleeTokens: p('ヨシノシの部下', '1人に同時に殴りかかる最大数', 2, '体', 'proto', null, '集団で一番近い相手を囲む。あふれた分はまわりで待つ'),
+  beamTokens: p('ヨシノシの部下', '同時にビームを撃つ最大数', 2, '体', 'proto'),
+  wpn: {
+    sword: { nm: '剣', reach: 1.6, wind: 0.65, act: 0.12, rec: 0.75, cd: [3.2, 4.2], r: 1.75, half: 0.6, knock: 2 },
+    fist: { nm: '拳', reach: 1.2, wind: 0.5, act: 0.1, rec: 0.55, cd: [2.8, 3.6], len: 1.5, w: 1.0, knock: 3.5 },
+    beam: { nm: '大砲（ビーム）', reach: 9, keep: 6, wind: 0.9, act: 0.25, rec: 0.6, cd: [3.8, 4.8], len: 11, w: 0.7, knock: 0 },
+  },
+  introT: p('常磐線', '始まりの演出（トバトーバンが倒れる→乗車→発車）', 12, 's', 'proto'), arriveT: 6,
+  dropRate: 0.06,
+};
 const CAM = {
   camera_pitch_deg: p('カメラ', 'camera_pitch_deg（俯角）', 44, 'deg', 'proto', null, '35〜55度で調整。ボスが遠いときは最大8度浅くする'),
   vertical_fov_deg: p('カメラ', 'vertical_fov_deg（横画面）', 50, 'deg', 'proto'),
@@ -785,7 +856,7 @@ const NET = {
 };
 p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 10, 'Apple 44pt / Android 48dp の目安より大きく');
 
-const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };
+const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };
 
 /* ===== save.js ===== */
 /* =====================================================================
@@ -796,7 +867,7 @@ const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, M
    IDは1〜10000。アカウントを作った順に自動で決まる（いまはこの端末の中での順番）。
    ===================================================================== */
 const SAVE = (() => {
-  const ID_MIN = 1, ID_MAX = 10000, VER = 1, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 6, PW_MAX = 32; // Firebase のパスワードは6文字以上
+  const ID_MIN = 1, ID_MAX = 10000, VER = 2, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 6, PW_MAX = 32; // Firebase のパスワードは6文字以上
   // 以前の形式（ID 1001〜）のセーブはいったん消す（1回だけ）
   (function migrate() {
     try {
@@ -821,12 +892,17 @@ const SAVE = (() => {
   function checkPw(pw) { if (typeof pw !== 'string' || pw.length < PW_MIN) return `パスワードは${PW_MIN}文字以上にしてください`; if (pw.length > PW_MAX) return `パスワードは${PW_MAX}文字までです`; if (/\s/.test(pw)) return 'パスワードに空白は使えません'; return null; }
   function storageOk() { try { const k = KEY + '_t'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return true; } catch (e) { return false; } }
   function freshChars() { const o = {}; for (const c of DATA.CHARS) o[c.id] = { lv: 1, exp: 0, b: 0, w: 0, k: 0 }; return o; }
-  function fresh(id, pw) { return { v: VER, id, pw, created: Date.now(), saved: 0, chars: freshChars(), rec: { b: 0, w: 0, mobs: 0, best: 0 }, party: null, swap: null, items: null, nick: '' }; }
+  const STAGES = ['senju', 'joban']; // クリアした回数をステージごとに持つ
+  function freshClear() { const o = {}; for (const k of STAGES) o[k] = 0; return o; }
+  function fresh(id, pw) { return { v: VER, id, pw, created: Date.now(), saved: 0, chars: freshChars(), rec: { b: 0, w: 0, mobs: 0, best: 0 }, clear: freshClear(), party: null, swap: null, items: null, nick: '' }; }
   /** 古い形式や、あとで増えたキャラにも対応させる */
   function normalize(s) {
     if (!s || typeof s !== 'object') return null;
     const f = fresh(s.id, s.pw);
     const o = Object.assign(f, s); o.chars = Object.assign(freshChars(), s.chars || {}); o.rec = Object.assign(f.rec, s.rec || {});
+    o.clear = Object.assign(freshClear(), s.clear || {});
+    if (!s.clear && o.rec.w > 0) o.clear.senju = Math.floor(+o.rec.w || 0); // ステージが1つだった頃の勝ち＝トバトーバン戦
+    for (const k in o.clear) o.clear[k] = Math.max(0, Math.floor(+o.clear[k] || 0));
     for (const c of DATA.CHARS) { const x = o.chars[c.id]; for (const k of ['lv', 'exp', 'b', 'w', 'k']) x[k] = Math.max(k === 'lv' ? 1 : 0, Math.floor(+x[k] || 0)); }
     return o;
   }
@@ -865,7 +941,8 @@ const SAVE = (() => {
     for (const id in op.kills || {}) { const c = s.chars[id]; if (!c) continue; const k = op.kills[id] | 0; c.k += k; s.rec.mobs += k; }
     const f = op.fin;
     if (f) {
-      s.rec.b++; if (f.win) { s.rec.w++; if (f.time > 0 && (!s.rec.best || f.time < s.rec.best)) s.rec.best = Math.round(f.time); }
+      const st = f.stage || 'senju';
+      s.rec.b++; if (f.win) { s.rec.w++; s.clear[st] = (s.clear[st] | 0) + 1; if (st === 'senju' && f.time > 0 && (!s.rec.best || f.time < s.rec.best)) s.rec.best = Math.round(f.time); }
       for (const id of f.ids) { const c = s.chars[id]; if (!c) continue; c.b++; if (f.win) c.w++; }
     }
     // レベルの上がり方はあとで決める（いまは全員Lv.1のまま）
@@ -879,6 +956,7 @@ const SAVE = (() => {
     b.push(VER); vi(s.id);
     const ph = parseInt(s.pw, 16) >>> 0; b.push(ph >>> 24, (ph >>> 16) & 255, (ph >>> 8) & 255, ph & 255);
     vi(s.rec.b); vi(s.rec.w); vi(s.rec.mobs); vi(s.rec.best);
+    vi(STAGES.length); for (const k of STAGES) vi(s.clear[k] || 0);
     const n = DATA.CHARS.length; vi(n);
     const used = DATA.CHARS.map(c => { const x = s.chars[c.id]; return x.lv > 1 || x.exp || x.b || x.w || x.k; });
     for (let i = 0; i < n; i += 8) { let m = 0; for (let j = 0; j < 8 && i + j < n; j++) if (used[i + j]) m |= 1 << j; b.push(m); }
@@ -901,9 +979,10 @@ const SAVE = (() => {
       try {
         let p = 0; const u8 = () => { if (p >= body.length) throw 0; return body[p++]; };
         const vi = () => { let n = 0, m = 1, v; do { v = u8(); n += (v & 127) * m; m *= 128; } while (v & 128); return n; };
-        if (u8() !== VER) return { ok: false, msg: 'このコードはこの版では読めません' };
+        const ver = u8(); if (ver !== 1 && ver !== VER) return { ok: false, msg: 'このコードはこの版では読めません' };
         const id = vi(); const pw = ((u8() << 24 >>> 0) + (u8() << 16) + (u8() << 8) + u8()).toString(16).padStart(8, '0');
         const s = fresh(id, pw); s.rec.b = vi(); s.rec.w = vi(); s.rec.mobs = vi(); s.rec.best = vi();
+        if (ver >= 2) { const m = vi(); for (let i = 0; i < m; i++) { const c = vi(); if (STAGES[i]) s.clear[STAGES[i]] = c; } } else delete s.clear; // 古いコードは勝ち数から
         const n = vi(), mask = []; for (let i = 0; i < n; i += 8) { const m = u8(); for (let j = 0; j < 8 && i + j < n; j++) mask.push(!!(m & (1 << j))); }
         for (let i = 0; i < n; i++) { if (!mask[i]) continue; const x = { lv: vi(), exp: vi(), b: vi(), w: vi(), k: vi() }; const c = DATA.CHARS[i]; if (c) s.chars[c.id] = x; }
         if (p !== body.length) continue;
@@ -1096,6 +1175,7 @@ class Sim {
     this.rng = new RNG(o.seed || 12345);
     this.diffKey = D.DIFF[o.diff] ? o.diff : 'normal'; this.diff = D.DIFF[this.diffKey]; // むずかしさは「通常」の1つだけ
     this.nextId = 1; this.evId = 0; this.events = []; this.mlog = [];
+    this.stageId = o.stageId === 'joban' ? 'joban' : 'senju'; // senju＝北千住（トバトーバン）、joban＝常磐線（ヨシノシの部下）
     this.stage = o.test ? 'boss' : 'street'; this.stageT = 0; this.timeLeft = D.SIM.timeLimit;
     this.allies = o.party.map((pp, i) => this.makeAlly(pp, i));
     this.inputs = this.allies.map(() => Sim.emptyInput());
@@ -1104,7 +1184,8 @@ class Sim {
     this.lanternT = 0; this.lanternCool = 0; this.lanternOrder = 0; this.candyT = D.SIM.candyPeriod;
     this.wave = 0; this.waveSpawned = false; this.barrier = 'street'; this.introWait = false; this.result = null;
     this.test = !!o.test;
-    if (o.test) this.spawnBoss(true);
+    if (this.stageId === 'joban') this.initJoban(o);
+    else if (o.test) this.spawnBoss(true);
     else this.spawnWave(0);
   }
   static emptyInput() { return { mx: 0, mz: 0, hold: { A: 0, X: 0, Y: 0, B: 0 }, ev: [], lock: null, healT: null }; }
@@ -1137,7 +1218,7 @@ class Sim {
     const dt = this.dt;
     this.tick++; this.t += dt; this.stageT += dt;
     if (this.stage === 'won' || this.stage === 'lost') { this.cleanupEvents(); return; }
-    const active = this.stage === 'street' || this.stage === 'boss';
+    const active = this.stage === 'street' || this.stage === 'boss' || this.stage === 'train';
     if (active && !this.test) { this.timeLeft -= dt; if (this.timeLeft <= 0) { this.timeLeft = 0; this.finish(false, 'time'); } }
     for (const a of this.allies) { a.px = a.x; a.pz = a.z; }
     if (this.stage !== 'intro') for (const a of this.allies) this.updateAlly(a, this.inputs[a.slot], dt);
@@ -1166,7 +1247,7 @@ class Sim {
   }
   enemiesAlive() { const r = []; if (this.boss && this.bossHittable()) r.push(this.boss); for (const m of this.mobs) if (m.st === 'ok') r.push(m); return r; }
   bossHittable() { const b = this.boss; return b && b.st !== 'intro' && b.st !== 'dead' && b.st !== 'fly' && b.st !== 'hidden' && !(b.st === 'rec' && b.mv === 'junkou' && b.y > 0.3); }
-  hurtParts(e) { return e === this.boss ? bossParts(e) : [{ x: e.x, z: e.z, r: DATA.MOB.r }]; }
+  hurtParts(e) { return e === this.boss ? bossParts(e) : [{ x: e.x, z: e.z, r: e.r || DATA.MOB.r }]; }
   /** 体の表面までの距離（いちばん近い部位） */
   gapTo(x, z, e) { let g = 1e9, q0 = null; for (const q of this.hurtParts(e)) { const d = dist2(x, z, q.x, q.z) - q.r; if (d < g) { g = d; q0 = q; } } return { g, q: q0 }; }
   /** 攻撃の形が体のどこかに触れたら、その接触点を返す（触れなければ null） */
@@ -1200,7 +1281,7 @@ class Sim {
     if (a.hurtT > 0) a.hurtT -= dt;
     for (const k of ['str', 'def', 'taunt', 'stealth', 'ramune']) if (a.buffs[k] > 0) a.buffs[k] = Math.max(0, a.buffs[k] - dt);
     a.threat *= (1 - S.threatDecay * dt);
-    if (a.c.passive === 'food' && a.st === 'ok' && (this.stage === 'boss' || this.stage === 'street')) {
+    if (a.c.passive === 'food' && a.st === 'ok' && (this.stage === 'boss' || this.stage === 'street' || this.stage === 'train')) {
       a.foodT -= dt; if (a.foodT <= 0) { a.foodT = S.foodPeriod; this.spawnPickup('food', a.x + Math.sin(a.yaw) * 1.2, a.z + Math.cos(a.yaw) * 1.2); this.ev('sfx', { s: 'food', x: a.x, z: a.z }); }
     }
     if (a.st === 'down') {
@@ -1237,6 +1318,7 @@ class Sim {
   }
   moveAlly(a, dx, dz) { const r = this.clampPos(a.x, a.z, a.x + dx, a.z + dz, 0.35); a.x = r[0]; a.z = r[1]; }
   clampPos(ox, oz, nx, nz, rad) {
+    if (this.stageId === 'joban') return this.clampTrain(ox, oz, nx, nz, rad);
     const ST = DATA.STAGE, hw = ST.streetHalfW - rad, pw = ST.plazaHalfW - rad;
     if (nz < 0) {
       if (Math.abs(nx) > hw) { if (oz >= 0 && Math.abs(ox) > hw) nz = 0; else nx = clamp(nx, -hw, hw); }
@@ -1559,14 +1641,15 @@ class Sim {
       if (src && src.hp > 0 && (src !== this.boss || this.bossHittable())) { const { q } = this.gapTo(o.x, o.z, src); o.yaw = yawTo(q.x - o.x, q.z - o.z); this.dealToEnemy(o, src, sk.pw, sk.stat, 'skill', null, contactPt(q, o.x, o.z)); }
       return 0;
     }
-    const atk = stat === 'yo' ? srcStats.yo : srcStats.str;
+    const fixed = opt.fixed != null; // ヨシノシの部下：まもりに関係なく決まったダメージ
+    const atk = fixed ? 0 : stat === 'yo' ? srcStats.yo : srcStats.str;
     const def = this.stat(o, 'def') * (o.buffs.def > 0 ? o.buffs.defMul : 1);
-    let dmg = pw * atk / (DATA.SIM.defBase + def) / this.aiK(o); // AIが動かすキャラは体力も90%相当
+    let dmg = (fixed ? opt.fixed : pw * atk / (DATA.SIM.defBase + def)) / this.aiK(o); // AIが動かすキャラは体力も90%相当
     const guarding = o.act && o.act.k === 'guard';
     if (guarding) {
       dmg *= o.c.passive === 'guardPlus' ? DATA.PASSIVE.guardPlus : o.act.sk.mul;
       this.ev('block', { slot: o.slot, x: o.x, z: o.z });
-      if (o.act.sk.reflect && opt.src && opt.src.hp > 0) { const rv = Math.max(1, Math.round(pw * atk / (DATA.SIM.defBase + def) * o.act.sk.reflect * this.aiK(o))); this.reflectTo(o, opt.src, rv); }
+      if (o.act.sk.reflect && opt.src && opt.src.hp > 0) { const rv = Math.max(1, Math.round((fixed ? opt.fixed : pw * atk / (DATA.SIM.defBase + def)) * o.act.sk.reflect * this.aiK(o))); this.reflectTo(o, opt.src, rv); }
     }
     dmg = Math.max(1, Math.round(dmg));
     o.hp -= dmg; o.hurtT = 0.25; o.rev = null; o.lan = null;
@@ -1710,13 +1793,14 @@ class Sim {
   /** キャンディー：20秒ごとに、いま遊んでいる場所のどこかへ1つ（取ると全回復） */
   updateCandy(dt) {
     const S = DATA.SIM, ST = DATA.STAGE;
-    if (this.stage !== 'street' && this.stage !== 'boss') return;
+    if (this.stage !== 'street' && this.stage !== 'boss' && this.stage !== 'train') return;
     this.candyT -= dt; if (this.candyT > 0) return;
     this.candyT = S.candyPeriod;
     if (this.pickups.filter(p => p.kind === 'candy').length >= S.candyMax) return;
     for (let k = 0; k < 12; k++) {
       let x, z;
-      if (this.stage === 'street') { x = this.rng.range(-7, 7); z = this.rng.range(ST.streetZ0 + 4, -3); }
+      if (this.stage === 'train') { const J = DATA.JOBAN; x = this.rng.range(-J.halfW + 0.5, J.halfW - 0.5); z = this.rng.range(J.zMin + 1, J.zMax - 1); if (Math.abs(z) < J.gwHalf + 0.6) continue; }
+      else if (this.stage === 'street') { x = this.rng.range(-7, 7); z = this.rng.range(ST.streetZ0 + 4, -3); }
       else { x = this.rng.range(-ST.plazaHalfW + 1.5, ST.plazaHalfW - 1.5); z = this.rng.range(1.5, ST.plazaZ1 - 1.5); }
       const r = this.clampPos(x, z, x, z, 0.3);
       if (Math.abs(r[0] - x) > 0.05 || Math.abs(r[1] - z) > 0.05) continue; // ボスの体などに重なる所は避ける
@@ -1765,7 +1849,9 @@ class Sim {
     for (const [x, z] of W) this.spawnMob(x, z, true);
     this.wave = i; this.waveSpawned = true;
   }
+  introLen() { return this.stageId === 'joban' ? DATA.JOBAN.introT : DATA.BOSS.introT; }
   updateStage(dt) {
+    if (this.stageId === 'joban') { this.updateJoban(dt); return; }
     if (this.stage === 'street') {
       const alive = this.mobs.filter(m => m.st === 'ok').length;
       if (alive === 0) {
@@ -1803,6 +1889,7 @@ class Sim {
     m.t += dt;
     if (m.st === 'dying') { m.dieT -= dt; if (m.dieT <= 0) m.st = 'gone'; return; }
     if (m.st !== 'ok') return;
+    if (m.kind === 'yoshi') return this.updateYoshi(m, dt);
     if (m.para > 0) { m.para -= dt; return; }
     if (this.stage === 'intro') return;
     const tg = this.mobTarget(m); if (!tg) { m.tgt = -1; return; }
@@ -1828,6 +1915,7 @@ class Sim {
   mobDie(m, by) {
     m.st = 'dying'; m.dieT = 0.6; this.ev('mobdie', { x: m.x, z: m.z });
     if (by && by.stats) by.stats.kills++; // セーブの記録（倒した敵の数）
+    if (m.kind === 'yoshi') { this.yoshiDie(m); return; }
     if (this.rng.next() < 0.4) this.spawnPickup('bag', m.x, m.z, DATA.ITEM_IDS[(this.rng.next() * DATA.ITEM_IDS.length) | 0]);
   }
 
@@ -2038,12 +2126,17 @@ class Sim {
   }
   updateHazards(dt) {
     for (const h of this.hazards) {
+      if (h.dead) continue;
       h.t += dt;
       if (h.act <= 0) { if (h.t >= h.warn + (h.keep || 0)) h.dead = 1; continue; }
       if (h.t < h.warn || h.t > h.warn + h.act) { if (h.t > h.warn + h.act + 0.05) h.dead = 1; continue; }
       if (h.t - dt < h.warn) this.ev('hzfire', { fx: h.fx, x: h.x, z: h.z, yaw: h.yaw, r: h.r || 0 });
       const b = this.boss, srcStats = h.src === 'boss' ? b : h.srcStats;
+      // single：最初に当たった1人だけ（ヨシノシの部下のビームは手前の1人で止まる）
+      let only = null;
+      if (h.single) { let bd = 1e9; const fx = Math.sin(h.yaw), fz = Math.cos(h.yaw); for (const o of this.allies) { if (o.st !== 'ok' || !inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR)) continue; const f = (o.x - h.x) * fx + (o.z - h.z) * fz; if (f < bd) { bd = f; only = o; } } }
       for (const o of this.allies) {
+        if (h.single && o !== only) continue;
         if (o.st !== 'ok') continue;
         const rec = h.hits[o.slot];
         if (rec && (rec.n >= h.max || h.t - rec.last < h.iv - 1e-6)) continue;
@@ -2053,7 +2146,8 @@ class Sim {
         else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR);
         if (!inside) continue;
         h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t };
-        this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: o.x - h.x, kz: o.z - h.z, src: h.src === 'boss' ? b : null });
+        const fixed = h.fixed ? Math.round(h.fixed[0] + this.rng.next() * (h.fixed[1] - h.fixed[0])) : null;
+        this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: h.kx != null ? h.kx : o.x - h.x, kz: h.kz != null ? h.kz : o.z - h.z, src: h.src === 'boss' ? b : (h.srcEnt || null), fixed });
       }
     }
     this.hazards = this.hazards.filter(h => !h.dead);
@@ -2080,7 +2174,7 @@ class Sim {
   }
   inDanger(x, z, margin, horizon) {
     for (const h of this.hazards) {
-      if (h.src !== 'boss' || h.act <= 0 && h.kind !== 'path') continue;
+      if ((h.src !== 'boss' && !h.dodge) || h.act <= 0 && h.kind !== 'path') continue;
       const until = h.warn - h.t; if (until > horizon && h.kind !== 'path') continue;
       if (h.t > h.warn + h.act) continue;
       let inside = false;
@@ -2247,6 +2341,189 @@ class Sim {
 }
 const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I, HZ, HZ_I, PJ, PJ_I, angDiff, yawTo, clamp, dist2, inFan, inLine, RNG };
 
+/* ===== joban.js ===== */
+/* =====================================================================
+   joban.js — ステージ2「常磐線」：北千住→上野の車内でヨシノシの部下と戦う
+   sim.js の Sim に足す（ホストだけが動かす・three.js 非依存）。
+   流れ：intro（トバトーバンが倒れる→ホームで乗車→発車）→ train（走りながら車内戦）
+        → 上野の手前は、車内の部下をすべて倒すまで走り続ける → arrive（上野に到着）→ 勝利
+   ===================================================================== */
+(() => {
+  const P = Sim.prototype;
+  const WPNS = ['sword', 'fist', 'beam'], WPN_W = [0.38, 0.37, 0.25];
+
+  P.initJoban = function (o) {
+    this.stage = o.test ? 'train' : 'intro'; this.barrier = 'none';
+    const J = DATA.JOBAN;
+    this.kills = 0; this.total = J.waves.reduce((s, n) => s + n, 0) + J.boardN * 3;
+    this.phase = 0; this.phaseKills = [0, 0, 0]; this.queue = []; this.spawnT = 0; this.boardedSt = 0;
+    this.tr = { at: 0, ph: 'stop', d: 0, v: 0, t: 0, doors: 0 }; // 北千住で停車中（演出の間）
+    const pos = [[-0.6, -4.2], [0.6, -4.2], [-0.6, -5.8], [0.6, -5.8]]; // 3号車の前寄り・前向き
+    for (const a of this.allies) { const q = pos[a.slot]; a.x = a.px = q[0]; a.z = a.pz = q[1]; a.yaw = 0; a.ai.tx = a.x; a.ai.tz = a.z; }
+    if (o.test) this.startTrain();
+  };
+
+  /** 車内の壁：通路の幅・前後の端・連結部（細い） */
+  P.clampTrain = function (ox, oz, nx, nz, rad) {
+    const J = DATA.JOBAN, hw = J.halfW - rad, gw = J.gwHalfW - rad, gb = J.gwHalf + rad;
+    nz = clamp(nz, J.zMin + rad, J.zMax - rad); nx = clamp(nx, -hw, hw);
+    if (Math.abs(nz) < gb && Math.abs(nx) > gw) {
+      if (Math.abs(oz) >= gb) nz = Math.sign(oz) * gb; // 連結部の壁に当たる
+      else nx = clamp(nx, -gw, gw);
+    }
+    return [nx, nz];
+  };
+
+  P.startTrain = function () {
+    this.stage = 'train'; this.stageT = 0; this.introWait = false;
+    const tr = this.tr; tr.ph = 'run'; tr.at = 0; tr.d = 0; tr.v = 0; tr.t = 0; tr.doors = 0;
+    // 第1波：2号車にすでに10体
+    this.phase = 1;
+    for (let i = 0; i < DATA.JOBAN.waves[0]; i++) this.spawnYoshi(this.rng.range(-1.1, 1.1), this.rng.range(9, 19), 'p1', 'in');
+    this.ev('stage', { k: 'train' }); this.ev('wave', { n: 1, cnt: DATA.JOBAN.waves[0] });
+  };
+
+  P.updateJoban = function (dt) {
+    const J = DATA.JOBAN;
+    if (this.stage === 'intro') { if (this.introWait) return; if (this.stageT >= J.introT) this.startTrain(); return; }
+    if (this.stage === 'train' || this.stage === 'arrive') this.updateTrainMotion(dt);
+    if (this.stage === 'train') { this.updateSpawns(dt); this.checkPhases(); }
+    if (this.stage === 'arrive' && this.stageT >= J.arriveT) this.finish(true, 'ueno');
+  };
+  /** 車内の部下を全部倒したか（上野に着ける条件） */
+  P.jobanCleared = function () { return this.phase >= 3 && this.boardedSt >= 3 && !this.queue.length && !this.mobs.some(m => m.st === 'ok'); };
+
+  /** 電車の動き：加速→走行→ブレーキで駅に止まる。日暮里→上野は、部下が残っている間は上野の手前を走り続ける */
+  P.updateTrainMotion = function (dt) {
+    const J = DATA.JOBAN, tr = this.tr; tr.t += dt;
+    if (tr.ph === 'stop') {
+      tr.v = 0; if (tr.at >= 4) return;
+      if (tr.t >= 1.2 && !tr.doors) { tr.doors = 1; this.ev('doors', { open: 1, st: tr.at }); if (tr.at >= 1 && tr.at <= 3) this.boardAt(tr.at); }
+      if (tr.t >= J.stopT - 1.4 && tr.doors === 1) { tr.doors = 2; this.ev('doors', { open: 0, st: tr.at }); }
+      if (tr.t >= J.stopT) { tr.ph = 'run'; tr.t = 0; tr.d = 0; tr.doors = 0; this.ev('depart', { st: tr.at }); }
+      return;
+    }
+    const L = J.segLen[tr.at], hold = tr.at === 3 && !this.jobanCleared();
+    const rem = L - tr.d, brakeD = tr.v * tr.v / (2 * J.acc);
+    if (hold) { tr.v = Math.min(J.vmax, tr.v + J.acc * dt); tr.d = Math.min(tr.d + tr.v * dt, L - J.vmax * J.vmax / (2 * J.acc) - 60); return; }
+    if (rem <= brakeD + 0.3) { tr.v = Math.max(0.7, Math.sqrt(Math.max(0, 2 * J.acc * rem))); tr.d += tr.v * dt; }
+    else { tr.v = Math.min(J.vmax, tr.v + J.acc * dt); tr.d += tr.v * dt; }
+    if (L - tr.d <= 0.05) {
+      tr.at++; tr.d = 0; tr.v = 0; tr.ph = 'stop'; tr.t = 0; tr.doors = 0;
+      this.ev('arriveSt', { st: tr.at });
+      if (tr.at >= 4) { this.stage = 'arrive'; this.stageT = 0; for (const a of this.allies) a.inv = 99; this.ev('stage', { k: 'arrive' }); }
+    }
+  };
+
+  /** 途中駅：左側のドアから10体が乗ってくる */
+  P.boardAt = function (st) {
+    const J = DATA.JOBAN;
+    for (let i = 0; i < J.boardN; i++) this.queue.push({ grp: 'st', from: 'door' });
+    this.boardedSt = Math.max(this.boardedSt, st);
+    this.ev('board', { st, n: J.boardN });
+  };
+  /** 10体倒すと1号車から20体、その20体を倒すと30体 */
+  P.checkPhases = function () {
+    const J = DATA.JOBAN;
+    if (this.phase === 1 && this.phaseKills[0] >= J.waves[0]) { this.phase = 2; for (let i = 0; i < J.waves[1]; i++) this.queue.push({ grp: 'p2', from: 'front' }); this.ev('wave', { n: 2, cnt: J.waves[1] }); }
+    else if (this.phase === 2 && this.phaseKills[1] >= J.waves[1]) { this.phase = 3; for (let i = 0; i < J.waves[2]; i++) this.queue.push({ grp: 'p3', from: 'front' }); this.ev('wave', { n: 3, cnt: J.waves[2] }); }
+  };
+  /** 待っている部下を、車内が混みすぎない範囲で少しずつ出す */
+  P.updateSpawns = function (dt) {
+    const J = DATA.JOBAN; this.spawnT -= dt;
+    if (this.spawnT > 0 || !this.queue.length) return;
+    if (this.mobs.filter(m => m.st === 'ok').length >= J.maxActive) return;
+    // 駅で乗ってくる分はドアが開いている間に優先して出す
+    let qi = this.queue.findIndex(q => q.from === 'door');
+    if (qi >= 0 && this.tr.doors !== 1) qi = -1;
+    if (qi < 0) qi = this.queue.findIndex(q => q.from === 'front');
+    if (qi < 0) { qi = 0; this.queue[0].from = 'front'; } // ドアが閉まるまでに乗り切れなかった分は、前の車両から入ってくる
+    const q = this.queue.splice(qi, 1)[0];
+    if (q.from === 'door') { const z = J.carDoors[(this.rng.next() * J.carDoors.length) | 0]; this.spawnYoshi(-J.halfW + 0.3, z + this.rng.range(-0.4, 0.4), q.grp, 'door'); this.spawnT = 0.3; }
+    else { this.spawnYoshi(this.rng.range(-1.0, 1.0), J.frontZ, q.grp, 'front'); this.spawnT = 0.24; }
+  };
+
+  P.spawnYoshi = function (x, z, grp, from) {
+    const J = DATA.JOBAN, rng = this.rng;
+    let r = rng.next(), wi = 0; while (wi < 2 && r > WPN_W[wi]) { r -= WPN_W[wi]; wi++; }
+    const hp = Math.round(J.hp[0] + rng.next() * (J.hp[1] - J.hp[0]));
+    const m = { id: 'm' + this.id(), kind: 'yoshi', wpn: WPNS[wi], grp, from, x, z, yaw: from === 'door' ? Math.PI / 2 : Math.PI, hp, maxHp: hp, def: J.def, str: 0, yo: 0, r: J.r, st: 'ok', t: 0, para: 0, defDown: 0, dots: [],
+      spd: rng.range(J.speed[0], J.speed[1]), cd: 0.6 + rng.next() * 1.2, act: null, tgt: -1, retT: 0, eng: -1, enterT: from === 'in' ? 0.7 : 0.55, wind: 0, moving: 0, fireT: 99, strafe: 1 };
+    this.mobs.push(m); this.ev('ySpawn', { x, z, from });
+    return m;
+  };
+
+  /** ヨシノシの部下：一番近い味方を集団でねらう。剣・拳は最大5体まで殴りかかり、残りはまわりで待つ。大砲は離れてビーム */
+  P.updateYoshi = function (m, dt) {
+    const J = DATA.JOBAN, W = J.wpn[m.wpn];
+    m.wind = m.act && m.act.t < m.act.w ? 1 : 0; m.moving = 0;
+    if (this.stage !== 'train') return;
+    if (m.para > 0) { m.para -= dt; m.act = null; return; }
+    if (m.act) { m.act.t += dt; if (m.act.t >= m.act.end) m.act = null; else return; }
+    if (m.enterT > 0) { // 乗り込む／前の車両から入ってくる
+      m.enterT -= dt; const s = m.spd * 0.8 * dt;
+      const nx = m.from === 'door' ? m.x + s : m.x, nz = m.from === 'front' ? m.z - s : m.z;
+      const c = this.clampTrain(m.x, m.z, nx, nz, m.r); m.x = c[0]; m.z = c[1]; m.moving = 1; return;
+    }
+    m.cd -= dt; m.retT -= dt;
+    let tg = this.allies[m.tgt];
+    if (m.retT <= 0 || !tg || tg.st !== 'ok') {
+      m.retT = 0.4; let best = null, bd = 1e9;
+      for (const o of this.allies) { if (o.st !== 'ok') continue; let d = dist2(m.x, m.z, o.x, o.z); if (o.buffs.stealth > 0) d += 6; if (o.buffs.taunt > 0) d -= 4; if (d < bd) { bd = d; best = o; } }
+      if (!best || best.slot !== m.tgt) m.eng = -1;
+      m.tgt = best ? best.slot : -1; tg = best;
+    }
+    if (!tg) return;
+    const dx = tg.x - m.x, dz = tg.z - m.z, d = Math.hypot(dx, dz) || 1e-3, ty = yawTo(dx, dz);
+    m.yaw += clamp(angDiff(m.yaw, ty), -6 * dt, 6 * dt);
+    const melee = m.wpn !== 'beam';
+    let engaged = true;
+    if (melee && m.eng !== tg.slot) { // 殴りかかれる枠が空いているか
+      let n = 0; for (const o of this.mobs) if (o !== m && o.st === 'ok' && o.eng === tg.slot) n++;
+      if (n < J.meleeTokens) m.eng = tg.slot; else engaged = false;
+    }
+    let gx = null, gz = null;
+    if (melee) { const stop = engaged ? W.reach * 0.75 : 2.6; if (Math.abs(d - stop) > 0.15) { gx = tg.x - dx / d * stop; gz = tg.z - dz / d * stop; } }
+    else if (d > W.keep + 1.5) { gx = tg.x - dx / d * W.keep; gz = tg.z - dz / d * W.keep; }
+    else if (d < 3.6) { gx = m.x - dx / d * 2; gz = m.z - dz / d * 2; }
+    let vx = 0, vz = 0;
+    if (gx != null) { const ex = gx - m.x, ez = gz - m.z, el = Math.hypot(ex, ez); if (el > 0.12) { vx = ex / el; vz = ez / el; } }
+    for (const o of this.mobs) { // 部下どうしで重ならない
+      if (o === m || o.st !== 'ok') continue;
+      const ox = m.x - o.x, oz = m.z - o.z, od = Math.hypot(ox, oz);
+      if (od < 0.78 && od > 1e-4) { const k = (0.78 - od) / 0.78 * 1.8; vx += ox / od * k; vz += oz / od * k; }
+    }
+    const vl = Math.hypot(vx, vz);
+    if (vl > 0.05) { const sp = m.spd * Math.min(1, vl); const c = this.clampTrain(m.x, m.z, m.x + vx / vl * sp * dt, m.z + vz / vl * sp * dt, m.r); m.x = c[0]; m.z = c[1]; m.moving = 1; }
+    if (m.cd <= 0 && Math.abs(angDiff(m.yaw, ty)) < 0.45) {
+      if (melee && engaged && d <= W.reach) this.yoshiAttack(m, tg);
+      else if (!melee && d <= W.reach && d >= 1.6 && this.mobs.filter(o => o.st === 'ok' && o.wpn === 'beam' && o.act).length < J.beamTokens) this.yoshiAttack(m, tg);
+    }
+  };
+
+  /** 攻撃：予兆を出してから当たる。ダメージはまもりに関係なく85〜120 */
+  P.yoshiAttack = function (m, tg) {
+    const J = DATA.JOBAN, W = J.wpn[m.wpn];
+    m.yaw = yawTo(tg.x - m.x, tg.z - m.z);
+    const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw);
+    const base = { warn: W.wind, act: W.act, pw: 0, stat: 'str', fixed: J.dmg, src: 'mob', srcEnt: m, srcId: m.id, knock: W.knock, kx: fx, kz: fz, max: 1, iv: 99 };
+    if (m.wpn === 'sword') this.hz(Object.assign(base, { kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: W.r, half: W.half, fx: 'ysword', dodge: true }));
+    else if (m.wpn === 'fist') this.hz(Object.assign(base, { kind: 'rect', x: m.x + fx * 0.25, z: m.z + fz * 0.25, yaw: m.yaw, len: W.len, w: W.w, fx: 'yfist', single: true }));
+    else this.hz(Object.assign(base, { kind: 'line', x: m.x + fx * 0.5, z: m.z + fz * 0.5, yaw: m.yaw, len: W.len, w: W.w, fx: 'ybeam', dodge: true, single: true }));
+    m.act = { t: 0, w: W.wind, end: W.wind + W.act + W.rec };
+    m.cd = W.cd[0] + this.rng.next() * (W.cd[1] - W.cd[0]) + m.act.end;
+    this.ev('yAtk', { w: m.wpn, x: m.x, z: m.z });
+  };
+
+  P.yoshiDie = function (m) {
+    this.kills++;
+    const gi = { p1: 0, p2: 1, p3: 2 }[m.grp]; if (gi != null) this.phaseKills[gi]++;
+    for (const h of this.hazards) if (h.srcId === m.id && h.t < h.warn) h.dead = 1; // 振りかぶり中に倒れたら攻撃は出ない
+    if (this.rng.next() < DATA.JOBAN.dropRate) this.spawnPickup('bag', m.x, m.z, DATA.ITEM_IDS[(this.rng.next() * DATA.ITEM_IDS.length) | 0]);
+    this.ev('ykill', { n: this.kills });
+  };
+})();
+
 /* ===== proto.js ===== */
 /* =====================================================================
    proto.js — スナップショットの符号化/復元（three.js・DOM 非依存）
@@ -2259,11 +2536,11 @@ const PROTO = (() => {
   const SK_IDS = Object.keys(DATA.SKILLS), SK_I = Object.fromEntries(SK_IDS.map((k, i) => [k, i]));
   const IT_I = Object.fromEntries(DATA.ITEM_IDS.map((k, i) => [k, i]));
   const ST = ['ok', 'down', 'gone'], ST_I = { ok: 0, down: 1, gone: 2 };
-  const STAGES = ['street', 'intro', 'boss', 'won', 'lost'], STAGE_I = Object.fromEntries(STAGES.map((k, i) => [k, i]));
+  const STAGES = ['street', 'intro', 'boss', 'won', 'lost', 'train', 'arrive'], STAGE_IDS = ['senju', 'joban'], TRPH = ['stop', 'run'], MK = ['fuda', 'sword', 'fist', 'beam'], STAGE_I = Object.fromEntries(STAGES.map((k, i) => [k, i]));
   const BARR = ['street', 'none', 'plaza'], BARR_I = { street: 0, none: 1, plaza: 2 };
   const PK = ['food', 'bag', 'candy'], PK_I = { food: 0, bag: 1, candy: 2 };
   const CTX = ['dash', 'revive', 'lantern'], CTX_I = { dash: 0, revive: 1, lantern: 2, '': 0 };
-  const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
+  const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land', 'ysword', 'yfist', 'ybeam'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
   const FLPH = ['rise', 'cross', 'gap', 'land'], FLPH_I = { rise: 0, cross: 1, gap: 2, land: 3 };
   const r2 = v => Math.round(v * 100) / 100, r1 = v => Math.round(v * 10) / 10;
   const EV_SKIP = new Set(['swing']); // 量が多い演出は数を絞る
@@ -2289,7 +2566,7 @@ const PROTO = (() => {
     const b = sim.boss;
     const B = b ? [r2(b.x), r2(b.z), r2(b.y), r2(b.yaw), Math.round(b.hp / b.maxHp * 1000), BST_I[b.st], b.mv ? BMV_I[b.mv] : 0, r2(b.t), b.phase, (b.defDown > 0 ? 1 : 0) | (b.st === 'stun' ? 2 : 0) | (b.dots && b.dots.length ? 4 : 0),
       b.fl ? [FLPH_I[b.fl.ph], r2(b.fl.yaw || 0), b.fl.i, b.fl.n, r2(b.fl.len || 0), r2(b.fl.t)] : 0, b.target, b.downT || 0] : 0;
-    const M = sim.mobs.map(m => [m.id, r2(m.x), r2(m.z), r2(m.yaw), Math.round(Math.max(0, m.hp) / m.maxHp * 1000), m.st === 'ok' ? 0 : 1, m.wind > 0 ? 1 : 0, m.para > 0 ? 1 : 0]);
+    const M = sim.mobs.map(m => [m.id, r2(m.x), r2(m.z), r2(m.yaw), Math.round(Math.max(0, m.hp) / m.maxHp * 1000), m.st === 'ok' ? 0 : 1, m.wind > 0 ? 1 : 0, m.para > 0 ? 1 : 0].concat(m.kind === 'yoshi' ? [MK.indexOf(m.wpn), m.act ? (m.act.t < m.act.w ? 1 : 2) : 0, m.enterT > 0 ? 1 : 0, m.moving ? 1 : 0] : []));
     let P = sim.projs.map(p => [p.id, PJ_I[p.kind], r2(p.x), r2(p.z), r2(p.yaw || 0), p.team === 'ally' ? 0 : 1, p.owner == null ? -1 : p.owner, r2(p.r)]);
     const H = sim.hazards.map(h => [h.id, HZ_I[h.kind], r2(h.x), r2(h.z), r2(h.yaw || 0),
       r2(h.kind === 'fan' ? h.r0 : h.kind === 'circle' ? h.r : h.len), r2(h.kind === 'fan' ? h.r1 : h.w || 0), r2(h.kind === 'fan' ? h.half : 0),
@@ -2304,7 +2581,8 @@ const PROTO = (() => {
       if (EV_SKIP.has(e.type) && ++swings > 6) continue;
       const c = {}; for (const k in e) { if (k === 't') continue; const v = e[k]; c[k] = typeof v === 'number' ? r2(v) : v; } E.push(c);
     }
-    const S = [STAGE_I[sim.stage], r1(sim.stageT), r1(sim.timeLeft), BARR_I[sim.barrier], sim.introWait ? 1 : 0, sim.tick, sim.result ? [sim.result.win ? 1 : 0, sim.result.why, r1(sim.result.time)] : 0, sim.diffKey];
+    const S = [STAGE_I[sim.stage], r1(sim.stageT), r1(sim.timeLeft), BARR_I[sim.barrier], sim.introWait ? 1 : 0, sim.tick, sim.result ? [sim.result.win ? 1 : 0, sim.result.why, r1(sim.result.time)] : 0, sim.diffKey,
+      sim.stageId === 'joban' ? 1 : 0, sim.tr ? [sim.tr.at, sim.tr.ph === 'run' ? 1 : 0, r1(sim.tr.v), r1(DATA.JOBAN.segLen[Math.min(3, sim.tr.at)] - sim.tr.d), r1(sim.tr.t), sim.tr.doors] : 0, sim.kills || 0, sim.total || 0, sim.phase || 0];
     const snap = { t: 'sn', g: o.gid || 0, tm: r2(sim.t), s: S, a: A, b: B, m: M, p: P, h: H, k: T, u: K, l: L, e: E, pe: o.pe || 0 };
     if (o.maxBytes) { // room の presence は 4KiB まで
       let j = JSON.stringify(snap).length;
@@ -2313,7 +2591,7 @@ const PROTO = (() => {
     return snap;
   }
   function decodeSnap(s) {
-    const v = { tm: s.tm, g: s.g, stage: STAGES[s.s[0]], stageT: s.s[1], timeLeft: s.s[2], barrier: BARR[s.s[3]], introWait: !!s.s[4], tick: s.s[5], result: s.s[6] ? { win: !!s.s[6][0], why: s.s[6][1], time: s.s[6][2] } : null, diff: s.s[7], pe: s.pe || 0 };
+    const v = { tm: s.tm, g: s.g, stage: STAGES[s.s[0]], stageT: s.s[1], timeLeft: s.s[2], barrier: BARR[s.s[3]], introWait: !!s.s[4], tick: s.s[5], result: s.s[6] ? { win: !!s.s[6][0], why: s.s[6][1], time: s.s[6][2] } : null, diff: s.s[7], pe: s.pe || 0, stageId: STAGE_IDS[s.s[8] || 0], tr: s.s[9] ? { at: s.s[9][0], ph: TRPH[s.s[9][1]], v: s.s[9][2], rem: s.s[9][3], t: s.s[9][4], doors: s.s[9][5] } : null, kills: s.s[10] || 0, total: s.s[11] || 0, phase: s.s[12] || 0 };
     v.allies = s.a.map(r => ({
       slot: r[0], ch: CH_IDS[r[1]], x: r[2], z: r[3], yaw: r[4], st: ST[r[5]], act: ACTS[r[6]], actT: r[7], hpR: r[8] / 1000, sp: r[9], stam: r[10], f: r[11],
       guard: !!(r[11] & 1), stealth: !!(r[11] & 2), inv: !!(r[11] & 4), strBuff: !!(r[11] & 8), defBuff: !!(r[11] & 16), taunt: !!(r[11] & 32), hurt: !!(r[11] & 64), dash: !!(r[11] & 128), tired: !!(r[11] & 256),
@@ -2324,7 +2602,7 @@ const PROTO = (() => {
     }));
     const b = s.b;
     v.boss = b ? { x: b[0], z: b[1], y: b[2], yaw: b[3], hpR: b[4] / 1000, st: BST[b[5]], mv: BMV[b[6]], t: b[7], phase: b[8], defDown: !!(b[9] & 1), stun: !!(b[9] & 2), dot: !!(b[9] & 4), fl: b[10] ? { ph: FLPH[b[10][0]], yaw: b[10][1], i: b[10][2], n: b[10][3], len: b[10][4], t: b[10][5] } : null, target: b[11], downT: b[12] } : null;
-    v.mobs = s.m.map(r => ({ id: r[0], x: r[1], z: r[2], yaw: r[3], hpR: r[4] / 1000, dying: !!r[5], wind: !!r[6], para: !!r[7] }));
+    v.mobs = s.m.map(r => ({ id: r[0], x: r[1], z: r[2], yaw: r[3], hpR: r[4] / 1000, dying: !!r[5], wind: !!r[6], para: !!r[7], kind: MK[r[8] || 0], yoshi: r.length > 8, ph: r[9] || 0, enter: !!r[10], moving: !!r[11] }));
     v.projs = s.p.map(r => ({ id: r[0], kind: PJ[r[1]], x: r[2], z: r[3], yaw: r[4], team: r[5] ? 'enemy' : 'ally', owner: r[6], r: r[7] }));
     v.hz = s.h.map(r => ({ id: r[0], kind: HZ[r[1]], x: r[2], z: r[3], yaw: r[4], a: r[5], b: r[6], c: r[7], t: r[8], warn: r[9], act: r[10], fx: FX[r[11]], brief: r[12] }));
     v.traps = s.k.map(r => ({ id: r[0], kind: r[1] ? 'mine' : 'para', x: r[2], z: r[3], armed: !!r[4] }));
@@ -2362,7 +2640,7 @@ const PROTO = (() => {
    自分の移動だけ予測して表示する。
    ===================================================================== */
 const NETLIB = (() => {
-  const VERSION = 'tb2'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
+  const VERSION = 'tb3'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
   const hashStr = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
   const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
@@ -2445,7 +2723,7 @@ const NETLIB = (() => {
       this.tr = o.transport || null; this.kind = this.tr ? 'host' : 'solo'; this.code = o.code || '';
       this.local = new LocalInput(); this.mySlot = 0; this.sim = null; this.gid = 0; this.acc = 0; this.snapAcc = 0;
       this.views = []; this.clients = new Map(); this.notices = []; this.timeScale = 1; this.paused = false;
-      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'], lv: o.lv || 1 }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), lvs: o.lvs || {}, phase: 'lobby' };
+      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'], lv: o.lv || 1 }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), lvs: o.lvs || {}, stage: 'senju', phase: 'lobby' };
       this.lastLobbySend = 0;
       if (this.tr) {
         this.tr.on('msg', (m, from) => this.onMsg(m, from));
@@ -2490,7 +2768,7 @@ const NETLIB = (() => {
       this.dirtyLobby = true;
     }
     notice(s) { this.notices.push({ s, t: now() }); }
-    lobbyMsg() { return { t: 'lb', v: VERSION, code: this.code, diff: this.lobby.diff, phase: this.lobby.phase, gid: this.gid, slots: this.lobby.slots.map(s => s ? { who: s.who, peer: s.peer, nick: s.nick, ch: s.ch, swap: s.swap, items: s.items, lv: s.lv || 1 } : null), ai: this.aiFill(), aiLv: this.aiFill().map(c => c ? (this.lobby.lvs[c] || 1) : 0) }; }
+    lobbyMsg() { return { t: 'lb', v: VERSION, code: this.code, diff: this.lobby.diff, stage: this.lobby.stage || 'senju', phase: this.lobby.phase, gid: this.gid, slots: this.lobby.slots.map(s => s ? { who: s.who, peer: s.peer, nick: s.nick, ch: s.ch, swap: s.swap, items: s.items, lv: s.lv || 1 } : null), ai: this.aiFill(), aiLv: this.aiFill().map(c => c ? (this.lobby.lvs[c] || 1) : 0) }; }
     aiFill() { const taken = new Set(this.lobby.slots.filter(Boolean).map(s => s.ch)); const pool = this.lobby.aiParty.concat(DATA.CHARS.map(c => c.id)).filter((c, i, a) => a.indexOf(c) === i && !taken.has(c)); return this.lobby.slots.map(s => s ? null : pool.shift()); }
     setMine(o) { Object.assign(this.lobby.slots[0], o); this.dirtyLobby = true; }
     startGame(o) {
@@ -2499,7 +2777,7 @@ const NETLIB = (() => {
       const party = this.lobby.slots.map((s, i) => s ? { ch: s.ch, swap: s.swap, items: s.items, nick: s.nick, lv: s.lv || 1 } : { ch: fill[i], swap: false, items: ['onigiri', 'ramune'], nick: 'AI', lv: this.lobby.lvs[fill[i]] || 1 });
       if (o.party) o.party.forEach((p, i) => { if (!this.lobby.slots[i] || i === 0) Object.assign(party[i], p); });
       this.gid++; this.lobby.phase = 'game';
-      this.sim = new Sim({ party, diff: this.lobby.diff, seed: (Math.random() * 1e9) | 0 });
+      this.sim = new Sim({ party, diff: this.lobby.diff, stageId: o.stageId || this.lobby.stage, seed: (Math.random() * 1e9) | 0 });
       this.sim.allies.forEach((a, i) => { a.ctrlAI = !this.lobby.slots[i] || (this.lobby.slots[i].who === 'peer' && !this.clients.has(this.lobby.slots[i].peer)); });
       for (const c of this.clients.values()) { c.q = 0; c.inp = null; c.loaded = false; }
       this.local = new LocalInput(); this.mySlot = 0; this.acc = 0; this.views = []; this.waitT = this.kind === 'host' ? 0 : -1;
@@ -2620,7 +2898,7 @@ const NETLIB = (() => {
         const dash = L.hold.B && !me.act && !me.tired && (me.stam > 0 || me.ramune);
         const s = (dash ? DATA.SIM.dash : DATA.SIM.walk) * mul * dt;
         const nx = this.pred.x + mx * s, nz = this.pred.z + mz * s;
-        const c = Sim.prototype.clampPos.call({ barrier: v.barrier, boss: v.boss }, this.pred.x, this.pred.z, nx, nz, 0.35);
+        const c = Sim.prototype.clampPos.call({ barrier: v.barrier, boss: v.boss, stageId: v.stageId, clampTrain: Sim.prototype.clampTrain }, this.pred.x, this.pred.z, nx, nz, 0.35);
         this.pendDx = (this.pendDx || 0) + c[0] - this.pred.x; this.pendDz = (this.pendDz || 0) + c[1] - this.pred.z;
         this.pred.x = c[0]; this.pred.z = c[1]; this.pred.yaw = SIMLIB.yawTo(mx, mz);
       }
@@ -2833,6 +3111,9 @@ const AUDIO = (() => {
       case 'boom': N({ f: 1800, f1: 80, dur: 0.6, g: 0.55, rev: 0.4 }); O({ f: 90, f1: 35, dur: 0.5, g: 0.5 }); break;
       case 'para': O({ f: 90, dur: 0.4, type: 'sawtooth', filt: 'bandpass', fq: 2000, q: 5, g: 0.12 }); N({ type: 'highpass', f: 4000, dur: 0.3, g: 0.1 }); break;
       case 'mark': N({ type: 'highpass', f: 2500, dur: 0.25, g: 0.12 }); break;
+      case 'rail': N({ type: 'lowpass', f: 260, dur: 0.07, g: 0.32 }); N({ type: 'lowpass', f: 220, dur: 0.07, g: 0.26, at: t + 0.13 }); N({ type: 'lowpass', f: 260, dur: 0.07, g: 0.3, at: t + 0.42 }); N({ type: 'lowpass', f: 210, dur: 0.08, g: 0.26, at: t + 0.55 }); break;
+      case 'doorOpen': case 'doorClose': N({ type: 'bandpass', f: 1800, f1: 600, q: 0.6, dur: 0.45, g: 0.18 }); O({ f: name === 'doorOpen' ? 880 : 660, dur: 0.12, type: 'triangle', g: 0.06, at: t + 0.4 }); break;
+      case 'trainChime': [0, 0.28].forEach((o, i) => O({ f: [784, 659][i], dur: 0.6, type: 'sine', g: 0.12, at: t + o, rev: 0.5 })); break;
       case 'food': O({ f: 600, f1: 900, dur: 0.08, type: 'triangle', g: 0.12 }); break;
       case 'eat': N({ type: 'bandpass', f: 900, q: 2, dur: 0.06, g: 0.15 }); N({ type: 'bandpass', f: 900, q: 2, dur: 0.06, g: 0.15, at: t + 0.1 }); O({ f: 800, f1: 1200, dur: 0.15, type: 'triangle', g: 0.08, at: t + 0.2 }); break;
       case 'pick': O({ f: 900, f1: 1400, dur: 0.1, type: 'triangle', g: 0.1 }); break;
@@ -2970,7 +3251,7 @@ const GFX = {};
     });
   }
 
-  GFX.buildWorld = function (scene) {
+  GFX.buildWorld = function (scene, fogScene) {
     const W = { lanternsStreet: [], toro: [], signs: [], papers: [], glass: [], flags: [] };
     const ST = DATA.STAGE;
     /* 空 */
@@ -2983,7 +3264,7 @@ const GFX = {};
     stars.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3)); scene.add(new THREE.Points(stars, new THREE.PointsMaterial({ color: 0xfff6e0, size: 1.6, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.8 })));
     const moonT = GFX.tex(128, 128, (g) => { const gr = g.createRadialGradient(64, 64, 10, 64, 64, 64); gr.addColorStop(0, 'rgba(255,248,220,1)'); gr.addColorStop(0.35, 'rgba(255,240,200,.9)'); gr.addColorStop(0.4, 'rgba(255,230,190,.25)'); gr.addColorStop(1, 'rgba(255,220,180,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
     const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: moonT, fog: false, depthWrite: false, transparent: true })); moon.position.set(-90, 120, 220); moon.scale.set(40, 40, 1); scene.add(moon);
-    scene.fog = new THREE.Fog(0x3d3973, 50, 170);
+    (fogScene || scene).fog = new THREE.Fog(0x3d3973, 50, 170);
     /* 明かり */
     scene.add(new THREE.HemisphereLight(0x9a96e6, 0x3d2c34, 1.25));
     const dusk = new THREE.DirectionalLight(0xffb48c, 0.7); dusk.position.set(-40, 30, -80); scene.add(dusk);
@@ -3559,9 +3840,10 @@ const GFX = {};
   };
 
   /* ---------- 札小僧 ---------- */
+  GFX.fudaTex = () => GFX._fudaT || (GFX._fudaT = GFX.tex(64, 128, (g, w, h) => { g.fillStyle = '#fbf6e8'; g.fillRect(0, 0, w, h); g.strokeStyle = '#c0392b'; g.lineWidth = 4; g.strokeRect(5, 5, w - 10, h - 10); GFX.vtext(g, '大売出', w / 2, 32, 30, 32, GFX.FONT_SIGN, '#c0392b'); }));
   GFX.makeMob = () => {
     const root = G(null), body = G(root, 0, 0.22, 0);
-    const fT = GFX._fudaT || (GFX._fudaT = GFX.tex(64, 128, (g, w, h) => { g.fillStyle = '#fbf6e8'; g.fillRect(0, 0, w, h); g.strokeStyle = '#c0392b'; g.lineWidth = 4; g.strokeRect(5, 5, w - 10, h - 10); GFX.vtext(g, '大売出', w / 2, 32, 30, 32, GFX.FONT_SIGN, '#c0392b'); }));
+    const fT = GFX.fudaTex();
     const fm = L(0xffffff, { map: fT });
     B(body, 0.36, 0.5, 0.06, [L(0xe8e0cc), L(0xe8e0cc), L(0xe8e0cc), L(0xe8e0cc), fm, fm], 0, 0.25, 0);
     const head = G(body, 0, 0.58, 0); K(head, 0.14, 0.2, 0xf1ead8, 0, 0, 0); S(head, 0.1, 0xf1ead8, 0, -0.04, 0); eyes(head, -0.03, 0.08, 0.04, 0.02);
@@ -3580,6 +3862,331 @@ const GFX = {};
     m.armL.rotation.z = -0.4 - hop * 0.3; m.armR.rotation.z = e.wind ? 2.4 : 0.4 + hop * 0.3;
     if (e.para) m.body.rotation.z = Math.sin(T * 40) * 0.1;
     if (e.dying) { m.root.rotation.y += T * 10; const s = Math.max(0.01, m.root.scale.x * 0.92); m.root.scale.setScalar(s); }
+  };
+})();
+
+/* ===== render_train.js ===== */
+/* =====================================================================
+   render_train.js — ステージ2「常磐線」の見た目
+   ・青い帯の常磐線（2号車・3号車で戦う。前の1号車には入れない）
+   ・走る車窓（建物・架線柱・線路が流れる）、駅のホーム（北千住・南千住・三河島・日暮里・上野）
+   ・ヨシノシの部下（＝ヨシノシと同じ見た目。猫背・気味の悪い目・知的な眼鏡と角帽。手の武器だけ違う）
+   座標は sim と同じ：x＝左右、z＝前後（+zが上野方面）。車内の床が y=0。
+   ===================================================================== */
+(() => {
+  const P = GFX.parts, S = P.S, B = P.B, C = P.C, K = P.K, G = P.G;
+  const L = GFX.lam, BAS = GFX.bas;
+
+  /* ---------- ヨシノシ（部下も同じ見た目） ---------- */
+  let YM = null;
+  const ymats = () => YM || (YM = {
+    coat: L(0x2b2552), trim: L(0x7a68c8), collar: L(0xebe6d8), skin: L(0xc6bfd4), skinD: L(0x8f86a6), hair: L(0x3a3550),
+    eyeW: L(0xf6f2d6, { emissive: 0x3a3a10, emissiveIntensity: 0.35 }), iris: BAS(0xc8ff3a), pupil: BAS(0x0c0a10), lid: L(0x6d6488),
+    gold: L(0xe0b84e, { emissive: 0x4a3200, emissiveIntensity: 0.5 }), cap: L(0x17151f), mouth: BAS(0x3a1830),
+    blade: L(0xe4ebf2, { emissive: 0x404a58, emissiveIntensity: 0.6 }), hilt: L(0x3a1f1a), guard: L(0xc9a23a),
+    iron: L(0x59606c), ironD: L(0x2e323a), brass: L(0xb98a3c, { emissive: 0x2a1800 }), glow: new THREE.MeshBasicMaterial({ color: 0xb6ff6a, transparent: true, opacity: 0.9, depthWrite: false }),
+    boot: L(0x1d1a26),
+  });
+  const buildYoshi = (wpn) => {
+    const M = ymats(), root = G(null), body = G(root, 0, 0.56, 0);
+    const legL = G(body, -0.1, 0, 0), legR = G(body, 0.1, 0, 0); body.name = 'body'; legL.name = 'legL'; legR.name = 'legR';
+    for (const lg of [legL, legR]) { C(lg, 0.05, 0.045, 0.5, M.coat, 0, -0.25, 0); B(lg, 0.1, 0.07, 0.2, M.boot, 0, -0.52, 0.04); }
+    // 猫背：背骨ごと前に曲げ、首はさらに前へ突き出す
+    const spine = G(body, 0, 0.02, 0); spine.rotation.x = 0.55; spine.name = 'spine';
+    C(spine, 0.17, 0.3, 0.74, M.coat, 0, 0.33, 0);
+    C(spine, 0.305, 0.31, 0.05, M.trim, 0, 0.0, 0);
+    B(spine, 0.03, 0.62, 0.02, M.trim, 0, 0.36, 0.235);
+    for (const y of [0.22, 0.38, 0.54]) S(spine, 0.022, M.gold, 0, y, 0.24 - y * 0.12);
+    C(spine, 0.15, 0.19, 0.13, M.collar, 0, 0.7, 0.01);
+    const neck = G(spine, 0, 0.74, 0.05); neck.rotation.x = -0.3; neck.name = 'neck'; // 首は前へ突き出し、顔はこちらを向く
+    const head = G(neck, 0, 0.17, 0.05); head.name = 'head';
+    S(head, 0.2, M.skin, 0, 0.06, 0, 1, 1.3, 1.05); // 大きなおでこ（知的）
+    B(head, 0.28, 0.045, 0.07, M.skinD, 0, 0.07, 0.16);
+    for (const s of [-1, 1]) B(head, 0.04, 0.14, 0.06, M.hair, s * 0.19, -0.02, -0.02);
+    // 気味の悪い目：左は大きく見開き、右は小さい。どちらも小さな瞳
+    const eyeL = G(head, -0.085, 0.0, 0.15), eyeR = G(head, 0.085, 0.025, 0.155);
+    S(eyeL, 0.092, M.eyeW, 0, 0, 0); S(eyeL, 0.055, M.iris, 0, 0, 0.055); S(eyeL, 0.02, M.pupil, 0, 0, 0.1);
+    S(eyeR, 0.056, M.eyeW, 0, 0, 0); S(eyeR, 0.032, M.iris, 0, 0, 0.034); S(eyeR, 0.012, M.pupil, 0, 0, 0.062);
+    B(eyeR, 0.13, 0.03, 0.05, M.lid, 0, 0.045, 0.03).rotation.z = -0.25; // 半分閉じたまぶた
+    // 丸眼鏡（金縁）と、片方だけの鎖
+    const ring = (r, x, y) => { const m = new THREE.Mesh(new THREE.TorusGeometry(r, 0.009, 6, 20), M.gold); m.position.set(x, y, 0.225); head.add(m); return m; };
+    ring(0.105, -0.085, 0.0); ring(0.075, 0.085, 0.025); B(head, 0.05, 0.012, 0.012, M.gold, 0, 0.02, 0.23);
+    C(head, 0.004, 0.004, 0.22, M.gold, -0.19, -0.1, 0.17).rotation.x = 0.3;
+    B(head, 0.09, 0.014, 0.01, M.mouth, 0.02, -0.15, 0.185).rotation.z = 0.18; // 薄い口（少しゆがむ）
+    // 角帽（学者の帽子）と房
+    C(head, 0.16, 0.18, 0.09, M.cap, 0, 0.27, -0.01);
+    const board = B(head, 0.3, 0.025, 0.3, M.cap, 0, 0.33, -0.03); board.rotation.y = 0.75;
+    C(head, 0.006, 0.006, 0.2, M.gold, 0.2, 0.24, 0.1); S(head, 0.022, M.gold, 0.2, 0.13, 0.1);
+    // 腕（細長い）
+    const armL = G(spine, -0.22, 0.62, 0.02), armR = G(spine, 0.22, 0.62, 0.02); armL.name = 'armL'; armR.name = 'armR';
+    for (const a of [armL, armR]) { C(a, 0.05, 0.042, 0.56, M.coat, 0, -0.28, 0); C(a, 0.055, 0.055, 0.06, M.trim, 0, -0.54, 0); S(a, 0.055, M.skin, 0, -0.6, 0, 1, 1.2, 1); }
+    // 手の武器（ここだけ違う）
+    const hand = G(armR, 0, -0.6, 0), w = G(hand); let glow = null;
+    if (wpn === 'sword') {
+      w.rotation.x = -1.35;
+      C(w, 0.025, 0.025, 0.18, M.hilt, 0, -0.02, 0); B(w, 0.16, 0.03, 0.05, M.guard, 0, -0.12, 0);
+      B(w, 0.045, 0.85, 0.012, M.blade, 0, -0.56, 0);
+      K(w, 0.032, 0.08, M.blade, 0, -1.02, 0).rotation.z = Math.PI;
+    } else if (wpn === 'fist') {
+      B(w, 0.2, 0.2, 0.22, M.iron, 0, -0.03, 0.02);
+      C(w, 0.09, 0.1, 0.14, M.ironD, 0, 0.11, 0);
+      for (const x of [-0.06, 0, 0.06]) K(w, 0.025, 0.07, M.iron, x, -0.08, 0.15).rotation.x = Math.PI / 2;
+    } else {
+      w.rotation.x = -1.45;
+      C(w, 0.065, 0.085, 0.6, M.brass, 0, -0.26, 0);
+      const mz = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.02, 6, 16), M.iron); mz.position.set(0, -0.56, 0); mz.rotation.x = Math.PI / 2; w.add(mz);
+      C(w, 0.09, 0.09, 0.08, M.ironD, 0, 0.02, 0);
+      glow = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), M.glow); glow.position.set(0, -0.6, 0); w.add(glow); glow.name = 'glow'; glow.userData.keep = true;
+    }
+    return root;
+  };
+  /** 動く部分（脚・背中・頭・腕）ごとに、色を頂点に焼き込んで1つにまとめる（1体＝6〜7回の描画） */
+  const colOf = (m) => { const c = m.color.clone(); if (m.emissive) c.add(m.emissive.clone().multiplyScalar(m.emissiveIntensity == null ? 1 : m.emissiveIntensity)); if (m.isMeshBasicMaterial) c.multiplyScalar(1.15); return c; };
+  function mergeVC(items) {
+    const pos = [], nor = [], col = [], m3 = new THREE.Matrix3(), v = new THREE.Vector3();
+    for (const { geo, m, c } of items) {
+      const g = geo.index ? geo.toNonIndexed() : geo, p = g.attributes.position, n = g.attributes.normal; m3.getNormalMatrix(m);
+      for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m); pos.push(v.x, v.y, v.z); v.fromBufferAttribute(n, i).applyMatrix3(m3).normalize(); nor.push(v.x, v.y, v.z); col.push(c.r, c.g, c.b); }
+    }
+    const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); out.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    return out;
+  }
+  const YT = {}; // 武器ごとのひな形
+  function yoshiTemplate(wpn) {
+    if (YT[wpn]) return YT[wpn];
+    const root = buildYoshi(wpn); root.updateMatrixWorld(true);
+    const anchors = ['legL', 'legR', 'spine', 'head', 'armL', 'armR'].map(n => root.getObjectByName(n)), buckets = new Map(anchors.map(a => [a, []]));
+    const inv = new THREE.Matrix4(), meshes = [];
+    root.traverse(o => { if (o.isMesh) meshes.push(o); });
+    for (const o of meshes) {
+      if (o.userData.keep) continue;
+      let p = o.parent; while (p && !buckets.has(p)) p = p.parent; if (!p) continue;
+      inv.copy(p.matrixWorld).invert(); buckets.get(p).push({ geo: o.geometry, m: new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld), c: colOf(o.material) });
+      o.parent.remove(o); o.geometry.dispose();
+    }
+    const vc = ymats().vc || (ymats().vc = new THREE.MeshLambertMaterial({ vertexColors: true }));
+    for (const [a, items] of buckets) if (items.length) { const mm = new THREE.Mesh(mergeVC(items), vc); mm.name = a.name + 'Mesh'; a.add(mm); }
+    return (YT[wpn] = root);
+  }
+  GFX.makeYoshi = (wpn, scale) => {
+    const root = yoshiTemplate(wpn).clone(true), g = n => root.getObjectByName(n), vc = ymats().vc, parts = [];
+    root.traverse(o => { if (o.isMesh && o.material === vc) parts.push(o); });
+    root.scale.setScalar(scale || 1);
+    const shadow = GFX.blob(0.42);
+    return { parts, fade: false, root, body: g('body'), spine: g('spine'), neck: g('neck'), head: g('head'), armL: g('armL'), armR: g('armR'), legL: g('legL'), legR: g('legR'), glow: g('glow'), shadow, wpn, ph: Math.random() * 10, die: 0 };
+  };
+  /** 自分とカメラの間に立つ部下は半透明にする（見た目だけ） */
+  GFX.fadeYoshi = (m, on) => {
+    if (m.fade === on) return; m.fade = on; const M = ymats();
+    const fm = M.vcFade || (M.vcFade = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.28, depthWrite: false }));
+    for (const p of m.parts) p.material = on ? fm : M.vc;
+  };
+  GFX.animYoshi = (m, e, T, dt) => {
+    m.root.position.set(e.x, 0, e.z); m.root.rotation.set(0, e.yaw, 0); m.shadow.position.set(e.x, 0.02, e.z);
+    const ph = m.ph, mv = e.moving && !e.dying ? 1 : 0, wk = T * 9 + ph;
+    m.legL.rotation.x = Math.sin(wk) * 0.55 * mv; m.legR.rotation.x = -Math.sin(wk) * 0.55 * mv;
+    m.body.position.y = 0.56 + Math.abs(Math.sin(wk)) * 0.04 * mv;
+    m.spine.rotation.x = 0.55 + Math.sin(T * 2.1 + ph) * 0.05; m.spine.rotation.z = Math.sin(T * 1.6 + ph) * 0.07;
+    // ときどき首をかくっと傾ける（気味が悪い）
+    const tw = Math.sin(T * 0.9 + ph * 3); m.neck.rotation.z = tw > 0.9 ? 0.4 : Math.sin(T * 1.3 + ph) * 0.08;
+    m.head.rotation.y = Math.sin(T * 0.7 + ph * 2) * 0.22;
+    let aR = -0.3 + Math.sin(wk) * 0.25 * mv, aL = -0.4 - Math.sin(wk) * 0.25 * mv, lunge = 0;
+    if (e.wind || e.ph === 2) {
+      const wind = e.ph === 1, k = wind ? 1 : 0;
+      if (m.wpn === 'sword') { aR = wind ? -2.7 : 0.5; lunge = wind ? -0.1 : 0.25; }
+      else if (m.wpn === 'fist') { aR = wind ? 0.7 : -1.55; lunge = wind ? -0.15 : 0.3; }
+      else { aR = wind ? -1.2 : -0.9; lunge = wind ? 0 : -0.12; }
+      aL = -0.6 - k * 0.2;
+    } else if (m.wpn === 'beam') aR = -1.1 + Math.sin(T * 2 + ph) * 0.05;
+    m.armR.rotation.x = aR; m.armL.rotation.x = aL; m.spine.rotation.x += lunge;
+    if (m.glow) { const on = e.ph === 1 ? 0.7 + Math.sin(T * 30) * 0.3 : e.ph === 2 ? 1.8 : 0.35; m.glow.scale.setScalar(on); }
+    if (e.para) m.root.rotation.z = Math.sin(T * 40) * 0.08;
+    if (e.enter) { m.root.scale.setScalar(Math.min(1, (m.root.scale.x || 0.4) + dt * 2.5)); } else if (!e.dying) m.root.scale.setScalar(1);
+    if (e.dying) { m.die += dt; const k = Math.min(1, m.die / 0.55); m.root.rotation.x = k * 1.3; m.root.position.y = -k * 0.5; m.root.scale.setScalar(Math.max(0.01, 1 - k * 0.6)); m.shadow.visible = k < 0.8; }
+  };
+
+  /* ---------- 常磐線（車内・車外・車窓・ホーム） ---------- */
+  GFX.buildTrain = function (scene) {
+    const J = DATA.JOBAN, rnd = GFX.rnd;
+    const T = { root: new THREE.Group(), train: new THREE.Group(), scen: new THREE.Group(), doors: [], dist: 0, lcd: null, platSt: -1 };
+    scene.add(T.root); T.root.add(T.train); T.root.add(T.scen); T.root.visible = false;
+    T.root.add(new THREE.HemisphereLight(0xf6f4ff, 0x5a5466, 1.25));
+    const dl = new THREE.DirectionalLight(0xfff6e8, 0.55); dl.position.set(3, 10, 6); T.root.add(dl);
+    const IN = 1.95, CEIL = 2.35, WIN0 = 0.95, WIN1 = 1.95;
+    const cars = [{ c: -11, nm: '3号車' }, { c: 11, nm: '2号車' }];
+    const DOORS = [-7.5, -2.5, 2.5, 7.5];
+    /* 材質 */
+    const floorT = GFX.tex(256, 256, (g, w, h) => { g.fillStyle = '#7b7f88'; g.fillRect(0, 0, w, h); for (let i = 0; i < 900; i++) { const v = 100 + rnd() * 40 | 0; g.fillStyle = `rgb(${v},${v + 2},${v + 8})`; g.fillRect(rnd() * w, rnd() * h, 2, 2); } }, [2, 10]);
+    const floorM = L(0xffffff, { map: floorT }), wallIn = L(0xe9e6de), seatM = L(0x2c58a8), seatD = L(0x23468a), ceilM = L(0xf3f3f0);
+    const lightM = BAS(0xfffbf0), poleM = L(0xd0d5dc), strapM = L(0xf5f5f5), metalD = L(0x6a6f78), yellowM = L(0xffd23a);
+    const glassM = new THREE.MeshLambertMaterial({ color: 0xa8d0e0, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide });
+    const outerT = (top) => GFX.tex(64, 128, (g, w, h) => { g.fillStyle = '#c4c9cf'; g.fillRect(0, 0, w, h); for (let x = 0; x < w; x += 6) { g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(x, 0, 2, h); } if (top) { g.fillStyle = '#1d56b8'; g.fillRect(0, 0, w, 26); g.fillStyle = '#19a596'; g.fillRect(0, 26, w, 8); } else { g.fillStyle = '#1d56b8'; g.fillRect(0, h - 20, w, 20); } });
+    const outLowM = L(0xffffff, { map: outerT(true) }), outUpM = L(0xffffff, { map: outerT(false) }), roofM = L(0x8d939b), underM = L(0x2a2c32);
+    const doorT = GFX.tex(64, 160, (g, w, h) => { g.fillStyle = '#b9bfc7'; g.fillRect(0, 0, w, h); g.fillStyle = '#3d4a58'; g.fillRect(10, 18, w - 20, 64); g.fillStyle = '#ffd23a'; g.fillRect(0, 0, 5, h); g.fillRect(w - 5, 0, 5, h); });
+    const doorM = L(0xffffff, { map: doorT });
+    const fadeM = L(0x34363e, { transparent: true }); T.fade = [fadeM];
+    /* 車内（2両分） */
+    const items = { floor: [], wallIn: [], outLow: [], outUp: [], glass: [], frame: [], seat: [], seatD: [], ceil: [], light: [], pole: [], strap: [], yellow: [], roof: [], under: [], doorR: [], doorA: [], doorB: [], fade: [], mid: [], dark: [], wheel: [], lcd: [], blue: [], lamp: [] };
+    const plane = (w, h) => new THREE.PlaneGeometry(w, h), box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+    for (const car of cars) {
+      const z0 = car.c - 10, z1 = car.c + 10;
+      items.floor.push({ geo: plane(IN * 2, 20), m: GFX.M(0, 0, car.c, 0, -Math.PI / 2) });
+      items.ceil.push({ geo: plane(IN * 2, 20), m: GFX.M(0, CEIL, car.c, 0, Math.PI / 2) });
+      items.roof.push({ geo: box(IN * 2 + 0.2, 0.3, 20), m: GFX.M(0, CEIL + 0.16, car.c) });
+      items.under.push({ geo: box(IN * 2 + 0.1, 1.05, 19.6), m: GFX.M(0, -0.55, car.c) });
+      for (const s of [-1, 1]) {
+        // 壁：ドアのところは開け、窓の上下に壁を張る
+        const cuts = [z0]; for (const d of DOORS) cuts.push(car.c + d - 0.65, car.c + d + 0.65); cuts.push(z1);
+        for (let i = 0; i < cuts.length; i += 2) {
+          const a = cuts[i], b = cuts[i + 1], len = b - a, mz = (a + b) / 2;
+          if (len < 0.1) continue;
+          items.wallIn.push({ geo: plane(len, WIN0), m: GFX.M(s * IN, WIN0 / 2, mz, -s * Math.PI / 2) });
+          items.wallIn.push({ geo: plane(len, CEIL - WIN1), m: GFX.M(s * IN, (CEIL + WIN1) / 2, mz, -s * Math.PI / 2) });
+          items.outLow.push({ geo: plane(len, WIN0 + 1.05), m: GFX.M(s * (IN + 0.08), (WIN0 - 1.05) / 2, mz, s * Math.PI / 2) });
+          items.outUp.push({ geo: plane(len, CEIL + 0.3 - WIN1), m: GFX.M(s * (IN + 0.08), (CEIL + 0.3 + WIN1) / 2, mz, s * Math.PI / 2) });
+          items.glass.push({ geo: plane(len, WIN1 - WIN0), m: GFX.M(s * (IN + 0.04), (WIN0 + WIN1) / 2, mz, s * Math.PI / 2) });
+          for (let k = 0; k <= Math.floor(len / 1.6); k++) items.frame.push({ geo: box(0.1, WIN1 - WIN0, 0.07), m: GFX.M(s * (IN + 0.03), (WIN0 + WIN1) / 2, a + Math.min(len, k * 1.6)) });
+          items.frame.push({ geo: box(0.12, 0.05, len), m: GFX.M(s * (IN + 0.02), WIN0, mz) }); items.frame.push({ geo: box(0.12, 0.05, len), m: GFX.M(s * (IN + 0.02), WIN1, mz) });
+          // ロングシート
+          const sa = a + 0.08, sb = b - 0.08;
+          if (sb - sa > 0.6) {
+            items.seat.push({ geo: box(0.5, 0.12, sb - sa), m: GFX.M(s * (IN - 0.27), 0.44, (sa + sb) / 2) });
+            items.seat.push({ geo: box(0.1, 0.5, sb - sa), m: GFX.M(s * (IN - 0.06), 0.72, (sa + sb) / 2) });
+            items.seatD.push({ geo: box(0.46, 0.38, sb - sa - 0.1), m: GFX.M(s * (IN - 0.28), 0.19, (sa + sb) / 2) });
+            items.pole.push({ geo: new THREE.CylinderGeometry(0.025, 0.025, CEIL, 8), m: GFX.M(s * (IN - 0.55), CEIL / 2, sa + 0.05) });
+            items.pole.push({ geo: new THREE.CylinderGeometry(0.025, 0.025, CEIL, 8), m: GFX.M(s * (IN - 0.55), CEIL / 2, sb - 0.05) });
+            // つり革
+            items.pole.push({ geo: new THREE.CylinderGeometry(0.018, 0.018, sb - sa, 6), m: GFX.M(s * (IN - 0.6), CEIL - 0.25, (sa + sb) / 2, 0, Math.PI / 2) });
+            for (let z = sa + 0.3; z < sb - 0.2; z += 0.45) { items.strap.push({ geo: box(0.03, 0.22, 0.012), m: GFX.M(s * (IN - 0.6), CEIL - 0.37, z) }); items.strap.push({ geo: new THREE.TorusGeometry(0.06, 0.012, 5, 12), m: GFX.M(s * (IN - 0.6), CEIL - 0.53, z, Math.PI / 2) }); }
+          }
+          // 荷物棚
+          items.frame.push({ geo: box(0.32, 0.03, len), m: GFX.M(s * (IN - 0.17), WIN1 + 0.05, mz) });
+        }
+        // 天井の照明
+        items.light.push({ geo: box(0.16, 0.03, 19), m: GFX.M(s * 0.7, CEIL - 0.02, car.c) });
+        // ドア（左右）
+        for (const d of DOORS) {
+          const zc = car.c + d;
+          for (const k of [-1, 1]) (s > 0 ? items.doorR : k < 0 ? items.doorA : items.doorB).push({ geo: box(0.05, 1.95, 0.65), m: GFX.M(s * (IN + 0.03), 0.98, zc + k * 0.325) }); // 開くのは左側（ホーム側）だけ
+          items.frame.push({ geo: box(0.14, CEIL + 0.3 - 1.95, 1.3), m: GFX.M(s * (IN + 0.03), (CEIL + 0.3 + 1.95) / 2, zc) });
+          items.yellow.push({ geo: plane(1.2, 0.12), m: GFX.M(s * (IN - 0.08), 0.004, zc, 0, -Math.PI / 2) });
+        }
+      }
+    }
+    // 連結部（細い通路・ほろ）と、車両の端の壁
+    const gw = J.gwHalfW + 0.05;
+    for (const s of [-1, 1]) {
+      items.fade.push({ geo: box(0.08, CEIL, 2.0), m: GFX.M(s * gw, CEIL / 2, 0) });
+      for (const z of [-1, 1]) items.fade.push({ geo: box(IN - gw, CEIL, 0.1), m: GFX.M(s * (gw + (IN - gw) / 2), CEIL / 2, z) });
+    }
+    items.floor.push({ geo: plane(gw * 2, 2), m: GFX.M(0, 0.001, 0, 0, -Math.PI / 2) });
+    // 外から見た連結部：車体の端を少し伸ばし、すき間（ほろ）は細く見せる
+    for (const s of [-1, 1]) for (const [a, b] of [[-1, -0.32], [0.32, 1]]) {
+      const len = b - a, mz = (a + b) / 2;
+      items.outLow.push({ geo: plane(len, WIN0 + 1.05), m: GFX.M(s * (IN + 0.08), (WIN0 - 1.05) / 2, mz, s * Math.PI / 2) });
+      items.outUp.push({ geo: plane(len, CEIL + 0.3 - WIN1), m: GFX.M(s * (IN + 0.08), (CEIL + 0.3 + WIN1) / 2, mz, s * Math.PI / 2) });
+      items.mid.push({ geo: plane(len, WIN1 - WIN0), m: GFX.M(s * (IN + 0.08), (WIN0 + WIN1) / 2, mz, s * Math.PI / 2) });
+      if (s > 0) items.roof.push({ geo: box(IN * 2 + 0.2, 0.3, len), m: GFX.M(0, CEIL + 0.16, mz) });
+    }
+    // 3号車の後ろの壁（4号車へは行けない）
+    const endT = GFX.tex(128, 160, (g, w, h) => { g.fillStyle = '#e9e6de'; g.fillRect(0, 0, w, h); g.fillStyle = '#b9bfc7'; g.fillRect(34, 20, 60, 140); g.fillStyle = '#3d4a58'; g.fillRect(44, 34, 40, 50); g.fillStyle = '#c03a2a'; g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText('4号車', w / 2, 112); });
+    GFX.mesh(T.train, plane(IN * 2, CEIL), L(0xffffff, { map: endT }), 0, CEIL / 2, -21);
+    // 2号車の前：1号車への入口（開いている。ここから部下が入ってくる）
+    for (const s of [-1, 1]) GFX.mesh(T.train, box(IN - 0.6, CEIL, 0.12), wallIn, s * (0.6 + (IN - 0.6) / 2), CEIL / 2, 21);
+    GFX.mesh(T.train, box(1.2, CEIL - 1.95, 0.12), wallIn, 0, (CEIL + 1.95) / 2, 21);
+    const signT = GFX.tex(256, 64, (g, w, h) => { g.fillStyle = '#16244a'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffd23a'; g.font = `bold 30px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('← 1号車', w / 2, h / 2); });
+    GFX.mesh(T.train, plane(0.9, 0.22), BAS(0xffffff, { map: signT }), 0, 2.12, 20.93, Math.PI);
+    // 1号車（入れない・少し暗い）
+    const dim = L(0x8a8a98);
+    GFX.mesh(T.train, plane(IN * 2, 12), L(0x55585f), 0, 0, 27, 0).rotation.x = -Math.PI / 2;
+    for (const s of [-1, 1]) { GFX.mesh(T.train, box(0.5, 0.5, 10), L(0x1f3d78), s * (IN - 0.27), 0.25, 27.5); GFX.mesh(T.train, box(0.06, CEIL, 12), dim, s * IN, CEIL / 2, 27); }
+    GFX.mesh(T.train, plane(IN * 2, CEIL), L(0x40424a), 0, CEIL / 2, 33, Math.PI);
+    // 中づり広告（架空）
+    const ads = ['北千住 宵町まつり', '常磐線で上野へ', 'ヨシノシ研究所 生徒募集', 'よいまち湯 本日あつ湯'].map((t, i) => GFX.tex(256, 128, (g, w, h) => { g.fillStyle = ['#fff4d6', '#e3f1ff', '#efe6ff', '#ffe8e0'][i]; g.fillRect(0, 0, w, h); g.fillStyle = ['#c0392b', '#1d56b8', '#4a2a8a', '#b8402a'][i]; g.font = `bold 28px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, w / 2, h / 2, w - 16); g.strokeStyle = g.fillStyle; g.lineWidth = 4; g.strokeRect(4, 4, w - 8, h - 8); }));
+    let ai = 0;
+    const adIt = ads.map(() => []);
+    for (const car of cars) for (const dz of [-6, -1, 4, 8.5]) { const a = adIt[ai++ % ads.length]; a.push({ geo: plane(0.8, 0.4), m: GFX.M(0, CEIL - 0.32, car.c + dz) }, { geo: plane(0.8, 0.4), m: GFX.M(0, CEIL - 0.32, car.c + dz, Math.PI) }); } // 表と裏（裏返しの文字にならない）
+    ads.forEach((t, i) => T.train.add(new THREE.Mesh(GFX.merge(adIt[i]), L(0xffffff, { map: t }))));
+    // ドアの上の案内表示（次の駅）
+    const lc = document.createElement('canvas'); lc.width = 256; lc.height = 64; T.lcdCtx = lc.getContext('2d'); T.lcd = new THREE.CanvasTexture(lc); T.lcd.colorSpace = THREE.SRGBColorSpace;
+    const lcdM = BAS(0xffffff, { map: T.lcd });
+    for (const car of cars) for (const d of DOORS) for (const s of [-1, 1]) items.lcd.push({ geo: plane(0.62, 0.16), m: GFX.M(s * (IN - 0.02), 2.12, car.c + d, -s * Math.PI / 2) });
+    T.train.add(new THREE.Mesh(GFX.merge(items.lcd), lcdM));
+    T.setLcd = (top, main, sub) => { const g = T.lcdCtx, w = 256, h = 64; g.fillStyle = '#0a0d14'; g.fillRect(0, 0, w, h); g.fillStyle = '#7fd7ff'; g.font = `16px ${GFX.FONT_UI}`; g.textAlign = 'left'; g.textBaseline = 'top'; g.fillText(top, 8, 4); g.fillStyle = '#ffb030'; g.font = `bold 30px ${GFX.FONT_UI}`; g.fillText(main, 8, 24); g.fillStyle = '#e6eef8'; g.font = `14px ${GFX.FONT_UI}`; g.textAlign = 'right'; g.fillText(sub, w - 8, 42); T.lcd.needsUpdate = true; };
+    // まとめて描く
+    const addM = (arr, mat) => { if (arr.length) T.train.add(new THREE.Mesh(GFX.merge(arr), mat)); };
+    addM(items.floor, floorM); addM(items.wallIn, wallIn); addM(items.outLow, outLowM); addM(items.outUp, outUpM);
+    const gl = new THREE.Mesh(GFX.merge(items.glass), glassM); gl.renderOrder = 2; T.train.add(gl);
+    addM(items.frame, metalD); addM(items.seat, seatM); addM(items.seatD, seatD); addM(items.ceil, ceilM); addM(items.light, lightM); addM(items.pole, poleM); addM(items.strap, strapM); addM(items.yellow, yellowM); addM(items.roof, roofM); addM(items.under, underM);
+    addM(items.doorR, doorM); addM(items.fade, fadeM); addM(items.mid, L(0xb3b8c0));
+    T.leafA = new THREE.Mesh(GFX.merge(items.doorA), doorM); T.leafB = new THREE.Mesh(GFX.merge(items.doorB), doorM); T.train.add(T.leafA, T.leafB); T.doorOpen = 0;
+    // 外から見える前後の車両（1号車の先頭・4〜5号車）
+    const sh = { outLow: [], outUp: [], roof: [], under: [] };
+    const shell = (z0, z1, front) => { const len = z1 - z0, zc = (z0 + z1) / 2;
+      for (const s of [-1, 1]) { sh.outLow.push({ geo: plane(len, WIN0 + 1.05), m: GFX.M(s * (IN + 0.08), (WIN0 - 1.05) / 2, zc, s * Math.PI / 2) }); sh.outUp.push({ geo: plane(len, CEIL + 0.3 - WIN1), m: GFX.M(s * (IN + 0.08), (CEIL + 0.3 + WIN1) / 2, zc, s * Math.PI / 2) }); items.dark.push({ geo: plane(len, WIN1 - WIN0), m: GFX.M(s * (IN + 0.07), (WIN0 + WIN1) / 2, zc, s * Math.PI / 2) }); }
+      sh.roof.push({ geo: box(IN * 2 + 0.2, 0.3, len), m: GFX.M(0, CEIL + 0.16, zc) }); sh.under.push({ geo: box(IN * 2, 1.05, len - 0.4), m: GFX.M(0, -0.55, zc) });
+      if (front) { items.blue.push({ geo: box(IN * 2 + 0.16, 3.4, 0.4), m: GFX.M(0, 0.6, z1 + 0.2) }); items.dark.push({ geo: plane(3.2, 1.1), m: GFX.M(0, 1.6, z1 + 0.41) }); for (const s of [-1, 1]) items.lamp.push({ geo: plane(0.4, 0.2), m: GFX.M(s * 1.3, 0.6, z1 + 0.41) }); }
+    };
+    shell(21, 41, true); shell(-41, -21.05, false); shell(-61, -41.05, false);
+    // 床下の台車
+    for (const z of [-58, -44, -38, -24, -18, -4, 4, 18, 24, 38]) for (const s of [-1, 1]) items.wheel.push({ geo: new THREE.CylinderGeometry(0.42, 0.42, 0.12, 14), m: GFX.M(s * 0.75, -0.75, z, 0, 0, Math.PI / 2) });
+    addM(sh.outLow, outLowM); addM(sh.outUp, outUpM); addM(sh.roof, roofM); addM(sh.under, underM);
+    addM(items.dark, L(0x1c2430)); addM(items.blue, L(0x1d56b8)); addM(items.lamp, BAS(0xfff6d0)); addM(items.wheel, L(0x1a1a1e));
+
+    /* 車窓：地面・線路・架線柱・建物（電車の進みに合わせて後ろへ流れる） */
+    const groundT = GFX.tex(128, 128, (g, w, h) => { g.fillStyle = '#3a3a42'; g.fillRect(0, 0, w, h); for (let i = 0; i < 500; i++) { const v = 60 + rnd() * 40 | 0; g.fillStyle = `rgb(${v},${v},${v + 4})`; g.fillRect(rnd() * w, rnd() * h, 3, 3); } g.fillStyle = '#5a4030'; for (let y = 0; y < h; y += 16) g.fillRect(16, y, w - 32, 6); g.fillStyle = '#b8bcc4'; g.fillRect(34, 0, 5, h); g.fillRect(w - 39, 0, 5, h); }, [1, 60]);
+    T.trackT = groundT;
+    T.scen.add(new THREE.Mesh(GFX.merge([0, -4.6, 4.6, 9.2].map(x => ({ geo: plane(3.2, 480), m: GFX.M(x, -1.12, 0, 0, -Math.PI / 2) }))), L(0xffffff, { map: groundT })));
+    const far = GFX.mesh(T.scen, plane(600, 600), L(0x24232c), 0, -1.2, 0); far.rotation.x = -Math.PI / 2;
+    // 夜の空
+    const sky = new THREE.Mesh(new THREE.SphereGeometry(280, 24, 12), new THREE.MeshBasicMaterial({ color: 0x2a2a58, side: THREE.BackSide, fog: false })); T.root.add(sky);
+    // 架線柱（インスタンス）
+    const NP = 20; T.poles = new THREE.InstancedMesh(new THREE.BoxGeometry(0.25, 7.5, 0.25), L(0x8a8f96), NP * 2); T.scen.add(T.poles);
+    T.beams = new THREE.InstancedMesh(new THREE.BoxGeometry(14, 0.2, 0.2), L(0x8a8f96), NP); T.scen.add(T.beams);
+    // 建物（インスタンス・色違い）
+    const facade = GFX.tex(128, 256, (g, w, h) => { g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); for (let y = 10; y < h; y += 22) for (let x = 8; x < w; x += 20) { const lit = rnd() < 0.45; g.fillStyle = lit ? '#ffe7a8' : '#3a3f58'; g.fillRect(x, y, 12, 12); } }, [2, 3]);
+    const NB = 70; T.blds = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({ map: facade, emissive: 0xffffff, emissiveMap: facade, emissiveIntensity: 0.35 }), NB); T.scen.add(T.blds);
+    T.bld = []; let zz = -220;
+    for (let i = 0; i < NB; i++) { const s = i % 2 ? 1 : -1, w = 7 + rnd() * 12, h = 6 + rnd() * 26, d = 8 + rnd() * 10; T.bld.push({ s, x: s * (16 + rnd() * 30 + d / 2), z: zz, w, h, d }); if (i % 2) zz += 6 + rnd() * 8; const c = new THREE.Color().setHSL(0.6 + rnd() * 0.15, 0.08 + rnd() * 0.1, 0.45 + rnd() * 0.3); T.blds.setColorAt(i, c); }
+    T.bldSpan = zz + 220;
+    /* ホーム（駅に止まるとき・左側） */
+    const plat = new THREE.Group(); T.scen.add(plat); T.plat = plat;
+    const pf = GFX.mesh(plat, box(6, 1.1, 150), L(0x9c9a94), -(IN + 0.12 + 3), -0.56, 0);
+    GFX.mesh(plat, plane(0.35, 150), L(0xf2c400), -(IN + 0.45), 0.005, 0).rotation.x = -Math.PI / 2;
+    { const pil = []; for (let z = -70; z <= 70; z += 10) pil.push({ geo: box(0.3, 3.4, 0.3), m: GFX.M(-(IN + 4), 1.7, z) }); plat.add(new THREE.Mesh(GFX.merge(pil), L(0x6c6f78))); }
+    GFX.mesh(plat, box(5.2, 0.2, 150), L(0x5a5e68), -(IN + 3.2), 3.45, 0);
+    { const bn = []; for (let z = -60; z <= 60; z += 20) bn.push({ geo: box(0.5, 0.42, 1.8), m: GFX.M(-(IN + 4.6), 0.21, z + 5) }); plat.add(new THREE.Mesh(GFX.merge(bn), L(0x7a5a3a))); }
+    // 駅名標（3枚・駅ごとに書きかえる）
+    const nc = document.createElement('canvas'); nc.width = 512; nc.height = 192; T.nameCtx = nc.getContext('2d'); T.nameTex = new THREE.CanvasTexture(nc); T.nameTex.colorSpace = THREE.SRGBColorSpace;
+    { const fr = [], fc = []; for (const z of [-14, 16, 46]) { fr.push({ geo: box(0.06, 1.0, 2.66), m: GFX.M(-(IN + 3.6), 2.3, z) }); for (const s of [-1, 1]) fc.push({ geo: plane(2.6, 0.95), m: GFX.M(-(IN + 3.6) + s * 0.035, 2.3, z, s * Math.PI / 2) }); }
+      plat.add(new THREE.Mesh(GFX.merge(fr), L(0x444444))); plat.add(new THREE.Mesh(GFX.merge(fc), BAS(0xffffff, { map: T.nameTex }))); }
+    T.setStation = (i) => {
+      if (T.platSt === i) return; T.platSt = i;
+      const g = T.nameCtx, w = 512, h = 192, st = J.stations, en = J.stationsEn;
+      g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); g.fillStyle = '#1d56b8'; g.fillRect(0, 120, w, 18);
+      g.fillStyle = '#111'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `bold 66px ${GFX.FONT_UI}`; g.fillText(st[i], w / 2, 56); g.font = `22px ${GFX.FONT_UI}`; g.fillText(en[i], w / 2, 104);
+      g.font = `18px ${GFX.FONT_UI}`; g.textAlign = 'left'; if (i > 0) g.fillText('← ' + st[i - 1], 12, 166); g.textAlign = 'right'; if (i < 4) g.fillText(st[i + 1] + ' →', w - 12, 166);
+      g.fillStyle = '#19a596'; g.fillRect(0, 0, w, 8); T.nameTex.needsUpdate = true;
+    };
+    T.setStation(0); T.setLcd('常磐線 上野行', '北千住', 'Kita-Senju');
+    const tmp = new THREE.Object3D();
+    /** 車窓を動かす。dist＝進んだ距離（m）、platZ＝ホームの位置（null なら表示しない） */
+    T.update = (dist, platZ, doorsOpen, T0, dt) => {
+      T.dist = dist;
+      groundT.offset.y = -dist / 8;
+      for (let i = 0; i < NP; i++) {
+        const z = ((i * 25 - dist) % 500 + 500) % 500 - 250;
+        for (const s of [0, 1]) { tmp.position.set((s ? 1 : -1) * 7.2, 2.6, z); tmp.rotation.set(0, 0, 0); tmp.scale.set(1, 1, 1); tmp.updateMatrix(); T.poles.setMatrixAt(i * 2 + s, tmp.matrix); }
+        tmp.position.set(0, 6.3, z); tmp.updateMatrix(); T.beams.setMatrixAt(i, tmp.matrix);
+      }
+      T.poles.instanceMatrix.needsUpdate = T.beams.instanceMatrix.needsUpdate = true;
+      for (let i = 0; i < NB; i++) { const b = T.bld[i]; const z = ((b.z + 220 - dist) % T.bldSpan + T.bldSpan) % T.bldSpan - 220; tmp.position.set(b.x, b.h / 2 - 1.1, z); tmp.scale.set(b.d, b.h, b.w); tmp.updateMatrix(); T.blds.setMatrixAt(i, tmp.matrix); }
+      T.blds.instanceMatrix.needsUpdate = true;
+      plat.visible = platZ != null && Math.abs(platZ) < 260; if (plat.visible) plat.position.z = platZ;
+      // 左側のドアの開け閉め
+      T.doorOpen += Math.max(-dt * 2.2, Math.min(dt * 2.2, (doorsOpen ? 1 : 0) - T.doorOpen)); T.leafA.position.z = -T.doorOpen * 0.62; T.leafB.position.z = T.doorOpen * 0.62;
+    };
+    return T;
   };
 })();
 
@@ -3644,7 +4251,7 @@ const R = (() => {
     pr = Math.min(window.devicePixelRatio || 1, 1.75); renderer.setPixelRatio(pr);
     scene = new THREE.Scene(); scene.background = new THREE.Color(0x2a2650);
     camera = new THREE.PerspectiveCamera(50, 1, 0.2, 400);
-    W = GFX.buildWorld(scene);
+    const wroot = new THREE.Group(); scene.add(wroot); W = GFX.buildWorld(wroot, scene); W.root = wroot; // 北千住（ステージ1）
     PA = makePoints(700, true); PN = makePoints(500, false); scene.add(PA.pts); scene.add(PN.pts);
     resize();
     // 自分の足元の印（ボスの体に隠れても見える）
@@ -3723,7 +4330,7 @@ const R = (() => {
       PJM.fire = [new THREE.SphereGeometry(0.26, 12, 10), new THREE.MeshBasicMaterial({ color: 0xff7a2a })];
       PJM.mark = [new THREE.TorusGeometry(0.16, 0.05, 6, 16), new THREE.MeshBasicMaterial({ color: 0xff4a2a })];
       PJM.leaf = PJM.star;
-      const ft = GFX._fudaT; PJM.fuda = [new THREE.PlaneGeometry(0.24, 0.42), GFX.lam(0xffffff, { map: ft, side: THREE.DoubleSide, emissive: 0x552211 })];
+      const ft = GFX.fudaTex(); PJM.fuda = [new THREE.PlaneGeometry(0.24, 0.42), GFX.lam(0xffffff, { map: ft, side: THREE.DoubleSide, emissive: 0x552211 })];
       PJM.lantern = PJM.fire;
     }
     const [g, m] = PJM[kind] || PJM.star; const mesh = new THREE.Mesh(g, m); scene.add(mesh); return mesh;
@@ -3766,11 +4373,75 @@ const R = (() => {
     o.edge.material.opacity = someone ? 0.95 : 0.55 + Math.sin(T * 5) * 0.25; o.fill.material.opacity = someone ? 0.22 : 0.1;
   }
 
+  /* ---------- ステージ2：常磐線（車内・車窓・始まりの演出） ---------- */
+  let TW = null; const JT = { dist: 0, cutBoss: null, lcd: '', fadeK: 1 };
+  const ensureTrain = () => TW || (TW = GFX.buildTrain(scene));
+  const JSTART = [[-0.6, -4.2], [0.6, -4.2], [-0.6, -5.8], [0.6, -5.8]];
+  /** 始まりの演出での味方の位置：広場でトバトーバンが倒れる → 北千住のホームから3号車に乗る */
+  function introPose(t, i) {
+    if (t < 3.5) return { x: [-1.8, 1.8, -0.6, 0.6][i], z: [7.2, 7.2, 6, 6][i], yaw: 0, moving: false, act: '', st: 'ok' };
+    const p0 = [-4.4 - (i % 2) * 0.9, -3.5 + (i - 1.5) * 1.1], d = [-1.7, -3.5], f = JSTART[i], t0 = 4.3 + i * 0.45;
+    const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+    if (t < t0) return { x: p0[0], z: p0[1], yaw: Math.PI / 2, moving: false, act: '', st: 'ok' };
+    if (t < t0 + 1.5) { const k = (t - t0) / 1.5, q = lerp(p0, d, k); return { x: q[0], z: q[1], yaw: Math.atan2(d[0] - p0[0], d[1] - p0[1]), moving: true, act: '', st: 'ok' }; }
+    if (t < t0 + 2.5) { const k = (t - t0 - 1.5) / 1.0, q = lerp(d, f, k); return { x: q[0], z: q[1], yaw: Math.atan2(f[0] - d[0], f[1] - d[1]), moving: true, act: '', st: 'ok' }; }
+    return { x: f[0], z: f[1], yaw: 0, moving: false, act: '', st: 'ok' };
+  }
+  /** 上野に着いたあとの時間（着いてから。着く前は -1） */
+  const outroT = v => v.stageId !== 'joban' ? -1 : v.stage === 'arrive' ? v.stageT : (v.stage === 'won' && v.tr && v.tr.at >= 4) ? DATA.JOBAN.arriveT + v.stageT : -1;
+  /** 上野：ドアが開いて、4人がホームに降りる */
+  function outroPose(t, i) {
+    const s0 = [-0.9, -3.5 + (i - 1.5) * 0.7], d = [-1.9, -3.5], f = [-2.8 - i * 0.78, -4.3 + (i % 2) * 0.55], t0 = 1.9 + i * 0.4;
+    const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+    if (t < t0) return { x: s0[0], z: s0[1], yaw: -Math.PI / 2, moving: false, act: '', st: 'ok' };
+    if (t < t0 + 0.7) { const q = lerp(s0, d, (t - t0) / 0.7); return { x: q[0], z: q[1], yaw: Math.atan2(d[0] - s0[0], d[1] - s0[1]), moving: true, act: '', st: 'ok' }; }
+    if (t < t0 + 1.7) { const q = lerp(d, f, (t - t0 - 0.7) / 1.0); return { x: q[0], z: q[1], yaw: Math.atan2(f[0] - d[0], f[1] - d[1]), moving: true, act: '', st: 'ok' }; }
+    return { x: f[0], z: f[1], yaw: Math.atan2(-4.3 - f[0], 2 - f[1]), moving: false, act: '', st: 'ok' };
+  }
+  function syncTrain(v, dt, T, me) {
+    const jb = v.stageId === 'joban', it = v.introWait ? 0 : v.stageT;
+    const showTrain = jb && !(v.stage === 'intro' && it < 3.5);
+    W.root.visible = !showTrain; if (jb) ensureTrain(); if (TW) TW.root.visible = showTrain;
+    // 演出用のトバトーバン（広場で倒れる）
+    const wantBoss = jb && v.stage === 'intro' && it < 3.5;
+    if (wantBoss && !JT.cutBoss) { JT.cutBoss = GFX.makeBoss(); W.root.add(JT.cutBoss.root); W.root.add(JT.cutBoss.shadow); }
+    if (!wantBoss && JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; }
+    if (JT.cutBoss) GFX.animBoss(JT.cutBoss, { x: 0, z: DATA.STAGE.bossSpawn[1], y: 0, yaw: Math.PI, st: 'dead', t: Math.max(0, it - 0.4) * 0.8, mv: null, phase: 2, hpR: 0, fl: null }, T, dt, v);
+    if (!showTrain) return;
+    // 電車の進み・ホームの位置・ドア
+    const Jd = DATA.JOBAN, tr = v.tr; let platZ = null, st = 0, doors = false, speed = 0, top = '常磐線 上野行', main = '北千住', sub = 'Kita-Senju';
+    if (v.stage === 'intro') { platZ = 0; doors = it >= 3.6 && it < 9.4; top = '常磐線 上野行　まもなく発車'; }
+    else if (tr) {
+      speed = tr.v; const L = Jd.segLen[Math.min(3, tr.at)], d = L - tr.rem;
+      if (tr.ph === 'stop') { platZ = 0; st = tr.at; doors = tr.doors === 1 || outroT(v) > 1.4; top = tr.at >= 4 ? '常磐線　終点' : '常磐線 上野行　ただいま'; main = Jd.stations[tr.at]; sub = Jd.stationsEn[tr.at]; }
+      else { const nx = Math.min(4, tr.at + 1); top = '常磐線 上野行　次は'; main = Jd.stations[nx]; sub = Jd.stationsEn[nx]; if (tr.rem < 260) { platZ = tr.rem; st = nx; } else if (d < 260) { platZ = -d; st = tr.at; } }
+    }
+    JT.dist += speed * dt;
+    JT.rail = (JT.rail || 0) + speed * dt; if (JT.rail > 22) { JT.rail = 0; AUDIO.sfx('rail', null, null, 0.4 + speed / Jd.vmax * 0.6); } // ガタンゴトン
+    if (platZ != null) TW.setStation(Math.min(4, st));
+    TW.update(JT.dist, platZ, doors, T, dt);
+    const key = top + main; if (key !== JT.lcd) { JT.lcd = key; TW.setLcd(top, main, sub); }
+    // 連結部の壁：カメラと自分が別の車両にいるときは薄くする
+    const ma = v.allies[me];
+    if (ma) { const cz = camera.position.z, across = (cz < -0.9 && ma.z > -0.3) || (cz > 0.9 && ma.z < 0.3) || Math.abs(cz) < 1.1; for (const m of TW.fade) { m.opacity += ((across ? 0.15 : 1) - m.opacity) * Math.min(1, dt * 8); m.depthWrite = m.opacity > 0.9; } }
+  }
+
+  /** カメラのすぐ前の部下は消し、自分を隠す位置の部下は半透明にする（視界をふさがない） */
+  function yoshiOcclude(m, e, a) {
+    const cx = camera.position.x, cz = camera.position.z, cd = Math.hypot(e.x - cx, e.z - cz);
+    m.root.visible = cd > 1.4; if (!a || !m.root.visible) return;
+    const dx = a.x - cx, dz = a.z - cz, L = Math.hypot(dx, dz) || 1, ux = dx / L, uz = dz / L;
+    const t = (e.x - cx) * ux + (e.z - cz) * uz, side = Math.abs((e.x - cx) * uz - (e.z - cz) * ux);
+    GFX.fadeYoshi(m, cd < 2.4 || (t > 0 && t < L - 0.35 && side < 0.75));
+  }
   /* ---------- 同期 ---------- */
   function sync(v, dt, T, me) {
     if (!v) return;
+    syncTrain(v, dt, T, me);
+    const cut = v.stageId === 'joban' && v.stage === 'intro', cutT = v.introWait ? 0 : v.stageT, ot = outroT(v), outro = ot > 1.2;
     // 味方
-    v.allies.forEach((a, i) => {
+    v.allies.forEach((a0, i) => {
+      const a = cut ? Object.assign({}, a0, introPose(cutT, i), { hpR: 1 }) : outro && a0.st !== 'gone' ? Object.assign({}, a0, outroPose(ot, i)) : a0;
       let m = allies[i];
       if (!m || m.c.id !== a.ch) { if (m) { scene.remove(m.root); scene.remove(m.shadow); } m = GFX.makeChar(DATA.CHI[a.ch]); allies[i] = m; scene.add(m.root); scene.add(m.shadow); }
       GFX.animChar(m, a, T, dt, { me: i === me });
@@ -3795,7 +4466,7 @@ const R = (() => {
     } else if (boss) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }
     // 札小僧
     const seenM = new Set();
-    for (const e of v.mobs) { seenM.add(e.id); let m = mobs.get(e.id); if (!m) { m = GFX.makeMob(); mobs.set(e.id, m); scene.add(m.root); scene.add(m.shadow); burst('norm', 10, { x: e.x, y: 0.5, z: e.z, spd: 1.5, life: 0.6, s0: 0.4, s1: 0.8, c: 0xf0e8d8, a: 0.6 }); } GFX.animMob(m, e, T, dt); }
+    for (const e of v.mobs) { seenM.add(e.id); let m = mobs.get(e.id); if (!m) { m = e.yoshi ? GFX.makeYoshi(e.kind) : GFX.makeMob(); m.yoshi = e.yoshi; if (e.yoshi) m.root.scale.setScalar(0.4); mobs.set(e.id, m); scene.add(m.root); scene.add(m.shadow); burst('norm', 10, { x: e.x, y: 0.5, z: e.z, spd: 1.5, life: 0.6, s0: 0.4, s1: 0.8, c: e.yoshi ? 0xb8a8ff : 0xf0e8d8, a: 0.6 }); } if (m.yoshi) { GFX.animYoshi(m, e, T, dt); yoshiOcclude(m, e, v.allies[me]); } else GFX.animMob(m, e, T, dt); } // カメラのすぐ前の部下は消して視界をふさがない
     for (const [id, m] of mobs) if (!seenM.has(id)) { scene.remove(m.root); scene.remove(m.shadow); mobs.delete(id); }
     // 弾
     const seenP = new Set();
@@ -3889,6 +4560,13 @@ const R = (() => {
     return out;
   }
   function shake(a) { if (opts.shake) cam.shake = Math.max(cam.shake, a); }
+  /** ヨシノシの部下のビーム（一瞬の光の帯） */
+  const beams = [];
+  function beamFlash(e) {
+    const len = DATA.JOBAN.wpn.beam.len, g = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, len), new THREE.MeshBasicMaterial({ color: 0xc8ff7a, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }));
+    g.position.set(e.x + Math.sin(e.yaw) * len / 2, 0.95, e.z + Math.cos(e.yaw) * len / 2); g.rotation.y = e.yaw; scene.add(g); beams.push({ g, t: 0.28 });
+  }
+  function stepBeams(dt) { for (const b of beams) { b.t -= dt; b.g.material.opacity = Math.max(0, b.t / 0.28) * 0.85; b.g.scale.x = b.g.scale.y = 0.6 + b.t * 3; if (b.t <= 0) { scene.remove(b.g); b.g.geometry.dispose(); } } for (let i = beams.length - 1; i >= 0; i--) if (beams[i].t <= 0) beams.splice(i, 1); }
   function fx(e, v, me) {
     const A = AUDIO.sfx;
     switch (e.type) {
@@ -3973,10 +4651,18 @@ const R = (() => {
       case 'hzfire': {
         if (e.fx === 'otoshi' || e.fx === 'bomb') { A('boom', e.x, e.z, 0.7); burst('add', 18, { x: e.x, y: 0.3, z: e.z, spd: 5, up: 1.5, life: 0.4, s0: 0.6, s1: 0.1, c: 0xff8a3a }); burst('norm', 6, { x: e.x, y: 0.3, z: e.z, spd: 1.5, life: 0.8, s0: 0.7, s1: 1.4, c: 0x5a5060, a: 0.5 }); shake(0.08); }
         if (e.fx === 'land') { A('land', e.x, e.z); for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI * 2; emit('norm', { x: e.x + Math.cos(a) * 1.5, y: 0.2, z: e.z + Math.sin(a) * 1.5, vx: Math.cos(a) * 7, vz: Math.sin(a) * 7, life: 0.8, s0: 0.6, s1: 1.4, c: 0xc8b8a0, a: 0.6 }); } shake(0.4); }
+        if (e.fx === 'ybeam') { A('shot_focus', e.x, e.z, 0.8); beamFlash(e); }
+        if (e.fx === 'ysword') { A('slash', e.x, e.z, 0.7); for (let i = 0; i < 6; i++) { const a = e.yaw + (i - 2.5) * 0.22; emit('add', { x: e.x + Math.sin(a) * 1.3, y: 0.7, z: e.z + Math.cos(a) * 1.3, vx: Math.sin(a) * 2, vz: Math.cos(a) * 2, life: 0.2, s0: 0.3, s1: 0.02, c: 0xe4ecff }); } }
+        if (e.fx === 'yfist') { A('hit', e.x, e.z, 0.7); burst('norm', 6, { x: e.x + Math.sin(e.yaw) * 1.1, y: 0.6, z: e.z + Math.cos(e.yaw) * 1.1, spd: 2, life: 0.35, s0: 0.3, s1: 0.6, c: 0xd8d0f0, a: 0.6 }); }
         if (e.fx === 'harite') { for (let d = 0.2; d < DATA.BMOVES.harite.len; d += 0.35) for (const s of [-1, 0, 1]) emit('norm', { x: e.x + Math.sin(e.yaw) * d + Math.cos(e.yaw) * s * 0.9, y: 0.25, z: e.z + Math.cos(e.yaw) * d - Math.sin(e.yaw) * s * 0.9, vx: Math.sin(e.yaw) * 3, vz: Math.cos(e.yaw) * 3, vy: 1.2, life: 0.55, s0: 0.5, s1: 1.2, c: 0xc8b8a0, a: 0.65 }); burst('add', 14, { x: e.x + Math.sin(e.yaw) * 1.2, y: 0.4, z: e.z + Math.cos(e.yaw) * 1.2, spd: 4, life: 0.3, s0: 0.5, s1: 0.05, c: 0xfff0c0 }); }
         break;
       }
       case 'cross': A('flyPass', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); break;
+      case 'yAtk': A(e.w === 'beam' ? 'charge' : 'swing', e.x, e.z, 0.5); break;
+      case 'ySpawn': burst('norm', 8, { x: e.x, y: 0.6, z: e.z, spd: 1.2, life: 0.5, s0: 0.35, s1: 0.7, c: 0xb8a8ff, a: 0.55 }); break;
+      case 'doors': A(e.open ? 'doorOpen' : 'doorClose'); break;
+      case 'depart': A('trainChime'); break;
+      case 'arriveSt': A('trainChime'); break;
       case 'land': A('stomp'); break;
       case 'phase2': if (listeners.notice) listeners.notice({ k: 'phase2' }); A('roar'); break;
       case 'unlock': if (listeners.notice) listeners.notice({ k: 'unlock' }); break;
@@ -3989,8 +4675,49 @@ const R = (() => {
   }
 
   /* ---------- カメラ ---------- */
+  /** 常磐線のカメラ：演出の流れ／車内では低めの三人称（天井の下・車内からはみ出さない） */
+  function trainCamera(v, me, dt, input, area) {
+    const a = v.allies[me], portrait = cam.portrait, it = v.introWait ? 0 : v.stageT, T = performance.now() / 1000;
+    const wantFov = portrait ? 72 : 62; if (Math.abs(camera.fov - wantFov) > 0.1) { camera.fov = wantFov; camera.updateProjectionMatrix(); }
+    camera.clearViewOffset();
+    if (v.stage === 'intro') {
+      const shots = it < 3.5 ? [{ t: 0, c: [4.6, 1.6, 4.0], l: [0, 2.8, 13.3] }, { t: 3.5, c: [3.0, 2.3, 6.2], l: [0, 1.4, 13.3] }]
+        : [{ t: 3.5, c: [-5.0, 1.9, -12.5], l: [-1.8, 1.0, -3.5] }, { t: 9.0, c: [-5.2, 1.9, -7.5], l: [-1.2, 1.1, -3.5] }, { t: 10.4, c: [-4.6, 1.9, -6.0], l: [-1.0, 1.1, -3.6] }, { t: 12, c: [0, 1.95, -11], l: [0, 1.0, -3] }];
+      let i = 0; while (i < shots.length - 2 && it >= shots[i + 1].t) i++;
+      const s0 = shots[i], s1 = shots[i + 1], kk = Math.max(0, Math.min(1, (it - s0.t) / (s1.t - s0.t))), e = kk * kk * (3 - 2 * kk);
+      const bl = (p, q) => p + (q - p) * e;
+      camera.position.set(bl(s0.c[0], s1.c[0]), bl(s0.c[1], s1.c[1]), bl(s0.c[2], s1.c[2])); camera.lookAt(bl(s0.l[0], s1.l[0]), bl(s0.l[1], s1.l[1]), bl(s0.l[2], s1.l[2]));
+      cam.ring.visible = cam.arrow.visible = false; cam.fx = a.x; cam.fz = a.z; cam.yaw = 0; return;
+    }
+    const ot = outroT(v);
+    if (ot > 1.2) { // 上野：ホームから電車を見る
+      const k = Math.min(1, (ot - 1.2) / 6), e = k * k * (3 - 2 * k);
+      camera.position.set(-4.6 + e * 0.3, 1.7 + e * 0.2, 3.0 - e * 1.0); camera.lookAt(-2.3, 1.0, -4.0 - e * 0.4);
+      cam.ring.visible = cam.arrow.visible = false; return;
+    }
+    let fx = a.x, fz = a.z;
+    const ml = Math.hypot(input.mx, input.mz); if (ml > 0.1 && a.st === 'ok') { fx += input.mx / ml * 1.2; fz += input.mz / ml * 1.2; }
+    if (cam.lock && cam.lock !== 'boss') { const m = v.mobs.find(e => e.id === cam.lock); if (m) { fx += (m.x - a.x) * 0.25; fz += (m.z - a.z) * 0.25; } }
+    const k = 1 - Math.exp(-dt / DATA.CAM.follow_delay_sec); cam.fx += (fx - cam.fx) * k; cam.fz += (fz - cam.fz) * k;
+    cam.dragT = Math.max(0, cam.dragT - dt);
+    if (cam.reset) { cam.reset = false; cam.yaw = a.yaw; }
+    if (cam.lock && !cam.dragT) { const t = v.mobs.find(e => e.id === cam.lock); if (t && Math.hypot(t.x - a.x, t.z - a.z) > 2) { const want = Math.atan2(t.x - a.x, t.z - a.z); cam.yaw += Math.max(-1.2 * dt, Math.min(1.2 * dt, SIMLIB.angDiff(cam.yaw, want))); } }
+    const p = 17 * Math.PI / 180, dist = portrait ? 6.4 : 5.6;
+    let cx = cam.fx - Math.sin(cam.yaw) * Math.cos(p) * dist, cz = cam.fz - Math.cos(cam.yaw) * Math.cos(p) * dist, cy = 1.0 + Math.sin(p) * dist;
+    const J = DATA.JOBAN; cx = Math.max(-1.75, Math.min(1.75, cx)); cz = Math.max(J.zMin - 0.2, Math.min(J.zMax + 0.2, cz)); cy = Math.min(cy, 2.12);
+    if (Math.abs(cz) < 1.1) cx = Math.max(-0.65, Math.min(0.65, cx));
+    const sp = v.tr ? Math.min(1, v.tr.v / J.vmax) : 0; // 走っているときの揺れ
+    cy += Math.sin(T * 9.5) * 0.008 * sp;
+    if (cam.shake > 0.001) { cx += (Math.random() - 0.5) * cam.shake * 0.5; cy += (Math.random() - 0.5) * cam.shake * 0.5; cam.shake *= Math.pow(0.02, dt); }
+    camera.position.set(cx, cy, cz); camera.lookAt(cam.fx, 0.85, cam.fz); camera.rotateZ(Math.sin(T * 1.25) * 0.006 * sp);
+    cam.ring.position.set(a.x, 0.05, a.z); cam.ring.visible = a.st === 'ok';
+    cam.arrow.position.set(a.x + Math.sin(a.yaw) * 0.75, 0.06, a.z + Math.cos(a.yaw) * 0.75); cam.arrow.rotation.set(Math.PI / 2, 0, -a.yaw + Math.PI); cam.arrow.visible = a.st === 'ok';
+    AUDIO.st.listener = { x: a.x, z: a.z, yaw: cam.yaw };
+  }
   function updateCamera(v, me, dt, input, area) {
     const C = DATA.CAM, a = v && v.allies[me]; if (!a) return;
+    if (v.stageId === 'joban') return trainCamera(v, me, dt, input, area);
+    { const wf = cam.portrait ? C.portrait_framing.fov : C.vertical_fov_deg; if (Math.abs(camera.fov - wf) > 0.1) { camera.fov = wf; camera.updateProjectionMatrix(); } }
     const portrait = cam.portrait, fr = portrait ? C.portrait_framing : C.landscape_framing;
     // ボスが遠いときは少し俯角を浅くして全身を入れる（35〜55度の範囲・新作の構図補助）
     const Bd = v.boss && v.stage === 'boss' && v.boss.st !== 'fly' ? Math.hypot(v.boss.x - a.x, v.boss.z - a.z) : 0;
@@ -4044,7 +4771,7 @@ const R = (() => {
     AUDIO.st.listener = { x: a.x, z: a.z, yaw: cam.yaw };
   }
   function render(dt) {
-    stepPoints(PA, dt); stepPoints(PN, dt);
+    stepPoints(PA, dt); stepPoints(PN, dt); stepBeams(dt);
     const projScale = VIEW.h * pr / (2 * Math.tan(camera.fov * Math.PI / 360));
     PA.mat.uniforms.uScale.value = PN.mat.uniforms.uScale.value = projScale;
     renderer.render(scene, camera);
@@ -4062,9 +4789,11 @@ const R = (() => {
     for (const [, m] of traps) scene.remove(m); traps.clear(); for (const [, m] of picks) scene.remove(m); picks.clear();
     cam.lanT = 0; if (W) for (const L of W.lanternsStreet) if (L.lit) W.setStreetLantern(L, false);
     for (const p of [PA, PN]) if (p) for (const q of p.P) q.life = 0;
+    if (W && W.root) W.root.visible = true; if (TW) TW.root.visible = false; if (JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; } JT.dist = 0; JT.rail = 0; JT.lcd = '';
+    for (const b of beams) scene.remove(b.g); beams.length = 0; resize();
   }
   function snapCam(v, me) { const a = v && v.allies[me]; if (!a) return; cam.fx = a.x; cam.fz = a.z; cam.yaw = 0; }
-  return { init, sync, events, updateCamera, render, project, on, cam, setOpts, clearEntities, snapCam, resize, get camera() { return camera; }, get renderer() { return renderer; }, get pr() { return pr; } };
+  return { outroT, init, sync, events, updateCamera, render, project, on, cam, setOpts, clearEntities, snapCam, resize, get camera() { return camera; }, get scene() { return scene; }, get renderer() { return renderer; }, get pr() { return pr; } };
 })();
 
 /* ===== ui.js ===== */
@@ -4190,14 +4919,15 @@ function bindMenus() {
   $('#btnHost').onclick = () => startHost();
   $('#btnJoin').onclick = () => startJoin();
   $('#btnTeamBack').onclick = () => { AUDIO.sfx('back'); if (G.coop) goTitle(); else show('title'); };
-  $('#btnGo').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session && G.session.kind === 'host') { G.session.lobby.diff = G.diff; G.session.startGame(); enterGame(); } } else startSolo(); };
+  $('#btnGo').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session && G.session.kind === 'host') { const S = G.session; S.lobby.diff = G.diff; if (!stageOpen(S.lobby.stage)) S.lobby.stage = 'senju'; S.startGame(); enterGame(); } } else openStage(); };
+  $('#btnStageBack').onclick = () => { AUDIO.sfx('back'); show('team'); };
   $('#btnResume').onclick = () => resume();
   $('#btnPSet').onclick = () => openSub('settings', 'pause');
   $('#btnPHow').onclick = () => openSub('how', 'pause');
   $('#btnPSave').onclick = () => doSave('pause');
   $('#btnQuit').onclick = () => { AUDIO.sfx('back'); goTitle(); };
-  $('#btnSkip').onclick = () => { const s = G.session; if (s && s.sim && s.sim.stage === 'intro' && s.kind === 'solo') s.sim.stageT = DATA.BOSS.introT; resume(); };
-  $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else startSolo(); };
+  $('#btnSkip').onclick = () => { const s = G.session; if (s && s.sim && s.sim.stage === 'intro' && s.kind === 'solo') s.sim.stageT = s.sim.introLen(); resume(); };
+  $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else startSolo(G.stageId || 'senju'); };
   $('#btnReteam').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') G.session.backToLobby(); openLobby(); } else openTeam(); };
   $('#btnResTitle').onclick = () => { AUDIO.sfx('back'); goTitle(); };
   $('#btnLostOk').onclick = () => goTitle();
@@ -4299,6 +5029,16 @@ function renderTeam() {
     b.onclick = () => { AUDIO.sfx('ui'); if (on) { if (G.items.length > 1) G.items = G.items.filter(x => x !== id); } else { G.items.push(id); if (G.items.length > 2) G.items.shift(); } if (G.items.length < 2) G.items.push(DATA.ITEM_IDS.find(x => !G.items.includes(x))); STORE.set('items', G.items); sendMine(); renderTeam(); };
     it.appendChild(b);
   }
+  // 協力プレイ：ステージ（ホストが選ぶ）
+  $('#stageRow').hidden = !coop;
+  if (coop && S) {
+    const sc = $('#stageChips'); sc.textContent = ''; const cur = (lob && lob.stage) || 'senju', host = S.kind === 'host';
+    for (const st of STAGES) {
+      const open = host ? stageOpen(st.id) : true, b = el('button', 'chip' + (cur === st.id ? ' on' : ''), (open ? st.ic + ' ' : '🔒 ') + st.nm); b.type = 'button'; b.disabled = !host || !open;
+      if (host) b.onclick = () => { S.lobby.stage = st.id; S.dirtyLobby = true; AUDIO.sfx('ui'); renderTeam(); };
+      sc.appendChild(b);
+    }
+  }
   if (coop && S) {
     $('#lobCode').textContent = ''; const cb = el('div', 'code-big', S.code); $('#lobCode').appendChild(cb);
     const st = $('#lobStatus');
@@ -4342,6 +5082,27 @@ function sendMine() {
    ログイン中は「セーブ」を押すだけで保存。戦いが終わったときに自動セーブ。 */
 G.acct = null; G.pending = []; G.run = null;
 const lvOf = id => (G.acct && G.acct.chars[id] ? G.acct.chars[id].lv : 1);
+/* ---------- ステージ（2はトバトーバンを1回倒すと解放） ---------- */
+G.sessClear = {};
+const cleared = id => !!((G.acct && G.acct.clear && G.acct.clear[id] > 0) || G.sessClear[id]);
+const stageOpen = id => id !== 'joban' || cleared('senju');
+const STAGES = [
+  { id: 'senju', cls: 's1', ic: '🏮', no: 'ステージ1', nm: '北千住 祭り広場', en: 'トバトーバン（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。' },
+  { id: 'joban', cls: 's2', ic: '🚃', no: 'ステージ2', nm: '常磐線 北千住→上野', en: 'ヨシノシの部下 90体', d: '青い常磐線の2号車・3号車で戦う。1号車から次々に来る部下と、南千住・三河島・日暮里で乗ってくる部下を倒して上野へ。' },
+];
+function openStage() { renderStages(); show('stage'); }
+function renderStages() {
+  const box = $('#stages'); box.textContent = '';
+  for (const s of STAGES) {
+    const open = stageOpen(s.id), b = el('button', 'stage-card ' + s.cls + (open ? '' : ' locked')); b.type = 'button';
+    const top = el('div', 'sc-top'); top.append(el('span', 'ic', s.ic)); const tt = el('div'); tt.append(el('small', '', s.no), el('b', '', s.nm)); top.appendChild(tt);
+    const body = el('div', 'sc-body'); body.append(el('span', 'en', '敵：' + s.en), el('span', '', s.d)); if (cleared(s.id)) body.appendChild(el('span', 'clr', 'クリア済み'));
+    b.append(top, body);
+    if (!open) { const lk = el('div', 'lock'); lk.append(el('span', 'lk', '🔒'), el('span', '', 'トバトーバンを1回倒すと解放')); b.appendChild(lk); }
+    b.onclick = () => { if (!open) { AUDIO.sfx('back'); mtoast('ステージ1でトバトーバンを倒すと遊べます'); return; } AUDIO.sfx('ok'); startSolo(s.id); };
+    box.appendChild(b);
+  }
+}
 const fmtDate = ts => { if (!ts) return 'まだ'; const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const cloud = () => ACCT.mode === 'cloud';
 function mtoast(t, ms) { const m = $('#mtoast'); m.textContent = t; m.classList.add('show'); clearTimeout(G.mtT); G.mtT = setTimeout(() => m.classList.remove('show'), ms || 2400); }
@@ -4413,7 +5174,7 @@ function runOp(v, fin) {
   if (!G.run || !v) return null;
   const slots = G.coop ? [G.my] : [0, 1, 2, 3], op = { kills: {}, fin: null };
   for (const i of slots) { const a = v.allies[i]; if (!a) continue; const k = Math.max(0, (a.kills || 0) - G.run.applied[i]); if (k) { op.kills[a.ch] = (op.kills[a.ch] || 0) + k; G.run.applied[i] += k; } }
-  if (fin) op.fin = { ids: slots.map(i => v.allies[i] && v.allies[i].ch).filter(Boolean), win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0 };
+  if (fin) op.fin = { ids: slots.map(i => v.allies[i] && v.allies[i].ch).filter(Boolean), win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0, stage: v.stageId || 'senju' };
   return op;
 }
 /** 自動セーブ（戦いが終わったとき） */
@@ -4435,7 +5196,7 @@ function openAccount(from) { if (!G.acct) { openLogin(from || 'title'); return; 
 function renderAccount() {
   const s = G.acct; $('#acTitle').textContent = `ID ${s.id}`;
   const kv = $('#acKv'); kv.textContent = '';
-  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['最速クリア', s.rec.best ? fmt(s.rec.best) : 'まだ']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
+  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['トバトーバン戦', (s.clear && s.clear.senju ? `クリア ${s.clear.senju}回` : 'まだ') + (s.rec.best ? `（最速 ${fmt(s.rec.best)}）` : '')], ['常磐線', s.clear && s.clear.joban ? `クリア ${s.clear.joban}回` : stageOpen('joban') ? 'まだ' : '🔒 トバトーバンを倒すと解放']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
   const ro = $('#acRoster'); ro.textContent = '';
   for (const c of DATA.CHARS) { const d = el('div'); const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; d.append(im, el('b', '', c.nm), el('span', 'lv', 'Lv.' + s.chars[c.id].lv)); ro.appendChild(d); }
   const cl = cloud(); $('#acCodeBox').hidden = cl; $('#btnAcCopy').hidden = cl; $('#acCloud').hidden = !cl;
@@ -4512,25 +5273,27 @@ async function startJoin() {
 function toast(s) { const n = $('#netMsg'); n.textContent = s; }
 
 /* ---------- ゲーム開始 ---------- */
-function startSolo() {
+function startSolo(stageId) {
   AUDIO.init();
+  G.stageId = stageOpen(stageId) ? stageId : 'senju';
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
-  S.lobby.diff = G.diff;
-  S.startGame({ party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
+  S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
+  S.startGame({ stageId: G.stageId, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {
-  G.run = { applied: [0, 0, 0, 0] }; G.lastAuto = null; // この戦いでセーブ済みの記録
+  G.run = { applied: [0, 0, 0, 0] }; G.lastAuto = null; G.cut = {}; // この戦いでセーブ済みの記録・演出の字幕
   G.mode = 'play'; G.lock = null; G.resultShown = false; G.lagBoss = 1; G.lagMe = 1; G.spTotals = {}; G.lastStage = ''; G.hint = 0;
   R.clearEntities(); R.cam.lock = null; R.cam.yaw = 0; R.cam.introDone = false;
   show(null); $('#hud').hidden = false; layoutHud(); buildPartyCards();
   AUDIO.bgm('street');
   try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => { }); } catch (e) { }
   G.snapNext = true;
+  const jb = G.session && G.session.sim && G.session.sim.stageId === 'joban', d0 = jb ? DATA.JOBAN.introT * 1000 + 1200 : 0; // 常磐線は演出のあとに出す
   if (!G.coop) { // 最初に：仲間アイコンをタップで操作キャラを切り替えられる
-    setTimeout(() => { if (G.mode !== 'play') return; notice((curLayout && curLayout.portrait ? '上' : '左上') + 'の仲間アイコンをタップすると、そのキャラに切り替えられます', 'tip', 5200); const p = $('#party'); p.classList.add('tip'); setTimeout(() => p.classList.remove('tip'), 5200); }, 700);
+    setTimeout(() => { if (G.mode !== 'play') return; notice((curLayout && curLayout.portrait ? '上' : '左上') + 'の仲間アイコンをタップすると、そのキャラに切り替えられます', 'tip', 5200); const p = $('#party'); p.classList.add('tip'); setTimeout(() => p.classList.remove('tip'), 5200); }, 700 + d0);
   }
-  if (G.firstRun && !G.coop) { setTimeout(() => notice('スティックで移動・Aで攻撃。札小僧をやっつけよう', 'info', 4000), 6200); setTimeout(() => notice('Xは技1、Yは技2。ためる技は長押しして離す', 'info', 4000), 10400); STORE.set('played', true); G.firstRun = false; }
+  if (G.firstRun && !G.coop) { setTimeout(() => notice('スティックで移動・Aで攻撃。' + (jb ? 'ヨシノシの部下' : '札小僧') + 'をやっつけよう', 'info', 4000), 6200 + d0); setTimeout(() => notice('Xは技1、Yは技2。ためる技は長押しして離す', 'info', 4000), 10400 + d0); STORE.set('played', true); G.firstRun = false; }
 }
 function pause() {
   if (G.mode !== 'play') return; const S = G.session;
@@ -4718,8 +5481,10 @@ function onNotice(o) {
     if (o.s === 'wave2') notice('札小僧がまた出た！', 'info', 1500);
     if (o.s === 'open') { banner('結界が解けた', '奥の祭り広場へ進もう', 2200); AUDIO.sfx('lantern'); }
     if (o.s === 'intro') { AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
+    if (o.s === 'train') { AUDIO.bgm('boss'); banner('ヨシノシの部下が現れた！', '上野に着くまでに、車内の部下をすべて倒せ', 2400); }
+    if (o.s === 'arrive') { banner('上野に到着！', 'ヨシノシは上野で待っている……', 3000); }
     if (o.s === 'fight') { AUDIO.bgm('boss'); banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
-    if (o.s === 'won') { AUDIO.jingle(true); banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
+    if (o.s === 'won') { AUDIO.jingle(true); if (v && v.stageId === 'joban') banner('ヨシノシの部下を全員倒した！', '常磐線は無事に上野へ着いた', 3000); else banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
     if (o.s === 'lost') { AUDIO.jingle(false); banner(G.v && G.v.result && G.v.result.why === 'time' ? '時間切れ' : '全滅', '', 2500); }
   }
 }
@@ -4728,6 +5493,9 @@ function onEvent(e, v) {
   switch (e.type) {
     case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.kind === 'sp' ? 'sp' : e.crit ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e); break;
     case 'hurt': dmgNum(e.x, 1.2, e.z, e.v, 'hurt'); if (e.slot === me) vib(25); break;
+    case 'wave': if (e.n >= 2) notice(`1号車から${e.cnt}体が来る！（第${e.n}波）`, 'warn', 2200); break;
+    case 'board': notice(`${DATA.JOBAN.stations[e.st]}：部下が${e.n}体乗ってきた！`, 'warn', 2200); break;
+    case 'arriveSt': if (e.st < 4) notice(`${DATA.JOBAN.stations[e.st]}に到着`, 'info', 1500); break;
     case 'heal': if (e.v > 0) dmgNum(e.x, 1.2, e.z, '+' + e.v, 'heal'); break;
     case 'down': notice(`P${e.slot + 1}が気絶した${e.slot === me ? '…' : '（まわりの円に入って4秒で救助）'}`, 'warn', 2200); if (e.slot === me && G.session.kind === 'solo') setTimeout(() => notice('仲間のカードを押すと操作を交代できます', 'info', 2600), 900); break;
     case 'ascend': notice(`P${e.slot + 1}が昇天した（この戦闘では戻らない）`, 'warn', 2400); break;
@@ -4760,15 +5528,43 @@ function stepDmg(dt) {
   for (const k in G.spTotals) { const T = G.spTotals[k]; T.t -= dt; if (T.t <= 0) { if (T.d) T.d.remove(); delete G.spTotals[k]; continue; } const p = R.project(T.x, 4.2, T.z); T.d.style.left = p.x + 'px'; T.d.style.top = Math.max(60, p.y) + 'px'; T.d.style.opacity = Math.min(1, T.t * 3); }
 }
 
+/* ---------- ステージ2のHUD：路線図・撃破数・暗転・字幕 ---------- */
+function trainHud(v) {
+  const J = DATA.JOBAN, tr = v.tr, t = v.introWait ? 0 : v.stageT;
+  // 暗転（広場→北千住のホーム）
+  $('#fade').style.opacity = v.stage === 'intro' ? (t < 3.0 ? 0 : t < 3.5 ? (t - 3) / 0.5 : t < 4.0 ? 1 - (t - 3.5) / 0.5 : 0) : 0;
+  if (v.stage === 'intro') {
+    const C = G.cut || (G.cut = {});
+    if (t > 0.3 && !C.a) { C.a = 1; banner('トバトーバンを鎮めた！', 'そのころ、常磐線にヨシノシの部下が現れたという知らせが……', 2600); }
+    if (t > 4.1 && !C.b) { C.b = 1; banner('北千住駅', '常磐線 上野行きに乗りこもう', 2200); }
+    if (t > 9.4 && !C.c) { C.c = 1; AUDIO.sfx('trainChime'); AUDIO.sfx('doorClose'); notice('ドアが閉まります', 'info', 1400); }
+  }
+  if (!tr) return;
+  // 路線：北千住〜上野の5駅
+  const bar = $('#rtBar');
+  const at = k => `calc(9px + ${k.toFixed(4)} * (100% - 18px))`;
+  if (!bar.dataset.built) { bar.dataset.built = 1; J.stations.forEach((n, i) => { const s = el('span', 'rt-s' + (i === 0 ? ' first' : i === J.stations.length - 1 ? ' last' : ''), n); s.style.left = at(i / (J.stations.length - 1)); bar.insertBefore(s, $('#rtTr')); }); }
+  const L = J.segLen[Math.min(3, tr.at)], frac = tr.ph === 'stop' ? 0 : Math.max(0, Math.min(1, (L - tr.rem) / L));
+  const pos = Math.min(4, tr.at + frac) / 4; $('#rtFill').style.width = `calc(${pos.toFixed(4)} * (100% - 18px))`; $('#rtTr').style.left = at(pos);
+  const nx = Math.min(4, tr.at + 1);
+  $('#rtNext').textContent = v.stage === 'arrive' || tr.at >= 4 ? '上野 到着' : tr.ph === 'stop' ? `${J.stations[tr.at]} 停車中` : tr.at === 3 && tr.rem > 300 && v.kills < v.total ? `次は 上野（全部倒すと到着）` : `次は ${J.stations[nx]}`;
+  $('#rtKills').textContent = `撃破 ${v.kills}/${v.total}` + (v.phase ? `・第${v.phase}波` : '');
+}
+
 /* ---------- HUD更新 ---------- */
 const fmt = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 function setBar(i, r) { i.style.width = Math.max(0, Math.min(1, r)) * 100 + '%'; }
 function updateHud(v, dt) {
   const me = v.allies[G.my]; if (!me) return;
+  // ステージ2：路線と撃破数・始まりの演出
+  const jb = v.stageId === 'joban';
+  $('#bossbox').classList.toggle('train', jb); $('#route').hidden = !jb;
+  if (jb) trainHud(v);
+  else $('#fade').style.opacity = 0;
   // ボス
-  const showBoss = v.boss && (v.stage === 'boss' || v.stage === 'won' || v.stage === 'lost');
+  const showBoss = jb ? v.stage !== 'intro' : v.boss && (v.stage === 'boss' || v.stage === 'won' || v.stage === 'lost');
   $('#bossbox').hidden = !showBoss;
-  if (showBoss) {
+  if (showBoss && !jb) {
     const b = v.boss; setBar($('#bossFill'), b.hpR); G.lagBoss = G.lagBoss > b.hpR ? Math.max(b.hpR, G.lagBoss - dt * 0.15) : b.hpR; setBar($('#bossLag'), G.lagBoss);
     $('#bossPh').hidden = b.phase !== 2;
     $('#bossSt').textContent = b.st === 'down' ? 'ダウン中' : b.stun ? '麻痺' : b.st === 'fly' ? '飛行中' : b.defDown ? '守り↓' : '';
@@ -4859,6 +5655,7 @@ function devOverlay(v) {
 /* ---------- ミニマップ（ワールド座標から描く。+zが上、カメラの向きに合わせて+xは左） ---------- */
 function drawMap(v) {
   const c = $('#mapc'); const g = c.getContext('2d'); const W = c.width, H = c.height; g.clearRect(0, 0, W, H);
+  if (v.stageId === 'joban') return drawTrainMap(v, g, W, H);
   const big = $('#map').classList.contains('big');
   const me = v.allies[G.my];
   const inPlaza = v.stage !== 'street';
@@ -4894,18 +5691,39 @@ function drawMap(v) {
   const [mx, mz] = P(me.x, me.z), cy = R.cam.yaw; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy - 0.45) * 28, mz - Math.cos(cy - 0.45) * 28); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy + 0.45) * 28, mz - Math.cos(cy + 0.45) * 28); g.stroke();
 }
 
+/** 車内のミニマップ：左が3号車（後ろ）、右が2号車（前・上野方面）。右端から部下が来る */
+function drawTrainMap(v, g, W, H) {
+  const J = DATA.JOBAN, me = v.allies[G.my];
+  const zx = z => W * 0.04 + (z - (J.zMin - 0.4)) / (J.zMax - J.zMin + 0.8) * W * 0.92, xy = x => H * 0.5 + x / (J.halfW + 0.45) * H * 0.27;
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, W, H);
+  const fs = Math.max(10, Math.round(W / 11)); g.font = `900 ${fs}px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const [z0, z1, nm] of [[-21, -1, '3号車'], [1, 21, '2号車']]) { g.fillStyle = '#4a5468'; g.fillRect(zx(z0), xy(-J.halfW - 0.45), zx(z1) - zx(z0), xy(J.halfW + 0.45) - xy(-J.halfW - 0.45)); g.fillStyle = '#2c58a8'; g.fillRect(zx(z0), xy(-J.halfW - 0.45), zx(z1) - zx(z0), H * 0.04); g.fillRect(zx(z0), xy(J.halfW + 0.45) - H * 0.04, zx(z1) - zx(z0), H * 0.04); g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText(nm, (zx(z0) + zx(z1)) / 2, H * 0.12); }
+  g.fillStyle = '#4a5468'; g.fillRect(zx(-1), xy(-J.gwHalfW), zx(1) - zx(-1), xy(J.gwHalfW) - xy(-J.gwHalfW));
+  g.fillStyle = '#ff6a4a'; g.fillRect(zx(21) - 2, xy(-0.6), 5, xy(0.6) - xy(-0.6)); g.fillStyle = 'rgba(255,255,255,.7)'; g.fillText('1号車', zx(21) - fs * 0.2, H * 0.9);
+  if (v.tr && v.tr.doors === 1) { g.fillStyle = '#ffd23a'; for (const z of J.carDoors) g.fillRect(zx(z) - 4, xy(-J.halfW - 0.45) - 2, 8, 4); }
+  for (const h of v.hz) if (h.fx === 'ybeam') { const [x0, z0] = [h.x, h.z], x1 = h.x + Math.sin(h.yaw) * h.a, z1 = h.z + Math.cos(h.yaw) * h.a; g.strokeStyle = 'rgba(200,255,120,.8)'; g.lineWidth = 2; g.beginPath(); g.moveTo(zx(z0), xy(x0)); g.lineTo(zx(z1), xy(x1)); g.stroke(); }
+  for (const p of v.pickups) { g.fillStyle = p.kind === 'candy' ? '#ff5fa8' : '#d07aa0'; g.beginPath(); g.arc(zx(p.z), xy(p.x), p.kind === 'candy' ? 5 : 3.5, 0, 7); g.fill(); }
+  for (const m of v.mobs) { if (m.dying) continue; g.fillStyle = m.kind === 'beam' ? '#c8ff6a' : '#ff5a4a'; g.beginPath(); g.arc(zx(m.z), xy(m.x), 3.6, 0, 7); g.fill(); }
+  v.allies.forEach((a, i) => { if (a.st === 'gone') return; const x = zx(a.z), y = xy(a.x); g.fillStyle = i === G.my ? '#fff' : pcol(i); g.beginPath(); g.arc(x, y, i === G.my ? 6.5 : 5.5, 0, 7); g.fill(); if (a.st === 'down') { g.strokeStyle = '#7dffb0'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 9, 0, 7); g.stroke(); } g.fillStyle = i === G.my ? '#1b1838' : '#fff'; g.font = `900 ${Math.round(fs * 0.75)}px ${GFX.FONT_UI}`; g.fillText(String(i + 1), x, y + 1); g.font = `900 ${fs}px ${GFX.FONT_UI}`; });
+}
+
 /* ---------- 結果 ---------- */
 function showResult(v) {
   if (G.resultShown) return; G.resultShown = true; G.mode = 'result';
   const S = G.session, win = v.result && v.result.win;
-  $('#resEyebrow').textContent = win ? '勝利' : '敗北'; $('#resTitle').textContent = win ? 'トバトーバンを鎮めた！' : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
+  const jb = v.stageId === 'joban', firstClear = win && !cleared(v.stageId);
+  if (win) G.sessClear[v.stageId] = true;
+  $('#resEyebrow').textContent = win ? (jb ? 'クリア' : '勝利') : '敗北'; $('#resTitle').textContent = win ? (jb ? '上野に到着！' : 'トバトーバンを鎮めた！') : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
   const kv = $('#resKv'); kv.textContent = '';
-  for (const [k, val] of [['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : '協力プレイ']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
+  const rows = [['ステージ', jb ? '常磐線（北千住→上野）' : '北千住（トバトーバン）'], ['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : '協力プレイ']];
+  if (jb) rows.splice(2, 0, ['倒した部下', `${v.kills} / ${v.total}`]);
+  for (const [k, val] of rows) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
   const grid = $('#resGrid'); grid.textContent = '';
   const stats = S.sim ? S.sim.allies.map(a => a.stats) : null;
   v.allies.forEach((a, i) => { const c = el('div', 'res-c'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const im = el('img'); im.src = G.thumbs[a.ch] || ''; im.alt = ''; c.append(pn, im, el('b', '', DATA.CHI[a.ch].nm), el('span', 'lv', 'Lv.' + (a.lv || 1))); if (stats) { c.appendChild(el('span', '', `与えたダメージ ${stats[i].dmg}`)); c.appendChild(el('span', '', `救助 ${stats[i].revives}・必殺 ${stats[i].specials}`)); } c.appendChild(el('span', 'small', a.st === 'ok' ? '元気' : a.st === 'down' ? '気絶' : '昇天')); grid.appendChild(c); });
   const rw = '金の提灯芯';
-  $('#resReward').textContent = win ? `獲得：${rw} ×${v.result.time < 240 ? 3 : v.result.time < 480 ? 2 : 1}（育成は今後の拡張で使う予定です）` : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
+  $('#resReward').textContent = jb ? (win ? 'ヨシノシは上野で待っている……（つづく）' : 'もう一度挑戦できます。狭い車内では囲まれないように、救助の円とキャンディーを使おう。')
+    : win ? `獲得：${rw} ×${v.result.time < 240 ? 3 : v.result.time < 480 ? 2 : 1}（育成は今後の拡張で使う予定です）${firstClear ? '　🔓 ステージ2「常磐線」が解放された！' : ''}` : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
   const host = S.kind !== 'client';
   $('#btnRetry').hidden = !host; $('#btnReteam').hidden = !host && G.coop;
   $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : 'もう一度';
@@ -4939,7 +5757,7 @@ function frame(ts) {
         R.sync(v, dt, G.T, G.my);
         const evs = R.events(v, G.my); for (const e of evs) onEvent(e, v);
         R.updateCamera(v, G.my, dt, S.local, gameArea());
-        $('#hud').classList.toggle('intro', v.stage === 'intro');
+        $('#hud').classList.toggle('intro', v.stage === 'intro'); $('#hud').classList.toggle('cine', (v.stage === 'intro' && v.stageId === 'joban') || R.outroT(v) > 1.2);
         if (G.mode === 'play') { updateHud(v, dt); G.mapT = (G.mapT || 0) + dt; if (G.mapT > 0.05) { G.mapT = 0; drawMap(v); } }
         stepDmg(dt);
         if ((v.stage === 'won' || v.stage === 'lost') && v.stageT > (v.stage === 'won' ? 3.4 : 2.6) && G.mode === 'play') showResult(v);
@@ -4956,7 +5774,7 @@ function titleCam(T) {
 }
 boot();
 
-window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX };
+window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX, THREE };
 
 </script>
 </body>

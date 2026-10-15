@@ -234,6 +234,34 @@ const STAGE = {
   bossSpawn: [0, 13.3],
   waves: [[[-3, -44], [3, -46]], [[-5, -24], [0, -22], [5, -25]]],
 };
+/* ---------------- ステージ2：常磐線（北千住→上野）ヨシノシの部下 ---------------- */
+// 車内の座標：x＝左右（通路の幅）、z＝前後（+zが上野方面＝前）。3号車 z -21〜-1、連結部 -1〜1、2号車 1〜21（その先の1号車には入れない）
+const JOBAN = {
+  nm: '常磐線', boss: 'ヨシノシ', minion: 'ヨシノシの部下',
+  halfW: p('常磐線', '車内の通路の半幅', 1.5, 'm', 'proto', null, '遊びやすさのため実物より少し広い'),
+  gwHalf: 1.0, gwHalfW: 0.8, zMin: -20.6, zMax: 20.6, frontZ: 20.3,
+  carDoors: [-18.5, -13.5, -8.5, -3.5, 3.5, 8.5, 13.5, 18.5], // 乗り降りのドア（左右）
+  stations: ['北千住', '南千住', '三河島', '日暮里', '上野'],
+  stationsEn: ['Kita-Senju', 'Minami-Senju', 'Mikawashima', 'Nippori', 'Ueno'],
+  segLen: p('常磐線', '駅と駅の間（ゲーム内の距離）', [800, 700, 700, 900], 'm', 'proto', null, '北千住→南千住→三河島→日暮里→上野'),
+  vmax: p('常磐線', '電車の最高速度', 24, 'm/s', 'proto'), acc: 2.0,
+  stopT: p('常磐線', '途中駅の停車時間', 8, 's', 'proto'),
+  boardN: p('常磐線', '途中駅（南千住・三河島・日暮里）で乗ってくる部下', 10, '体/駅', 'proto'),
+  waves: p('常磐線', '1号車から来る部下（3段階）', [10, 20, 30], '体', 'proto', null, '最初に10体。10体倒すと20体、その20体を倒すと30体'),
+  hp: p('ヨシノシの部下', '体力（1体ごとにこの間で決まる）', [650, 700], 'points', 'proto'),
+  dmg: p('ヨシノシの部下', '1発のダメージ（この間で決まる）', [85, 120], 'points', 'proto', null, 'まもりに関係なくこのダメージ（ガード・AIの体力90%は反映）'),
+  def: p('ヨシノシの部下', 'まもり', 70, 'points', 'proto'), r: 0.38,
+  speed: [2.4, 2.9], maxActive: p('ヨシノシの部下', '同時に車内にいる最大数', 20, '体', 'proto', null, '多いときは1号車で待ち、空いた分だけ出てくる'),
+  meleeTokens: p('ヨシノシの部下', '1人に同時に殴りかかる最大数', 2, '体', 'proto', null, '集団で一番近い相手を囲む。あふれた分はまわりで待つ'),
+  beamTokens: p('ヨシノシの部下', '同時にビームを撃つ最大数', 2, '体', 'proto'),
+  wpn: {
+    sword: { nm: '剣', reach: 1.6, wind: 0.65, act: 0.12, rec: 0.75, cd: [3.2, 4.2], r: 1.75, half: 0.6, knock: 2 },
+    fist: { nm: '拳', reach: 1.2, wind: 0.5, act: 0.1, rec: 0.55, cd: [2.8, 3.6], len: 1.5, w: 1.0, knock: 3.5 },
+    beam: { nm: '大砲（ビーム）', reach: 9, keep: 6, wind: 0.9, act: 0.25, rec: 0.6, cd: [3.8, 4.8], len: 11, w: 0.7, knock: 0 },
+  },
+  introT: p('常磐線', '始まりの演出（トバトーバンが倒れる→乗車→発車）', 12, 's', 'proto'), arriveT: 6,
+  dropRate: 0.06,
+};
 const CAM = {
   camera_pitch_deg: p('カメラ', 'camera_pitch_deg（俯角）', 44, 'deg', 'proto', null, '35〜55度で調整。ボスが遠いときは最大8度浅くする'),
   vertical_fov_deg: p('カメラ', 'vertical_fov_deg（横画面）', 50, 'deg', 'proto'),
@@ -252,4 +280,4 @@ const NET = {
 };
 p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 10, 'Apple 44pt / Android 48dp の目安より大きく');
 
-const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };
+const DATA = { REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };

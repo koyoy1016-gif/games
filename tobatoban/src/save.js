@@ -6,7 +6,7 @@
    IDは1〜10000。アカウントを作った順に自動で決まる（いまはこの端末の中での順番）。
    ===================================================================== */
 const SAVE = (() => {
-  const ID_MIN = 1, ID_MAX = 10000, VER = 1, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 6, PW_MAX = 32; // Firebase のパスワードは6文字以上
+  const ID_MIN = 1, ID_MAX = 10000, VER = 2, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 6, PW_MAX = 32; // Firebase のパスワードは6文字以上
   // 以前の形式（ID 1001〜）のセーブはいったん消す（1回だけ）
   (function migrate() {
     try {
@@ -31,12 +31,17 @@ const SAVE = (() => {
   function checkPw(pw) { if (typeof pw !== 'string' || pw.length < PW_MIN) return `パスワードは${PW_MIN}文字以上にしてください`; if (pw.length > PW_MAX) return `パスワードは${PW_MAX}文字までです`; if (/\s/.test(pw)) return 'パスワードに空白は使えません'; return null; }
   function storageOk() { try { const k = KEY + '_t'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return true; } catch (e) { return false; } }
   function freshChars() { const o = {}; for (const c of DATA.CHARS) o[c.id] = { lv: 1, exp: 0, b: 0, w: 0, k: 0 }; return o; }
-  function fresh(id, pw) { return { v: VER, id, pw, created: Date.now(), saved: 0, chars: freshChars(), rec: { b: 0, w: 0, mobs: 0, best: 0 }, party: null, swap: null, items: null, nick: '' }; }
+  const STAGES = ['senju', 'joban']; // クリアした回数をステージごとに持つ
+  function freshClear() { const o = {}; for (const k of STAGES) o[k] = 0; return o; }
+  function fresh(id, pw) { return { v: VER, id, pw, created: Date.now(), saved: 0, chars: freshChars(), rec: { b: 0, w: 0, mobs: 0, best: 0 }, clear: freshClear(), party: null, swap: null, items: null, nick: '' }; }
   /** 古い形式や、あとで増えたキャラにも対応させる */
   function normalize(s) {
     if (!s || typeof s !== 'object') return null;
     const f = fresh(s.id, s.pw);
     const o = Object.assign(f, s); o.chars = Object.assign(freshChars(), s.chars || {}); o.rec = Object.assign(f.rec, s.rec || {});
+    o.clear = Object.assign(freshClear(), s.clear || {});
+    if (!s.clear && o.rec.w > 0) o.clear.senju = Math.floor(+o.rec.w || 0); // ステージが1つだった頃の勝ち＝トバトーバン戦
+    for (const k in o.clear) o.clear[k] = Math.max(0, Math.floor(+o.clear[k] || 0));
     for (const c of DATA.CHARS) { const x = o.chars[c.id]; for (const k of ['lv', 'exp', 'b', 'w', 'k']) x[k] = Math.max(k === 'lv' ? 1 : 0, Math.floor(+x[k] || 0)); }
     return o;
   }
@@ -75,7 +80,8 @@ const SAVE = (() => {
     for (const id in op.kills || {}) { const c = s.chars[id]; if (!c) continue; const k = op.kills[id] | 0; c.k += k; s.rec.mobs += k; }
     const f = op.fin;
     if (f) {
-      s.rec.b++; if (f.win) { s.rec.w++; if (f.time > 0 && (!s.rec.best || f.time < s.rec.best)) s.rec.best = Math.round(f.time); }
+      const st = f.stage || 'senju';
+      s.rec.b++; if (f.win) { s.rec.w++; s.clear[st] = (s.clear[st] | 0) + 1; if (st === 'senju' && f.time > 0 && (!s.rec.best || f.time < s.rec.best)) s.rec.best = Math.round(f.time); }
       for (const id of f.ids) { const c = s.chars[id]; if (!c) continue; c.b++; if (f.win) c.w++; }
     }
     // レベルの上がり方はあとで決める（いまは全員Lv.1のまま）
@@ -89,6 +95,7 @@ const SAVE = (() => {
     b.push(VER); vi(s.id);
     const ph = parseInt(s.pw, 16) >>> 0; b.push(ph >>> 24, (ph >>> 16) & 255, (ph >>> 8) & 255, ph & 255);
     vi(s.rec.b); vi(s.rec.w); vi(s.rec.mobs); vi(s.rec.best);
+    vi(STAGES.length); for (const k of STAGES) vi(s.clear[k] || 0);
     const n = DATA.CHARS.length; vi(n);
     const used = DATA.CHARS.map(c => { const x = s.chars[c.id]; return x.lv > 1 || x.exp || x.b || x.w || x.k; });
     for (let i = 0; i < n; i += 8) { let m = 0; for (let j = 0; j < 8 && i + j < n; j++) if (used[i + j]) m |= 1 << j; b.push(m); }
@@ -111,9 +118,10 @@ const SAVE = (() => {
       try {
         let p = 0; const u8 = () => { if (p >= body.length) throw 0; return body[p++]; };
         const vi = () => { let n = 0, m = 1, v; do { v = u8(); n += (v & 127) * m; m *= 128; } while (v & 128); return n; };
-        if (u8() !== VER) return { ok: false, msg: 'このコードはこの版では読めません' };
+        const ver = u8(); if (ver !== 1 && ver !== VER) return { ok: false, msg: 'このコードはこの版では読めません' };
         const id = vi(); const pw = ((u8() << 24 >>> 0) + (u8() << 16) + (u8() << 8) + u8()).toString(16).padStart(8, '0');
         const s = fresh(id, pw); s.rec.b = vi(); s.rec.w = vi(); s.rec.mobs = vi(); s.rec.best = vi();
+        if (ver >= 2) { const m = vi(); for (let i = 0; i < m; i++) { const c = vi(); if (STAGES[i]) s.clear[STAGES[i]] = c; } } else delete s.clear; // 古いコードは勝ち数から
         const n = vi(), mask = []; for (let i = 0; i < n; i += 8) { const m = u8(); for (let j = 0; j < 8 && i + j < n; j++) mask.push(!!(m & (1 << j))); }
         for (let i = 0; i < n; i++) { if (!mask[i]) continue; const x = { lv: vi(), exp: vi(), b: vi(), w: vi(), k: vi() }; const c = DATA.CHARS[i]; if (c) s.chars[c.id] = x; }
         if (p !== body.length) continue;

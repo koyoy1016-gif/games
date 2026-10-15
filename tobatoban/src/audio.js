@@ -178,6 +178,9 @@ const AUDIO = (() => {
       case 'boom': N({ f: 1800, f1: 80, dur: 0.6, g: 0.55, rev: 0.4 }); O({ f: 90, f1: 35, dur: 0.5, g: 0.5 }); break;
       case 'para': O({ f: 90, dur: 0.4, type: 'sawtooth', filt: 'bandpass', fq: 2000, q: 5, g: 0.12 }); N({ type: 'highpass', f: 4000, dur: 0.3, g: 0.1 }); break;
       case 'mark': N({ type: 'highpass', f: 2500, dur: 0.25, g: 0.12 }); break;
+      case 'rail': N({ type: 'lowpass', f: 260, dur: 0.07, g: 0.32 }); N({ type: 'lowpass', f: 220, dur: 0.07, g: 0.26, at: t + 0.13 }); N({ type: 'lowpass', f: 260, dur: 0.07, g: 0.3, at: t + 0.42 }); N({ type: 'lowpass', f: 210, dur: 0.08, g: 0.26, at: t + 0.55 }); break;
+      case 'doorOpen': case 'doorClose': N({ type: 'bandpass', f: 1800, f1: 600, q: 0.6, dur: 0.45, g: 0.18 }); O({ f: name === 'doorOpen' ? 880 : 660, dur: 0.12, type: 'triangle', g: 0.06, at: t + 0.4 }); break;
+      case 'trainChime': [0, 0.28].forEach((o, i) => O({ f: [784, 659][i], dur: 0.6, type: 'sine', g: 0.12, at: t + o, rev: 0.5 })); break;
       case 'food': O({ f: 600, f1: 900, dur: 0.08, type: 'triangle', g: 0.12 }); break;
       case 'eat': N({ type: 'bandpass', f: 900, q: 2, dur: 0.06, g: 0.15 }); N({ type: 'bandpass', f: 900, q: 2, dur: 0.06, g: 0.15, at: t + 0.1 }); O({ f: 800, f1: 1200, dur: 0.15, type: 'triangle', g: 0.08, at: t + 0.2 }); break;
       case 'pick': O({ f: 900, f1: 1400, dur: 0.1, type: 'triangle', g: 0.1 }); break;

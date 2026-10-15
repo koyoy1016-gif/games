@@ -88,7 +88,7 @@ const GFX = {};
     });
   }
 
-  GFX.buildWorld = function (scene) {
+  GFX.buildWorld = function (scene, fogScene) {
     const W = { lanternsStreet: [], toro: [], signs: [], papers: [], glass: [], flags: [] };
     const ST = DATA.STAGE;
     /* 空 */
@@ -101,7 +101,7 @@ const GFX = {};
     stars.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3)); scene.add(new THREE.Points(stars, new THREE.PointsMaterial({ color: 0xfff6e0, size: 1.6, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.8 })));
     const moonT = GFX.tex(128, 128, (g) => { const gr = g.createRadialGradient(64, 64, 10, 64, 64, 64); gr.addColorStop(0, 'rgba(255,248,220,1)'); gr.addColorStop(0.35, 'rgba(255,240,200,.9)'); gr.addColorStop(0.4, 'rgba(255,230,190,.25)'); gr.addColorStop(1, 'rgba(255,220,180,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
     const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map: moonT, fog: false, depthWrite: false, transparent: true })); moon.position.set(-90, 120, 220); moon.scale.set(40, 40, 1); scene.add(moon);
-    scene.fog = new THREE.Fog(0x3d3973, 50, 170);
+    (fogScene || scene).fog = new THREE.Fog(0x3d3973, 50, 170);
     /* 明かり */
     scene.add(new THREE.HemisphereLight(0x9a96e6, 0x3d2c34, 1.25));
     const dusk = new THREE.DirectionalLight(0xffb48c, 0.7); dusk.position.set(-40, 30, -80); scene.add(dusk);

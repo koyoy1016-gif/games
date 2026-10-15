@@ -376,9 +376,10 @@
   };
 
   /* ---------- 札小僧 ---------- */
+  GFX.fudaTex = () => GFX._fudaT || (GFX._fudaT = GFX.tex(64, 128, (g, w, h) => { g.fillStyle = '#fbf6e8'; g.fillRect(0, 0, w, h); g.strokeStyle = '#c0392b'; g.lineWidth = 4; g.strokeRect(5, 5, w - 10, h - 10); GFX.vtext(g, '大売出', w / 2, 32, 30, 32, GFX.FONT_SIGN, '#c0392b'); }));
   GFX.makeMob = () => {
     const root = G(null), body = G(root, 0, 0.22, 0);
-    const fT = GFX._fudaT || (GFX._fudaT = GFX.tex(64, 128, (g, w, h) => { g.fillStyle = '#fbf6e8'; g.fillRect(0, 0, w, h); g.strokeStyle = '#c0392b'; g.lineWidth = 4; g.strokeRect(5, 5, w - 10, h - 10); GFX.vtext(g, '大売出', w / 2, 32, 30, 32, GFX.FONT_SIGN, '#c0392b'); }));
+    const fT = GFX.fudaTex();
     const fm = L(0xffffff, { map: fT });
     B(body, 0.36, 0.5, 0.06, [L(0xe8e0cc), L(0xe8e0cc), L(0xe8e0cc), L(0xe8e0cc), fm, fm], 0, 0.25, 0);
     const head = G(body, 0, 0.58, 0); K(head, 0.14, 0.2, 0xf1ead8, 0, 0, 0); S(head, 0.1, 0xf1ead8, 0, -0.04, 0); eyes(head, -0.03, 0.08, 0.04, 0.02);

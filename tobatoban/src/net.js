@@ -6,7 +6,7 @@
    自分の移動だけ予測して表示する。
    ===================================================================== */
 const NETLIB = (() => {
-  const VERSION = 'tb2'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
+  const VERSION = 'tb3'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
   const hashStr = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
   const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
@@ -89,7 +89,7 @@ const NETLIB = (() => {
       this.tr = o.transport || null; this.kind = this.tr ? 'host' : 'solo'; this.code = o.code || '';
       this.local = new LocalInput(); this.mySlot = 0; this.sim = null; this.gid = 0; this.acc = 0; this.snapAcc = 0;
       this.views = []; this.clients = new Map(); this.notices = []; this.timeScale = 1; this.paused = false;
-      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'], lv: o.lv || 1 }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), lvs: o.lvs || {}, phase: 'lobby' };
+      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'], lv: o.lv || 1 }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), lvs: o.lvs || {}, stage: 'senju', phase: 'lobby' };
       this.lastLobbySend = 0;
       if (this.tr) {
         this.tr.on('msg', (m, from) => this.onMsg(m, from));
@@ -134,7 +134,7 @@ const NETLIB = (() => {
       this.dirtyLobby = true;
     }
     notice(s) { this.notices.push({ s, t: now() }); }
-    lobbyMsg() { return { t: 'lb', v: VERSION, code: this.code, diff: this.lobby.diff, phase: this.lobby.phase, gid: this.gid, slots: this.lobby.slots.map(s => s ? { who: s.who, peer: s.peer, nick: s.nick, ch: s.ch, swap: s.swap, items: s.items, lv: s.lv || 1 } : null), ai: this.aiFill(), aiLv: this.aiFill().map(c => c ? (this.lobby.lvs[c] || 1) : 0) }; }
+    lobbyMsg() { return { t: 'lb', v: VERSION, code: this.code, diff: this.lobby.diff, stage: this.lobby.stage || 'senju', phase: this.lobby.phase, gid: this.gid, slots: this.lobby.slots.map(s => s ? { who: s.who, peer: s.peer, nick: s.nick, ch: s.ch, swap: s.swap, items: s.items, lv: s.lv || 1 } : null), ai: this.aiFill(), aiLv: this.aiFill().map(c => c ? (this.lobby.lvs[c] || 1) : 0) }; }
     aiFill() { const taken = new Set(this.lobby.slots.filter(Boolean).map(s => s.ch)); const pool = this.lobby.aiParty.concat(DATA.CHARS.map(c => c.id)).filter((c, i, a) => a.indexOf(c) === i && !taken.has(c)); return this.lobby.slots.map(s => s ? null : pool.shift()); }
     setMine(o) { Object.assign(this.lobby.slots[0], o); this.dirtyLobby = true; }
     startGame(o) {
@@ -143,7 +143,7 @@ const NETLIB = (() => {
       const party = this.lobby.slots.map((s, i) => s ? { ch: s.ch, swap: s.swap, items: s.items, nick: s.nick, lv: s.lv || 1 } : { ch: fill[i], swap: false, items: ['onigiri', 'ramune'], nick: 'AI', lv: this.lobby.lvs[fill[i]] || 1 });
       if (o.party) o.party.forEach((p, i) => { if (!this.lobby.slots[i] || i === 0) Object.assign(party[i], p); });
       this.gid++; this.lobby.phase = 'game';
-      this.sim = new Sim({ party, diff: this.lobby.diff, seed: (Math.random() * 1e9) | 0 });
+      this.sim = new Sim({ party, diff: this.lobby.diff, stageId: o.stageId || this.lobby.stage, seed: (Math.random() * 1e9) | 0 });
       this.sim.allies.forEach((a, i) => { a.ctrlAI = !this.lobby.slots[i] || (this.lobby.slots[i].who === 'peer' && !this.clients.has(this.lobby.slots[i].peer)); });
       for (const c of this.clients.values()) { c.q = 0; c.inp = null; c.loaded = false; }
       this.local = new LocalInput(); this.mySlot = 0; this.acc = 0; this.views = []; this.waitT = this.kind === 'host' ? 0 : -1;
@@ -264,7 +264,7 @@ const NETLIB = (() => {
         const dash = L.hold.B && !me.act && !me.tired && (me.stam > 0 || me.ramune);
         const s = (dash ? DATA.SIM.dash : DATA.SIM.walk) * mul * dt;
         const nx = this.pred.x + mx * s, nz = this.pred.z + mz * s;
-        const c = Sim.prototype.clampPos.call({ barrier: v.barrier, boss: v.boss }, this.pred.x, this.pred.z, nx, nz, 0.35);
+        const c = Sim.prototype.clampPos.call({ barrier: v.barrier, boss: v.boss, stageId: v.stageId, clampTrain: Sim.prototype.clampTrain }, this.pred.x, this.pred.z, nx, nz, 0.35);
         this.pendDx = (this.pendDx || 0) + c[0] - this.pred.x; this.pendDz = (this.pendDz || 0) + c[1] - this.pred.z;
         this.pred.x = c[0]; this.pred.z = c[1]; this.pred.yaw = SIMLIB.yawTo(mx, mz);
       }

@@ -42,7 +42,9 @@ with sync_playwright() as p:
         d = 220 if rotdir == 'left' else -220
         pg.mouse.move(cx - d / 2, cy); pg.mouse.down(); pg.mouse.move(cx + d / 2, cy, steps=6); pg.mouse.up(); time.sleep(0.3)
         s1 = pg.evaluate("document.getElementById('team').scrollTop"); print('scroll', s0, '->', s1)
-        x, y = center(pg, '#btnGo'); pg.mouse.click(x, y)
+        x, y = center(pg, '#btnGo'); pg.mouse.click(x, y); time.sleep(0.5)
+        pg.screenshot(path=os.path.join(OUT, f'61b_stage_{tag}.png'))
+        x, y = center(pg, '#stages .stage-card'); pg.mouse.click(x, y)  # ステージ選択（回転した画面で指で押す）
         pg.wait_for_function('__tb.G.mode === "play"', timeout=10000); time.sleep(2.5)
         pg.screenshot(path=os.path.join(OUT, f'62_play_{tag}.png'))
         # スティック：プレイヤーから見て「上」へ倒す

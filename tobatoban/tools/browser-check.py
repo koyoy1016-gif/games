@@ -44,6 +44,7 @@ def run(p, w, h, tag, steps):
     b = p.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'])
     ctx = b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=1, is_mobile=True, has_touch=True)
     page = ctx.new_page(); route(page)
+    if os.environ.get('WARN_STACK'): page.add_init_script("const w0 = console.warn; console.warn = function(...a){ if (String(a[0]).includes('parameter')) a = a.concat([new Error().stack.split('\\n').slice(2, 7).join(' | ')]); return w0.apply(console, a); };")
     errs = []
     page.on('console', lambda m: errs.append(f'[{m.type}] {m.text}') if m.type in ('error', 'warning') else None)
     page.on('pageerror', lambda e: errs.append(f'[pageerror] {e}'))
@@ -78,7 +79,7 @@ def ev(js, key=None):
 def check_overlap(key):
     def f(page, res): res[key] = overlaps(page)
     return f
-START_SOLO = '''() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); return __tb.G.mode; }'''
+START_SOLO = '''() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); return __tb.G.mode; }'''
 TO_BOSS = '''() => { const s = __tb.G.session.sim; s.mobs = []; s.wave = 1; s.barrier = 'none'; s.allies.forEach((a,i) => { a.x = -2 + i; a.z = -1; }); s.allies[0].z = 3; return 'ok'; }'''
 FORCE = '''(mv) => { const s = __tb.G.session.sim; const b = s.boss; if (!b || s.stage !== 'boss') return 'nostage'; b.st='idle'; b.gap=99; b.cds={}; const t = s.allies[0]; s.bossStart(mv, t); return b.st; }'''
 NOHP = '''() => { const t = document.getElementById('hud').innerText; const m = t.match(/\\d+\\s*\\/\\s*\\d+/g); return m || []; }'''
@@ -103,7 +104,7 @@ with sync_playwright() as p:
     if SCEN in ('all', 'port'):
         results.append(run(p, 390, 844, 'port', [
             shot('19_login_port'), ev("() => { document.getElementById('btnGuest').click(); return 1; }"), wait(0.3), shot('20_title_port'), ev("() => { document.getElementById('btnSolo').click(); return 1; }"), wait(0.5), shot('21_team_port'),
-            ev("() => { document.getElementById('btnGo').click(); return 1; }"), wait(2.5), shot('22_street_port'), check_overlap('overlap_port'),
+            ev("() => { document.getElementById('btnGo').click(); return 1; }"), wait(0.4), shot('21b_stage_port'), ev("() => { document.querySelector('#stages .stage-card').click(); return 1; }"), wait(2.5), shot('22_street_port'), check_overlap('overlap_port'),
             ev(TO_BOSS), wait(6.5), shot('23_boss_port'), check_overlap('overlap_port_boss'),
         ]))
     if SCEN in ('all', 'small'):
@@ -115,6 +116,30 @@ with sync_playwright() as p:
         for i in range(9):
             steps += [wait(0.55), shot(f'5{i}_fly'), ev("() => { const f=__tb.G.session.sim.boss.fl; return f ? f.ph + ' ' + Math.round(f.yaw*180/Math.PI) + '° i' + f.i : __tb.G.session.sim.boss.st; }", f'fly{i}')]
         results.append(run(p, 844, 390, 'fly', steps))
+    if SCEN in ('joban', 'jobanport'):
+        # ステージ2：ステージ選択（ロック→解放）→ 演出（トバトーバンが倒れる→ホーム→乗車）→ 車内戦 → 駅 → 上野
+        vis = "() => [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',')"
+        sim = "__tb.G.session.sim"
+        port = SCEN == 'jobanport'
+        W, H = (390, 844) if port else (844, 390)
+        pre = 'p' if port else ''
+        steps = [ev("() => { document.getElementById('btnGuest').click(); document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); return 1; }"), wait(0.4), ev(vis, 'screen'), shot(pre + '60_stage_locked'),
+            ev("() => { document.querySelectorAll('#stages .stage-card')[1].click(); return __tb.G.mode; }", 'locked_click_mode'), wait(0.3), shot(pre + '60b_locked_toast'),
+            ev("() => { __tb.G.sessClear.senju = true; document.getElementById('btnStageBack').click(); document.getElementById('btnGo').click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'cards'), wait(0.3), shot(pre + '61_stage_open'),
+            ev("() => { document.querySelectorAll('#stages .stage-card')[1].click(); return __tb.G.mode + ' ' + " + sim + ".stageId + ' ' + " + sim + ".stage; }", 'start'),
+            wait(1.2), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_62_cut_collapse'), shot(pre + '62_cut_collapse'), wait(2.4), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_63_cut_platform'), shot(pre + '63_cut_platform'), wait(1.8), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_64_cut_board'), shot(pre + '64_cut_board'), wait(2.6), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_65_cut_inside'), shot(pre + '65_cut_inside'), wait(2.6), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_66_cut_depart'), shot(pre + '66_cut_depart'),
+            wait(2.0), ev("() => " + sim + ".stage + ' mobs ' + " + sim + ".mobs.length", 'after_intro'), shot(pre + '67_train'), check_overlap('overlap_train'),
+            ev("() => { const s=" + sim + "; s.allies.forEach(a => a.inv = 999); const L = __tb.G.session.local; L.push('A'); L.push('A'); return 1; }"), wait(3.0), shot(pre + '68_fight'),
+            ev("() => { const i = __tb.R.renderer.info; return {calls: i.render.calls, tris: i.render.triangles, geos: i.memory.geometries, tex: i.memory.textures}; }", 'perf'),
+            ev("() => document.getElementById('bossbox').innerText.replace(/\\n/g,' | ')", 'route_text'),
+            # 南千住の手前まで進める → 停車・ドア・乗車
+            ev("() => { const s=" + sim + "; s.tr.d = DATA_LEN0 - 12; s.tr.v = 7; return s.tr.d; }".replace('DATA_LEN0', '__tb.DATA.JOBAN.segLen[0]')), wait(5.5), ev("() => { const t=" + sim + ".tr; return [t.at, t.ph, t.doors, Math.round(t.t*10)/10]; }", 'station'), shot(pre + '69_station'), wait(2.0), shot(pre + '70_boarding'),
+            # 最後まで飛ばす：部下を全滅・日暮里を出た所 → 上野に着く
+            ev("() => { const s=" + sim + "; s.phase = 3; s.boardedSt = 3; s.queue = []; s.mobs.forEach(m => { if (m.st === 'ok') s.dealToEnemy(s.allies[0], m, 99999, 'str', 'A', null); }); s.kills = s.total; const t = s.tr; t.at = 3; t.ph = 'run'; t.t = 0; t.d = __tb.DATA.JOBAN.segLen[3] - 100; t.v = 20; return s.stage; }", 'skip'),
+            wait(3.0), shot(pre + '71_approach_ueno'), wait(8.5), ev("() => " + sim + ".stage + ' at ' + " + sim + ".tr.at", 'arrive_stage'), shot(pre + '72_ueno'), wait(2.5), shot(pre + '72b_ueno_platform'), wait(3.0), shot(pre + '72c_ueno_platform'), wait(3.0), ev("() => [__tb.G.mode, " + sim + ".result && " + sim + ".result.why]", 'result'), shot(pre + '73_result'),
+            ev("() => document.getElementById('result') ? document.getElementById('result').innerText.slice(0, 300) : ''", 'result_text'),
+        ]
+        results.append(run(p, W, H, 'joban', steps))
     if SCEN in ('save',):
         # ログイン（毎回）→ 登録 → 戦う → 自動セーブ → 開き直す → ログインして続きから
         def reload(page, res):
@@ -126,7 +151,7 @@ with sync_playwright() as p:
         results.append(run(p, 844, 390, 'save', [
             ev(vis, 'boot_screen'), shot('80_login'),
             click('#btnRegister'), typ('#lgPw', 'neko22'), typ('#lgPw2', 'neko22'), shot('81_register'), click('#btnRegister'), wait(0.3), txt('#lgDoneId', 'assigned_id'), shot('81b_done'), click('#btnDoneOk'), wait(0.3), ev(vis, 'after_register'), txt('#acctWho', 'acct_bar'), shot('82_title_login'),
-            click('#btnSolo'), wait(0.4), shot('83_team_lv'), click('#btnGo'), wait(2.0),
+            click('#btnSolo'), wait(0.4), shot('83_team_lv'), click('#btnGo'), wait(0.3), click('#stages .stage-card'), wait(2.0),
             ev("() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); return s.allies[0].stats.kills; }", 'kills'), wait(1.5),
             ev(TO_BOSS), wait(1.5), ev("() => JSON.parse(localStorage.getItem('tb.acct.1')).rec.mobs", 'stored_mobs_at_plaza(0=no autosave)'), wait(5.5),
             ev("() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); return s.stage; }"), wait(5), txt('#resSave', 'result_save'), ev("() => JSON.parse(localStorage.getItem('tb.acct.1')).rec", 'stored_after_battle'), shot('85_result_save'),
@@ -180,7 +205,7 @@ with sync_playwright() as p:
         res['A_register'] = until(A, "() => !document.querySelector('#lgDone').hidden") and J(A, "() => document.querySelector('#lgDoneId').textContent")
         A.screenshot(path=os.path.join(OUT, '90_cloud_done.png'))
         clk(A, '#btnDoneOk'); time.sleep(0.5); res['A_bar'] = J(A, "() => document.querySelector('#acctWho').textContent")
-        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); }"); time.sleep(2.5)
+        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); }"); time.sleep(2.5)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); }"); time.sleep(1)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs=[]; s.barrier='none'; s.allies.forEach((a,i)=>{a.x=-2+i;a.z=-1;}); s.allies[0].z=3; }"); time.sleep(7)
         J(A, "() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); }")
@@ -244,7 +269,7 @@ with sync_playwright() as p:
         if not res['A_register']: res['A_msg'] = J(A, "() => document.querySelector('#lgMsg').textContent")
         A.screenshot(path=os.path.join(OUT, '90_cloud_done.png'))
         clk(A, '#btnDoneOk'); time.sleep(0.5); res['A_bar'] = J(A, "() => document.querySelector('#acctWho').textContent")
-        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); }"); time.sleep(2.5)
+        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); }"); time.sleep(2.5)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); }"); time.sleep(1)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs=[]; s.barrier='none'; s.allies.forEach((a,i)=>{a.x=-2+i;a.z=-1;}); s.allies[0].z=3; }"); time.sleep(7)
         J(A, "() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); }")
@@ -280,6 +305,6 @@ with sync_playwright() as p:
         for k, v in r.items():
             if k in ('tag',): continue
             if k == 'errors':
-                print('errors:', len(v)); [print('  ', e[:300]) for e in v[:25]]
+                print('errors:', len(v)); [print('  ', e[:300] if not os.environ.get('WARN_STACK') else e[:1200]) for e in v[:25]]
             else: print(k, ':', v)
 srv.shutdown()

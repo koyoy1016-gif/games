@@ -58,7 +58,7 @@ const R = (() => {
     pr = Math.min(window.devicePixelRatio || 1, 1.75); renderer.setPixelRatio(pr);
     scene = new THREE.Scene(); scene.background = new THREE.Color(0x2a2650);
     camera = new THREE.PerspectiveCamera(50, 1, 0.2, 400);
-    W = GFX.buildWorld(scene);
+    const wroot = new THREE.Group(); scene.add(wroot); W = GFX.buildWorld(wroot, scene); W.root = wroot; // 北千住（ステージ1）
     PA = makePoints(700, true); PN = makePoints(500, false); scene.add(PA.pts); scene.add(PN.pts);
     resize();
     // 自分の足元の印（ボスの体に隠れても見える）
@@ -137,7 +137,7 @@ const R = (() => {
       PJM.fire = [new THREE.SphereGeometry(0.26, 12, 10), new THREE.MeshBasicMaterial({ color: 0xff7a2a })];
       PJM.mark = [new THREE.TorusGeometry(0.16, 0.05, 6, 16), new THREE.MeshBasicMaterial({ color: 0xff4a2a })];
       PJM.leaf = PJM.star;
-      const ft = GFX._fudaT; PJM.fuda = [new THREE.PlaneGeometry(0.24, 0.42), GFX.lam(0xffffff, { map: ft, side: THREE.DoubleSide, emissive: 0x552211 })];
+      const ft = GFX.fudaTex(); PJM.fuda = [new THREE.PlaneGeometry(0.24, 0.42), GFX.lam(0xffffff, { map: ft, side: THREE.DoubleSide, emissive: 0x552211 })];
       PJM.lantern = PJM.fire;
     }
     const [g, m] = PJM[kind] || PJM.star; const mesh = new THREE.Mesh(g, m); scene.add(mesh); return mesh;
@@ -180,11 +180,75 @@ const R = (() => {
     o.edge.material.opacity = someone ? 0.95 : 0.55 + Math.sin(T * 5) * 0.25; o.fill.material.opacity = someone ? 0.22 : 0.1;
   }
 
+  /* ---------- ステージ2：常磐線（車内・車窓・始まりの演出） ---------- */
+  let TW = null; const JT = { dist: 0, cutBoss: null, lcd: '', fadeK: 1 };
+  const ensureTrain = () => TW || (TW = GFX.buildTrain(scene));
+  const JSTART = [[-0.6, -4.2], [0.6, -4.2], [-0.6, -5.8], [0.6, -5.8]];
+  /** 始まりの演出での味方の位置：広場でトバトーバンが倒れる → 北千住のホームから3号車に乗る */
+  function introPose(t, i) {
+    if (t < 3.5) return { x: [-1.8, 1.8, -0.6, 0.6][i], z: [7.2, 7.2, 6, 6][i], yaw: 0, moving: false, act: '', st: 'ok' };
+    const p0 = [-4.4 - (i % 2) * 0.9, -3.5 + (i - 1.5) * 1.1], d = [-1.7, -3.5], f = JSTART[i], t0 = 4.3 + i * 0.45;
+    const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+    if (t < t0) return { x: p0[0], z: p0[1], yaw: Math.PI / 2, moving: false, act: '', st: 'ok' };
+    if (t < t0 + 1.5) { const k = (t - t0) / 1.5, q = lerp(p0, d, k); return { x: q[0], z: q[1], yaw: Math.atan2(d[0] - p0[0], d[1] - p0[1]), moving: true, act: '', st: 'ok' }; }
+    if (t < t0 + 2.5) { const k = (t - t0 - 1.5) / 1.0, q = lerp(d, f, k); return { x: q[0], z: q[1], yaw: Math.atan2(f[0] - d[0], f[1] - d[1]), moving: true, act: '', st: 'ok' }; }
+    return { x: f[0], z: f[1], yaw: 0, moving: false, act: '', st: 'ok' };
+  }
+  /** 上野に着いたあとの時間（着いてから。着く前は -1） */
+  const outroT = v => v.stageId !== 'joban' ? -1 : v.stage === 'arrive' ? v.stageT : (v.stage === 'won' && v.tr && v.tr.at >= 4) ? DATA.JOBAN.arriveT + v.stageT : -1;
+  /** 上野：ドアが開いて、4人がホームに降りる */
+  function outroPose(t, i) {
+    const s0 = [-0.9, -3.5 + (i - 1.5) * 0.7], d = [-1.9, -3.5], f = [-2.8 - i * 0.78, -4.3 + (i % 2) * 0.55], t0 = 1.9 + i * 0.4;
+    const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+    if (t < t0) return { x: s0[0], z: s0[1], yaw: -Math.PI / 2, moving: false, act: '', st: 'ok' };
+    if (t < t0 + 0.7) { const q = lerp(s0, d, (t - t0) / 0.7); return { x: q[0], z: q[1], yaw: Math.atan2(d[0] - s0[0], d[1] - s0[1]), moving: true, act: '', st: 'ok' }; }
+    if (t < t0 + 1.7) { const q = lerp(d, f, (t - t0 - 0.7) / 1.0); return { x: q[0], z: q[1], yaw: Math.atan2(f[0] - d[0], f[1] - d[1]), moving: true, act: '', st: 'ok' }; }
+    return { x: f[0], z: f[1], yaw: Math.atan2(-4.3 - f[0], 2 - f[1]), moving: false, act: '', st: 'ok' };
+  }
+  function syncTrain(v, dt, T, me) {
+    const jb = v.stageId === 'joban', it = v.introWait ? 0 : v.stageT;
+    const showTrain = jb && !(v.stage === 'intro' && it < 3.5);
+    W.root.visible = !showTrain; if (jb) ensureTrain(); if (TW) TW.root.visible = showTrain;
+    // 演出用のトバトーバン（広場で倒れる）
+    const wantBoss = jb && v.stage === 'intro' && it < 3.5;
+    if (wantBoss && !JT.cutBoss) { JT.cutBoss = GFX.makeBoss(); W.root.add(JT.cutBoss.root); W.root.add(JT.cutBoss.shadow); }
+    if (!wantBoss && JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; }
+    if (JT.cutBoss) GFX.animBoss(JT.cutBoss, { x: 0, z: DATA.STAGE.bossSpawn[1], y: 0, yaw: Math.PI, st: 'dead', t: Math.max(0, it - 0.4) * 0.8, mv: null, phase: 2, hpR: 0, fl: null }, T, dt, v);
+    if (!showTrain) return;
+    // 電車の進み・ホームの位置・ドア
+    const Jd = DATA.JOBAN, tr = v.tr; let platZ = null, st = 0, doors = false, speed = 0, top = '常磐線 上野行', main = '北千住', sub = 'Kita-Senju';
+    if (v.stage === 'intro') { platZ = 0; doors = it >= 3.6 && it < 9.4; top = '常磐線 上野行　まもなく発車'; }
+    else if (tr) {
+      speed = tr.v; const L = Jd.segLen[Math.min(3, tr.at)], d = L - tr.rem;
+      if (tr.ph === 'stop') { platZ = 0; st = tr.at; doors = tr.doors === 1 || outroT(v) > 1.4; top = tr.at >= 4 ? '常磐線　終点' : '常磐線 上野行　ただいま'; main = Jd.stations[tr.at]; sub = Jd.stationsEn[tr.at]; }
+      else { const nx = Math.min(4, tr.at + 1); top = '常磐線 上野行　次は'; main = Jd.stations[nx]; sub = Jd.stationsEn[nx]; if (tr.rem < 260) { platZ = tr.rem; st = nx; } else if (d < 260) { platZ = -d; st = tr.at; } }
+    }
+    JT.dist += speed * dt;
+    JT.rail = (JT.rail || 0) + speed * dt; if (JT.rail > 22) { JT.rail = 0; AUDIO.sfx('rail', null, null, 0.4 + speed / Jd.vmax * 0.6); } // ガタンゴトン
+    if (platZ != null) TW.setStation(Math.min(4, st));
+    TW.update(JT.dist, platZ, doors, T, dt);
+    const key = top + main; if (key !== JT.lcd) { JT.lcd = key; TW.setLcd(top, main, sub); }
+    // 連結部の壁：カメラと自分が別の車両にいるときは薄くする
+    const ma = v.allies[me];
+    if (ma) { const cz = camera.position.z, across = (cz < -0.9 && ma.z > -0.3) || (cz > 0.9 && ma.z < 0.3) || Math.abs(cz) < 1.1; for (const m of TW.fade) { m.opacity += ((across ? 0.15 : 1) - m.opacity) * Math.min(1, dt * 8); m.depthWrite = m.opacity > 0.9; } }
+  }
+
+  /** カメラのすぐ前の部下は消し、自分を隠す位置の部下は半透明にする（視界をふさがない） */
+  function yoshiOcclude(m, e, a) {
+    const cx = camera.position.x, cz = camera.position.z, cd = Math.hypot(e.x - cx, e.z - cz);
+    m.root.visible = cd > 1.4; if (!a || !m.root.visible) return;
+    const dx = a.x - cx, dz = a.z - cz, L = Math.hypot(dx, dz) || 1, ux = dx / L, uz = dz / L;
+    const t = (e.x - cx) * ux + (e.z - cz) * uz, side = Math.abs((e.x - cx) * uz - (e.z - cz) * ux);
+    GFX.fadeYoshi(m, cd < 2.4 || (t > 0 && t < L - 0.35 && side < 0.75));
+  }
   /* ---------- 同期 ---------- */
   function sync(v, dt, T, me) {
     if (!v) return;
+    syncTrain(v, dt, T, me);
+    const cut = v.stageId === 'joban' && v.stage === 'intro', cutT = v.introWait ? 0 : v.stageT, ot = outroT(v), outro = ot > 1.2;
     // 味方
-    v.allies.forEach((a, i) => {
+    v.allies.forEach((a0, i) => {
+      const a = cut ? Object.assign({}, a0, introPose(cutT, i), { hpR: 1 }) : outro && a0.st !== 'gone' ? Object.assign({}, a0, outroPose(ot, i)) : a0;
       let m = allies[i];
       if (!m || m.c.id !== a.ch) { if (m) { scene.remove(m.root); scene.remove(m.shadow); } m = GFX.makeChar(DATA.CHI[a.ch]); allies[i] = m; scene.add(m.root); scene.add(m.shadow); }
       GFX.animChar(m, a, T, dt, { me: i === me });
@@ -209,7 +273,7 @@ const R = (() => {
     } else if (boss) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }
     // 札小僧
     const seenM = new Set();
-    for (const e of v.mobs) { seenM.add(e.id); let m = mobs.get(e.id); if (!m) { m = GFX.makeMob(); mobs.set(e.id, m); scene.add(m.root); scene.add(m.shadow); burst('norm', 10, { x: e.x, y: 0.5, z: e.z, spd: 1.5, life: 0.6, s0: 0.4, s1: 0.8, c: 0xf0e8d8, a: 0.6 }); } GFX.animMob(m, e, T, dt); }
+    for (const e of v.mobs) { seenM.add(e.id); let m = mobs.get(e.id); if (!m) { m = e.yoshi ? GFX.makeYoshi(e.kind) : GFX.makeMob(); m.yoshi = e.yoshi; if (e.yoshi) m.root.scale.setScalar(0.4); mobs.set(e.id, m); scene.add(m.root); scene.add(m.shadow); burst('norm', 10, { x: e.x, y: 0.5, z: e.z, spd: 1.5, life: 0.6, s0: 0.4, s1: 0.8, c: e.yoshi ? 0xb8a8ff : 0xf0e8d8, a: 0.6 }); } if (m.yoshi) { GFX.animYoshi(m, e, T, dt); yoshiOcclude(m, e, v.allies[me]); } else GFX.animMob(m, e, T, dt); } // カメラのすぐ前の部下は消して視界をふさがない
     for (const [id, m] of mobs) if (!seenM.has(id)) { scene.remove(m.root); scene.remove(m.shadow); mobs.delete(id); }
     // 弾
     const seenP = new Set();
@@ -303,6 +367,13 @@ const R = (() => {
     return out;
   }
   function shake(a) { if (opts.shake) cam.shake = Math.max(cam.shake, a); }
+  /** ヨシノシの部下のビーム（一瞬の光の帯） */
+  const beams = [];
+  function beamFlash(e) {
+    const len = DATA.JOBAN.wpn.beam.len, g = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, len), new THREE.MeshBasicMaterial({ color: 0xc8ff7a, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }));
+    g.position.set(e.x + Math.sin(e.yaw) * len / 2, 0.95, e.z + Math.cos(e.yaw) * len / 2); g.rotation.y = e.yaw; scene.add(g); beams.push({ g, t: 0.28 });
+  }
+  function stepBeams(dt) { for (const b of beams) { b.t -= dt; b.g.material.opacity = Math.max(0, b.t / 0.28) * 0.85; b.g.scale.x = b.g.scale.y = 0.6 + b.t * 3; if (b.t <= 0) { scene.remove(b.g); b.g.geometry.dispose(); } } for (let i = beams.length - 1; i >= 0; i--) if (beams[i].t <= 0) beams.splice(i, 1); }
   function fx(e, v, me) {
     const A = AUDIO.sfx;
     switch (e.type) {
@@ -387,10 +458,18 @@ const R = (() => {
       case 'hzfire': {
         if (e.fx === 'otoshi' || e.fx === 'bomb') { A('boom', e.x, e.z, 0.7); burst('add', 18, { x: e.x, y: 0.3, z: e.z, spd: 5, up: 1.5, life: 0.4, s0: 0.6, s1: 0.1, c: 0xff8a3a }); burst('norm', 6, { x: e.x, y: 0.3, z: e.z, spd: 1.5, life: 0.8, s0: 0.7, s1: 1.4, c: 0x5a5060, a: 0.5 }); shake(0.08); }
         if (e.fx === 'land') { A('land', e.x, e.z); for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI * 2; emit('norm', { x: e.x + Math.cos(a) * 1.5, y: 0.2, z: e.z + Math.sin(a) * 1.5, vx: Math.cos(a) * 7, vz: Math.sin(a) * 7, life: 0.8, s0: 0.6, s1: 1.4, c: 0xc8b8a0, a: 0.6 }); } shake(0.4); }
+        if (e.fx === 'ybeam') { A('shot_focus', e.x, e.z, 0.8); beamFlash(e); }
+        if (e.fx === 'ysword') { A('slash', e.x, e.z, 0.7); for (let i = 0; i < 6; i++) { const a = e.yaw + (i - 2.5) * 0.22; emit('add', { x: e.x + Math.sin(a) * 1.3, y: 0.7, z: e.z + Math.cos(a) * 1.3, vx: Math.sin(a) * 2, vz: Math.cos(a) * 2, life: 0.2, s0: 0.3, s1: 0.02, c: 0xe4ecff }); } }
+        if (e.fx === 'yfist') { A('hit', e.x, e.z, 0.7); burst('norm', 6, { x: e.x + Math.sin(e.yaw) * 1.1, y: 0.6, z: e.z + Math.cos(e.yaw) * 1.1, spd: 2, life: 0.35, s0: 0.3, s1: 0.6, c: 0xd8d0f0, a: 0.6 }); }
         if (e.fx === 'harite') { for (let d = 0.2; d < DATA.BMOVES.harite.len; d += 0.35) for (const s of [-1, 0, 1]) emit('norm', { x: e.x + Math.sin(e.yaw) * d + Math.cos(e.yaw) * s * 0.9, y: 0.25, z: e.z + Math.cos(e.yaw) * d - Math.sin(e.yaw) * s * 0.9, vx: Math.sin(e.yaw) * 3, vz: Math.cos(e.yaw) * 3, vy: 1.2, life: 0.55, s0: 0.5, s1: 1.2, c: 0xc8b8a0, a: 0.65 }); burst('add', 14, { x: e.x + Math.sin(e.yaw) * 1.2, y: 0.4, z: e.z + Math.cos(e.yaw) * 1.2, spd: 4, life: 0.3, s0: 0.5, s1: 0.05, c: 0xfff0c0 }); }
         break;
       }
       case 'cross': A('flyPass', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); break;
+      case 'yAtk': A(e.w === 'beam' ? 'charge' : 'swing', e.x, e.z, 0.5); break;
+      case 'ySpawn': burst('norm', 8, { x: e.x, y: 0.6, z: e.z, spd: 1.2, life: 0.5, s0: 0.35, s1: 0.7, c: 0xb8a8ff, a: 0.55 }); break;
+      case 'doors': A(e.open ? 'doorOpen' : 'doorClose'); break;
+      case 'depart': A('trainChime'); break;
+      case 'arriveSt': A('trainChime'); break;
       case 'land': A('stomp'); break;
       case 'phase2': if (listeners.notice) listeners.notice({ k: 'phase2' }); A('roar'); break;
       case 'unlock': if (listeners.notice) listeners.notice({ k: 'unlock' }); break;
@@ -403,8 +482,49 @@ const R = (() => {
   }
 
   /* ---------- カメラ ---------- */
+  /** 常磐線のカメラ：演出の流れ／車内では低めの三人称（天井の下・車内からはみ出さない） */
+  function trainCamera(v, me, dt, input, area) {
+    const a = v.allies[me], portrait = cam.portrait, it = v.introWait ? 0 : v.stageT, T = performance.now() / 1000;
+    const wantFov = portrait ? 72 : 62; if (Math.abs(camera.fov - wantFov) > 0.1) { camera.fov = wantFov; camera.updateProjectionMatrix(); }
+    camera.clearViewOffset();
+    if (v.stage === 'intro') {
+      const shots = it < 3.5 ? [{ t: 0, c: [4.6, 1.6, 4.0], l: [0, 2.8, 13.3] }, { t: 3.5, c: [3.0, 2.3, 6.2], l: [0, 1.4, 13.3] }]
+        : [{ t: 3.5, c: [-5.0, 1.9, -12.5], l: [-1.8, 1.0, -3.5] }, { t: 9.0, c: [-5.2, 1.9, -7.5], l: [-1.2, 1.1, -3.5] }, { t: 10.4, c: [-4.6, 1.9, -6.0], l: [-1.0, 1.1, -3.6] }, { t: 12, c: [0, 1.95, -11], l: [0, 1.0, -3] }];
+      let i = 0; while (i < shots.length - 2 && it >= shots[i + 1].t) i++;
+      const s0 = shots[i], s1 = shots[i + 1], kk = Math.max(0, Math.min(1, (it - s0.t) / (s1.t - s0.t))), e = kk * kk * (3 - 2 * kk);
+      const bl = (p, q) => p + (q - p) * e;
+      camera.position.set(bl(s0.c[0], s1.c[0]), bl(s0.c[1], s1.c[1]), bl(s0.c[2], s1.c[2])); camera.lookAt(bl(s0.l[0], s1.l[0]), bl(s0.l[1], s1.l[1]), bl(s0.l[2], s1.l[2]));
+      cam.ring.visible = cam.arrow.visible = false; cam.fx = a.x; cam.fz = a.z; cam.yaw = 0; return;
+    }
+    const ot = outroT(v);
+    if (ot > 1.2) { // 上野：ホームから電車を見る
+      const k = Math.min(1, (ot - 1.2) / 6), e = k * k * (3 - 2 * k);
+      camera.position.set(-4.6 + e * 0.3, 1.7 + e * 0.2, 3.0 - e * 1.0); camera.lookAt(-2.3, 1.0, -4.0 - e * 0.4);
+      cam.ring.visible = cam.arrow.visible = false; return;
+    }
+    let fx = a.x, fz = a.z;
+    const ml = Math.hypot(input.mx, input.mz); if (ml > 0.1 && a.st === 'ok') { fx += input.mx / ml * 1.2; fz += input.mz / ml * 1.2; }
+    if (cam.lock && cam.lock !== 'boss') { const m = v.mobs.find(e => e.id === cam.lock); if (m) { fx += (m.x - a.x) * 0.25; fz += (m.z - a.z) * 0.25; } }
+    const k = 1 - Math.exp(-dt / DATA.CAM.follow_delay_sec); cam.fx += (fx - cam.fx) * k; cam.fz += (fz - cam.fz) * k;
+    cam.dragT = Math.max(0, cam.dragT - dt);
+    if (cam.reset) { cam.reset = false; cam.yaw = a.yaw; }
+    if (cam.lock && !cam.dragT) { const t = v.mobs.find(e => e.id === cam.lock); if (t && Math.hypot(t.x - a.x, t.z - a.z) > 2) { const want = Math.atan2(t.x - a.x, t.z - a.z); cam.yaw += Math.max(-1.2 * dt, Math.min(1.2 * dt, SIMLIB.angDiff(cam.yaw, want))); } }
+    const p = 17 * Math.PI / 180, dist = portrait ? 6.4 : 5.6;
+    let cx = cam.fx - Math.sin(cam.yaw) * Math.cos(p) * dist, cz = cam.fz - Math.cos(cam.yaw) * Math.cos(p) * dist, cy = 1.0 + Math.sin(p) * dist;
+    const J = DATA.JOBAN; cx = Math.max(-1.75, Math.min(1.75, cx)); cz = Math.max(J.zMin - 0.2, Math.min(J.zMax + 0.2, cz)); cy = Math.min(cy, 2.12);
+    if (Math.abs(cz) < 1.1) cx = Math.max(-0.65, Math.min(0.65, cx));
+    const sp = v.tr ? Math.min(1, v.tr.v / J.vmax) : 0; // 走っているときの揺れ
+    cy += Math.sin(T * 9.5) * 0.008 * sp;
+    if (cam.shake > 0.001) { cx += (Math.random() - 0.5) * cam.shake * 0.5; cy += (Math.random() - 0.5) * cam.shake * 0.5; cam.shake *= Math.pow(0.02, dt); }
+    camera.position.set(cx, cy, cz); camera.lookAt(cam.fx, 0.85, cam.fz); camera.rotateZ(Math.sin(T * 1.25) * 0.006 * sp);
+    cam.ring.position.set(a.x, 0.05, a.z); cam.ring.visible = a.st === 'ok';
+    cam.arrow.position.set(a.x + Math.sin(a.yaw) * 0.75, 0.06, a.z + Math.cos(a.yaw) * 0.75); cam.arrow.rotation.set(Math.PI / 2, 0, -a.yaw + Math.PI); cam.arrow.visible = a.st === 'ok';
+    AUDIO.st.listener = { x: a.x, z: a.z, yaw: cam.yaw };
+  }
   function updateCamera(v, me, dt, input, area) {
     const C = DATA.CAM, a = v && v.allies[me]; if (!a) return;
+    if (v.stageId === 'joban') return trainCamera(v, me, dt, input, area);
+    { const wf = cam.portrait ? C.portrait_framing.fov : C.vertical_fov_deg; if (Math.abs(camera.fov - wf) > 0.1) { camera.fov = wf; camera.updateProjectionMatrix(); } }
     const portrait = cam.portrait, fr = portrait ? C.portrait_framing : C.landscape_framing;
     // ボスが遠いときは少し俯角を浅くして全身を入れる（35〜55度の範囲・新作の構図補助）
     const Bd = v.boss && v.stage === 'boss' && v.boss.st !== 'fly' ? Math.hypot(v.boss.x - a.x, v.boss.z - a.z) : 0;
@@ -458,7 +578,7 @@ const R = (() => {
     AUDIO.st.listener = { x: a.x, z: a.z, yaw: cam.yaw };
   }
   function render(dt) {
-    stepPoints(PA, dt); stepPoints(PN, dt);
+    stepPoints(PA, dt); stepPoints(PN, dt); stepBeams(dt);
     const projScale = VIEW.h * pr / (2 * Math.tan(camera.fov * Math.PI / 360));
     PA.mat.uniforms.uScale.value = PN.mat.uniforms.uScale.value = projScale;
     renderer.render(scene, camera);
@@ -476,7 +596,9 @@ const R = (() => {
     for (const [, m] of traps) scene.remove(m); traps.clear(); for (const [, m] of picks) scene.remove(m); picks.clear();
     cam.lanT = 0; if (W) for (const L of W.lanternsStreet) if (L.lit) W.setStreetLantern(L, false);
     for (const p of [PA, PN]) if (p) for (const q of p.P) q.life = 0;
+    if (W && W.root) W.root.visible = true; if (TW) TW.root.visible = false; if (JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; } JT.dist = 0; JT.rail = 0; JT.lcd = '';
+    for (const b of beams) scene.remove(b.g); beams.length = 0; resize();
   }
   function snapCam(v, me) { const a = v && v.allies[me]; if (!a) return; cam.fx = a.x; cam.fz = a.z; cam.yaw = 0; }
-  return { init, sync, events, updateCamera, render, project, on, cam, setOpts, clearEntities, snapCam, resize, get camera() { return camera; }, get renderer() { return renderer; }, get pr() { return pr; } };
+  return { outroT, init, sync, events, updateCamera, render, project, on, cam, setOpts, clearEntities, snapCam, resize, get camera() { return camera; }, get scene() { return scene; }, get renderer() { return renderer; }, get pr() { return pr; } };
 })();

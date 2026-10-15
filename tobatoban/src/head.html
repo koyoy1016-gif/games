@@ -164,11 +164,43 @@ a{color:var(--shu)}
 #hud{position:absolute;inset:0;pointer-events:none;font-family:var(--f-body)}
 #hud .hb{position:absolute;pointer-events:auto;touch-action:none;transition:opacity .3s}
 #hud.intro .btnc,#hud.intro .itm,#hud.intro .stick,#hud.intro #mebox{opacity:0!important;pointer-events:none}
+#hud.cine>*:not(#bMenu):not(#notice):not(#touch){opacity:0!important;pointer-events:none}
+#hud.cine #bMenu{opacity:.7!important;pointer-events:auto}
 .bossbox{display:flex;flex-direction:column;gap:3px}
 .bossname{display:flex;align-items:baseline;gap:8px;font-weight:900;font-size:15px;text-shadow:0 1px 2px #000}
 .bossname .df{font-size:11px;background:var(--shu);border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
 .bossname .ph{font-size:11px;background:#7a1f3a;border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
 .bossname .st{font-size:11px;color:var(--gold)}
+.bossbox .route{display:flex;flex-direction:column;gap:3px}
+.bossbox.train .bossname,.bossbox.train .hpbar{display:none}
+.rt-top{display:flex;align-items:baseline;gap:8px;font-weight:900;font-size:13px;line-height:16px;text-shadow:0 1px 2px #000;white-space:nowrap;overflow:hidden}
+.rt-top b{font-size:11px;background:#1d56b8;border-radius:5px;padding:0 6px;text-shadow:none}
+.rt-top .rt-k{margin-left:auto;color:var(--gold)}
+.rt-bar{position:relative;height:24px;border-radius:8px;background:rgba(10,8,24,.78);border:2px solid #0d0b1d;overflow:hidden}
+.rt-bar::before{content:'';position:absolute;left:9px;right:9px;bottom:5px;height:4px;border-radius:2px;background:rgba(255,255,255,.2)}
+.rt-bar i{position:absolute;left:9px;bottom:5px;height:4px;border-radius:2px;background:linear-gradient(90deg,#3c8cff,#19d6b8);width:0}
+.rt-bar .rt-s{position:absolute;top:0;font-size:9.5px;font-weight:900;line-height:11px;color:#fff;transform:translateX(-50%);white-space:nowrap;text-shadow:0 1px 1px #000}
+.rt-bar .rt-s::after{content:'';position:absolute;left:50%;top:13px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#fff;box-shadow:0 0 0 1.5px #0d0b1d}
+.rt-bar .rt-s.first{transform:translateX(-9px)}.rt-bar .rt-s.first::after{left:9px}
+.rt-bar .rt-s.last{transform:translateX(calc(-100% + 9px))}.rt-bar .rt-s.last::after{left:calc(100% - 9px)}
+.rt-bar .rt-tr{position:absolute;bottom:0;font-size:13px;line-height:14px;transform:translateX(-50%);filter:drop-shadow(0 0 2px #fff);z-index:2}
+#fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:4}
+.stages{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@container app (max-width:600px){.stages{grid-template-columns:1fr}}
+.stage-card{position:relative;text-align:left;border:3px solid var(--ink);border-radius:16px;background:#fff;color:var(--ink);padding:0;overflow:hidden;display:flex;flex-direction:column;min-height:48px;box-shadow:0 4px 0 var(--ink)}
+.stage-card .sc-top{padding:12px 14px 10px;color:#fff;display:flex;align-items:center;gap:10px}
+.stage-card .sc-top .ic{font-size:30px;line-height:1}
+.stage-card .sc-top b{font-family:var(--f-disp);font-weight:400;font-size:20px;display:block;line-height:1.2}
+.stage-card .sc-top small{font-size:11px;font-weight:900;opacity:.9;letter-spacing:.08em}
+.stage-card .sc-body{padding:10px 14px 12px;display:flex;flex-direction:column;gap:4px;font-size:12.5px;line-height:1.55}
+.stage-card .sc-body .en{font-weight:900}
+.stage-card.s1 .sc-top{background:linear-gradient(120deg,#e4572e,#9a2f4a)}
+.stage-card.s2 .sc-top{background:linear-gradient(120deg,#1d56b8,#19a596)}
+.stage-card.locked{filter:grayscale(.85)}
+.stage-card .lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:rgba(20,18,32,.8);color:#fff;font-weight:900;font-size:15px;text-align:center;padding:12px}
+.stage-card .lock .lk{font-size:34px;line-height:1}
+.stage-card .clr{align-self:flex-start;font-size:11px;font-weight:900;background:#2fa36b;color:#fff;border-radius:6px;padding:0 6px}
+#stageRow .chip[disabled]{opacity:.5}
 .hpbar{position:relative;height:14px;border-radius:7px;background:rgba(10,8,24,.75);border:2px solid #0d0b1d;overflow:hidden}
 .hpbar i{position:absolute;inset:0 auto 0 0;border-radius:5px}
 .hpbar i.lag{background:#ffd9b0;transition:width .5s .4s}
@@ -350,10 +382,20 @@ a{color:var(--shu)}
       <div class="detail" id="detail"></div>
     </div>
     <div><h3 style="margin-bottom:6px">持ち込むアイテム（2つ）</h3><div class="items" id="items"></div></div>
+    <div id="stageRow" hidden><h3 style="margin-bottom:6px">ステージ（ホストが選ぶ）</h3><div class="row" id="stageChips"></div></div>
     <div class="row sticky-actions">
       <button class="btn ghost" id="btnTeamBack">もどる</button>
       <button class="btn main" id="btnGo">出撃する</button>
     </div>
+  </div>
+</section>
+
+<!-- ステージ選択（ソロ：編成のあと） -->
+<section class="screen" id="stage" hidden>
+  <div class="panel wide">
+    <div class="eyebrow">ステージ選択</div><h2>どこで戦う？</h2>
+    <div class="stages" id="stages"></div>
+    <div class="row"><button class="btn ghost" id="btnStageBack" type="button">編成にもどる</button></div>
   </div>
 </section>
 
@@ -498,7 +540,7 @@ a{color:var(--shu)}
 <!-- HUD -->
 <div id="hud" hidden>
   <div id="touch"></div>
-  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/90</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
   <div class="hb party" id="party"></div>
   <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
   <div class="hb" id="map"><canvas id="mapc"></canvas></div>
@@ -524,6 +566,7 @@ a{color:var(--shu)}
 </div>
 <div id="cutin"><img id="cutImg" alt=""><div><small id="cutWho" style="display:block;font-size:11px;font-weight:900"></small><b id="cutNm"></b></div></div>
 <div id="banner"></div>
+<div id="fade"></div>
 <div id="bossCard"><div class="s">付喪神</div><div class="n">トバトーバン</div><div class="d">古い大看板と祭りの台座が、宵の広場で目を覚ました</div></div>
 <div id="rotateHint" hidden>📱↻ 横画面のほうが見やすく遊べます<button id="rotateX">とじる</button></div>
 <div id="turnHint" hidden><span class="ph">📱</span><b>スマホを横向きにしてください</b><small>縦持ちのままでも画面を横向きで表示しています</small></div>
