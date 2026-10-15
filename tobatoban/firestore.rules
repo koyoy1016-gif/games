@@ -1,0 +1,43 @@
+rules_version = '2';
+// 北千住もののけ夜警隊：アカウントとセーブのルール
+// ・meta/counter … 次に割り当てるID。1つずつしか進められず、進めるときは ids/{その番号} を自分のものとして同時に作る
+// ・ids/{番号}   … IDの持ち主（あとから変えられない）
+// ・saves/{uid}  … セーブ。本人だけが読み書きできる
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+
+    match /meta/counter {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['next'])
+        && request.resource.data.next == 2
+        && getAfter(/databases/$(database)/documents/ids/1).data.uid == request.auth.uid;
+      allow update: if signedIn()
+        && request.resource.data.keys().hasOnly(['next'])
+        && resource.data.next is int
+        && resource.data.next <= 10000
+        && request.resource.data.next == resource.data.next + 1
+        && getAfter(/databases/$(database)/documents/ids/$(string(resource.data.next))).data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /ids/{n} {
+      allow read: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid
+        && int(n) >= 1
+        && getAfter(/databases/$(database)/documents/meta/counter).data.next == int(n) + 1;
+      allow update, delete: if false;
+    }
+
+    match /saves/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /{other=**} {
+      allow read, write: if false;
+    }
+  }
+}

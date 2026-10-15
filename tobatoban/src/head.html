@@ -372,7 +372,7 @@ a{color:var(--shu)}
     </div>
     <p class="small">このゲームは横画面で遊びます。スマホを縦に持っていても画面は横向きで表示されるので、スマホを左に倒して（上側を左へ）遊んでください。逆向きに持つ場合は設定の「横向きの回転方向」で変えられます。</p>
     <p class="small">赤い縞の範囲がボスの攻撃予兆。紫の帯は空中突進の通り道（横・斜め・縦など毎回ちがう向きから飛んでくる）。4基の灯籠を30秒以内に灯すとボスが6秒止まる。仲間が気絶して30秒放置すると昇天し、その戦闘では戻らない。</p>
-    <p class="small">セーブ：「新しくアカウントを作る」でパスワードを自分で決めると、ID（1〜10000）が作った順に自動で決まります。次からはIDとパスワードでログインします（開くたびにたずねます）。ログイン中はタイトルや一時停止メニューの「セーブ」を押すだけで保存でき、戦いが終わったときは自動でセーブします。別の端末で続けるときは「アカウント」の引き継ぎコードを使います。</p>
+    <p class="small">セーブ：「新しくアカウントを作る」でパスワード（6文字以上）を自分で決めると、ID（1〜10000）が作った順に自動で決まります。次からはIDとパスワードでログインします（開くたびにたずねます）。ログイン中はタイトルや一時停止メニューの「セーブ」を押すだけで保存でき、戦いが終わったときは自動でセーブします。</p>
     <p class="small">パソコン：WASD移動・J=A・K=X・L=Y・U=必殺・Space=B・F=注目・Q/E=カメラ・1/2=アイテム・Esc=メニュー</p>
     <div class="row"><button class="btn main" data-back>とじる</button></div>
   </div>
@@ -407,8 +407,8 @@ a{color:var(--shu)}
     <div class="lg-done" id="lgDone" hidden><span>あなたのID</span><b id="lgDoneId">1</b><span class="small">ログインに使います。パスワードといっしょにメモしておいてください。</span></div>
     <div class="lg-grid" id="lgGrid">
       <label for="lgId" id="lgIdL">ID</label><input type="text" id="lgId" inputmode="numeric" maxlength="6" autocomplete="username" placeholder="1〜10000">
-      <label for="lgPw">パスワード</label><input type="password" id="lgPw" maxlength="16" autocomplete="current-password" placeholder="4〜16文字">
-      <label for="lgPw2" id="lgPw2L" hidden>もう一度</label><input type="password" id="lgPw2" maxlength="16" autocomplete="new-password" placeholder="確認のためもう一度" hidden>
+      <label for="lgPw">パスワード</label><input type="password" id="lgPw" maxlength="32" autocomplete="current-password" placeholder="6文字以上">
+      <label for="lgPw2" id="lgPw2L" hidden>もう一度</label><input type="password" id="lgPw2" maxlength="32" autocomplete="new-password" placeholder="確認のためもう一度" hidden>
     </div>
     <div class="lg-msg" id="lgMsg" role="status"></div>
     </div><div class="lg-r">
@@ -423,7 +423,7 @@ a{color:var(--shu)}
       <button class="btn" id="btnRestore" type="button">コードで引き継ぐ</button>
     </details>
     <div class="row"><button class="btn ghost" id="btnGuest" type="button">ログインせずに遊ぶ（セーブなし）</button></div>
-    <p class="small">セーブはこの端末のブラウザに保存されます。ほかのサービスと同じパスワードは使わないでください。</p>
+    <p class="small" id="lgNote">セーブはこの端末のブラウザに保存されます。ほかのサービスと同じパスワードは使わないでください。</p>
   </div></div></div>
 </section>
 
@@ -434,9 +434,12 @@ a{color:var(--shu)}
     <div class="kv" id="acKv"></div>
     <h3>もののけのレベル</h3>
     <div class="ac-roster" id="acRoster"></div>
+    <p class="small" id="acCloud" hidden>セーブはサーバーにあります。別の端末でも、このIDとパスワードでログインすれば続きから遊べます。</p>
+    <div id="acCodeBox" style="display:flex;flex-direction:column;gap:8px">
     <h3>引き継ぎコード（別の端末で続けるとき）</h3>
     <p class="small">セーブするたびに変わります。別の端末のログイン画面で、このコードとIDとパスワードを入れると続きから遊べます。</p>
     <div class="ac-code" id="acCode"></div>
+    </div>
     <div class="row">
       <button class="btn main" id="btnAcSave" type="button">セーブする</button>
       <button class="btn" id="btnAcCopy" type="button">コードをコピー</button>

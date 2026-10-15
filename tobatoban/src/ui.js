@@ -75,7 +75,7 @@ async function boot() {
   makeThumbs();
   bindMenus(); bindHud(); bindRotScroll(); applySettings();
   detectNet();
-  G.mode = 'title'; updateAcctBar(); openLogin('title'); // 開くたびにログインをたずねる
+  ACCT.setup(); G.mode = 'title'; updateAcctBar(); openLogin('title'); // 開くたびにログインをたずねる
   requestAnimationFrame(frame);
 }
 function makeThumbs() {
@@ -266,13 +266,14 @@ function sendMine() {
   if (S.kind === 'host') S.setMine(o); else S.hello(o);
 }
 
-/* ---------- セーブ（配られたID＋自分で決めたパスワード） ----------
+/* ---------- セーブ（IDは作った順に自動・パスワードは本人が決める） ----------
+   ACCT.mode が 'cloud' なら Firebase（全員で通しの番号・どの端末でも続きから）、'local' ならこの端末だけ。
    ログインはこの画面を開いている間だけ有効。開き直すたびにログインをたずねる。
-   IDは作った順に自動で決まり、パスワードだけ本人が決める。
    ログイン中は「セーブ」を押すだけで保存。戦いが終わったときに自動セーブ。 */
 G.acct = null; G.pending = []; G.run = null;
 const lvOf = id => (G.acct && G.acct.chars[id] ? G.acct.chars[id].lv : 1);
 const fmtDate = ts => { if (!ts) return 'まだ'; const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
+const cloud = () => ACCT.mode === 'cloud';
 function mtoast(t, ms) { const m = $('#mtoast'); m.textContent = t; m.classList.add('show'); clearTimeout(G.mtT); G.mtT = setTimeout(() => m.classList.remove('show'), ms || 2400); }
 function updateAcctBar() {
   const w = $('#acctWho'); w.textContent = '';
@@ -280,47 +281,62 @@ function updateAcctBar() {
   else { w.append('ログインしていません'); w.appendChild(el('small', '', 'セーブするにはログイン')); $('#btnAcct').textContent = 'ログイン'; $('#btnTSave').hidden = true; }
 }
 function lgMsg(t, ok) { const m = $('#lgMsg'); m.textContent = t; m.classList.toggle('ok', !!ok); }
+function lgBusy(on) { G.lgBusy = on; for (const q of ['#btnLogin', '#btnRegister', '#btnRestore', '#btnDoneOk']) $(q).disabled = on; if (on) lgMsg('サーバーと通信しています…', true); }
+const PW_TXT = () => `${SAVE.PW_MIN}文字以上`;
 function setRegMode(on) {
   G.regMode = on; $('#lgPw2').hidden = $('#lgPw2L').hidden = !on; $('#lgId').hidden = $('#lgIdL').hidden = on;
   $('#btnRegister').textContent = on ? 'アカウントを作る（IDは自動で決まります）' : '新しくアカウントを作る'; $('#btnLogin').textContent = on ? 'IDを持っている人はログイン' : 'ログイン'; $('#btnLogin').classList.toggle('main', !on);
   $('#lgTitle').textContent = on ? '新しくアカウントを作る' : 'ログイン';
-  $('#lgLead').textContent = on ? 'パスワードを自分で決めて2回入れてください（4〜16文字）。IDは作った順に自動で決まります。' : 'IDと、自分で決めたパスワードを入れてください。ログインしている間は「セーブ」を押すだけで続きを保存できます。';
-  $('#lgPw').setAttribute('autocomplete', on ? 'new-password' : 'current-password');
+  $('#lgLead').textContent = on ? `パスワードを自分で決めて2回入れてください（${PW_TXT()}）。IDは作った順に自動で決まります。` : 'IDと、自分で決めたパスワードを入れてください。ログインしている間は「セーブ」を押すだけで続きを保存できます。';
+  $('#lgPw').setAttribute('autocomplete', on ? 'new-password' : 'current-password'); $('#lgPw').placeholder = PW_TXT();
 }
 /** アカウントを作った直後：決まったIDを大きく見せる */
 function showDone(on, id) {
   $('#lgDone').hidden = !on; if (on) $('#lgDoneId').textContent = String(id);
-  for (const q of ['#lgGrid', '#btnLogin', '#btnRegister', '#lgMove', '#btnGuest']) $(q).hidden = on;
+  for (const q of ['#lgGrid', '#btnLogin', '#btnRegister', '#btnGuest']) $(q).hidden = on;
+  $('#lgMove').hidden = on || cloud();
   $('#btnDoneOk').hidden = !on;
   if (on) { $('#lgTitle').textContent = 'アカウントができました'; $('#lgLead').textContent = 'これからはこのIDと、いま決めたパスワードでログインします。'; }
 }
 function openLogin(back, msg) {
-  G.loginBack = back || 'title'; showDone(false); setRegMode(false);
+  G.loginBack = back || 'title'; showDone(false); setRegMode(false); lgBusy(false);
   const last = STORE.get('lastId', ''); if (!$('#lgId').value && last) $('#lgId').value = last;
   $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg(msg || '', false); G.restoreConfirm = null;
   $('#btnGuest').textContent = G.loginBack === 'title' ? 'ログインせずに遊ぶ（セーブなし）' : 'もどる';
+  $('#lgNote').textContent = cloud() ? 'セーブはサーバーに保存されます。どの端末でも、IDとパスワードでログインすれば続きから遊べます。ほかのサービスと同じパスワードは使わないでください。' : 'セーブはこの端末のブラウザに保存されます。ほかのサービスと同じパスワードは使わないでください。';
   show('login');
 }
 /** ログインできた：編成などをアカウントから読み、ログイン前の記録があれば足して保存 */
-function loginOk(save, msg) {
+async function loginOk(save, msg) {
   G.acct = save; G.lgFail = 0; STORE.set('lastId', String(save.id));
   if (Array.isArray(save.party) && save.party.length === 4 && save.party.every(id => DATA.CHI[id])) G.party = save.party.slice();
   if (Array.isArray(save.swap) && save.swap.length === 4) G.swap = save.swap.map(Boolean);
   if (Array.isArray(save.items) && save.items.length === 2 && save.items.every(i => DATA.ITEMS[i])) G.items = save.items.slice();
   if (save.nick) G.nick = save.nick;
   let extra = '';
-  if (G.pending.length) { for (const op of G.pending) SAVE.apply(save, op); G.pending = []; extra = '。ログイン前の戦いの記録もセーブしました'; if (G.run) G.lastAuto = `ID ${save.id} にセーブしました`; }
-  persist(); updateAcctBar(); AUDIO.sfx('ok');
+  const hadPending = G.pending.length > 0;
+  if (hadPending) { for (const op of G.pending) SAVE.apply(save, op); G.pending = []; }
+  updateAcctBar(); AUDIO.sfx('ok');
   const back = G.loginBack || 'title'; show(back);
+  if (hadPending) { const ok = await persist(); extra = ok ? '。ログイン前の戦いの記録もセーブしました' : '。ログイン前の戦いの記録はセーブできませんでした'; if (G.run) G.lastAuto = ok ? `ID ${save.id} にセーブしました` : 'セーブできませんでした'; }
   if (back === 'result') refreshResSave();
   mtoast(msg + extra, 2800);
 }
-function persist() { const s = G.acct; if (!s) return false; s.party = G.party.slice(); s.swap = G.swap.slice(); s.items = G.items.slice(); s.nick = G.nick || ''; const ok = SAVE.write(s); updateAcctBar(); return ok; }
+/** いまの編成なども入れて保存する（サーバーのときは通信が終わるまで待つ） */
+async function persist() {
+  const s = G.acct; if (!s) return false;
+  s.party = G.party.slice(); s.swap = G.swap.slice(); s.items = G.items.slice(); s.nick = G.nick || '';
+  const ok = await ACCT.write(s); updateAcctBar(); return ok;
+}
 /** セーブボタン：ログイン中ならそのまま保存。していなければログイン画面へ */
-function doSave(from) {
-  if (!G.acct) { AUDIO.sfx('ui'); openLogin(from, 'セーブするにはログインしてください'); return; }
-  if (persist()) { AUDIO.sfx('ok'); mtoast(`セーブしました（ID ${G.acct.id}・${fmtDate(G.acct.saved)}）`); }
-  else mtoast('セーブできませんでした（このブラウザでは保存できません）', 3200);
+async function doSave(from) {
+  if (!G.acct) { AUDIO.sfx('ui'); openLogin(from, 'セーブするにはログインしてください'); return false; }
+  if (G.saving) return false; G.saving = true;
+  if (cloud()) mtoast('セーブしています…', 8000);
+  const ok = await persist(); G.saving = false;
+  if (ok) { AUDIO.sfx('ok'); mtoast(`セーブしました（ID ${G.acct.id}・${fmtDate(G.acct.saved)}）`); }
+  else mtoast(cloud() ? 'セーブできませんでした（サーバーとつながりません。電波のよい所でもう一度）' : 'セーブできませんでした（このブラウザでは保存できません）', 3600);
+  return ok;
 }
 /** この戦いでまだ記録していない分（倒した敵・出撃・勝敗）をまとめる */
 function runOp(v, fin) {
@@ -331,18 +347,19 @@ function runOp(v, fin) {
   return op;
 }
 /** 自動セーブ（戦いが終わったとき） */
-function checkpoint(v, fin, label) {
+async function checkpoint(v, fin, label) {
   const op = runOp(v, fin); if (!op) return;
-  if (G.acct) {
-    SAVE.apply(G.acct, op); const ok = persist();
-    G.lastAuto = ok ? `${label}ので自動セーブしました（ID ${G.acct.id}）` : '自動セーブできませんでした（このブラウザでは保存できません）';
-    if (!fin) notice(ok ? '自動セーブしました' : '自動セーブできませんでした', 'info', 1800);
-  } else G.pending.push(op);
+  if (!G.acct) { G.pending.push(op); return; }
+  SAVE.apply(G.acct, op);
+  G.lastAuto = cloud() ? '自動セーブしています…' : null; refreshResSave();
+  const ok = await persist();
+  G.lastAuto = ok ? `${label}ので自動セーブしました（ID ${G.acct ? G.acct.id : ''}）` : (cloud() ? '自動セーブできませんでした。電波のよい所で「セーブ」を押してください' : '自動セーブできませんでした（このブラウザでは保存できません）');
+  if (G.mode === 'result') refreshResSave();
 }
 function refreshResSave() {
   const t = $('#resSave'), b = $('#btnResLogin');
-  if (G.acct) { t.textContent = G.lastAuto || `ID ${G.acct.id} にセーブしました`; b.hidden = true; }
-  else { t.textContent = 'ログインしていないので、この戦いの記録はまだセーブされていません。'; b.hidden = false; }
+  if (G.acct) { t.textContent = G.lastAuto || `ID ${G.acct.id} にセーブしました`; b.hidden = !/できません/.test(t.textContent); b.textContent = 'もう一度セーブ'; }
+  else { t.textContent = 'ログインしていないので、この戦いの記録はまだセーブされていません。'; b.hidden = false; b.textContent = 'ログインしてセーブ'; }
 }
 function openAccount(from) { if (!G.acct) { openLogin(from || 'title'); return; } G.acBack = from || 'title'; renderAccount(); show('account'); }
 function renderAccount() {
@@ -351,26 +368,31 @@ function renderAccount() {
   for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['最速クリア', s.rec.best ? fmt(s.rec.best) : 'まだ']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
   const ro = $('#acRoster'); ro.textContent = '';
   for (const c of DATA.CHARS) { const d = el('div'); const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; d.append(im, el('b', '', c.nm), el('span', 'lv', 'Lv.' + s.chars[c.id].lv)); ro.appendChild(d); }
-  $('#acCode').textContent = SAVE.encode(s);
+  const cl = cloud(); $('#acCodeBox').hidden = cl; $('#btnAcCopy').hidden = cl; $('#acCloud').hidden = !cl;
+  if (!cl) $('#acCode').textContent = SAVE.encode(s);
 }
 function bindAccount() {
   $('#btnAcct').onclick = () => { AUDIO.sfx('ui'); if (G.acct) openAccount('title'); else openLogin('title'); };
   $('#btnTSave').onclick = () => doSave('title');
-  $('#btnLogin').onclick = () => {
+  $('#btnLogin').onclick = async () => {
     if (G.regMode) { setRegMode(false); $('#lgPw2').value = ''; lgMsg(''); AUDIO.sfx('ui'); return; }
+    if (G.lgBusy) return;
     if (G.lgLock && performance.now() < G.lgLock) { lgMsg(`まちがいが続いたので、${Math.ceil((G.lgLock - performance.now()) / 1000)}秒待ってからためしてください`); return; }
-    const id = SAVE.parseId($('#lgId').value), r = SAVE.login(id, $('#lgPw').value);
-    if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); if (!r.none && SAVE.validId(id)) { G.lgFail = (G.lgFail || 0) + 1; if (G.lgFail >= 5) { G.lgFail = 0; G.lgLock = performance.now() + 30000; } } return; }
-    loginOk(r.save, r.msg);
+    const id = SAVE.parseId($('#lgId').value), pw = $('#lgPw').value;
+    lgBusy(true); const r = await ACCT.login(id, pw); lgBusy(false);
+    if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); if (!r.none && SAVE.validId(id) && /ちがいます/.test(r.msg)) { G.lgFail = (G.lgFail || 0) + 1; if (G.lgFail >= 5) { G.lgFail = 0; G.lgLock = performance.now() + 30000; } } return; }
+    lgMsg(''); loginOk(r.save, r.msg);
   };
-  $('#btnRegister').onclick = () => {
+  $('#btnRegister').onclick = async () => {
     if (!G.regMode) { setRegMode(true); $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg(''); AUDIO.sfx('ui'); return; }
-    const r = SAVE.register($('#lgPw').value, $('#lgPw2').value);
+    if (G.lgBusy) return;
+    lgBusy(true); const r = await ACCT.register($('#lgPw').value, $('#lgPw2').value); lgBusy(false);
     if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); return; }
     // ここでログイン済みにして、IDを大きく見せる（「はじめる」で元の画面へ）
     $('#lgId').value = String(r.id); $('#lgPw').value = ''; $('#lgPw2').value = ''; lgMsg('');
-    G.acct = r.save; G.lgFail = 0; STORE.set('lastId', String(r.id)); persist(); updateAcctBar(); AUDIO.sfx('ok');
+    G.acct = r.save; G.lgFail = 0; STORE.set('lastId', String(r.id)); updateAcctBar(); AUDIO.sfx('ok');
     showDone(true, r.id);
+    persist(); // 編成などもいっしょに保存
   };
   $('#btnRestore').onclick = () => {
     const id = SAVE.parseId($('#lgId').value), code = $('#lgCode').value, key = id + '|' + code;
@@ -381,11 +403,11 @@ function bindAccount() {
   $('#btnGuest').onclick = () => { AUDIO.sfx('back'); show(G.loginBack || 'title'); };
   $('#btnDoneOk').onclick = () => { const s = G.acct; showDone(false); setRegMode(false); if (s) loginOk(s, `ID ${s.id} でログインしました。全員Lv.1からスタート`); };
   for (const id of ['#lgId', '#lgPw', '#lgPw2']) $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); (G.regMode ? $('#btnRegister') : $('#btnLogin')).click(); } });
-  $('#btnAcSave').onclick = () => { doSave('account'); renderAccount(); };
+  $('#btnAcSave').onclick = async () => { await doSave('account'); renderAccount(); };
   $('#btnAcCopy').onclick = async () => { const t = $('#acCode').textContent; try { await navigator.clipboard.writeText(t); mtoast('引き継ぎコードをコピーしました'); } catch (e) { mtoast('コピーできませんでした。コードを長押しして選んでください', 3000); } };
-  $('#btnLogout').onclick = () => { G.acct = null; updateAcctBar(); AUDIO.sfx('back'); mtoast('ログアウトしました'); show('title'); };
+  $('#btnLogout').onclick = () => { G.acct = null; ACCT.logout(); updateAcctBar(); AUDIO.sfx('back'); mtoast('ログアウトしました'); show('title'); };
   $('#btnAcBack').onclick = () => { AUDIO.sfx('back'); show(G.acBack || 'title'); };
-  $('#btnResLogin').onclick = () => openLogin('result', 'ログインすると、この戦いの記録もセーブされます');
+  $('#btnResLogin').onclick = async () => { if (G.acct) { const ok = await doSave('result'); G.lastAuto = ok ? `ID ${G.acct.id} にセーブしました` : G.lastAuto; refreshResSave(); } else openLogin('result', 'ログインすると、この戦いの記録もセーブされます'); };
 }
 
 /* ---------- 協力プレイの開始 ---------- */

@@ -136,6 +136,133 @@ with sync_playwright() as p:
             typ('#lgPw', 'neko22'), click('#btnLogin'), wait(0.3), ev("() => { const a = __tb.G.acct; return a ? [a.id, a.rec.b, a.rec.w, a.rec.mobs] : null; }", 'restored'),
             ev("() => { localStorage.setItem('tb.saveVer','1'); localStorage.setItem('tb.acct.1001','{}'); return 1; }"), reload, ev("() => Object.keys(localStorage).filter(k => k.startsWith('tb.acct.'))", 'after_wipe_keys'),
         ]))
+    if SCEN in ('cloud',):
+        # サーバー版（Firebase）：本物のSDK（gstaticの代わりにローカルのコピー）＋Authエミュレーター＋共有の検査用Firestore。2つのブラウザ＝2台の端末
+        FB_DIR = os.environ['FB_DIR']; SDKD = os.path.join(FB_DIR, 'node_modules', 'firebase')
+        import urllib.request
+        urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:9099/emulator/v1/projects/demo-tb/accounts', method='DELETE')).read()
+        store = {}
+        INIT = '''window.__TB_CLOUD_TEST = { cfg: { apiKey: 'demo-key', authDomain: 'localhost', projectId: 'demo-tb' }, opt: { authEmulator: 'http://127.0.0.1:9099', db: {}, fs: {
+          doc: (db, c, id) => ({ path: c + '/' + id }),
+          async getDoc(ref) { const d = await window.__fsGet(ref.path); return { exists: () => d != null, data: () => d }; },
+          async setDoc(ref, data) { await window.__fsSet(ref.path, JSON.parse(JSON.stringify(data))); },
+          async runTransaction(db, fn) { const w = {}; const tx = { async get(ref) { const d = await window.__fsGet(ref.path); return { exists: () => d != null, data: () => d }; }, set(ref, data) { w[ref.path] = JSON.parse(JSON.stringify(data)); } }; const r = await fn(tx); for (const p in w) await window.__fsSet(p, w[p]); return r; } } } };'''
+        b = p.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
+        def device(tag):
+            ctx = b.new_context(viewport={'width': 844, 'height': 390}, device_scale_factor=1, is_mobile=True, has_touch=True)
+            ctx.expose_function('__fsGet', lambda path: store.get(path))
+            ctx.expose_function('__fsSet', lambda path, data: store.__setitem__(path, data))
+            ctx.add_init_script(INIT)
+            pg = ctx.new_page(); errs = []
+            pg.on('pageerror', lambda e: errs.append(str(e)))
+            def h(r):
+                u = r.request.url
+                if 'three.module.js' in u and THREE_LOCAL: r.fulfill(path=THREE_LOCAL, content_type='application/javascript')
+                elif 'www.gstatic.com/firebasejs/' in u: r.fulfill(path=os.path.join(SDKD, u.rsplit('/', 1)[1]), content_type='application/javascript', headers={'access-control-allow-origin': '*'})
+                elif 'fonts.g' in u: r.abort()
+                else: r.continue_()
+            pg.route('**/*', h)
+            pg.goto(URL); pg.wait_for_function('window.__tb && window.__tb.G.mode === "title"', timeout=60000); time.sleep(1.0)
+            return ctx, pg, errs
+        J = lambda pg, js: pg.evaluate(js)
+        def val(pg, sel, v): J(pg, "() => { document.querySelector('%s').value = '%s'; }" % (sel, v))
+        def clk(pg, sel): J(pg, "() => document.querySelector('%s').click()" % sel)
+        def until(pg, js, t=20):
+            end = time.time() + t
+            while time.time() < end:
+                if J(pg, js): return True
+                time.sleep(0.2)
+            return False
+        res = {'tag': 'cloud'}
+        cA, A, eA = device('A')
+        res['mode'] = J(A, '() => __tb.ACCT.mode'); res['note'] = J(A, "() => document.querySelector('#lgNote').textContent")
+        clk(A, '#btnRegister'); val(A, '#lgPw', 'neko22'); val(A, '#lgPw2', 'neko22'); clk(A, '#btnRegister')
+        res['A_register'] = until(A, "() => !document.querySelector('#lgDone').hidden") and J(A, "() => document.querySelector('#lgDoneId').textContent")
+        A.screenshot(path=os.path.join(OUT, '90_cloud_done.png'))
+        clk(A, '#btnDoneOk'); time.sleep(0.5); res['A_bar'] = J(A, "() => document.querySelector('#acctWho').textContent")
+        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); }"); time.sleep(2.5)
+        J(A, "() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); }"); time.sleep(1)
+        J(A, "() => { const s=__tb.G.session.sim; s.mobs=[]; s.barrier='none'; s.allies.forEach((a,i)=>{a.x=-2+i;a.z=-1;}); s.allies[0].z=3; }"); time.sleep(7)
+        J(A, "() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); }")
+        until(A, "() => __tb.G.mode === 'result' && /自動セーブしました|できません/.test(document.querySelector('#resSave').textContent)", 30)
+        res['A_result'] = J(A, "() => document.querySelector('#resSave').textContent")
+        A.screenshot(path=os.path.join(OUT, '91_cloud_result.png'))
+        cB, B, eB = device('B')  # 別の端末
+        val(B, '#lgId', '1'); val(B, '#lgPw', 'inu333'); clk(B, '#btnLogin'); until(B, "() => /ちがいます|通信/.test(document.querySelector('#lgMsg').textContent) && !document.querySelector('#btnLogin').disabled")
+        res['B_wrong_pw'] = J(B, "() => document.querySelector('#lgMsg').textContent")
+        val(B, '#lgPw', 'neko22'); clk(B, '#btnLogin'); until(B, "() => !!__tb.G.acct")
+        res['B_login_id1'] = J(B, "() => { const a = __tb.G.acct; return a && [a.id, a.rec.b, a.rec.w, a.rec.mobs]; }")
+        J(B, "() => document.getElementById('btnAcct').click()"); time.sleep(0.4); B.screenshot(path=os.path.join(OUT, '92_cloud_account_B.png'))
+        J(B, "() => { document.getElementById('btnLogout').click(); document.getElementById('btnAcct').click(); }"); time.sleep(0.3)
+        clk(B, '#btnRegister'); val(B, '#lgPw', 'inu333'); val(B, '#lgPw2', 'inu333'); clk(B, '#btnRegister')
+        res['B_register'] = until(B, "() => !document.querySelector('#lgDone').hidden") and J(B, "() => document.querySelector('#lgDoneId').textContent")
+        res['server'] = {k: (v if k.startswith('meta') or k.startswith('ids') else '(save)') for k, v in store.items()}
+        res['errors'] = eA + eB
+        b.close(); results.append(res)
+    if SCEN in ('cloud',):
+        # サーバー版（Firebase）：本物のSDK（gstaticの代わりにローカルのコピー）＋Authエミュレーター＋共有の検査用Firestore。2つのブラウザ＝2台の端末
+        FB_DIR = os.environ['FB_DIR']; SDKD = os.path.join(FB_DIR, 'node_modules', 'firebase')
+        import urllib.request
+        urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:9099/emulator/v1/projects/demo-tb/accounts', method='DELETE')).read()
+        store = {}
+        INIT = '''window.__TB_CLOUD_TEST = { cfg: { apiKey: 'demo-key', authDomain: 'localhost', projectId: 'demo-tb' }, opt: { authEmulator: 'http://127.0.0.1:9099', db: {}, fs: {
+          doc: (db, c, id) => ({ path: c + '/' + id }),
+          async getDoc(ref) { const d = await window.__fsGet(ref.path); return { exists: () => d != null, data: () => d }; },
+          async setDoc(ref, data) { await window.__fsSet(ref.path, JSON.parse(JSON.stringify(data))); },
+          async runTransaction(db, fn) { const w = {}; const tx = { async get(ref) { const d = await window.__fsGet(ref.path); return { exists: () => d != null, data: () => d }; }, set(ref, data) { w[ref.path] = JSON.parse(JSON.stringify(data)); } }; const r = await fn(tx); for (const p in w) await window.__fsSet(p, w[p]); return r; } } } };'''
+        b = p.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
+        def device(tag):
+            ctx = b.new_context(viewport={'width': 844, 'height': 390}, device_scale_factor=1, is_mobile=True, has_touch=True)
+            ctx.expose_function('__fsGet', lambda path: store.get(path))
+            ctx.expose_function('__fsSet', lambda path, data: store.__setitem__(path, data))
+            ctx.add_init_script(INIT)
+            pg = ctx.new_page(); errs = []
+            pg.on('pageerror', lambda e: errs.append(str(e)))
+            def h(r):
+                u = r.request.url
+                if 'three.module.js' in u and THREE_LOCAL: r.fulfill(path=THREE_LOCAL, content_type='application/javascript')
+                elif 'www.gstatic.com/firebasejs/' in u: r.fulfill(path=os.path.join(SDKD, u.rsplit('/', 1)[1]), content_type='application/javascript', headers={'access-control-allow-origin': '*'})
+                elif 'fonts.g' in u: r.abort()
+                else: r.continue_()
+            pg.route('**/*', h)
+            pg.goto(URL); pg.wait_for_function('window.__tb && window.__tb.G.mode === "title"', timeout=60000); time.sleep(1.0)
+            return ctx, pg, errs
+        J = lambda pg, js: pg.evaluate(js)
+        def val(pg, sel, v): J(pg, "() => { document.querySelector('%s').value = '%s'; }" % (sel, v))
+        def clk(pg, sel): J(pg, "() => document.querySelector('%s').click()" % sel)
+        def until(pg, js, t=20):
+            end = time.time() + t
+            while time.time() < end:
+                if J(pg, js): return True
+                time.sleep(0.2)
+            return False
+        res = {'tag': 'cloud'}
+        cA, A, eA = device('A')
+        res['mode'] = J(A, '() => __tb.ACCT.mode'); res['note'] = J(A, "() => document.querySelector('#lgNote').textContent")
+        clk(A, '#btnRegister'); val(A, '#lgPw', 'neko22'); val(A, '#lgPw2', 'neko22'); clk(A, '#btnRegister')
+        res['A_register'] = until(A, "() => !document.querySelector('#lgDone').hidden") and J(A, "() => document.querySelector('#lgDoneId').textContent")
+        if not res['A_register']: res['A_msg'] = J(A, "() => document.querySelector('#lgMsg').textContent")
+        A.screenshot(path=os.path.join(OUT, '90_cloud_done.png'))
+        clk(A, '#btnDoneOk'); time.sleep(0.5); res['A_bar'] = J(A, "() => document.querySelector('#acctWho').textContent")
+        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); }"); time.sleep(2.5)
+        J(A, "() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); }"); time.sleep(1)
+        J(A, "() => { const s=__tb.G.session.sim; s.mobs=[]; s.barrier='none'; s.allies.forEach((a,i)=>{a.x=-2+i;a.z=-1;}); s.allies[0].z=3; }"); time.sleep(7)
+        J(A, "() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); }")
+        until(A, "() => __tb.G.mode === 'result' && /自動セーブしました|できません/.test(document.querySelector('#resSave').textContent)", 30)
+        res['A_result'] = J(A, "() => document.querySelector('#resSave').textContent")
+        A.screenshot(path=os.path.join(OUT, '91_cloud_result.png'))
+        cB, B, eB = device('B')  # 別の端末
+        val(B, '#lgId', '1'); val(B, '#lgPw', 'inu333'); clk(B, '#btnLogin'); until(B, "() => /ちがいます|つながり/.test(document.querySelector('#lgMsg').textContent) && !document.querySelector('#btnLogin').disabled")
+        res['B_wrong_pw'] = J(B, "() => document.querySelector('#lgMsg').textContent")
+        val(B, '#lgPw', 'neko22'); clk(B, '#btnLogin'); until(B, "() => !!__tb.G.acct")
+        res['B_login_id1'] = J(B, "() => { const a = __tb.G.acct; return a && [a.id, a.rec.b, a.rec.w, a.rec.mobs]; }")
+        J(B, "() => document.getElementById('btnAcct').click()"); time.sleep(0.4); B.screenshot(path=os.path.join(OUT, '92_cloud_account_B.png'))
+        J(B, "() => { document.getElementById('btnLogout').click(); document.getElementById('btnAcct').click(); }"); time.sleep(0.3)
+        clk(B, '#btnRegister'); val(B, '#lgPw', 'inu333'); val(B, '#lgPw2', 'inu333'); clk(B, '#btnRegister')
+        res['B_register'] = until(B, "() => !document.querySelector('#lgDone').hidden") and J(B, "() => document.querySelector('#lgDoneId').textContent")
+        res['server'] = {k: (v if k.startswith('meta') or k.startswith('ids') else '(save)') for k, v in store.items()}
+        res['errors'] = eA + eB
+        b.close(); results.append(res)
     if SCEN in ('menus',):
         results.append(run(p, 844, 390, 'menus', [ev("() => { document.getElementById('btnGuest').click(); return 1; }"), ev("() => { document.getElementById('btnHow').click(); return 1; }"), wait(0.4), shot('40_how'), ev("() => { document.querySelector('#how [data-back]').click(); document.getElementById('btnSet').click(); return 1; }"), wait(0.3), shot('41_settings'), ev("() => { document.querySelector('#settings [data-back]').click(); document.getElementById('btnCoop').click(); return 1; }"), wait(0.3), shot('42_coop')]))
     for r in results:

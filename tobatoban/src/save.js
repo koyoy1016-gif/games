@@ -6,7 +6,7 @@
    IDは1〜10000。アカウントを作った順に自動で決まる（いまはこの端末の中での順番）。
    ===================================================================== */
 const SAVE = (() => {
-  const ID_MIN = 1, ID_MAX = 10000, VER = 1, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 4, PW_MAX = 16;
+  const ID_MIN = 1, ID_MAX = 10000, VER = 1, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 6, PW_MAX = 32; // Firebase のパスワードは6文字以上
   // 以前の形式（ID 1001〜）のセーブはいったん消す（1回だけ）
   (function migrate() {
     try {
