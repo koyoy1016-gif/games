@@ -165,6 +165,15 @@ a{color:var(--shu)}
 .grp{font-family:var(--f-disp);font-weight:400;font-size:14px;padding-top:12px}
 
 /* ---------- HUD ---------- */
+#walk{position:absolute;inset:0;z-index:20;pointer-events:none;font-family:var(--f-body)}
+#walk::before,#walk::after{content:'';position:absolute;left:0;right:0;height:9%;background:#000}
+#walk::before{top:0}#walk::after{bottom:0}
+#walk .wk-cap{position:absolute;left:6%;bottom:14%;background:rgba(12,14,34,.82);color:#fff;border-left:6px solid #5ad8ff;padding:8px 16px 8px 12px;border-radius:6px;font-weight:900;font-size:clamp(20px,4.6vmin,34px);letter-spacing:.08em;opacity:0;transition:opacity .3s}
+#walk .wk-cap small{display:block;font-size:.42em;letter-spacing:.2em;opacity:.8}
+#walk .wk-cap.on{opacity:1}
+#walk .wk-title{position:absolute;left:50%;top:22%;transform:translate(-50%,-50%) scale(.9);color:#fff;font-weight:900;font-size:clamp(34px,9vmin,64px);text-shadow:0 0 18px #5ad8ff,0 4px 0 #1d56b8;opacity:0;transition:opacity .5s,transform .5s;white-space:nowrap}
+#walk .wk-title.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#walk .wk-skip{position:absolute;right:max(14px,var(--sar,0px));top:calc(9% + 8px);pointer-events:auto;min-height:40px;background:rgba(255,255,255,.9)}
 #hud{position:absolute;inset:0;pointer-events:none;font-family:var(--f-body)}
 #hud .hb{position:absolute;pointer-events:auto;touch-action:none;transition:opacity .3s}
 #hud.intro .btnc,#hud.intro .itm,#hud.intro .stick,#hud.intro #mebox{opacity:0!important;pointer-events:none}
@@ -176,7 +185,17 @@ a{color:var(--shu)}
 .bossname .ph{font-size:11px;background:#7a1f3a;border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
 .bossname .st{font-size:11px;color:var(--gold)}
 .bossbox .route{display:flex;flex-direction:column;gap:3px}
+.bossbox .ak-grid{display:none}
+.bossbox.akiba>.bossname,.bossbox.akiba>.hpbar{display:none}
+.bossbox.akiba .ak-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+.ak .nm{display:flex;justify-content:space-between;gap:6px;font-weight:900;font-size:12px;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;line-height:15px}
+.ak .nm .s{font-size:11px;opacity:.95}
+.ak .hpbar{height:12px}.ak.thin .hpbar{height:7px;border-width:1px}.ak.thin .nm{font-size:11px;line-height:13px}
+.ak.down .hpbar{opacity:.4}.ak.down .nm .s{color:#ffb0c8}
+.ak-twin{margin-top:3px;background:rgba(120,20,70,.88);color:#fff;font-weight:900;border-radius:8px;padding:3px 8px;text-align:center;font-size:14px;border:2px solid #ff8ad8}
+.ak-twin.hurry{animation:lowp .4s infinite alternate}
 .bossbox.train .bossname,.bossbox.train .hpbar{display:none}
+.bossbox.street .hpbar{display:none}
 .ue-info[hidden]{display:none}
 .ue-info{display:inline-flex;gap:8px;margin-left:auto;align-items:center;font-weight:900;font-size:12px;text-shadow:0 1px 2px #000;white-space:nowrap}
 .ue-info #ueBar{background:#2a5a9a;border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
@@ -224,6 +243,8 @@ a{color:var(--shu)}
 .hpbar i{position:absolute;inset:0 auto 0 0;border-radius:5px}
 .hpbar i.lag{background:#ffd9b0;transition:width .5s .4s}
 .hpbar i.fill{background:linear-gradient(#ef7a74,#cb4b46 55%,#8f2a26);transition:width .1s}
+.hznum{position:absolute;transform:translate(-50%,-50%);font-family:var(--f-disp);font-size:20px;color:#fff;text-shadow:0 0 6px #6a3aff,0 2px 0 #1b1838;pointer-events:none}
+.orbt{position:absolute;transform:translate(-50%,-100%);font-size:11px;font-weight:900;color:#ffd84a;text-shadow:0 1px 2px #000;pointer-events:none}
 .hpbar .qm{display:none;position:absolute;top:-2px;bottom:-2px;width:3px;background:#9ad0ff;box-shadow:0 0 4px #9ad0ff}
 .bossbox.ueno .hpbar .qm{display:block}.bossbox.ueno .hpbar .third{display:none}
 .hpbar .third{position:absolute;top:0;bottom:0;left:33.3%;width:2px;background:rgba(255,255,255,.55)}
@@ -275,6 +296,7 @@ a{color:var(--shu)}
 .btnc .cdt{position:absolute;bottom:-17px;font-size:11px;font-weight:900;background:rgba(0,0,0,.6);border-radius:5px;padding:0 4px}
 #bA{background:#e9a23b;color:#2a1a08;text-shadow:none}#bA .lb{color:#2a1a08}
 #bX{background:#3f78d6}#bY{background:#187c80}
+#bOrb{background:#3a3260;opacity:.75}#bOrb.on{background:#2a1f5c;border-color:var(--gold);box-shadow:0 0 0 3px #e0b84e,0 0 14px #e0b84e;opacity:1}#bOrb.off{filter:grayscale(.8)}
 #bSP{background:#7446b8}#bSP.full{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold),0 0 18px var(--gold);opacity:.95}
 #bB{background:#475569}
 #bLock,#bCam,#bMenu,#bSig{background:rgba(18,16,40,.75)}
@@ -508,6 +530,7 @@ a{color:var(--shu)}
     <div class="row sticky-actions">
       <button class="btn ghost" id="btnTeamBack">もどる</button>
       <button class="btn" id="btnRecommend" type="button">おすすめ編成</button>
+      <button class="btn" id="btnWalkReplay" type="button" hidden>🚶 徒歩演出を見る</button>
       <button class="btn main" id="btnGo">出撃する</button>
     </div>
   </div>
@@ -527,7 +550,7 @@ a{color:var(--shu)}
 <!-- 上野の準備（電車クリアのあと） -->
 <section class="screen" id="prep" hidden>
   <div class="panel">
-    <div class="eyebrow">上野駅前</div><h2>ヨシノシンが待っている</h2>
+    <div class="eyebrow" id="prepEyebrow">上野駅前</div><h2 id="prepTitle">ヨシノシンが待っている</h2>
     <p class="small" id="prepLead">電車の報酬は確定しました。このままヨシノシンに挑むか、編成を見直してから挑めます。</p>
     <div class="kv" id="prepKv"></div>
     <div class="row"><button class="btn main" id="btnPrepGo" type="button">このままヨシノシンへ</button></div>
@@ -706,9 +729,10 @@ a{color:var(--shu)}
 </section>
 
 <!-- HUD -->
+<div id="walk" hidden><div class="wk-cap" id="wkCap"></div><div class="wk-title" id="wkTitle">秋葉原編</div><button class="btn ghost wk-skip" id="btnWalkSkip" type="button">スキップ ▶</button></div>
 <div id="hud" hidden>
   <div id="touch"></div>
-  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span><span class="qm" style="left:25%"></span><span class="qm" style="left:50%"></span><span class="qm" style="left:75%"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="ak-grid" id="akGrid"></div><div class="ak-twin" id="akTwin" hidden></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span><span class="qm" style="left:25%"></span><span class="qm" style="left:50%"></span><span class="qm" style="left:75%"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
   <div class="hb party" id="party"></div>
   <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
   <div class="hb" id="map"><canvas id="mapc"></canvas></div>
@@ -717,6 +741,7 @@ a{color:var(--shu)}
   <button class="hb btnc" id="bA" aria-label="A 通常攻撃"><span class="key">A</span><span class="lb" id="lA">攻撃</span></button>
   <button class="hb btnc" id="bX" aria-label="X 技1"><span class="key">X</span><span class="lb" id="lX"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cX"/></svg><span class="cdt" id="tX" hidden></span></button>
   <button class="hb btnc" id="bY" aria-label="Y 技2"><span class="key">Y</span><span class="lb" id="lY"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cY"/></svg><span class="cdt" id="tY" hidden></span></button>
+  <button class="hb btnc" id="bOrb" aria-label="重玉（強化必殺）"><span class="key" style="font-size:calc(14px*var(--ui))">重玉</span><span class="lb" id="lOrb">なし</span></button>
   <button class="hb btnc" id="bSP" aria-label="必殺技"><span class="key" style="font-size:calc(15px*var(--ui))">必殺</span><span class="lb" id="lSP">0%</span></button>
   <button class="hb btnc" id="bB" aria-label="B ダッシュ・灯す"><span class="key">B</span><span class="lb ctxB" id="lB">走る</span></button>
   <button class="hb btnc" id="bLock" aria-label="注目"><span class="key" style="font-size:calc(16px*var(--ui))">◎</span><span class="lb">注目</span></button>
@@ -1086,7 +1111,39 @@ const NET = {
 };
 p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 10, 'Apple 44pt / Android 48dp の目安より大きく');
 
-const AKIBA = { introT: { akiba_platform: 3, akiba_plaza: 3 } };
+/* ---------------- 秋葉原編：駅ホーム（オガ・カエ）と駅前広場（星・中＋オガ・カエ） ---------------- */
+const AKIBA = {
+  introT: { akiba_platform: p('秋葉原', 'ホームの始まりの演出', 2.5, 's', 'proto'), akiba_plaza: p('秋葉原', '広場の始まり（星と中が2人を起こす）', 3, 's', 'spec') },
+  rec: 60,
+  platform: { halfX: p('秋葉原', 'ホームの安全幅', 18, 'm', 'spec') / 2, zMax: p('秋葉原', 'ホームの長さ', 26, 'm', 'spec'), start: [[-1.5, 3.4], [1.5, 3.4], [-0.5, 2.2], [0.5, 2.2]], foes: { oga: [-3.2, 17], kae: [3.2, 17] } },
+  plaza: { half: p('秋葉原', '駅前広場（歩ける範囲・中心から）', 13, 'm', 'spec'), start: [[-1.5, -9.5], [1.5, -9.5], [-0.5, -10.7], [0.5, -10.7]], foes: { hoshi: [-2.4, 8], naka: [2.4, 8], oga: [-5.5, 4], kae: [5.5, 4] } },
+  // scale：見た目の拡大率（星・中2.0倍／オガ・カエ1.5倍。依頼による変更）。HP・能力・当たり判定の半径は変えない
+  foes: {
+    hoshi: { nm: '星', hp: 8000, str: 750, yo: 813, def: 210, h: 1.60, r: 0.42, scale: 2.0, spd: 2.3, col: 0xf2c94c },
+    naka: { nm: '中', hp: 8000, str: 750, yo: 813, def: 210, h: 1.58, r: 0.42, scale: 2.0, spd: 2.3, col: 0x9ad0ff },
+    oga: { nm: 'オガ', hp: 4000, str: 750, yo: 813, def: 190, h: 1.48, r: 0.42, scale: 1.5, spd: 2.5, col: 0xff7a5a },
+    kae: { nm: 'カエ', hp: 4000, str: 750, yo: 813, def: 180, h: 1.50, r: 0.42, scale: 1.5, spd: 2.5, col: 0x6ad8a8 },
+  },
+  moves: { // 威力・秒数は本作の初期調整値（原作の実測ではない）
+    hoshizuna: { who: 'hoshi', nm: '星砂おとし', pw: 49, stat: 'yo', r: 1.4, warn: 1.1, act: 0.15, cd: 4.5, rng: 9, rec: 0.6 },
+    hoshirai: { who: 'hoshi', nm: '星雷のしるし', pw: 65, stat: 'yo', r: 1.0, n: 3, delay: 0.65, warn: 1.3, act: 0.15, cd: 9, max: 2, rng: 10, rec: 0.8 },
+    hoshimado: { who: 'hoshi', nm: '星まどい', eff: 'strYo', mul: 0.9, dur: 4, r: 1.0, warn: 1.2, act: 0.1, cd: 18, rng: 10, rec: 0.5 },
+    shizuku: { who: 'naka', nm: '中の水しずく', pw: 49, stat: 'yo', w: 0.8, len: 12, speed: 8, warn: 0.9, cd: 4.5, rng: 11, rec: 0.5 },
+    hyoutei: { who: 'naka', nm: '銀氷の小庭', pw: 65, stat: 'yo', r: 1.5, n: 3, warn: 1.4, act: 0.2, cd: 10, rng: 10, rec: 0.8 },
+    mayoi: { who: 'naka', nm: '迷いの銀札', eff: 'spd', mul: 0.9, dur: 4, r: 1.0, warn: 1.2, act: 0.1, cd: 18, rng: 10, rec: 0.5 },
+    ougi: { who: 'oga', nm: '紅扇たたき', pw: 53, stat: 'str', r: 2.5, half: Math.PI / 4, warn: 0.75, act: 0.12, cd: 3.5, rng: 2.3, rec: 0.6 },
+    iki: { who: 'oga', nm: '灯りの息', pw: 49, stat: 'yo', r: 6, half: Math.PI / 6, warn: 1.2, act: 0.8, cd: 7, rng: 5, rec: 1.4 },
+    benibana: { who: 'oga', nm: '紅花おとし', pw: 70, stat: 'str', r: 2.0, warn: 1.5, act: 0.15, cd: 11, rng: 9, rec: 0.8 },
+    nagi: { who: 'kae', nm: '水杖なぎ', pw: 53, stat: 'str', r: 3.0, half: Math.PI * 55 / 180, warn: 0.85, act: 0.12, cd: 3.8, rng: 2.8, rec: 0.6 },
+    meguri: { who: 'kae', nm: '水環めぐり', pw: 49, stat: 'yo', w: 0.8, len: 8, sweep: Math.PI * 2 / 3, dur: 2.5, warn: 1.5, cd: 12, rng: 6, rec: 0.8 },
+    kagami: { who: 'kae', nm: '水鏡の足どめ', r: 1.1, n: 2, life: 4, mul: 0.9, warn: 1.2, cd: 14, rng: 9, rec: 0.6 },
+  },
+  rights: p('秋葉原', '同時に通常攻撃する相手（全体）', 2, '人', 'spec'),
+  twin: { window: p('秋葉原', '星・中：片方が倒れてからの制限時間', 15, 's', 'spec'), revive: p('秋葉原', '失敗したとき倒れていた方が戻るHP', 4000, 'points', 'spec', null, '最大HPの50%。生き残っていた方のHPは変えない') },
+  guard: { dmg: 1200, low: 300, win: 5, mul: 1.10, dur: 6, cd: 15 },
+  geo: { first: 12, every: 18, w: { 2: 0.40, 3: 0.35, 4: 0.25 }, minSep: 3, minArea: 8, maxCover: 0.45, edge: 2.5, reachT: 1.8, rec: 2,
+    line: { nm: '二点結び', pw: 65, w: 1.2, warn: 1.5, act: 0.3 }, tri: { nm: '三角結界', pw: 75, warn: 2.0, act: 0.3 }, quad: { nm: '四角結界', pw: 22, warn: 2.5, dur: 3, iv: 0.75, max: 4 } },
+};
 const DATA = { AKIBA, REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, STREET, UENO, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };
 
 /* ===== roster_data.js ===== */
@@ -1709,6 +1766,21 @@ function inFan(px, pz, ox, oz, yaw, r0, r1, half, tr) {
   const a = Math.abs(angDiff(yaw, yawTo(px - ox, pz - oz)));
   return a <= half + Math.asin(Math.min(1, tr / Math.max(d, tr)));
 }
+/** 多角形（xz平面・頂点の順番どおり）の内側か、辺から tr 以内か（三角結界・四角結界の床判定） */
+function inPoly(px, pz, pts, tr) {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const xi = pts[i][0], zi = pts[i][1], xj = pts[j][0], zj = pts[j][1];
+    if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) inside = !inside;
+  }
+  if (inside) return true;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { // 辺までの距離
+    const ax = pts[j][0], az = pts[j][1], bx = pts[i][0], bz = pts[i][1], ex = bx - ax, ez = bz - az, L = ex * ex + ez * ez || 1e-9;
+    const t = Math.max(0, Math.min(1, ((px - ax) * ex + (pz - az) * ez) / L)), dx = px - (ax + ex * t), dz = pz - (az + ez * t);
+    if (dx * dx + dz * dz <= tr * tr) return true;
+  }
+  return false;
+}
 function inLine(px, pz, ox, oz, yaw, len, halfW, tr) {
   const fx = Math.sin(yaw), fz = Math.cos(yaw), dx = px - ox, dz = pz - oz;
   const f = dx * fx + dz * fz, s = dx * fz - dz * fx;
@@ -1801,7 +1873,7 @@ class Sim {
   /** AIが動かしているキャラは能力をすべて90%にする（プレイヤーが操作を交代すると元に戻る） */
   aiK(a) { return a.ctrlAI ? DATA.SIM.aiMul : 1; }
   /** 能力：レベルの値（AIなら各×0.9の切り捨て）× 強化（同じ能力は一番強いものだけ） */
-  stat(a, k) { return a.stt[k] * this.buffMul(a, k); }
+  stat(a, k) { return a.stt[k] * this.buffMul(a, k) * (a.dl && a.dl.length ? this.debuffMul(a, k) : 1); } // 秋葉原の「星まどい」など、味方への能力低下も（おはらいで解除）
   /** AIと人の切り替え：能力を計算し直し、HPは割合を保つ（気絶中は0のまま。切り替えで回復しない） */
   syncAi(a) {
     const on = !!a.ctrlAI; if (a._ai === on) return; a._ai = on;
@@ -1815,7 +1887,7 @@ class Sim {
   debuffMul(e, k) { let m = 1; if (e && e.dl) for (const b of e.dl) if (b.k === k && b.t > 0 && b.mul < m) m = b.mul; if (k === 'spd' && e === this.boss) m = Math.max(0.95, m); return Math.max(0.25, m); }
   updateEnemyStatus(dt) {
     const tick = e => { if (!e.dl || !e.dl.length) return; for (const b of e.dl) b.t -= dt; e.dl = e.dl.filter(b => b.t > 0); };
-    if (this.boss) tick(this.boss); for (const m of this.mobs) tick(m);
+    if (this.boss) tick(this.boss); for (const m of this.mobs) tick(m); for (const a of this.allies) tick(a);
   }
   free(a) { return a.st === 'ok' && !a.act; }
   canMove(a) {
@@ -1889,7 +1961,7 @@ class Sim {
       let spd = S.walk;
       const wantDash = inp.hold.B && !a.rev && !a.lan && (!a.act);
       if (wantDash && !a.tired && (a.stam > 0 || a.buffs.ramune > 0)) { spd = S.dash; a.dashing = true; }
-      spd *= mv * this.aiK(a) * this.buffMul(a, 'spd');
+      spd *= mv * this.aiK(a) * this.buffMul(a, 'spd') * (a.dl && a.dl.length ? this.debuffMul(a, 'spd') : 1) * (this.allyMoveMul ? this.allyMoveMul(a) : 1);
       this.moveAlly(a, mx * spd * dt, mz * spd * dt);
       const ty = yawTo(mx, mz); a.yaw += clamp(angDiff(a.yaw, ty), -12 * dt, 12 * dt);
       a.moving = true;
@@ -2626,6 +2698,7 @@ class Sim {
     if (m.st === 'fly') return this.updateFly(m, dt); // 上野：投げられて飛んでいる部下
     if (m.st !== 'ok') return;
     if (m.kind === 'yoshi') return this.updateYoshi(m, dt);
+    if (m.kind === 'akiba') return this.updateAkibaEnemy(m, dt);
     if (m.para > 0) { m.para -= dt; return; }
     if (this.stage === 'intro') return;
     const tg = this.mobTarget(m); if (!tg) { m.tgt = -1; return; }
@@ -2649,6 +2722,7 @@ class Sim {
     this.ev('sfx', { s: 'fudaShot', x: m.x, z: m.z });
   }
   mobDie(m, by) {
+    if (m.kind === 'akiba') return this.akibaDown(m, by); // 秋葉原の4人は倒れて待機（双子の復活・補助役の判定）
     m.st = 'dying'; m.dieT = 0.6; this.ev('mobdie', { x: m.x, z: m.z });
     if (by && by.stats) by.stats.kills++; // セーブの記録（倒した敵の数）
     if (m.kind === 'yoshi') { this.yoshiDie(m); return; }
@@ -2883,8 +2957,10 @@ class Sim {
         if (h.kind === 'fan') inside = inFan(o.x, o.z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, DATA.MOB.allyR);
         else if (h.kind === 'circle') inside = dist2(o.x, o.z, h.x, h.z) <= h.r + DATA.MOB.allyR;
         else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR);
+        else if (h.kind === 'poly') inside = inPoly(o.x, o.z, h.pts, DATA.MOB.allyR);
         if (!inside) continue;
         h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t }; if (h.grp) h.grp.hits[o.slot] = gr + 1;
+        if (h.eff) { if (this.hazardEffect) this.hazardEffect(h, o); continue; } // ダメージのない状態マーク（秋葉原の星まどい・迷いの銀札）
         this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: h.kx != null ? h.kx : o.x - h.x, kz: h.kz != null ? h.kz : o.z - h.z, src: h.src === 'boss' ? b : (h.srcEnt || null), mul: h.mul });
       }
     }
@@ -2918,6 +2994,7 @@ class Sim {
       let inside = false;
       if (h.kind === 'fan') inside = inFan(x, z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, margin);
       else if (h.kind === 'circle') inside = dist2(x, z, h.x, h.z) <= h.r + margin;
+      else if (h.kind === 'poly') inside = inPoly(x, z, h.pts, margin);
       else inside = inLine(x, z, h.x, h.z, h.yaw, h.len, h.w / 2, margin);
       if (inside) return h;
     }
@@ -3100,7 +3177,7 @@ class Sim {
     return best;
   }
 }
-const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I, HZ, HZ_I, PJ, PJ_I, angDiff, yawTo, clamp, dist2, inFan, inLine, RNG };
+const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I, HZ, HZ_I, PJ, PJ_I, angDiff, yawTo, clamp, dist2, inFan, inLine, RNG };
 
 /* ===== joban.js ===== */
 /* =====================================================================
@@ -3245,11 +3322,11 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   };
   /** 動いてよい場面か（電車：走行中の戦い／上野：ボス戦・睡眠中は止まる） */
   P.yoshiLive = function (m) { return this.stageId === 'ueno' ? this.uenoMinionsLive() : this.stageId === 'ueno_street' ? this.streetLive(m) : this.stage === 'train'; };
-  /** 攻撃権：同時に攻撃を始められるのは 近接・防御で最大4体、ビームで最大1体（上野は2体） */
+  /** 攻撃権：同時に攻撃権を持てるのは 電車＝近接4体・ビーム2体／上野＝近接4＋ビーム6（計10）。権利は最短周期のあいだ保持 */
   P.yoshiCanAttack = function (m) {
     const R = this.ycfg.rights, beam = m.typ === 'beam'; let n = 0, all = 0;
     if (beam && this.U && this.U.tengai) return false; // 天蓋乱射の間は射撃を遅らせて逃げ道を残す
-    for (const o of this.mobs) if (o !== m && o.kind === 'yoshi' && o.act && o.st === 'ok') { all++; if ((o.typ === 'beam') === beam) n++; }
+    for (const o of this.mobs) if (o !== m && o.kind === 'yoshi' && o.st === 'ok' && (o.act || o.rightT > 0)) { all++; if ((o.typ === 'beam') === beam) n++; } // 攻撃権は予兆開始から最短周期（剣3.2/拳3.5/ビーム5秒）のあいだ持ち続け、その後に交代
     if (R.all != null && all >= R.all) return false;
     return n < (beam ? R.beam : R.melee);
   };
@@ -3258,8 +3335,9 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   P.updateYoshi = function (m, dt) {
     const J = DATA.JOBAN, W = J.wpn[m.wpn === 'shield' ? 'shield' : m.wpn], T = m.T;
     m.wind = m.act && m.act.t < m.act.w ? 1 : 0; m.moving = 0;
+    if (m.rightT > 0) m.rightT -= dt;
     if (!this.yoshiLive(m)) return;
-    if (m.para > 0) { m.para -= dt; m.act = null; return; }
+    if (m.para > 0) { m.rightT = 0; m.para -= dt; m.act = null; return; }
     m.cd -= dt; m.gCd -= dt; if (m.gT > 0) m.gT -= dt;
     if (m.act) { m.act.t += dt; if (m.act.t >= m.act.end) m.act = null; else return; }
     if (m.enterT > 0) { // 乗り込む／前の車両から入ってくる
@@ -3307,6 +3385,7 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   P.afterEnemyHit = function (e, dmg, a, kind) {
     if (e.kind === 'yoshi' && e.typ === 'guard' && e.gT <= 0 && e.gCd <= 0 && e.hp > 0 && !e.act) this.yoshiGuard(e); // 殴られたら構える
     if (this.uenoAfterHit) this.uenoAfterHit(e, dmg, a, kind);
+    if (this.akibaAfterHit) this.akibaAfterHit(e, dmg, a, kind);
   };
 
   /** 攻撃：予兆を出してから当たる。ダメージは共通式（威力×ちから or ようりょく÷(120＋まもり)） */
@@ -3317,10 +3396,11 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     const base = { warn, act: W.act, pw: T.pw, stat: T.stat, srcStats: { str: m.str, yo: m.yo }, src: 'mob', srcEnt: m, srcId: m.id, knock: W.knock, kx: fx, kz: fz, max: 1, iv: 99 };
     let h;
     if (m.wpn === 'sword') h = this.hz(Object.assign(base, { kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: W.r, half: W.half, fx: 'ysword', dodge: true }));
-    else if (m.wpn === 'fist' || m.wpn === 'shield') h = this.hz(Object.assign(base, { kind: 'rect', x: m.x + fx * 0.25, z: m.z + fz * 0.25, yaw: m.yaw, len: W.len, w: W.w, fx: 'yfist', single: true }));
+    else if (m.wpn === 'fist' || m.wpn === 'shield') h = this.hz(Object.assign(base, { kind: 'rect', x: m.x + fx * 0.25, z: m.z + fz * 0.25, yaw: m.yaw, len: W.len, w: W.w, fx: 'yfist', single: true, dodge: true }));
     else h = this.hz(Object.assign(base, { kind: 'line', x: m.x + fx * 0.5, z: m.z + fz * 0.5, yaw: m.yaw, len: T.len || W.len, w: W.w, fx: 'ybeam', dodge: true, single: true, hook: 'yBeam' })); // 幅0.7m：通路（3m）の左右に逃げ幅が残る
     m.act = { t: 0, w: warn, end: warn + W.act + W.rec };
     m.cd = T.period + this.rng.next() * 0.4; // 準備開始から次の準備開始までの最短周期
+    m.rightT = T.period;
     this.ev('yAtk', { w: m.wpn, x: m.x, z: m.z });
     return h;
   };
@@ -3382,7 +3462,12 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     if (this.stageId.startsWith('akiba')) return this.akibaCandySpot();
     return [0, 0];
   };
-  P.streetSnap = function () { return [this.gate]; };
+  P.extSnap = function () {
+    if (this.stageId === 'ueno_street') return ['s', this.gate];
+    if (this.stageId.startsWith('akiba') && this.akibaSnap) return ['a'].concat(this.akibaSnap());
+    return 0;
+  };
+  SIMLIB.extDecode = x => x[0] === 's' ? { kind: 'street', gate: x[1] } : x[0] === 'a' && SIMLIB.akibaDecode ? SIMLIB.akibaDecode(x.slice(1)) : null;
 })();
 
 /* ===== ueno.js ===== */
@@ -3794,6 +3879,11 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     if (Us.pend >= 0 && this.bossHittable()) return b;
     const k = this.sleepNext();
     if (k >= 0 && b && b.hp <= U().moves.sleep.stages[k].pre && this.bossHittable() && dist2(a.x, a.z, b.x, b.z) > 6) return b; // 次の段階が近い：本体に寄っておく
+    if (mobs.length) { // 射撃部下（被ダメージの大半）を先に減らす：距離を短く見積もる
+      const w = m => dist2(a.x, a.z, m.x, m.z) * (m.typ === 'beam' ? 0.4 : 1);
+      const m = mobs.reduce((p, q) => w(q) < w(p) ? q : p);
+      if (!this.bossHittable() || a.c.ai === 'melee' || a.c.ai === 'ranged' || dist2(a.x, a.z, m.x, m.z) < 8) return m;
+    }
     return aiEnemy0.call(this, a);
   };
   const aiDecide0 = P.aiDecide;
@@ -3823,13 +3913,300 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
 })();
 
 /* ===== akiba.js ===== */
-/* akiba.js — 秋葉原編（あとで本実装に置き換える仮の枠） */
+/* =====================================================================
+   akiba.js — 秋葉原編：駅ホーム（オガ・カエ）と駅前広場（星・中＋オガ・カエ）
+   sim.js の Sim に足す（ホストだけが動かす・three.js 非依存）。4人は mobs に kind:'akiba' として入れる（注目・弾・追尾は共通）
+   ・ホーム：オガ・カエ（各HP4,000）を両方倒すと勝ち。片方が倒れても復活しない
+   ・広場：星・中（各HP8,000）。片方が倒れてから15秒以内にもう片方も倒すと勝ち。間に合わなければ倒れた方だけHP4,000で復活
+     オガ・カエは始まりに一度だけHP4,000で起こされ、広場で再び倒れたらもう起きない
+   ・図形の必殺：生きている相手から2/3/4人を選び、線（2人）・三角の面（3人）・凸四角形の火床（4人）。予兆中は参加者が足を止める
+   ・通常攻撃をする相手は全体で同時に2人まで。威力は共通のダメージ式（約150はLv60の基準）
+   ===================================================================== */
 (() => {
-  const P = Sim.prototype;
-  P.initAkiba = function () { this.stage = 'boss'; this.lanterns = []; };
-  P.clampAkiba = function (ox, oz, nx, nz) { return [nx, nz]; };
-  P.updateAkibaStage = function () { };
-  P.akibaCandySpot = function () { return [0, 5]; };
+  const P = Sim.prototype, A = () => DATA.AKIBA;
+  const TWINS = ['hoshi', 'naka'];
+  const MOVES_OF = { hoshi: [['hoshizuna', 5], ['hoshirai', 2], ['hoshimado', 1]], naka: [['shizuku', 5], ['hyoutei', 2], ['mayoi', 1]], oga: [['ougi', 5], ['iki', 2], ['benibana', 2]], kae: [['nagi', 5], ['meguri', 2], ['kagami', 1]] };
+  const KEEP = { hoshi: 6, naka: 7, oga: 1.8, kae: 2.2 };
+
+  P.initAkiba = function (o) {
+    const D = A(), plaza = this.stageId === 'akiba_plaza', C = plaza ? D.plaza : D.platform;
+    this.stage = o.test ? 'boss' : 'intro'; this.barrier = 'none'; this.lanterns = []; this.kills = 0; this.total = 0; this.queue = null;
+    const Pl = Math.floor(this.allies.reduce((s, a) => s + a.lv, 0) / this.allies.length), k = DATA.lvAdjust('akiba', Pl);
+    this.akLv = Pl; this.lvOut = k.out; this.lvIn = k.in;
+    this.AK = { plaza, twinT: -1, twinDown: null, twinFails: 0, geoT: D.geo.first, geo: null, geoN: 0, log: { hoshi: [], naka: [] }, gcd: { hoshi: 0, naka: 0 }, revived: false };
+    for (const a of this.allies) { const q = C.start[a.slot]; a.x = a.px = q[0]; a.z = a.pz = q[1]; a.yaw = 0; a.ai.tx = a.x; a.ai.tz = a.z + 1; a.sp = Math.max(a.sp, 50); }
+    for (const who in C.foes) { const m = this.spawnFoe(who, C.foes[who][0], C.foes[who][1]); if (plaza && (who === 'oga' || who === 'kae')) { m.hp = 0; m.st = 'down'; } }
+    if (o.test) this.akibaRevive();
+  };
+  P.spawnFoe = function (who, x, z) {
+    const T = A().foes[who], cd = {};
+    for (const [k] of MOVES_OF[who]) cd[k] = 1.5 + this.rng.next() * 2.5;
+    const m = { id: 'k' + this.id(), kind: 'akiba', who, T, x, z, yaw: Math.PI, hp: T.hp, maxHp: T.hp, str: T.str, yo: T.yo, def: T.def, r: T.r, st: 'ok', t: 0, para: 0, defDown: 0, dots: [], dl: [], act: null, cd, gap: 1 + this.rng.next(), wind: 0, moving: 0, tgt: -1, retT: 0, strafe: this.rng.next() < 0.5 ? 1 : -1, yoMul: 1, buffT: 0, geo: false, geoRec: 0, jump: 0 };
+    this.mobs.push(m); return m;
+  };
+  /** 広場の始まり：倒れたオガ・カエを、星と中が光の糸で一度だけ起こす（各HP4,000） */
+  P.akibaRevive = function () {
+    if (!this.AK.plaza || this.AK.revived) return; this.AK.revived = true;
+    for (const m of this.mobs) if (m.kind === 'akiba' && (m.who === 'oga' || m.who === 'kae') && m.st === 'down') { m.st = 'ok'; m.hp = m.maxHp; this.ev('akRevive', { who: m.who, x: m.x, z: m.z }); }
+  };
+  P.clampAkiba = function (ox, oz, nx, nz, rad) {
+    const D = A();
+    if (this.stageId === 'akiba_plaza') { const h = D.plaza.half - rad; return [clamp(nx, -h, h), clamp(nz, -h, h)]; }
+    const C = D.platform; return [clamp(nx, -C.halfX + rad, C.halfX - rad), clamp(nz, 0.2 + rad, C.zMax - rad)];
+  };
+  P.akibaCandySpot = function () { const D = A(); if (this.stageId === 'akiba_plaza') return [this.rng.range(-11, 11), this.rng.range(-11, 6)]; return [this.rng.range(-7, 7), this.rng.range(2, 14)]; };
+  P.foe = function (who) { return this.mobs.find(m => m.kind === 'akiba' && m.who === who); };
+  P.akibaPaused = function () { return false; };
+
+  /* ---------- 進行：始まり・双子の15秒・図形の必殺・相方を守る ---------- */
+  P.updateAkibaStage = function (dt) {
+    const D = A(), AK = this.AK;
+    if (this.stage === 'intro') {
+      if (this.introWait) return;
+      if (AK.plaza && this.stageT >= 2.0) this.akibaRevive();
+      if (this.stageT >= D.introT[this.stageId]) { this.stage = 'boss'; this.stageT = 0; this.ev('stage', { k: 'fight' }); }
+      return;
+    }
+    if (this.stage !== 'boss') return;
+    // 双子：片方が倒れてから15秒。期限ちょうどの命中は先に処理済み（味方の更新が先）。間に合わなければ倒れていた方だけHP4,000で復活
+    if (AK.twinT >= 0) {
+      AK.twinT -= dt;
+      if (AK.twinT <= 1e-9) {
+        const m = this.foe(AK.twinDown); AK.twinT = -1; AK.twinDown = null; AK.twinFails++;
+        if (m && m.st === 'down') { m.st = 'ok'; m.hp = Math.min(m.maxHp, D.twin.revive); m.act = null; this.ev('twinRevive', { who: m.who, x: m.x, z: m.z }); }
+      }
+    }
+    // 相方を守る：直近5秒で片方に1,200以上・もう片方が300未満なら、攻撃されていない方のようりょく×1.10（6秒・再使用15秒・重複なし）
+    if (AK.plaza && AK.twinT < 0) {
+      const G = D.guard, now = this.t, sum = w => AK.log[w].filter(q => now - q.t <= G.win).reduce((s, q) => s + q.v, 0);
+      for (const w of TWINS) { AK.log[w] = AK.log[w].filter(q => now - q.t <= G.win); AK.gcd[w] -= dt; }
+      for (const [hit, other] of [['hoshi', 'naka'], ['naka', 'hoshi']]) {
+        const mo = this.foe(other); if (!mo || mo.st !== 'ok' || AK.gcd[other] > 0 || mo.buffT > 0) continue;
+        if (sum(hit) >= G.dmg && sum(other) < G.low) { mo.yoMul = G.mul; mo.buffT = G.dur; AK.gcd[other] = G.cd; this.ev('akGuard', { who: other, x: mo.x, z: mo.z }); }
+      }
+    }
+    for (const m of this.mobs) if (m.kind === 'akiba' && m.buffT > 0) { m.buffT -= dt; if (m.buffT <= 0) m.yoMul = 1; }
+    if (AK.plaza) this.updateGeo(dt);
+  };
+
+  /** 倒れたとき（mobDie から） */
+  P.akibaDown = function (m, by) {
+    const AK = this.AK; if (m.st !== 'ok') return;
+    m.st = 'down'; m.hp = 0; m.act = null; m.jump = 0; this.kills++;
+    if (by && by.stats) by.stats.kills++;
+    for (const h of this.hazards) if (h.srcEnt === m && h.t < h.warn) h.dead = 1; // 予兆中に倒れたら攻撃は出ない
+    if (AK.geo && AK.geo.ids.includes(m.id) && AK.geo.hz && AK.geo.hz.t < AK.geo.hz.warn) this.cancelGeo('down'); // 予兆中の参加者が倒れたら取り消し
+    this.ev('akDown', { who: m.who, x: m.x, z: m.z });
+    if (!AK.plaza) { if (['oga', 'kae'].every(w => { const f = this.foe(w); return !f || f.st !== 'ok'; })) this.finish(true, 'platform'); return; }
+    if (TWINS.includes(m.who)) {
+      const other = TWINS.find(w => w !== m.who), mo = this.foe(other);
+      if (mo && mo.st !== 'ok') { AK.twinT = -1; this.akibaWin(); return; } // 15秒以内に両方（同じ範囲技で同時も成功）
+      AK.twinDown = m.who; AK.twinT = A().twin.window;
+      if (AK.geo && !AK.geo.fired) this.cancelGeo('twin');
+      this.ev('twinDown', { who: m.who, other });
+    }
+  };
+  P.akibaWin = function () {
+    for (const m of this.mobs) if (m.kind === 'akiba' && m.st === 'ok') { m.st = 'down'; m.leave = 1; } // 戦意を失って退場
+    this.hazards = this.hazards.filter(h => h.src !== 'akiba');
+    this.finish(true, 'twins');
+  };
+  P.akibaAfterHit = function (e, dmg) {
+    if (e.kind !== 'akiba' || !this.AK || !TWINS.includes(e.who)) return;
+    this.AK.log[e.who].push({ t: this.t, v: dmg });
+  };
+
+  /* ---------- 4人それぞれの動き ---------- */
+  P.akibaRightsFree = function () { if (this.AK && this.AK.geoWait) return false; let n = 0; for (const m of this.mobs) if (m.kind === 'akiba' && m.st === 'ok' && m.act && !m.geo) n++; return n < A().rights; };
+  P.akibaTarget = function (m) {
+    let best = null, bs = 1e9;
+    for (const o of this.allies) { if (o.st !== 'ok') continue; let d = dist2(m.x, m.z, o.x, o.z); if (o.buffs.stealth > 0) d += 6; if (o.buffs.taunt > 0) d -= 4; if (d < bs) { bs = d; best = o; } }
+    return best;
+  };
+  P.updateAkibaEnemy = function (m, dt) {
+    const D = A(), AK = this.AK; m.wind = m.act && m.act.t < m.act.w ? 1 : 0; m.moving = 0;
+    if (this.stage !== 'boss') return;
+    for (const k in m.cd) m.cd[k] -= dt; m.gap -= dt;
+    if (m.geo) return; // 図形の必殺中は足を止める（同じ足元の座標）
+    if (m.geoRec > 0) { m.geoRec -= dt; return; }
+    if (m.act) { this.akibaAct(m, dt); return; }
+    m.retT -= dt; let tg = this.allies[m.tgt];
+    if (m.retT <= 0 || !tg || tg.st !== 'ok') { m.retT = 0.6; tg = this.akibaTarget(m); m.tgt = tg ? tg.slot : -1; }
+    if (!tg) return;
+    const dx = tg.x - m.x, dz = tg.z - m.z, d = Math.hypot(dx, dz) || 1e-3, ty = yawTo(dx, dz);
+    m.yaw += clamp(angDiff(m.yaw, ty), -5 * dt, 5 * dt);
+    // それぞれ別々に歩き、追い込む方向を変える（相手ごとに少し横へずれる）
+    const keep = KEEP[m.who], ang = ty + Math.PI + m.strafe * 0.45, gx = tg.x + Math.sin(ang) * keep, gz = tg.z + Math.cos(ang) * keep;
+    let vx = gx - m.x, vz = gz - m.z; const vl = Math.hypot(vx, vz);
+    for (const o of this.mobs) { if (o === m || o.kind !== 'akiba' || o.st !== 'ok') continue; const ox = m.x - o.x, oz = m.z - o.z, od = Math.hypot(ox, oz); if (od < 1.6 && od > 1e-4) { vx += ox / od * 1.5; vz += oz / od * 1.5; } }
+    const L = Math.hypot(vx, vz);
+    if (vl > 0.25 && L > 1e-3) { const sp = m.T.spd * this.debuffMul(m, 'spd') * dt; const c = this.clampAkiba(m.x, m.z, m.x + vx / L * sp, m.z + vz / L * sp, m.r); m.x = c[0]; m.z = c[1]; m.moving = 1; }
+    if (this.rng.next() < dt * 0.15) m.strafe *= -1;
+    // 攻撃：全体で2人まで。図形の必殺の間は通常攻撃も床攻撃も重ねない
+    if (m.gap > 0 || AK.geo || !this.akibaRightsFree()) return;
+    const ready = MOVES_OF[m.who].filter(([k]) => m.cd[k] <= 0 && d <= D.moves[k].rng);
+    if (!ready.length) return;
+    let r = this.rng.next() * ready.reduce((s, q) => s + q[1], 0), pick = ready[0][0];
+    for (const [k, w] of ready) { r -= w; if (r <= 0) { pick = k; break; } }
+    this.akibaStart(m, pick, tg);
+  };
+  /** 技の始まり：予兆は開始時に置く（対象の位置は予兆の開始で固定） */
+  P.akibaStart = function (m, k, tg) {
+    const M = A().moves[k], src = { str: m.str, yo: m.yo * m.yoMul }, base = { pw: M.pw || 0, stat: M.stat || 'yo', srcStats: src, src: 'akiba', srcEnt: m, srcId: m.id, dodge: true, max: 1, iv: 99 };
+    m.cd[k] = M.cd; m.yaw = yawTo(tg.x - m.x, tg.z - m.z);
+    const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), H = o => this.hz(Object.assign({}, base, o));
+    let end = M.warn + (M.act || 0) + (M.rec || 0.6);
+    const fxOf = { hoshi: 'hoshi', naka: 'naka', oga: 'oga', kae: 'kae' }[m.who];
+    switch (k) {
+      case 'hoshizuna': H({ kind: 'circle', x: tg.x, z: tg.z, r: M.r, warn: M.warn, act: M.act, fx: fxOf }); break;
+      case 'hoshirai': { const grp = { hits: {}, max: M.max }; for (let i = 0; i < M.n; i++) { const a = this.rng.next() * TAU, rr = i === 0 ? 0 : this.rng.range(1.2, 2.4); H({ kind: 'circle', x: tg.x + Math.sin(a) * rr, z: tg.z + Math.cos(a) * rr, r: M.r, warn: M.warn + i * M.delay, act: M.act, fx: fxOf, grp }); } end = M.warn + (M.n - 1) * M.delay + M.act + M.rec; break; }
+      case 'hoshimado': case 'mayoi': H({ kind: 'circle', x: tg.x, z: tg.z, r: M.r, warn: M.warn, act: M.act, fx: 'debuffMark', eff: { k: M.eff, mul: M.mul, dur: M.dur, src: 'ak:' + k } }); break;
+      case 'shizuku': H({ kind: 'line', x: m.x + fx * 0.4, z: m.z + fz * 0.4, yaw: m.yaw, len: M.len, w: M.w, warn: M.warn, act: 0, fx: fxOf }); end = M.warn + M.rec; break;
+      case 'hyoutei': { const grp = { hits: {}, max: 1 }; for (let i = 0; i < M.n; i++) { const a = i * TAU / 3 + this.rng.next(), rr = i === 0 ? 0 : 2.6; H({ kind: 'circle', x: tg.x + Math.sin(a) * rr, z: tg.z + Math.cos(a) * rr, r: M.r, warn: M.warn, act: M.act, fx: fxOf, grp }); } break; }
+      case 'ougi': case 'nagi': H({ kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: M.r, half: M.half, warn: M.warn, act: M.act, fx: fxOf, knock: 3, kx: fx, kz: fz }); break;
+      case 'iki': H({ kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: M.r, half: M.half, warn: M.warn, act: M.act, fx: fxOf }); break;
+      case 'benibana': { const c = this.clampAkiba(tg.x, tg.z, tg.x, tg.z, 0.5); H({ kind: 'circle', x: c[0], z: c[1], r: M.r, warn: M.warn, act: M.act, fx: fxOf, knock: 4 }); m.jumpTo = [c[0], c[1]]; m.jumpFrom = [m.x, m.z]; break; }
+      case 'meguri': { const dir = this.rng.next() < 0.5 ? 1 : -1, y0 = m.yaw - dir * M.sweep / 2; H({ kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0.3, r1: M.len, half: M.sweep / 2, warn: M.warn, act: 0, fx: fxOf, dir }); m.spin = { dir, y0, hz: null }; end = M.warn + M.dur + M.rec; break; }
+      case 'kagami': { for (let i = 0; i < M.n; i++) { const a = this.rng.next() * TAU, rr = i === 0 ? 0.6 : 2.4; const c = this.clampAkiba(tg.x + Math.sin(a) * rr, tg.z + Math.cos(a) * rr, tg.x + Math.sin(a) * rr, tg.z + Math.cos(a) * rr, 1.1); H({ kind: 'circle', x: c[0], z: c[1], r: M.r, warn: M.warn, act: 0, keep: M.life, fx: 'water' }); } break; }
+    }
+    m.act = { k, t: 0, w: M.warn, end, tg: tg.slot, fired: false };
+    this.ev('akMove', { who: m.who, mv: k });
+  };
+  P.akibaAct = function (m, dt) {
+    const A0 = m.act, M = A().moves[A0.k]; A0.t += dt;
+    if (A0.k === 'shizuku' && !A0.fired && A0.t >= M.warn) { // 水弾：幅0.8m・距離12m・秒速8m
+      A0.fired = true; const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw);
+      this.projs.push({ id: this.id(), kind: 'mizu', team: 'enemy', x: m.x + fx * 0.5, y: 0.8, z: m.z + fz * 0.5, vx: fx * M.speed, vz: fz * M.speed, life: M.len / M.speed, r: M.w / 2, pw: M.pw, stat: 'yo', src: { str: m.str, yo: m.yo * m.yoMul }, srcEnt: m, hit: new Set(), yaw: m.yaw });
+    }
+    if (A0.k === 'benibana' && m.jumpTo) { const k = Math.min(1, A0.t / M.warn); m.x = m.jumpFrom[0] + (m.jumpTo[0] - m.jumpFrom[0]) * k; m.z = m.jumpFrom[1] + (m.jumpTo[1] - m.jumpFrom[1]) * k; m.jump = Math.sin(k * Math.PI) * 2.2; if (k >= 1) { m.jump = 0; m.jumpTo = null; } }
+    if (A0.k === 'meguri' && m.spin && A0.t >= M.warn) { // 水の光を2.5秒で120度回す（1人1回まで）
+      const S = m.spin, k = Math.min(1, (A0.t - M.warn) / M.dur), yaw = S.y0 + S.dir * M.sweep * k;
+      if (!S.hz) S.hz = this.hz({ kind: 'line', x: m.x, z: m.z, yaw, len: M.len, w: M.w, warn: 0, act: M.dur, pw: M.pw, stat: 'yo', srcStats: { str: m.str, yo: m.yo * m.yoMul }, src: 'akiba', srcEnt: m, srcId: m.id, max: 1, iv: 99, fx: 'kae' });
+      S.hz.yaw = yaw; m.yaw = yaw;
+      if (k >= 1) m.spin = null;
+    }
+    if (A0.t >= A0.end) { m.act = null; m.gap = 0.4 + this.rng.next() * 0.8; }
+  };
+  /** 状態マーク（ダメージなし）：星まどい＝ちから・ようりょく×0.9、迷いの銀札＝移動×0.9（4秒・同じ技は重ねず更新・おはらいで解除） */
+  P.hazardEffect = function (h, o) {
+    const E = h.eff; if (!E) return;
+    if (E.k === 'strYo') { this.addDebuff(o, 'str', E.mul, E.dur, E.src); this.addDebuff(o, 'yo', E.mul, E.dur, E.src); }
+    else this.addDebuff(o, E.k, E.mul, E.dur, E.src);
+    this.ev('akMark', { slot: o.slot, k: E.k, x: o.x, z: o.z });
+  };
+  /** 水たまり：中では移動×0.9（重ならない） */
+  P.allyMoveMul = function (a) {
+    if (!this.stageId.startsWith('akiba')) return 1;
+    for (const h of this.hazards) if (h.fx === 'water' && h.t >= h.warn && dist2(a.x, a.z, h.x, h.z) <= h.r) return A().moves.kagami.mul;
+    return 1;
+  };
+
+  /* ---------- 図形の必殺：2人＝線、3人＝三角の面、4人＝凸四角形の火床 ---------- */
+  const area = pts => { let s = 0; for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; s += a[0] * b[1] - b[0] * a[1]; } return Math.abs(s) / 2; };
+  function hull(pts) { // 凸包（Andrew）。4点すべてが頂点のときだけ採用
+    const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lo = [], up = []; for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 1e-6) lo.pop(); lo.push(q); }
+    for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 1e-6) up.pop(); up.push(q); }
+    return lo.slice(0, -1).concat(up.slice(0, -1));
+  }
+  P.geoShape = function (foes) {
+    const G = A().geo, pts = foes.map(f => [f.x, f.z]), half = A().plaza.half;
+    if (pts.some(q => Math.abs(q[0]) > half - G.edge || Math.abs(q[1]) > half - G.edge)) return null; // 外側の通路2.5m
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) if (dist2(pts[i][0], pts[i][1], pts[j][0], pts[j][1]) < G.minSep) return null;
+    const floor = (half * 2) * (half * 2);
+    if (pts.length === 2) { const len = dist2(pts[0][0], pts[0][1], pts[1][0], pts[1][1]); if (len * G.line.w > floor * G.maxCover) return null; return { n: 2, pts, yaw: yawTo(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]), len }; }
+    if (pts.length === 3) { const ar = area(pts); if (ar < G.minArea || ar > floor * G.maxCover) return null; return { n: 3, pts }; }
+    const h = hull(pts); if (h.length !== 4) return null; // 1点が内側・3点一直線・交差は使わない
+    const ar = area(h); if (ar > floor * G.maxCover) return null;
+    return { n: 4, pts: h };
+  };
+  /** 全員が1.8秒以内に（回避なしで）図形の外へ出られるか */
+  P.geoSafe = function (sh) {
+    const G = A().geo, half = A().plaza.half, R = DATA.MOB.allyR;
+    const inside = (x, z) => sh.n === 2 ? inLine(x, z, sh.pts[0][0], sh.pts[0][1], sh.yaw, sh.len, G.line.w / 2, R) : inPoly(x, z, sh.pts, R);
+    return this.allies.every(o => {
+      if (o.st !== 'ok') return true;
+      const sp = DATA.SIM.walk * this.aiK(o) * (o.dl && o.dl.length ? this.debuffMul(o, 'spd') : 1) * this.allyMoveMul(o), reach = sp * G.reachT;
+      if (!inside(o.x, o.z)) return true;
+      for (let r = 0.5; r <= reach; r += 0.5) for (let i = 0; i < 16; i++) { const a = i / 16 * TAU, x = o.x + Math.sin(a) * r, z = o.z + Math.cos(a) * r; if (Math.abs(x) < half - 0.4 && Math.abs(z) < half - 0.4 && !inside(x, z)) return true; }
+      return false;
+    });
+  };
+  P.updateGeo = function (dt) {
+    const D = A(), G = D.geo, AK = this.AK;
+    if (AK.geo) {
+      const g = AK.geo, h = g.hz;
+      if (!g.fired && h && h.t >= h.warn) g.fired = true;
+      if (!h || h.dead || h.t > h.warn + h.act + 0.05) { for (const m of this.mobs) if (g.ids.includes(m.id)) { m.geo = false; if (m.st === 'ok') m.geoRec = G.rec; } AK.geo = null; AK.geoT = G.every; }
+      return;
+    }
+    if (AK.twinT >= 0) { AK.geoWait = false; return; } // 片方が倒れた後の15秒間は新しく予約しない
+    AK.geoT -= dt; if (AK.geoT > 0) return;
+    AK.geoWait = true; // 予約：新しい攻撃を始めず、水たまり・攻撃が終わるのを待つ
+    if (this.hazards.some(h => h.src === 'akiba' && (h.fx === 'water' || h.t < h.warn + h.act)) || this.mobs.some(m => m.kind === 'akiba' && m.act)) { AK.geoT = 0.2; return; }
+    const alive = this.mobs.filter(m => m.kind === 'akiba' && m.st === 'ok'); if (alive.length < 2) { AK.geoWait = false; AK.geoT = 2; return; }
+    for (let tries = 0; tries < 24; tries++) {
+      let n; const r = this.rng.next(); n = r < G.w[2] ? 2 : r < G.w[2] + G.w[3] ? 3 : 4;
+      if (n > alive.length) continue; // 有効な人数で引き直す
+      const pick = alive.slice().sort(() => this.rng.next() - 0.5).slice(0, n);
+      const sh = this.geoShape(pick); if (!sh || !this.geoSafe(sh)) continue;
+      AK.geoWait = false; this.startGeo(pick, sh); return;
+    }
+    AK.geoWait = false; AK.geoT = 2; // 合う配置がない：取り消して少し後でもう一度
+  };
+  P.startGeo = function (foes, sh) {
+    const G = A().geo, AK = this.AK, src = { str: 750, yo: 813 }; // 共有のようりょく813（相方の強化は重ねない）
+    for (const m of foes) { m.geo = true; m.act = null; m.moving = 0; }
+    const base = { src: 'akiba', srcStats: src, stat: 'yo', dodge: true, iv: 99, max: 1, geo: 1 };
+    let h;
+    if (sh.n === 2) h = this.hz(Object.assign(base, { kind: 'line', x: sh.pts[0][0], z: sh.pts[0][1], yaw: sh.yaw, len: sh.len, w: G.line.w, warn: G.line.warn, act: G.line.act, pw: G.line.pw, fx: 'link2' }));
+    else if (sh.n === 3) h = this.hz(Object.assign(base, { kind: 'poly', x: 0, z: 0, pts: sh.pts, warn: G.tri.warn, act: G.tri.act, pw: G.tri.pw, fx: 'tri3' }));
+    else h = this.hz(Object.assign(base, { kind: 'poly', x: 0, z: 0, pts: sh.pts, warn: G.quad.warn, act: G.quad.dur, pw: G.quad.pw, max: G.quad.max, iv: G.quad.iv, fx: 'quad4' }));
+    AK.geo = { n: sh.n, ids: foes.map(m => m.id), whos: foes.map(m => m.who), hz: h, fired: false, cast: ++AK.geoN };
+    this.ev('geo', { n: sh.n, whos: AK.geo.whos });
+  };
+  P.cancelGeo = function (why) {
+    const AK = this.AK, g = AK.geo; if (!g) return;
+    if (g.hz) g.hz.dead = 1;
+    for (const m of this.mobs) if (g.ids.includes(m.id)) { m.geo = false; m.geoRec = 0.5; }
+    AK.geo = null; AK.geoT = 4; this.ev('geoCancel', { why });
+  };
+
+  /* ---------- 味方AI（秋葉原）：双子は現在HPが高い方（絶対値）を0.6秒ごとに見直す。片方が0なら生き残り側へ ---------- */
+  const aiEnemy0 = P.aiEnemy;
+  P.aiEnemy = function (a) {
+    if (!this.stageId.startsWith('akiba')) return aiEnemy0.call(this, a);
+    const alive = this.mobs.filter(m => m.kind === 'akiba' && m.st === 'ok'); if (!alive.length) return null;
+    if (!this.AK.plaza) return alive.sort((p, q) => dist2(a.x, a.z, p.x, p.z) - dist2(a.x, a.z, q.x, q.z))[0];
+    const twins = alive.filter(m => TWINS.includes(m.who));
+    let pick = twins.length ? null : alive[0];
+    if (twins.length) {
+      const ai = a.ai, cur = twins.find(m => m.id === ai.akPick);
+      if (cur && this.t < (ai.akPickT || 0)) pick = cur;
+      else { pick = twins.slice().sort((p, q) => q.hp - p.hp || (p.who < q.who ? -1 : 1))[0]; ai.akPick = pick.id; ai.akPickT = this.t + 0.6; }
+    }
+    // オガ・カエは目の前の危険のときだけ（双子へ届かない・すぐそばに来たとき）
+    const near = alive.filter(m => !TWINS.includes(m.who) && dist2(a.x, a.z, m.x, m.z) < 2.2).sort((p, q) => dist2(a.x, a.z, p.x, p.z) - dist2(a.x, a.z, q.x, q.z))[0];
+    if (near && pick && dist2(a.x, a.z, pick.x, pick.z) > 6 && this.AK.twinT < 0) return near;
+    return pick;
+  };
+  P.akibaOrbNow = function (a, S) {
+    if (!this.AK || !this.AK.plaza || this.AK.twinT < 0) return null;
+    const m = this.foe(TWINS.find(w => w !== this.AK.twinDown)); if (!m || m.st !== 'ok') return null;
+    return this.gapTo(a.x, a.z, m).g < 4.5 || S.type === 'buff' || S.type === 'debuff';
+  };
+  P.akibaGunNow = function (a) {
+    if (!this.AK || !this.AK.plaza || this.AK.twinT < 0 || this.AK.twinT > 7) return null;
+    const m = this.foe(TWINS.find(w => w !== this.AK.twinDown)); if (!m || m.st !== 'ok') return null;
+    return this.gapTo(a.x, a.z, m).g < DATA.ITEMS.starburst_gun.range - 2 ? m : null;
+  };
+
+  /* ---------- スナップショット ---------- */
+  P.akibaSnap = function () {
+    const AK = this.AK, g = AK.geo;
+    return [AK.plaza ? 1 : 0, Math.round(Math.max(0, AK.twinT) * 100) / 100, AK.twinDown ? TWINS.indexOf(AK.twinDown) + 1 : 0, g ? g.n : 0, g ? g.whos.map(w => ['hoshi', 'naka', 'oga', 'kae'].indexOf(w)).join('') : '', Math.round(this.lvOut * 1000), Math.round(this.lvIn * 1000), this.akLv, AK.twinFails];
+  };
+  SIMLIB.akibaDecode = a => ({ kind: 'akiba', plaza: !!a[0], twinT: a[1], twinDown: a[2] ? TWINS[a[2] - 1] : null, geoN: a[3], geoWho: a[4] ? String(a[4]).split('').map(i => ['hoshi', 'naka', 'oga', 'kae'][+i]) : [], lvOut: a[5] / 1000, lvIn: a[6] / 1000, lv: a[7], fails: a[8] });
 })();
 
 /* ===== proto.js ===== */
@@ -3844,7 +4221,7 @@ const PROTO = (() => {
   const SK_IDS = Object.keys(DATA.SKILLS), SK_I = Object.fromEntries(SK_IDS.map((k, i) => [k, i]));
   const IT_I = Object.fromEntries(DATA.ITEM_IDS.map((k, i) => [k, i]));
   const ST = ['ok', 'down', 'gone'], ST_I = { ok: 0, down: 1, gone: 2 };
-  const STAGES = ['street', 'intro', 'boss', 'won', 'lost', 'train', 'arrive'], STAGE_IDS = ['senju', 'joban', 'ueno', 'ueno_street', 'akiba_platform', 'akiba_plaza'], TRPH = ['stop', 'run'], MK = ['fuda', 'sword', 'fist', 'beam', 'shield'], STAGE_I = Object.fromEntries(STAGES.map((k, i) => [k, i]));
+  const STAGES = ['street', 'intro', 'boss', 'won', 'lost', 'train', 'arrive'], STAGE_IDS = ['senju', 'joban', 'ueno', 'ueno_street', 'akiba_platform', 'akiba_plaza'], TRPH = ['stop', 'run'], MK = ['fuda', 'sword', 'fist', 'beam', 'shield', 'hoshi', 'naka', 'oga', 'kae'], STAGE_I = Object.fromEntries(STAGES.map((k, i) => [k, i]));
   const BARR = ['street', 'none', 'plaza'], BARR_I = { street: 0, none: 1, plaza: 2 };
   const PK = ['food', 'bag', 'candy'], PK_I = { food: 0, bag: 1, candy: 2 };
   const CTX = ['dash', 'revive', 'lantern'], CTX_I = { dash: 0, revive: 1, lantern: 2, '': 0 };
@@ -3875,7 +4252,7 @@ const PROTO = (() => {
     const b = sim.boss;
     const B = b ? [r2(b.x), r2(b.z), r2(b.y), r2(b.yaw), Math.round(b.hp / b.maxHp * 1000), BST_I[b.st], b.mv ? BMV_I[b.mv] : 0, r2(b.t), b.phase, (b.defDown > 0 ? 1 : 0) | (b.st === 'stun' ? 2 : 0) | (b.dots && b.dots.length ? 4 : 0),
       b.fl ? [FLPH_I[b.fl.ph], r2(b.fl.yaw || 0), b.fl.i, b.fl.n, r2(b.fl.len || 0), r2(b.fl.t)] : 0, b.target, b.downT || 0] : 0;
-    const M = sim.mobs.map(m => [m.id, r2(m.x), r2(m.z), r2(m.yaw), Math.round(Math.max(0, m.hp) / m.maxHp * 1000), m.st === 'ok' || m.st === 'fly' ? 0 : 1, m.wind > 0 ? 1 : 0, m.para > 0 ? 1 : 0].concat(m.kind === 'yoshi' ? [MK.indexOf(m.wpn), m.act ? (m.act.t < m.act.w ? 1 : 2) : 0, m.enterT > 0 ? 1 : 0, m.moving ? 1 : 0, m.gT > 0 ? 1 : 0, Math.round((m.scale || 1) * 100), m.air ? r2(m.air) : 0] : []));
+    const M = sim.mobs.map(m => [m.id, r2(m.x), r2(m.z), r2(m.yaw), Math.round(Math.max(0, m.hp) / m.maxHp * 1000), m.st === 'ok' || m.st === 'fly' ? 0 : 1, m.wind > 0 ? 1 : 0, m.para > 0 ? 1 : 0].concat(m.kind === 'akiba' ? [MK.indexOf(m.who), m.act ? (m.act.t < m.act.w ? 1 : 2) : m.geo ? 3 : 0, m.act ? (DATA.AKIBA.moves[m.act.k] ? Object.keys(DATA.AKIBA.moves).indexOf(m.act.k) + 1 : 0) : 0, m.moving ? 1 : 0, m.st === 'down' ? (m.leave ? 2 : 1) : 0, m.yoMul > 1 ? 1 : 0, r2(m.jump || 0), Math.round(m.maxHp)] : m.kind === 'yoshi' ? [MK.indexOf(m.wpn), m.act ? (m.act.t < m.act.w ? 1 : 2) : 0, m.enterT > 0 ? 1 : 0, m.moving ? 1 : 0, m.gT > 0 ? 1 : 0, Math.round((m.scale || 1) * 100), m.air ? r2(m.air) : 0] : []));
     let P = sim.projs.map(p => [p.id, PJ_I[p.kind], r2(p.x), r2(p.z), r2(p.yaw || 0), p.team === 'ally' ? 0 : 1, p.owner == null ? -1 : p.owner, r2(p.r)]);
     const H = sim.hazards.map(h => [h.id, HZ_I[h.kind], r2(h.x), r2(h.z), r2(h.yaw || 0),
       r2(h.kind === 'fan' ? h.r0 : h.kind === 'circle' ? h.r : h.len), r2(h.kind === 'fan' ? h.r1 : h.w || 0), r2(h.kind === 'fan' ? h.half : 0),
@@ -3913,7 +4290,7 @@ const PROTO = (() => {
     }));
     const b = s.b;
     v.boss = b ? { x: b[0], z: b[1], y: b[2], yaw: b[3], hpR: b[4] / 1000, st: BST[b[5]], mv: BMV[b[6]], t: b[7], phase: b[8], defDown: !!(b[9] & 1), stun: !!(b[9] & 2), dot: !!(b[9] & 4), fl: b[10] ? { ph: FLPH[b[10][0]], yaw: b[10][1], i: b[10][2], n: b[10][3], len: b[10][4], t: b[10][5] } : null, target: b[11], downT: b[12] } : null;
-    v.mobs = s.m.map(r => ({ id: r[0], x: r[1], z: r[2], yaw: r[3], hpR: r[4] / 1000, dying: !!r[5], wind: !!r[6], para: !!r[7], kind: MK[r[8] || 0], yoshi: r.length > 8, ph: r[9] || 0, enter: !!r[10], moving: !!r[11], guard: !!r[12], scale: (r[13] || 100) / 100, air: r[14] || 0 }));
+    v.mobs = s.m.map(r => ({ id: r[0], x: r[1], z: r[2], yaw: r[3], hpR: r[4] / 1000, dying: !!r[5], wind: !!r[6], para: !!r[7], kind: MK[r[8] || 0], yoshi: r.length > 8 && r[8] <= 4, akiba: r.length > 8 && r[8] >= 5, ph: r[9] || 0, enter: r[8] >= 5 ? false : !!r[10], mv: r[8] >= 5 ? (Object.keys(DATA.AKIBA.moves)[(r[10] || 0) - 1] || '') : '', moving: !!r[11], guard: r[8] >= 5 ? false : !!r[12], down: r[8] >= 5 ? r[12] : 0, buff: r[8] >= 5 ? !!r[13] : false, scale: r[8] >= 5 ? 1 : (r[13] || 100) / 100, air: r[8] >= 5 ? r[14] || 0 : r[14] || 0, maxHp: r[8] >= 5 ? r[15] : 0 }));
     v.projs = s.p.map(r => ({ id: r[0], kind: PJ[r[1]], x: r[2], z: r[3], yaw: r[4], team: r[5] ? 'enemy' : 'ally', owner: r[6], r: r[7] }));
     v.hz = s.h.map(r => ({ id: r[0], kind: HZ[r[1]], x: r[2], z: r[3], yaw: r[4], a: r[5], b: r[6], c: r[7], t: r[8], warn: r[9], act: r[10], fx: FX[r[11]], brief: r[12], num: r[13] || 0, pts: r[14] || null }));
     v.traps = s.k.map(r => ({ id: r[0], kind: r[1] ? 'mine' : 'para', x: r[2], z: r[3], armed: !!r[4] }));
@@ -3954,7 +4331,7 @@ const PROTO = (() => {
    自分の移動だけ予測して表示する。
    ===================================================================== */
 const NETLIB = (() => {
-  const VERSION = 'tb5'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
+  const VERSION = 'tb6'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
   const hashStr = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
   const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
@@ -5980,6 +6357,52 @@ const GFX = {};
     return W;
   };
 
+  /* ---------- 上野の居酒屋通り（架空）：暖簾・赤提灯・縦看板・電線の提灯。3つの暖簾の結界 ---------- */
+  GFX.buildStreet = function (scene) {
+    const D = DATA.STREET, HX = D.halfX, ZM = D.zMax;
+    const W = { root: new THREE.Group(), gates: [] }; scene.add(W.root); W.root.visible = false; const root = W.root;
+    root.add(new THREE.HemisphereLight(0xffe8d0, 0x3a2a40, 1.0));
+    const dl = new THREE.DirectionalLight(0xffd8b0, 0.55); dl.position.set(4, 12, 10); root.add(dl);
+    const sky = new THREE.Mesh(new THREE.SphereGeometry(160, 20, 10), new THREE.MeshBasicMaterial({ side: THREE.BackSide, map: GFX.tex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#1a1638'); gr.addColorStop(0.5, '#4a2e5a'); gr.addColorStop(0.62, '#a8584a'); gr.addColorStop(1, '#2a2030'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }), depthWrite: false }));
+    sky.position.set(0, 0, ZM / 2); root.add(sky);
+    const roadT = GFX.tex(128, 128, (g, w, h) => { g.fillStyle = '#4a4650'; g.fillRect(0, 0, w, h); for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(${200 + Math.random() * 40},${190 + Math.random() * 40},${180},${Math.random() * 0.08})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); } g.strokeStyle = 'rgba(30,26,34,.5)'; g.lineWidth = 2; g.strokeRect(1, 1, 126, 126); }, [4, 26]);
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(HX * 2 + 1, ZM + 12), L(0xffffff, { map: roadT })); road.rotation.x = -Math.PI / 2; road.position.set(0, 0, ZM / 2 - 4); root.add(road);
+    // 改札（入口）と「上野駅」
+    const darkM = L(0x2a2630), steel = L(0x9aa0a8);
+    for (let i = -2; i <= 2; i++) { B(root, 0.25, 1.0, 1.4, steel, i * 1.8, 0.5, -2.2); B(root, 0.32, 0.08, 1.45, L(0x3a8ad8, { emissive: 0x103050 }), i * 1.8, 1.02, -2.2); }
+    const gateT = GFX.tex(512, 96, (g, w, h) => { g.fillStyle = '#1d2a48'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = `bold 46px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('上野駅　広小路口', w / 2, h / 2 + 2); });
+    const gs = new THREE.Mesh(new THREE.PlaneGeometry(8, 1.5), BAS(0xffffff, { map: gateT })); gs.position.set(0, 3.4, -2.6); root.add(gs);
+    B(root, 10, 0.4, 0.4, darkM, 0, 4.25, -2.6);
+    // 両側の店（ゲーム用の架空の店名）
+    const names = ['やきとり 鳥吉', '呑み処 さくら', 'もつ煮 まるや', '立ち飲み 灯', '大衆酒場 ひさご', '串かつ 福', '海鮮 浜の家', 'おでん 千歳', 'ホルモン 炎', '居酒屋 ふくろう', '餃子 天竜', 'そば処 藤'];
+    const norenCols = [0x1d3a6a, 0x7a1f2a, 0x2a4a2a, 0x3a2a5a, 0x8a5a1a];
+    let ni = 0;
+    for (const sd of [-1, 1]) for (let z = 2; z < ZM + 4; z += 5.2) {
+      const x = sd * (HX + 1.6), h = 3.4 + ((ni * 7) % 3) * 0.5;
+      B(root, 3.2, h, 5.0, L([0x6a4a3a, 0x5a4a52, 0x7a5a40, 0x4a3a3a][ni % 4]), x, h / 2, z);
+      B(root, 0.1, 1.6, 3.6, L(0xffe0a8, { emissive: 0x6a4a20, emissiveIntensity: 0.8 }), x - sd * 1.62, 1.1, z); // 明かりのついた店先
+      const nc = norenCols[ni % norenCols.length], nm = names[ni % names.length];
+      const nt = GFX.tex(256, 128, (g, w, h) => { g.fillStyle = '#' + nc.toString(16).padStart(6, '0'); g.fillRect(0, 0, w, h); g.fillStyle = '#f6eedc'; g.font = `bold 40px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(nm.split(' ')[1] || nm, w / 2, h / 2); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3; for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(i * 64, 40); g.lineTo(i * 64, h); g.stroke(); } });
+      const nr = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.9), L(0xffffff, { map: nt, side: THREE.DoubleSide })); nr.position.set(x - sd * 1.66, 2.25, z); nr.rotation.y = sd > 0 ? -Math.PI / 2 : Math.PI / 2; root.add(nr); // 暖簾
+      const vt = GFX.tex(64, 256, (g, w, h) => { g.fillStyle = '#f4ecd8'; g.fillRect(0, 0, w, h); g.fillStyle = '#b02a2a'; g.font = `bold 34px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'top'; const t = nm.split(' ')[1] || nm; for (let i = 0; i < t.length && i < 6; i++) g.fillText(t[i], w / 2, 8 + i * 40); g.strokeStyle = '#3a2a20'; g.lineWidth = 6; g.strokeRect(2, 2, w - 4, h - 4); });
+      const vs = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 2.0), BAS(0xffffff, { map: vt, side: THREE.DoubleSide })); vs.position.set(x - sd * 1.35, 3.7, z + 2.0); vs.rotation.y = Math.PI; root.add(vs); // 縦看板（通りに向けて）
+      const lan = S(root, 0.28, BAS(0xff5a3a), x - sd * 1.95, 2.9, z - 1.6, 1, 1.3, 1); W.lan = W.lan || []; W.lan.push(lan); // 赤提灯
+      ni++;
+    }
+    // 頭上の提灯の列（電線）
+    for (let z = 4; z < ZM; z += 6) { B(root, HX * 2 + 3, 0.02, 0.02, darkM, 0, 4.6, z); for (let i = -3; i <= 3; i++) { const l = S(root, 0.14, BAS(i % 2 ? 0xffd27a : 0xff8a5a), i * 1.2, 4.35 - Math.abs(i) * 0.04, z, 1, 1.25, 1); W.lan.push(l); } }
+    // 暖簾の結界（地点を片付けると開く）
+    for (const gz of D.gates) {
+      const g = new THREE.Group(); g.position.set(0, 0, gz); root.add(g);
+      const bt = GFX.tex(256, 128, (gg, w, h) => { gg.fillStyle = 'rgba(120,60,200,.55)'; gg.fillRect(0, 0, w, h); gg.strokeStyle = 'rgba(255,220,255,.8)'; gg.lineWidth = 6; for (let i = -128; i < 256; i += 32) { gg.beginPath(); gg.moveTo(i, 0); gg.lineTo(i + 128, h); gg.stroke(); } gg.fillStyle = '#fff'; gg.font = `bold 30px ${GFX.FONT_UI}`; gg.textAlign = 'center'; gg.fillText('結界', w / 2, h / 2 + 10); });
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(HX * 2, 3), new THREE.MeshBasicMaterial({ map: bt, transparent: true, side: THREE.DoubleSide, depthWrite: false })); m.position.y = 1.5; g.add(m);
+      for (const sd of [-1, 1]) C(g, 0.12, 0.12, 3.4, L(0x8a2a2a), sd * HX, 1.7, 0);
+      W.gates.push(g);
+    }
+    W.update = (T, X) => { const gate = X && X.kind === 'street' ? X.gate : 0; W.gates.forEach((g, i) => { g.visible = i >= gate; if (g.visible) g.children[0].material.opacity = 0.75 + Math.sin(T * 3 + i) * 0.15; }); for (let i = 0; i < W.lan.length; i += 7) W.lan[i].scale.y = 1.25 + Math.sin(T * 2 + i) * 0.03; };
+    return W;
+  };
+
   /* ---------- ヨシノシン（3.2m） ---------- */
   GFX.makeYoshinoshin = function () {
     const M = {
@@ -6036,7 +6459,8 @@ const GFX = {};
     const glow = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), new THREE.MeshBasicMaterial({ color: 0xc8ff7a, transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending })); glow.position.set(0, -0.22, 0.05); fuda.add(glow);
     // バリア（半透明の殻：青→赤）
     const barrier = new THREE.Mesh(new THREE.SphereGeometry(2.0, 28, 18), new THREE.MeshBasicMaterial({ color: 0x6ab8ff, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })); barrier.position.y = 1.7; barrier.visible = false; root.add(barrier);
-    const shadow = GFX.blob(1.1);
+    root.scale.setScalar(DATA.UENO.bossScale || 1); // 本体だけ1.85倍（5.92m）
+    const shadow = GFX.blob(1.1 * (DATA.UENO.bossScale || 1));
     return { root, body, spine, neck, head, armL, armR, legL, legR, sleeveL, handR, fuda, glow, dolls, lidL, lidR, skirt, barrier, shadow, ph: 0, kind: 'yoshinoshin', fadeT: 1 };
   };
 
@@ -6081,6 +6505,140 @@ const GFX = {};
   };
 })();
 
+/* ===== render_akiba.js ===== */
+/* =====================================================================
+   render_akiba.js — 秋葉原編の見た目
+   ・秋葉原駅ホーム（閉鎖された安全幅18m・長さ26mの架空ホーム）と、駅前広場（28m四方・電子街の看板）
+   ・敵の4人（星・中・オガ・カエ）：かわいい目と丸い手足を持つ独自の女の子の妖怪（約2.8頭身）
+   ・上野→御徒町→秋葉原の徒歩演出（15秒）用の通り
+   ===================================================================== */
+(() => {
+  const P = GFX.parts, S = P.S, B = P.B, C = P.C, K = P.K, G = P.G;
+  const L = GFX.lam, BAS = GFX.bas;
+  const signTex = (txt, sub, bg, fg, w, h) => GFX.tex(w || 512, h || 160, (g, W, H) => { g.fillStyle = bg; g.fillRect(0, 0, W, H); g.fillStyle = fg; g.font = `bold ${Math.round(H * 0.42)}px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, W / 2, sub ? H * 0.4 : H / 2, W - 20); if (sub) { g.font = `${Math.round(H * 0.18)}px ${GFX.FONT_UI}`; g.fillText(sub, W / 2, H * 0.78, W - 20); } });
+  const neon = (txt, col) => GFX.tex(256, 96, (g, W, H) => { g.fillStyle = '#120c20'; g.fillRect(0, 0, W, H); g.shadowColor = col; g.shadowBlur = 18; g.fillStyle = col; g.font = `bold 40px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, W / 2, H / 2, W - 16); });
+  const W0 = {};
+  function lights(root, warm) { root.add(new THREE.HemisphereLight(warm ? 0xfff0e0 : 0xe8f0ff, 0x40384a, 1.1)); const d = new THREE.DirectionalLight(0xfff4e0, 0.75); d.position.set(-6, 14, 4); root.add(d); }
+  function skyOf(root, cz) { const sky = new THREE.Mesh(new THREE.SphereGeometry(170, 20, 10), new THREE.MeshBasicMaterial({ side: THREE.BackSide, map: GFX.tex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#203a78'); gr.addColorStop(0.45, '#7a6ac8'); gr.addColorStop(0.62, '#f2a6b8'); gr.addColorStop(1, '#2a2440'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }), depthWrite: false })); sky.position.z = cz; root.add(sky); }
+
+  /** 秋葉原駅ホーム：x=±9、z=0〜26。右（+x）は線路側の柵 */
+  function buildPlatform(scene) {
+    const D = DATA.AKIBA.platform, root = new THREE.Group(); scene.add(root); lights(root); skyOf(root, 13);
+    const fl = new THREE.Mesh(new THREE.PlaneGeometry(D.halfX * 2 + 2, D.zMax + 8), L(0xb8b4ae)); fl.rotation.x = -Math.PI / 2; fl.position.set(0, 0, D.zMax / 2); root.add(fl);
+    const tile = L(0xf2c94c); for (let z = -2; z < D.zMax + 3; z += 0.6) B(root, 0.3, 0.02, 0.5, tile, D.halfX - 1.0, 0.012, z); // 点字ブロック
+    // 線路側の柵（落ちない）と線路
+    for (let z = -2; z < D.zMax + 3; z += 2) C(root, 0.05, 0.05, 1.2, L(0x8a8a90), D.halfX + 0.25, 0.6, z);
+    B(root, 0.06, 0.06, D.zMax + 6, L(0xb0b0b8), D.halfX + 0.25, 1.15, D.zMax / 2); B(root, 0.06, 0.06, D.zMax + 6, L(0xb0b0b8), D.halfX + 0.25, 0.6, D.zMax / 2);
+    const bed = new THREE.Mesh(new THREE.PlaneGeometry(6, D.zMax + 40), L(0x5a5048)); bed.rotation.x = -Math.PI / 2; bed.position.set(D.halfX + 3.5, -1.1, D.zMax / 2); root.add(bed);
+    for (const dx of [2.3, 4.7]) B(root, 0.1, 0.1, D.zMax + 40, L(0x9a9aa2), D.halfX + dx, -1.0, D.zMax / 2);
+    // 屋根と柱（戦う場所の外側）
+    B(root, 2.2, 0.3, D.zMax + 6, L(0xd8dce4), -D.halfX - 0.6, 5.2, D.zMax / 2); // 屋根は壁ぎわだけ（上から見るカメラで戦う場所を隠さない）
+    for (let z = 0; z <= D.zMax; z += 6.5) C(root, 0.18, 0.18, 5.2, L(0x7a8090), -D.halfX - 0.5, 2.6, z);
+    // 駅名標「秋葉原」
+    for (const z of [6, 18]) { const st = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.2), BAS(0xffffff, { map: signTex('秋葉原', 'Akihabara　御徒町 ← → 神田', '#ffffff', '#1b2a48') })); st.position.set(-D.halfX - 0.35, 2.4, z); st.rotation.y = Math.PI / 2; root.add(st); C(root, 0.05, 0.05, 1.8, L(0x3a3a44), -D.halfX - 0.4, 0.9, z - 1.3); C(root, 0.05, 0.05, 1.8, L(0x3a3a44), -D.halfX - 0.4, 0.9, z + 1.3); }
+    const top = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.2), BAS(0xffffff, { map: signTex('秋葉原駅', 'AKIHABARA', '#1d56b8', '#ffffff') })); top.position.set(0, 4.2, D.zMax + 2.5); top.rotation.y = Math.PI; root.add(top);
+    // 向かいの電子街のビル（遠景）
+    for (let i = 0; i < 6; i++) { const x = D.halfX + 10 + (i % 2) * 6, z = -4 + i * 7; B(root, 5, 10 + (i % 3) * 4, 6, L([0x4a4060, 0x3a4a6a, 0x5a3a5a][i % 3]), x, 5 + (i % 3) * 2, z); const n = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 1.3), BAS(0xffffff, { map: neon(['ゲーム', 'でんき', 'パーツ', 'ホビー', 'カード', 'ラジオ'][i], ['#ff5ad8', '#5ad8ff', '#ffe25a', '#8aff6a', '#ff8a4a', '#b08aff'][i]) })); n.position.set(x - 2.55, 6 + (i % 2) * 2, z); n.rotation.y = -Math.PI / 2; root.add(n); }
+    root.visible = false; return root;
+  }
+  /** 秋葉原駅前広場：中心から±13m。奥（+z）に「秋葉原駅」の駅舎 */
+  function buildPlaza(scene) {
+    const H = DATA.AKIBA.plaza.half, root = new THREE.Group(); scene.add(root); lights(root); skyOf(root, 0);
+    const tileT = GFX.tex(128, 128, (g, w, h) => { g.fillStyle = '#8c8894'; g.fillRect(0, 0, w, h); for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { g.fillStyle = (x + y) % 2 ? '#9894a2' : '#827e8c'; g.fillRect(x * 32 + 1, y * 32 + 1, 30, 30); } }, [14, 14]);
+    const fl = new THREE.Mesh(new THREE.PlaneGeometry(H * 2 + 2, H * 2 + 2), L(0xffffff, { map: tileT })); fl.rotation.x = -Math.PI / 2; root.add(fl);
+    const out = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), L(0x55525e)); out.rotation.x = -Math.PI / 2; out.position.y = -0.02; root.add(out);
+    for (const [x, z, w, d] of [[0, H + 0.15, H * 2 + 0.6, 0.3], [0, -H - 0.15, H * 2 + 0.6, 0.3], [H + 0.15, 0, 0.3, H * 2], [-H - 0.15, 0, 0.3, H * 2]]) B(root, w, 0.2, d, L(0xd8d0c4), x, 0.1, z);
+    // 駅舎
+    B(root, 30, 8, 5, L(0xe6e2da), 0, 4, H + 4.5); for (let i = -3; i <= 3; i++) B(root, 3, 3, 0.2, L(0x7fa8c8, { emissive: 0x223344 }), i * 4, 2, H + 1.95);
+    const sg = new THREE.Mesh(new THREE.PlaneGeometry(9, 2), BAS(0xffffff, { map: signTex('秋葉原駅', 'AKIHABARA STATION', '#1d2a48', '#ffffff') })); sg.position.set(0, 6, H + 1.9); sg.rotation.y = Math.PI; root.add(sg);
+    // 高架と電車（左奥）
+    B(root, 3.6, 0.6, 60, L(0x8a8690), -H - 8, 6, 0); for (let z = -26; z <= 26; z += 8) B(root, 0.8, 6, 0.8, L(0x8a8690), -H - 8, 3, z);
+    for (let k = 0; k < 2; k++) { B(root, 2.8, 3, 18, L(0xe6eaee), -H - 8, 7.8, -10 + k * 18.5); B(root, 2.85, 0.35, 18, L(0xf2c94c), -H - 8, 7.1, -10 + k * 18.5); }
+    // 電子街の看板（架空の店名）
+    const shops = [['電気のまち', '#5ad8ff'], ['ゲームの森', '#ff5ad8'], ['パーツ堂', '#ffe25a'], ['ホビー天国', '#8aff6a'], ['無線の店', '#ff8a4a'], ['カード広場', '#b08aff']];
+    shops.forEach(([t, c], i) => { const sd = i % 2 ? 1 : -1, z = -10 + Math.floor(i / 2) * 9; B(root, 4, 12, 7, L([0x4a4060, 0x3a4a6a, 0x5a3a5a][i % 3]), sd * (H + 4.5), 6, z); const n = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 5), BAS(0xffffff, { map: GFX.tex(64, 256, (g, w, h) => { g.fillStyle = '#120c20'; g.fillRect(0, 0, w, h); g.shadowColor = c; g.shadowBlur = 12; g.fillStyle = c; g.font = `bold 34px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'top'; for (let j = 0; j < t.length; j++) g.fillText(t[j], w / 2, 10 + j * 46); }) })); n.position.set(sd * (H + 2.4), 6, z); n.rotation.y = sd > 0 ? -Math.PI / 2 : Math.PI / 2; root.add(n); });
+    root.visible = false; return root;
+  }
+  GFX.syncAkibaWorld = function (scene, v, T) {
+    const pl = v.stageId === 'akiba_plaza';
+    if (pl) { W0.plaza = W0.plaza || buildPlaza(scene); W0.plaza.visible = true; if (W0.platform) W0.platform.visible = false; }
+    else { W0.platform = W0.platform || buildPlatform(scene); W0.platform.visible = true; if (W0.plaza) W0.plaza.visible = false; }
+  };
+  GFX.hideAkibaWorld = function () { if (W0.plaza) W0.plaza.visible = false; if (W0.platform) W0.platform.visible = false; };
+
+  /* ---------- 敵の4人：約2.8頭身・かわいい目と丸い手足 ---------- */
+  const LOOK = {
+    hoshi: { skin: 0xffe6d6, hair: 0x2a2a5a, main: 0x1d2a5a, sub: 0xf6eedc, eye: 0xf2c94c, acc: 0xf2c94c },
+    naka: { skin: 0xffe8e0, hair: 0xb8c8e8, main: 0x8aa8d8, sub: 0x9ad8ff, eye: 0x7a6ad8, acc: 0xd8e0f0 },
+    oga: { skin: 0xffe0d0, hair: 0x7a2a2a, main: 0xff6a3a, sub: 0xffc08a, eye: 0xff8ab0, acc: 0xff7a6a },
+    kae: { skin: 0xffeedd, hair: 0x2a5a4a, main: 0x8ad8a8, sub: 0xf6d8e8, eye: 0x6ad87a, acc: 0x2ac0a0 },
+  };
+  GFX.makeAkiba = function (who) {
+    const T = DATA.AKIBA.foes[who], c = LOOK[who], h = T.h, headH = h / 2.8, R = headH * 0.5;
+    const root = G(null), body = G(root, 0, 0, 0);
+    const legH = h - headH - h * 0.34, legL = G(body, -0.09, legH, 0), legR = G(body, 0.09, legH, 0);
+    for (const lg of [legL, legR]) { C(lg, 0.06, 0.055, legH, L(c.sub), 0, -legH / 2, 0); S(lg, 0.085, L(c.main), 0, -legH + 0.03, 0.03, 1.1, 0.7, 1.3); }
+    const torso = G(body, 0, legH, 0);
+    const tH = h * 0.34; C(torso, 0.17, 0.26, tH, L(c.main), 0, tH / 2, 0, null, 14); // 丸い服
+    const head = G(torso, 0, tH + R * 0.95, 0);
+    S(head, R, L(c.skin), 0, 0, 0, 1, 0.96, 0.98);
+    S(head, R * 1.05, L(c.hair), 0, R * 0.18, -R * 0.12, 1, 0.92, 0.95); // 髪
+    for (const sd of [-1, 1]) { // 大きな目（ハイライト）・ほお
+      const e = G(head, sd * R * 0.36, -R * 0.05, R * 0.86);
+      S(e, R * 0.2, BAS(0x18141e), 0, 0, 0, 0.85, 1.1, 0.5); S(e, R * 0.13, BAS(c.eye), 0, -R * 0.03, R * 0.04, 0.85, 1.05, 0.5); S(e, R * 0.06, BAS(0xffffff), R * 0.05, R * 0.07, R * 0.09);
+      S(head, R * 0.1, BAS(0xffa0b0), sd * R * 0.55, -R * 0.32, R * 0.78, 1, 0.6, 0.4);
+    }
+    B(head, R * 0.18, R * 0.04, R * 0.05, BAS(0x8a3a4a), 0, -R * 0.42, R * 0.9); // 小さな口
+    const arms = [];
+    for (const sd of [-1, 1]) { const a = G(torso, sd * 0.2, tH * 0.85, 0); C(a, 0.05, 0.045, tH * 0.8, L(c.sub), 0, -tH * 0.4, 0); S(a, 0.065, L(c.skin), 0, -tH * 0.82, 0); arms.push(a); }
+    const prop = G(arms[1], 0, -tH * 0.82, 0.05);
+    if (who === 'hoshi') { for (let i = 0; i < 3; i++) { const st = new THREE.Mesh(new THREE.OctahedronGeometry(R * 0.18), BAS(c.acc)); st.position.set((i - 1) * R * 0.5, R * 1.05, R * 0.2); head.add(st); } C(torso, 0.3, 0.38, tH * 0.55, L(c.sub), 0, tH * 0.7, -0.04, null, 14); /* 短いケープ */ }
+    if (who === 'naka') { const rb = new THREE.Mesh(new THREE.TorusGeometry(R * 0.32, R * 0.07, 6, 18, Math.PI * 1.3), BAS(c.acc)); rb.position.set(R * 0.5, R * 0.75, 0); rb.rotation.z = 0.5; head.add(rb); C(prop, 0.015, 0.015, 0.6, L(0xd8e0f0), 0, 0.1, 0.1).rotation.x = 0.6; }
+    if (who === 'oga') { for (const sd of [-1, 1]) K(head, R * 0.12, R * 0.35, L(c.acc), sd * R * 0.45, R * 0.95, 0).rotation.z = -sd * 0.3; const fan = new THREE.Mesh(new THREE.CircleGeometry(0.22, 12, 0, Math.PI), L(0xffd27a, { side: THREE.DoubleSide })); fan.position.set(0, 0.05, 0.08); prop.add(fan); }
+    if (who === 'kae') { S(head, R * 0.14, BAS(c.acc), -R * 0.6, R * 0.55, R * 0.3); C(torso, 0.27, 0.42, tH * 0.45, L(0xf6d8e8), 0, tH * 0.1, 0, null, 10); /* 蓮の裾 */ C(prop, 0.018, 0.018, 0.8, L(0x6ad8c8), 0, 0.15, 0.1).rotation.x = 0.4; S(prop, 0.06, BAS(0x9af0ff), 0, 0.52, 0.28); }
+    const glow = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.03, 6, 28), new THREE.MeshBasicMaterial({ color: 0xffd84a, transparent: true, opacity: 0 })); glow.rotation.x = Math.PI / 2; glow.position.y = 0.05; root.add(glow);
+    const sc = T.scale || 1; root.scale.setScalar(sc); // 見た目だけ拡大（判定は data の r のまま）
+    return { root, body, torso, head, legL, legR, armL: arms[0], armR: arms[1], glow, shadow: GFX.blob(0.45 * sc), who, ph: Math.random() * 10, akiba: true, sc };
+  };
+  GFX.animAkiba = function (m, e, T, dt) {
+    m.root.position.set(e.x, e.air || 0, e.z); m.root.rotation.set(0, e.yaw, 0); m.shadow.position.set(e.x, 0.02, e.z);
+    const mv = e.moving && !e.down ? 1 : 0, wk = T * 9 + m.ph;
+    m.legL.rotation.x = Math.sin(wk) * 0.6 * mv; m.legR.rotation.x = -Math.sin(wk) * 0.6 * mv;
+    m.torso.position.y = (m.legL.position.y) + Math.abs(Math.sin(wk)) * 0.03 * mv;
+    let aR = -0.2 + Math.sin(wk) * 0.4 * mv, aL = -0.2 - Math.sin(wk) * 0.4 * mv;
+    if (e.ph === 1) { aR = -2.4; aL = -0.6; } else if (e.ph === 2) { aR = -0.9; aL = -0.4; } else if (e.ph === 3) { aR = aL = -2.8; } // 3：図形の必殺（両手を上げて光を結ぶ）
+    m.armR.rotation.x = aR; m.armL.rotation.x = aL; m.head.rotation.z = Math.sin(T * 1.5 + m.ph) * 0.08;
+    m.glow.material.opacity = e.ph === 3 ? 0.7 + Math.sin(T * 10) * 0.3 : e.buff ? 0.5 : 0; m.glow.material.color.set(e.buff ? 0xff8ad8 : 0xffd84a);
+    m.root.rotation.z = 0; m.root.visible = true;
+    if (e.down) { m.root.rotation.x = -1.3; m.root.position.y = 0.15; if (e.down === 2) { m.fade = (m.fade || 0) + dt; m.root.visible = m.fade < 1.2 ? Math.floor(T * 10) % 2 === 0 : false; } } // 倒れている（退場は点滅して消える）
+    else { m.root.rotation.x = 0; m.fade = 0; }
+  };
+
+  /* ---------- 上野→御徒町→秋葉原の徒歩演出（15秒） ---------- */
+  GFX.buildWalk = function (scene) {
+    const root = new THREE.Group(); scene.add(root); lights(root, true); skyOf(root, 60);
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(14, 160), L(0x4a4650)); road.rotation.x = -Math.PI / 2; road.position.z = 60; root.add(road);
+    const sw = L(0x9a9490); for (const sd of [-1, 1]) B(root, 3, 0.15, 160, sw, sd * 5.5, 0.07, 60);
+    // 上野駅（0〜20）
+    const ue = new THREE.Mesh(new THREE.PlaneGeometry(8, 1.8), BAS(0xffffff, { map: signTex('上野駅', 'UENO', '#1d2a48', '#ffffff') })); ue.position.set(-6.6, 4.2, 6); ue.rotation.y = Math.PI / 2; root.add(ue);
+    B(root, 2, 6, 18, L(0xd9cbb4), -8.2, 3, 8);
+    // 飲み屋街（20〜55）
+    for (let z = 22; z < 56; z += 4) for (const sd of [-1, 1]) { B(root, 3, 3.6, 3.6, L([0x6a4a3a, 0x5a4a52, 0x7a5a40][(z / 4) % 3 | 0]), sd * 8.6, 1.8, z); S(root, 0.26, BAS(0xff5a3a), sd * 6.9, 2.8, z, 1, 1.3, 1); const n = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.8), L([0x1d3a6a, 0x7a1f2a, 0x2a4a2a][(z / 4) % 3 | 0], { side: THREE.DoubleSide })); n.position.set(sd * 7.05, 2.1, z); n.rotation.y = sd > 0 ? -Math.PI / 2 : Math.PI / 2; root.add(n); }
+    // 御徒町駅（60〜72）
+    B(root, 2, 6, 12, L(0xc8c4bc), 8.2, 3, 66);
+    const ok = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.8), BAS(0xffffff, { map: signTex('御徒町駅', 'OKACHIMACHI', '#ffffff', '#1b2a48') })); ok.position.set(6.6, 4.4, 66); ok.rotation.y = -Math.PI / 2; root.add(ok);
+    // 高架下（75〜95）と電子街の光（95〜）
+    for (let z = 76; z < 95; z += 4) { B(root, 14, 0.8, 1.2, L(0x7a7680), 0, 6, z); for (const sd of [-1, 1]) B(root, 0.8, 6, 0.8, L(0x7a7680), sd * 6.6, 3, z); }
+    B(root, 14, 0.5, 24, L(0x6a6670), 0, 6.8, 85);
+    const cols = ['#ff5ad8', '#5ad8ff', '#ffe25a', '#8aff6a', '#ff8a4a', '#b08aff'], words = ['ゲーム', 'でんき', 'パーツ', 'ホビー', 'カード', 'ラジオ'];
+    for (let i = 0; i < 8; i++) { const sd = i % 2 ? 1 : -1, z = 98 + Math.floor(i / 2) * 6; B(root, 4, 10, 5, L(0x3a3450), sd * 9, 5, z); const n = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 1.2), BAS(0xffffff, { map: neon(words[i % 6], cols[i % 6]) })); n.position.set(sd * 6.9, 4 + (i % 3), z); n.rotation.y = sd > 0 ? -Math.PI / 2 : Math.PI / 2; root.add(n); }
+    const ak = new THREE.Mesh(new THREE.PlaneGeometry(9, 2), BAS(0xffffff, { map: signTex('秋葉原駅', 'AKIHABARA', '#1d56b8', '#ffffff') })); ak.position.set(0, 5.4, 124); ak.rotation.y = Math.PI; root.add(ak);
+    B(root, 22, 9, 4, L(0xe6e2da), 0, 4.5, 127);
+    root.visible = false;
+    return { root };
+  };
+})();
+
 /* ===== render_main.js ===== */
 /* =====================================================================
    render_main.js — 描画の本体：エンティティ同期・予兆表示・弾・演出・カメラ
@@ -6088,7 +6646,7 @@ const GFX = {};
    ===================================================================== */
 const R = (() => {
   let renderer, scene, camera, W, canvas;
-  const allies = [], mobs = new Map(), projs = new Map(), hzs = new Map(), traps = new Map(), picks = new Map();
+  const allies = [], mobs = new Map(), projs = new Map(), hzs = new Map(), traps = new Map(), picks = new Map(), orbs = new Map();
   let boss = null;
   const seenEv = new Set(); let seenQ = [];
   const cam = { yaw: 0, pitch: 45, dist: 11.5, fx: 0, fz: -58, fy: 0.5, dragT: 0, shake: 0, reset: false, lock: null, flyPull: 0, introDone: false };
@@ -6183,28 +6741,39 @@ const R = (() => {
     else { const w = b / 2; strip(-w, 0, -w, a, 0.12); strip(w, 0, w, a, 0.12); strip(-w, 0, w, 0, 0.12); strip(-w, a, w, a, 0.12); }
     grp.userData.mat = m; return grp;
   }
+  function polyOutline(pts) {
+    const m = new THREE.MeshBasicMaterial({ color: 0xffc7a0, transparent: true, opacity: 0.95, depthWrite: false, side: THREE.DoubleSide }), grp = new THREE.Group();
+    for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], len = Math.hypot(b[0] - a[0], b[1] - a[1]), g = new THREE.PlaneGeometry(0.14, len); g.rotateX(-Math.PI / 2); const mm = new THREE.Mesh(g, m); mm.position.set((a[0] + b[0]) / 2, 0, (a[1] + b[1]) / 2); mm.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1]); grp.add(mm); }
+    grp.userData.mat = m; return grp;
+  }
   function makeHz(h) {
     const g = new THREE.Group(); g.position.set(h.x, 0.04 + (h.id % 7) * 0.003, h.z); g.rotation.y = h.yaw; g.renderOrder = 3;
     let geo, fill;
     const isPath = h.kind === 'path';
     const base = new THREE.MeshBasicMaterial({ map: isPath ? chevT() : stripeT(), transparent: true, opacity: isPath ? 0.75 : 0.42, depthWrite: false, side: THREE.DoubleSide });
-    if (h.kind === 'fan') { geo = new THREE.RingGeometry(Math.max(0.01, h.a), h.b, 28, 1, -Math.PI / 2 - h.c, 2 * h.c); geo.rotateX(-Math.PI / 2); }
+    if (h.kind === 'poly' && h.pts) { const sh = new THREE.Shape(); h.pts.forEach((q, i) => i ? sh.lineTo(q[0], -q[1]) : sh.moveTo(q[0], -q[1])); sh.closePath(); geo = new THREE.ShapeGeometry(sh); geo.rotateX(-Math.PI / 2); g.position.set(0, 0.05, 0); g.rotation.y = 0; }
+    else if (h.kind === 'fan') { geo = new THREE.RingGeometry(Math.max(0.01, h.a), h.b, 28, 1, -Math.PI / 2 - h.c, 2 * h.c); geo.rotateX(-Math.PI / 2); }
     else if (h.kind === 'circle') { geo = new THREE.CircleGeometry(h.a, 36); geo.rotateX(-Math.PI / 2); }
     else { geo = new THREE.PlaneGeometry(h.b, h.a); geo.rotateX(-Math.PI / 2); geo.translate(0, 0, h.a / 2); if (isPath) { base.map = chevT().clone(); base.map.needsUpdate = true; base.map.repeat.set(1, h.a / 3); } }
     const bm = new THREE.Mesh(geo, base); g.add(bm);
     const fm = new THREE.MeshBasicMaterial({ color: 0xff6a3a, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide });
     fill = new THREE.Mesh(geo, fm); fill.position.y = 0.005; g.add(fill);
-    const ol = outline(h.kind === 'fan' ? 'fan' : h.kind === 'circle' ? 'circle' : 'rect', h.a, h.b, h.c); ol.position.y = 0.01; g.add(ol);
+    const ol = h.kind === 'poly' && h.pts ? polyOutline(h.pts) : outline(h.kind === 'fan' ? 'fan' : h.kind === 'circle' ? 'circle' : 'rect', h.a, h.b, h.c); ol.position.y = 0.01; g.add(ol);
+    if (h.fx === 'quad4' || h.fx === 'tri3' || h.fx === 'link2') { base.color = new THREE.Color(h.fx === 'quad4' ? 0xff7a2a : h.fx === 'tri3' ? 0xffd84a : 0xb89aff); }
+    if (h.fx === 'water') { base.map = null; base.color = new THREE.Color(0x6ac8ff); fm.color.set(0x6ac8ff); }
+    if (h.fx === 'debuffMark') { base.color = new THREE.Color(0xd89aff); }
     scene.add(g);
     const o = { g, base, fill, fm, ol, kind: h.kind, fx: h.fx };
     if (h.fx === 'otoshi' || h.fx === 'bomb') { const l = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffb060 })); l.scale.set(1, 1.3, 1); scene.add(l); o.lant = l; }
     return o;
   }
   function updHz(o, h, T) {
+    if (o.kind !== 'poly') { o.g.position.x = h.x; o.g.position.z = h.z; o.g.rotation.y = h.yaw; } // 向きを追う予告（連掌・水環めぐり）
     const pre = h.t < h.warn, p = Math.min(1, h.t / Math.max(0.01, h.warn));
     const visible = !(h.brief && pre && h.warn - h.t > h.brief);
     o.g.visible = visible;
     if (o.kind === 'path') { o.base.map.offset.y -= 0.03; o.base.opacity = 0.5 + Math.sin(T * 12) * 0.2; o.fill.visible = false; o.ol.userData.mat.color.set(0xff9ad8); }
+    else if (pre && o.kind === 'poly') { o.fm.opacity = 0.15 + p * 0.35; o.base.opacity = 0.32 + Math.sin(T * 14) * 0.08; o.ol.userData.mat.color.set(0xffc7a0); }
     else if (pre) { if (o.kind === 'fan' || o.kind === 'circle') o.fill.scale.set(p, 1, p); else o.fill.scale.set(1, 1, p); o.fm.opacity = 0.32; o.base.opacity = 0.32 + Math.sin(T * 14) * 0.08; o.ol.userData.mat.color.set(0xffc7a0); }
     else { o.fill.scale.set(1, 1, 1); o.fm.color.set(0xfff0c8); o.fm.opacity = 0.55 + Math.sin(T * 30) * 0.15; o.ol.userData.mat.color.set(0xffffff); }
     if (o.lant) { o.lant.visible = pre; const k = p; o.lant.position.set(h.x, 9 * (1 - k * k) + 0.3, h.z); }
@@ -6223,7 +6792,10 @@ const R = (() => {
       PJM.leaf = PJM.star;
       const ft = GFX.fudaTex(); PJM.fuda = [new THREE.PlaneGeometry(0.24, 0.42), GFX.lam(0xffffff, { map: ft, side: THREE.DoubleSide, emissive: 0x552211 })];
       PJM.lantern = PJM.fire;
-      PJM.reiko = [new THREE.SphereGeometry(0.3, 12, 10), new THREE.MeshBasicMaterial({ color: 0xd8ff8a })];
+      PJM.reiko = [new THREE.SphereGeometry(DATA.UENO.moves.reiko.r, 16, 12), new THREE.MeshBasicMaterial({ color: 0xd8ff8a, transparent: true, opacity: 0.85 })]; // 判定と同じ太さ（直径1.2m）
+      PJM.gun = [new THREE.CylinderGeometry(0.07, 0.07, 0.9, 8).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xfff6a0 })];
+      PJM.hoshi = [new THREE.OctahedronGeometry(0.3), new THREE.MeshBasicMaterial({ color: 0xffd84a })];
+      PJM.mizu = [new THREE.SphereGeometry(0.4, 12, 10), new THREE.MeshBasicMaterial({ color: 0x7ad0ff, transparent: true, opacity: 0.8 })];
     }
     const [g, m] = PJM[kind] || PJM.star; const mesh = new THREE.Mesh(g, m); scene.add(mesh); return mesh;
   }
@@ -6291,12 +6863,19 @@ const R = (() => {
     return { x: f[0], z: f[1], yaw: Math.atan2(-4.3 - f[0], 2 - f[1]), moving: false, act: '', st: 'ok' };
   }
   /* ---------- 上野編：駅前の広場 ---------- */
-  let UW = null; const ensureUeno = () => UW || (UW = GFX.buildUeno(scene));
+  let UW = null, SW = null; const ensureUeno = () => UW || (UW = GFX.buildUeno(scene)), ensureStreet = () => SW || (SW = GFX.buildStreet(scene));
   function syncUeno(v, T) {
-    const ue = v.stageId === 'ueno';
-    if (ue) { ensureUeno(); UW.root.visible = true; W.root.visible = false; if (TW) TW.root.visible = false; UW.update(T); }
-    else if (UW) UW.root.visible = false;
-    return ue;
+    const ue = v.stageId === 'ueno', st = v.stageId === 'ueno_street', ak = v.stageId && v.stageId.startsWith('akiba');
+    if (ue) { ensureUeno(); UW.root.visible = true; UW.update(T); } else if (UW) UW.root.visible = false;
+    if (st) { ensureStreet(); SW.root.visible = true; SW.update(T, v.X); } else if (SW) SW.root.visible = false;
+    if (ak && GFX.syncAkibaWorld) GFX.syncAkibaWorld(scene, v, T); else if (GFX.hideAkibaWorld) GFX.hideAkibaWorld();
+    if (ue || st || ak) { W.root.visible = false; if (TW) TW.root.visible = false; }
+    return ue || st || ak;
+  }
+  /** 居酒屋通りの始まり：改札を抜けて通りへ歩いてくる */
+  function streetPose(t, i, a0) {
+    const k = Math.max(0, Math.min(1, (t - 0.6 - i * 0.25) / 3.2)), e = k * k * (3 - 2 * k);
+    return { x: a0.x, z: -6.5 + (a0.z + 6.5) * e, yaw: 0, moving: k > 0 && k < 1, act: '', st: 'ok' };
   }
   function syncTrain(v, dt, T, me) {
     if (syncUeno(v, T)) return;
@@ -6342,7 +6921,8 @@ const R = (() => {
     const cut = v.stageId === 'joban' && v.stage === 'intro', cutT = v.introWait ? 0 : v.stageT, ot = outroT(v), outro = ot > 1.2;
     // 味方
     v.allies.forEach((a0, i) => {
-      const a = cut ? Object.assign({}, a0, introPose(cutT, i), { hpR: 1 }) : outro && a0.st !== 'gone' ? Object.assign({}, a0, outroPose(ot, i)) : a0;
+      const stIn = v.stageId === 'ueno_street' && v.stage === 'intro';
+      const a = cut ? Object.assign({}, a0, introPose(cutT, i), { hpR: 1 }) : stIn ? Object.assign({}, a0, streetPose(cutT, i, a0)) : outro && a0.st !== 'gone' ? Object.assign({}, a0, outroPose(ot, i)) : a0;
       let m = allies[i];
       if (!m || m.c.id !== a.ch) { if (m) { scene.remove(m.root); scene.remove(m.shadow); } m = GFX.makeChar(DATA.CHI[a.ch]); allies[i] = m; scene.add(m.root); scene.add(m.shadow); }
       GFX.animChar(m, a, T, dt, { me: i === me });
@@ -6372,7 +6952,7 @@ const R = (() => {
     } else if (boss) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }
     // 札小僧
     const seenM = new Set();
-    for (const e of v.mobs) { seenM.add(e.id); let m = mobs.get(e.id); if (!m) { m = e.yoshi ? GFX.makeYoshi(e.kind) : GFX.makeMob(); m.yoshi = e.yoshi; if (e.yoshi) m.root.scale.setScalar(0.4); mobs.set(e.id, m); scene.add(m.root); scene.add(m.shadow); burst('norm', 10, { x: e.x, y: 0.5, z: e.z, spd: 1.5, life: 0.6, s0: 0.4, s1: 0.8, c: e.yoshi ? 0xb8a8ff : 0xf0e8d8, a: 0.6 }); } if (m.yoshi) { GFX.animYoshi(m, e, T, dt); yoshiOcclude(m, e, v.allies[me]); } else GFX.animMob(m, e, T, dt); } // カメラのすぐ前の部下は消して視界をふさがない
+    for (const e of v.mobs) { seenM.add(e.id); let m = mobs.get(e.id); if (e.akiba) { if (!m) { m = GFX.makeAkiba(e.kind); mobs.set(e.id, m); scene.add(m.root); scene.add(m.shadow); } GFX.animAkiba(m, e, T, dt); continue; } if (!m) { m = e.yoshi ? GFX.makeYoshi(e.kind) : GFX.makeMob(); m.yoshi = e.yoshi; if (e.yoshi) m.root.scale.setScalar(0.4); mobs.set(e.id, m); scene.add(m.root); scene.add(m.shadow); burst('norm', 10, { x: e.x, y: 0.5, z: e.z, spd: 1.5, life: 0.6, s0: 0.4, s1: 0.8, c: e.yoshi ? 0xb8a8ff : 0xf0e8d8, a: 0.6 }); } if (m.yoshi) { GFX.animYoshi(m, e, T, dt); yoshiOcclude(m, e, v.allies[me]); } else GFX.animMob(m, e, T, dt); } // カメラのすぐ前の部下は消して視界をふさがない
     for (const [id, m] of mobs) if (!seenM.has(id)) { scene.remove(m.root); scene.remove(m.shadow); mobs.delete(id); }
     // 弾
     const seenP = new Set();
@@ -6381,9 +6961,20 @@ const R = (() => {
       m.position.set(p.x, p.kind === 'fuda' ? 0.6 : p.kind === 'reiko' ? 1.1 : 0.65, p.z); m.rotation.y = T * 12;
       if (p.kind === 'focus') m.scale.setScalar(Math.max(0.8, p.r / 0.45 * 1.2));
       if (p.kind === 'fuda') { m.rotation.set(0, p.yaw + T * 14, 0.3); }
+      if (p.kind === 'gun') { m.rotation.set(0, p.yaw, 0); m.position.y = 0.8; }
       if (Math.random() < (p.kind === 'fire' ? 0.9 : 0.5)) emit('add', { x: p.x, y: 0.65, z: p.z, life: 0.25, s0: p.kind === 'fire' ? 0.5 : 0.25, s1: 0.02, c: { star: 0xffe27a, can: 0xbfd8ff, focus: 0xfff6c0, fire: 0xff7a2a, mark: 0xff4a2a, fuda: 0xff8a6a, reiko: 0xc8ff6a }[p.kind] || 0xffffff });
     }
     for (const [id, m] of projs) if (!seenP.has(id)) { scene.remove(m); projs.delete(id); }
+    // 重玉（紫紺の球に金の輪・残り3秒で明滅）
+    const seenO = new Set();
+    for (const ob of v.orbs || []) {
+      seenO.add(ob.id); let m = orbs.get(ob.id);
+      if (!m) { m = new THREE.Group(); const ball = new THREE.Mesh(new THREE.SphereGeometry(DATA.SIM.orb.r, 18, 14), new THREE.MeshStandardMaterial({ color: 0x2a1f6a, emissive: 0x3a2a8a, emissiveIntensity: 0.6, metalness: 0.3, roughness: 0.3 })); m.add(ball); for (let i = 0; i < 2; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(DATA.SIM.orb.r + 0.07 + i * 0.05, 0.018, 6, 28), new THREE.MeshBasicMaterial({ color: 0xffd84a })); r.rotation.x = i ? 1.2 : 0.4; m.add(r); } m.userData.ball = ball; orbs.set(ob.id, m); scene.add(m); burst('add', 14, { x: ob.x, y: 0.4, z: ob.z, spd: 2, life: 0.5, s0: 0.3, s1: 0.05, c: 0xffd84a }); }
+      m.position.set(ob.x, 0.42 + Math.sin(T * 5 + ob.id) * 0.05, ob.z); m.rotation.y = T * 2; m.children[1].rotation.z = T * 3; m.children[2].rotation.y = T * 2.4;
+      m.visible = ob.life > 3 || Math.floor(T * 6) % 2 === 0;
+      if (Math.random() < 0.5) emit('add', { x: ob.x, y: 0.42, z: ob.z, life: 0.35, s0: 0.22, s1: 0.03, c: 0xb89aff });
+    }
+    for (const [id, m] of orbs) if (!seenO.has(id)) { scene.remove(m); orbs.delete(id); }
     // 予兆
     const seenH = new Set();
     for (const h of v.hz) { seenH.add(h.id); let o = hzs.get(h.id); if (!o) { o = makeHz(h); hzs.set(h.id, o); } updHz(o, h, T); }
@@ -6501,6 +7092,7 @@ const R = (() => {
         const a = v.allies[e.slot]; A('spCut', a ? a.x : null, a ? a.z : null);
         if (listeners.notice) listeners.notice({ k: 'sp', slot: e.slot, nm: e.nm, me: e.slot === me });
         if (a) burst('add', 24, { x: a.x, y: 0.6, z: a.z, spd: 3, up: 1, life: 0.6, s0: 0.35, s1: 0.03, c: SPC[e.ch] || 0xfff0c0 });
+        if (a && e.heavy) { A('bossDown', a.x, a.z, 0.6); for (let i = 0; i < 36; i++) { const g = i / 36 * Math.PI * 2; emit('add', { x: a.x + Math.cos(g) * 0.9, y: 0.1, z: a.z + Math.sin(g) * 0.9, vy: 2.2, life: 0.7, s0: 0.35, s1: 0.05, c: i % 2 ? 0xffd84a : 0x8a6aff }); } }
         break;
       }
       case 'sphit': {
@@ -6579,6 +7171,9 @@ const R = (() => {
       case 'bhit': A('crit', e.x, e.z); burst('add', 24, { x: e.x, y: 1.8, z: e.z, spd: 5, life: 0.4, s0: 0.4, s1: 0.05, c: e.n >= 2 ? 0xffffff : 0xff6a4a }); shake(0.2); break;
       case 'barrier': A(e.on ? 'protect' : e.broken ? 'crit' : 'ui', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); if (e.broken && v.boss) burst('add', 40, { x: v.boss.x, y: 1.8, z: v.boss.z, spd: 6, life: 0.6, s0: 0.5, s1: 0.05, c: 0x9ad0ff }); break;
       case 'warpIn': burst('add', 26, { x: e.x, y: 1.5, z: e.z, spd: 3, life: 0.5, s0: 0.45, s1: 0.05, c: 0xb89aff }); A('whoosh', e.x, e.z); break;
+      case 'orb': A('ready', e.x, e.z, 0.6); break;
+      case 'orbGet': A('pick', e.x, e.z); burst('add', 20, { x: e.x, y: 0.6, z: e.z, spd: 2.5, up: 1.5, life: 0.6, s0: 0.3, s1: 0.04, c: 0xffd84a }); if (listeners.notice) listeners.notice({ k: 'orb', slot: e.slot }); break;
+      case 'gun': A('shot_focus', e.x, e.z); burst('add', 10, { x: e.x + Math.sin(e.yaw) * 0.6, y: 0.8, z: e.z + Math.cos(e.yaw) * 0.6, spd: 3, life: 0.2, s0: 0.3, s1: 0.03, c: 0xfff6a0 }); break;
       case 'yLand': burst('norm', 6, { x: e.x, y: 0.2, z: e.z, spd: 1.5, life: 0.4, s0: 0.3, s1: 0.6, c: 0xd8d0e8, a: 0.6 }); break;
       case 'waveWarn': A('summon'); break;
       case 'sleep': A('bossDown'); break;
@@ -6665,13 +7260,17 @@ const R = (() => {
     const dist = fr.dist + cam.flyPull + (v.stageId === 'ueno' ? 2.2 : 0), p = cam.pitch * Math.PI / 180; // 上野は広いので少し引く（9〜13m）
     let cx = cam.fx - Math.sin(cam.yaw) * Math.cos(p) * dist, cz = cam.fz - Math.cos(cam.yaw) * Math.cos(p) * dist, cy = 0.5 + Math.sin(p) * dist;
     let lx = cam.fx, ly = 0.5, lz = cam.fz;
+    if (v.stageId === 'ueno_street' && v.stage === 'intro') { // 改札の先から、歩いてくる4体を見る
+      const t = v.introWait ? 0 : v.stageT, k = Math.min(1, t / DATA.STREET.introT), e = k * k * (3 - 2 * k);
+      cx = 2.8 - e * 2.8; cy = 2.2 + e * (cy - 2.2); cz = 7 + e * (cz - 7); lx = 0; ly = 1.0; lz = -4 + e * 6; cam.yaw = 0; cam.fx = a.x; cam.fz = a.z;
+    }
     // 登場演出（4.5秒・入力無効の間だけ低い視点）
     if (v.stage === 'intro' && B) {
       const t = v.introWait ? 0 : v.stageT, bx = B.x, bz = B.z;
       const shots = v.stageId === 'ueno' ? [ // 上野：部下の列の奥で指を鳴らす→通常のカメラへ
-        { t: 0, c: [0, 3.2, 7], l: [0, 1.2, 16] },
-        { t: 0.9, c: [2.5, 2.6, bz - 7], l: [bx, 2.6, bz] },
-        { t: 2.0, c: [1.5, 2.4, bz - 6], l: [bx, 2.8, bz] },
+        { t: 0, c: [0, 4.2, 6], l: [0, 1.6, 17] },
+        { t: 0.9, c: [4.5, 3.6, bz - 12.5], l: [bx, 4.2, bz] },
+        { t: 2.0, c: [2.5, 3.4, bz - 11.5], l: [bx, 4.6, bz] },
         { t: DATA.UENO.introT, c: [cx, cy, cz], l: [lx, ly, lz] },
         { t: DATA.UENO.introT + 1, c: [cx, cy, cz], l: [lx, ly, lz] },
       ] : [
@@ -6716,10 +7315,10 @@ const R = (() => {
     if (boss) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }
     for (const [, m] of mobs) { scene.remove(m.root); scene.remove(m.shadow); } mobs.clear();
     for (const [, m] of projs) scene.remove(m); projs.clear(); for (const [, o] of hzs) dropHz(o); hzs.clear();
-    for (const [, m] of traps) scene.remove(m); traps.clear(); for (const [, m] of picks) scene.remove(m); picks.clear();
+    for (const [, m] of traps) scene.remove(m); traps.clear(); for (const [, m] of picks) scene.remove(m); picks.clear(); for (const [, m] of orbs) scene.remove(m); orbs.clear();
     cam.lanT = 0; if (W) for (const L of W.lanternsStreet) if (L.lit) W.setStreetLantern(L, false);
     for (const p of [PA, PN]) if (p) for (const q of p.P) q.life = 0;
-    if (W && W.root) W.root.visible = true; if (TW) TW.root.visible = false; if (UW) UW.root.visible = false; if (JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; } JT.dist = 0; JT.rail = 0; JT.lcd = '';
+    if (W && W.root) W.root.visible = true; if (TW) TW.root.visible = false; if (UW) UW.root.visible = false; if (SW) SW.root.visible = false; if (GFX.hideAkibaWorld) GFX.hideAkibaWorld(); if (JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; } JT.dist = 0; JT.rail = 0; JT.lcd = '';
     for (const b of beams) scene.remove(b.g); beams.length = 0; resize();
   }
   function snapCam(v, me) { const a = v && v.allies[me]; if (!a) return; cam.fx = a.x; cam.fz = a.z; cam.yaw = 0; }
@@ -6783,6 +7382,7 @@ function onViewChange() { applyRotation(); R.resize(); layoutHud(); }
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id);
   $('#hud').hidden = !(G.mode === 'play' && !id);
+  if (id === 'team' && $('#btnWalkReplay')) $('#btnWalkReplay').hidden = !(G.teamMode === 'zukan' && typeof ACC === 'function' && ACC().walkSeen);
 }
 function goTitle() {
   if (G.session) { try { G.session.leave(); } catch (e) { } }
@@ -6859,7 +7459,16 @@ function bindMenus() {
   $('#btnPSave').onclick = () => doSave('pause');
   $('#btnQuit').onclick = () => { AUDIO.sfx('back'); goTitle(); }; // 撤退は報酬なし（記録もしない）
   $('#btnSkip').onclick = () => { const s = G.session; if (s && s.sim && s.sim.stage === 'intro' && s.kind === 'solo') s.sim.stageT = s.sim.introLen(); resume(); };
-  $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else if (G.nextPrep) { leaveBattle(); openPrep(); } else startSolo(G.stageId || 'senju'); };
+  $('#btnRetry').onclick = () => {
+    AUDIO.sfx('ok');
+    if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } return; }
+    const nx = G.next; G.next = null;
+    if (nx === 'street') { leaveBattle(); startSolo('ueno_street'); }
+    else if (nx === 'prep') { leaveBattle(); openPrep('ueno'); }
+    else if (nx === 'akiba') { leaveBattle(); openTeam('akiba'); }
+    else if (nx === 'prepAkiba') { leaveBattle(); openPrep('akiba_plaza'); }
+    else startSolo(G.stageId || 'senju');
+  };
   $('#btnReteam').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') G.session.backToLobby(); openLobby(); } else { leaveBattle(); openTeam('stage'); } };
   $('#btnResGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop && G.session) goTitle(); else leaveBattle(); openGacha(); };
   $('#btnResTitle').onclick = () => { AUDIO.sfx('back'); goTitle(); };
@@ -7114,7 +7723,7 @@ function startSolo(stageId) {
   G.stageId = stageOpen(stageId) ? stageId : 'senju';
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
   S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
-  const carry = G.stageId === 'ueno' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
+  const carry = G.stageId === 'ueno_street' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
   S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch), eq: eqOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
@@ -7145,7 +7754,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && G.m
 const LAYOUT = {
   land: { W: 844, H: 390,
     stick: { c: [92, 294], d: 120, ax: 'L', ay: 'B' }, bA: { c: [748, 294], d: 76, ax: 'R', ay: 'B' }, bX: { c: [663, 244], d: 64, ax: 'R', ay: 'B' }, bY: { c: [746, 207], d: 64, ax: 'R', ay: 'B' },
-    bSP: { c: [657, 324], d: 64, ax: 'R', ay: 'B' }, bB: { c: [184, 316], d: 52, ax: 'L', ay: 'B' }, bLock: { c: [786, 140], d: 48, ax: 'R', ay: 'T' }, bCam: { c: [728, 140], d: 48, ax: 'R', ay: 'T' },
+    bSP: { c: [657, 324], d: 64, ax: 'R', ay: 'B' }, bOrb: { c: [582, 296], d: 60, ax: 'R', ay: 'B' }, bB: { c: [184, 316], d: 52, ax: 'L', ay: 'B' }, bLock: { c: [786, 140], d: 48, ax: 'R', ay: 'T' }, bCam: { c: [728, 140], d: 48, ax: 'R', ay: 'T' },
     bI0: { c: [282, 266], d: 48, ax: 'L', ay: 'B' }, bI1: { c: [338, 266], d: 48, ax: 'L', ay: 'B' }, bSig: { c: [232, 206], d: 48, ax: 'L', ay: 'B' }, bMenu: { c: [656, 40], d: 48, ax: 'R', ay: 'T' },
     party: { r: [16, 16, 160, 204], ax: 'L', ay: 'T' }, bossbox: { r: [230, 10, 380, 40], ax: 'L', ay: 'T' }, mebox: { r: [260, 312, 260, 34], ax: 'L', ay: 'B' }, map: { r: [690, 16, 112, 92], ax: 'R', ay: 'T' }, timer: { r: [230, 54, 200, 24], ax: 'L', ay: 'T' },
     area: [0, 1] },
@@ -7153,7 +7762,7 @@ const LAYOUT = {
     bossbox: { r: [16, 10, 358, 40], ax: 'L', ay: 'T' }, party: { r: [16, 56, 358, 48], ax: 'L', ay: 'T', row: true }, map: { r: [278, 116, 96, 96], ax: 'R', ay: 'T' },
     bLock: { c: [246, 140], d: 48, ax: 'R', ay: 'T' }, bCam: { c: [190, 140], d: 48, ax: 'R', ay: 'T' }, bMenu: { c: [40, 140], d: 48, ax: 'L', ay: 'T' }, timer: { r: [72, 128, 120, 24], ax: 'L', ay: 'T' },
     stick: { c: [82, 742], d: 120, ax: 'L', ay: 'B' }, bA: { c: [314, 746], d: 76, ax: 'R', ay: 'B' }, bX: { c: [228, 690], d: 64, ax: 'R', ay: 'B' }, bY: { c: [314, 654], d: 64, ax: 'R', ay: 'B' },
-    bSP: { c: [230, 786], d: 64, ax: 'R', ay: 'B' }, bB: { c: [168, 742], d: 48, ax: 'L', ay: 'B' }, bI0: { c: [172, 610], d: 48, ax: 'L', ay: 'B' }, bI1: { c: [228, 610], d: 48, ax: 'L', ay: 'B' },
+    bSP: { c: [230, 786], d: 64, ax: 'R', ay: 'B' }, bOrb: { c: [300, 572], d: 60, ax: 'R', ay: 'B' }, bB: { c: [168, 742], d: 48, ax: 'L', ay: 'B' }, bI0: { c: [172, 610], d: 48, ax: 'L', ay: 'B' }, bI1: { c: [228, 610], d: 48, ax: 'L', ay: 'B' },
     bSig: { c: [44, 610], d: 48, ax: 'L', ay: 'B' }, mebox: { r: [16, 524, 220, 34], ax: 'L', ay: 'B' },
     area: [108, 604] },
 };
@@ -7244,6 +7853,7 @@ function bindHud() {
   btn('bX', () => press('X+', 'X'), () => release('X-', 'X'));
   btn('bY', () => press('Y+', 'Y'), () => release('Y-', 'Y'));
   btn('bSP', () => press('SP'));
+  btn('bOrb', () => press('O+'));
   btn('bB', () => press('B+', 'B'), () => release('B-', 'B'));
   btn('bLock', () => toggleLock());
   btn('bCam', () => { R.cam.reset = true; AUDIO.sfx('ui'); });
@@ -7253,7 +7863,7 @@ function bindHud() {
   document.querySelectorAll('#sigmenu button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); press('sig', undefined); const L = local(); if (L) { L.ev[L.ev.length - 1] = [L.evId, 'sig', b.dataset.sig]; } $('#sigmenu').hidden = true; AUDIO.sfx('ok'); }));
   $('#map').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); $('#map').classList.toggle('big'); sizeMapCanvas(); });
   // キーボード（パソコンでの確認用）
-  const KM = { KeyJ: ['A'], KeyK: ['X+', 'X', 'X-'], KeyL: ['Y+', 'Y', 'Y-'], KeyU: ['SP'], Space: ['B+', 'B', 'B-'], Digit1: ['I0'], Digit2: ['I1'] };
+  const KM = { KeyJ: ['A'], KeyK: ['X+', 'X', 'X-'], KeyL: ['Y+', 'Y', 'Y-'], KeyU: ['SP'], KeyO: ['O+'], Space: ['B+', 'B', 'B-'], Digit1: ['I0'], Digit2: ['I1'] };
   addEventListener('keydown', e => {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     if (e.code === 'Escape') { if (G.mode === 'play') pause(); else if (G.mode === 'pause') resume(); return; }
@@ -7332,6 +7942,7 @@ function onNotice(o) {
   if (o.k === 'sp') {
     if (o.me) { const c = $('#cutin'); $('#cutImg').src = G.thumbs[v.allies[o.slot].ch] || ''; $('#cutWho').textContent = 'P' + (o.slot + 1) + '　必殺技'; $('#cutNm').textContent = o.nm; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show'); }
     else notice(`P${o.slot + 1}：${o.nm}！`, 'sp', 1300);
+  } else if (o.k === 'orb') { notice(o.slot === G.my ? '重玉を拾った！「重玉」ボタンで強化必殺（効果2倍）' : `P${o.slot + 1}が重玉を拾った`, 'sp', 2200);
   } else if (o.k === 'boss') { const M = (G.v && G.v.stageId === 'ueno' ? DATA.UENO.moves : DATA.BMOVES)[o.mv]; if (M && o.mv !== 'cmd') notice(M.nm, 'boss', 1100); }
   else if (o.k === 'phase2') { banner('トバトーバンが本気を出した', '空を飛ぶ巡行が3回に増える。ミニマップと矢印を見よう', 2400); AUDIO.bgm('boss2'); }
   else if (o.k === 'unlock') { if (G.lock === 'boss') { G.lock = null; G.relockWanted = SET.relock; } notice('ボスが飛んだ！ 注目が外れた', 'warn', 1500); }
@@ -7378,6 +7989,7 @@ function onEvent(e, v) {
     case 'pick': if (e.slot === me) notice(DATA.ITEMS[e.it].nm + 'を拾った', '', 1000); break;
     case 'candy': notice('🍬 キャンディーが出た！（取ると全回復）', 'info', 1800); break;
     case 'eatCandy': notice(e.slot === me ? '🍬 キャンディーで全回復！' : `P${e.slot + 1}がキャンディーで全回復`, '', 1400); break;
+    default: akibaEvent(e, v);
   }
 }
 /* ---------- ダメージ数字 ---------- */
@@ -7416,9 +8028,9 @@ function trainHud(v) {
   const L = J.segLen[Math.min(3, tr.at)], frac = tr.ph === 'stop' ? 0 : Math.max(0, Math.min(1, (L - tr.rem) / L));
   const pos = Math.min(4, tr.at + frac) / 4; $('#rtFill').style.width = `calc(${pos.toFixed(4)} * (100% - 18px))`; $('#rtTr').style.left = at(pos);
   const nx = Math.min(4, tr.at + 1);
-  $('#rtNext').textContent = v.stage === 'arrive' || tr.at >= 4 ? '上野 到着' : tr.ph === 'stop' ? `${J.stations[tr.at]} 停車中` : tr.at === 3 && tr.rem > 300 && v.kills < v.total ? `車内の敵を倒すと上野に到着` : `次は ${J.stations[nx]}`;
+  $('#rtNext').textContent = v.stage === 'arrive' || tr.at >= 4 ? '上野 到着' : tr.ph === 'stop' ? `${J.stations[tr.at]} 停車中` : v.hold ? '上野進入待ち（車内の敵を倒すと到着）' : tr.at === 3 && tr.rem > 300 && v.kills < v.total ? `車内の敵を倒すと上野に到着` : `次は ${J.stations[nx]}`;
   const alive = v.mobs.filter(m => m.yoshi && !m.dying).length;
-  $('#rtKills').textContent = `撃破 ${v.kills}/${v.total}` + `・車内${alive}` + (v.wait ? `・待機${v.wait}` : '');
+  $('#rtKills').textContent = `撃破 ${v.kills}/${v.total}・車内${alive}` + (v.wait ? `・待機${v.wait}` : '') + (v.inF || v.waitF ? '・⬆前から' : '') + (v.inR || v.waitR ? '・⬇後ろから' : '');
 }
 
 /* ---------- HUD更新 ---------- */
@@ -7434,7 +8046,9 @@ function updateHud(v, dt) {
   // ボス
   const showBoss = jb ? v.stage !== 'intro' : v.boss && (v.stage === 'boss' || v.stage === 'won' || v.stage === 'lost');
   $('#bossbox').hidden = !showBoss;
-  const ue = v.stageId === 'ueno', U = v.U;
+  const ue = v.stageId === 'ueno', U = v.U, sr = v.stageId === 'ueno_street';
+  $('#bossbox').classList.toggle('street', sr);
+  if (sr) { $('#bossbox').hidden = v.stage === 'intro'; $('#bossNm').textContent = '上野の居酒屋通り'; $('#bossSt').textContent = `撃破 ${v.kills}/${v.total}・結界 ${v.X ? v.X.gate : 0}/3`; }
   $('#ueInfo').hidden = !(ue && showBoss);
   $('#bossbox').classList.toggle('ueno', ue);
   if (showBoss && !jb) {
@@ -7443,11 +8057,12 @@ function updateHud(v, dt) {
     $('#bossNm').textContent = ue ? 'ヨシノシン' : 'トバトーバン';
     $('#bossSt').textContent = b.st === 'sleep' ? '睡眠中・被ダメージ×2.25' : ue && U && U.pend >= 0 ? '睡眠準備' : b.st === 'down' ? 'ダウン中' : b.stun ? (ue ? 'よろめき' : '麻痺') : b.st === 'fly' ? '飛行中' : ue && U && U.sleepNear ? '睡眠チャージが近い' : b.defDown ? '守り↓' : '';
     if (ue && U) {
-      $('#ueMin').textContent = `部下 ${U.alive}/100${U.waveWait ? `（待機${U.waveWait}）` : ''}・増援まで${Math.ceil(U.waveIn)}秒`;
+      $('#ueMin').textContent = `部下${U.alive}/100${U.waveWait ? `(待${U.waveWait})` : ''}・増援${Math.ceil(U.waveIn)}秒`;
       const bb = $('#ueBar'); bb.hidden = !U.barrier; if (U.barrier) { bb.textContent = `バリア ${U.bhits}/2・${Math.max(0, Math.ceil(DATA.UENO.moves.barrier.max - U.barrierT))}秒`; bb.classList.toggle('hit', U.bhits >= 1); }
-      $('#ueLv').textContent = U.barrier ? '' : `Lv${U.lv} 与×${U.lvOut.toFixed(2)}/被×${U.lvIn.toFixed(2)}`;
+      $('#ueLv').textContent = '';
     }
   }
+  akibaHud(v);
   // 上野：睡眠チェックの10秒と合計ダメージ
   const sb = $('#sleepBox'), sleepOn = ue && U && U.sleep && v.stage === 'boss';
   sb.hidden = !sleepOn;
@@ -7471,6 +8086,7 @@ function updateHud(v, dt) {
     circ.setAttribute('stroke-dashoffset', String(113 * (1 - ratio)));
     t.hidden = !txt; t.textContent = txt;
   }
+  const ob = $('#bOrb'); ob.classList.toggle('on', !!me.orb); ob.classList.toggle('off', !me.orb || me.st !== 'ok'); $('#lOrb').textContent = me.orb ? '1' : 'なし';
   const spb = $('#bSP'); spb.classList.toggle('full', me.sp >= 100); $('#lSP').textContent = me.sp >= 100 ? '満タン' : me.sp + '%';
   if (me.sp >= 100 && !G.spReadyShown) { G.spReadyShown = true; AUDIO.sfx('ready'); } if (me.sp < 100) G.spReadyShown = false;
   $('#lB').textContent = me.ctx === 'lantern' ? '灯す' : '走る';
@@ -7517,8 +8133,10 @@ function overlays(v, me) {
   });
   for (const mo of v.mobs) {
     if (mo.dying) continue; const d = Math.hypot(mo.x - me.x, mo.z - me.z); if (d > 16 && G.lock !== mo.id) continue;
-    put('m' + mo.id, mo.x, 1.15, mo.z, () => { const e = el('div', 'label3d'); const hp = el('div', 'mini hp'); hp.style.width = '34px'; const hi = el('i'); hi.style.background = '#ff6a5a'; hp.appendChild(hi); e.appendChild(hp); return { e, hi }; }, o => setBar(o.hi, mo.hpR));
+    put('m' + mo.id, mo.x, mo.akiba && DATA.AKIBA.foes[mo.kind] ? DATA.AKIBA.foes[mo.kind].h * (DATA.AKIBA.foes[mo.kind].scale || 1) + 0.3 : 1.15, mo.z, () => { const e = el('div', 'label3d'); const hp = el('div', 'mini hp'); hp.style.width = '34px'; const hi = el('i'); hi.style.background = '#ff6a5a'; hp.appendChild(hi); e.appendChild(hp); return { e, hi }; }, o => setBar(o.hi, mo.hpR));
   }
+  for (const h of v.hz) if (h.num && h.t < h.warn + 0.05) put('hz' + h.id, h.x, 0.2, h.z, () => { const e = el('div', 'hznum'); return { e }; }, o => { o.e.textContent = String(h.num); o.e.style.opacity = 0.6 + 0.4 * Math.min(1, h.t / h.warn); }); // 天蓋乱射の着弾順
+  for (const ob of v.orbs || []) if (ob.life <= 3) put('ob' + ob.id, ob.x, 0.9, ob.z, () => ({ e: el('div', 'orbt') }), o => { o.e.textContent = Math.ceil(ob.life) + '秒'; });
   if (v.boss && (v.stage === 'boss') && v.boss.st !== 'dead') edge('boss', v.boss.x, v.boss.y + 2, v.boss.z, '#cb4b46', v.boss.st === 'fly' ? '飛行' : 'ボス');
   // 注目のレティクル
   let tgt = null; if (G.lock === 'boss' && v.boss) tgt = { x: v.boss.x, y: v.boss.y + 2.6, z: v.boss.z }; else if (G.lock) { const mo = v.mobs.find(q => q.id === G.lock); if (mo) tgt = { x: mo.x, y: 0.6, z: mo.z }; else G.lock = null; }
@@ -7545,6 +8163,8 @@ function drawMap(v) {
   const c = $('#mapc'); const g = c.getContext('2d'); const W = c.width, H = c.height; g.clearRect(0, 0, W, H);
   if (v.stageId === 'joban') return drawTrainMap(v, g, W, H);
   if (v.stageId === 'ueno') return drawUenoMap(v, g, W, H);
+  if (v.stageId === 'ueno_street') return drawStreetMap(v, g, W, H);
+  if (v.stageId && v.stageId.startsWith('akiba') && typeof drawAkibaMap === 'function') return drawAkibaMap(v, g, W, H);
   const big = $('#map').classList.contains('big');
   const me = v.allies[G.my];
   const inPlaza = v.stage !== 'street';
@@ -7580,6 +8200,16 @@ function drawMap(v) {
   const [mx, mz] = P(me.x, me.z), cy = R.cam.yaw; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy - 0.45) * 28, mz - Math.cos(cy - 0.45) * 28); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy + 0.45) * 28, mz - Math.cos(cy + 0.45) * 28); g.stroke();
 }
 
+/** 居酒屋通りのミニマップ：細長い通り。上が奥 */
+function drawStreetMap(v, g, W, H) {
+  const D = DATA.STREET, me = v.allies[G.my], span = 26, z0 = Math.max(0, Math.min(D.zMax - span, me.z - 8)), sc = H / span;
+  const P = (x, z) => [W / 2 - x * sc, H - (z - z0) * sc];
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, W, H);
+  let [a1] = P(D.halfX, 0), [a2] = P(-D.halfX, 0); g.fillStyle = '#5a5060'; g.fillRect(Math.min(a1, a2), 0, Math.abs(a2 - a1), H);
+  const gate = v.X ? v.X.gate : 0; D.gates.forEach((gz, i) => { if (i < gate) return; const [, y] = P(0, gz); g.fillStyle = '#b06aff'; g.fillRect(Math.min(a1, a2), y - 2, Math.abs(a2 - a1), 4); });
+  for (const m of v.mobs) { if (m.dying) continue; const [x, z] = P(m.x, m.z); if (z < -4 || z > H + 4) continue; g.fillStyle = m.kind === 'beam' ? '#c8ff6a' : '#ff5a4a'; g.beginPath(); g.arc(x, z, 3, 0, 7); g.fill(); }
+  v.allies.forEach((a, i) => { if (a.st === 'gone') return; const [x, z] = P(a.x, a.z); g.fillStyle = i === G.my ? '#fff' : pcol(i); g.beginPath(); g.arc(x, z, i === G.my ? 5.5 : 4.5, 0, 7); g.fill(); });
+}
 /** 上野のミニマップ：広場（34m×28m）。上が奥（駅舎） */
 function drawUenoMap(v, g, W, H) {
   const D = DATA.UENO, me = v.allies[G.my], sc = Math.min(W / (D.halfX * 2 + 2), H / (D.zMax + 2));
@@ -7620,14 +8250,14 @@ function drawTrainMap(v, g, W, H) {
 function showResult(v) {
   if (G.resultShown) return; G.resultShown = true; G.mode = 'result';
   const S = G.session, win = v.result && v.result.win, st = v.stageId || 'senju';
-  const jb = st === 'joban', ue = st === 'ueno', firstClear = win && !cleared(st);
+  const jb = st === 'joban', ue = st === 'ueno', sr = st === 'ueno_street', ak = st.startsWith('akiba'), firstClear = win && !cleared(st);
   const res = checkpoint(v, true, '戦いが終わった');
   if (win) G.sessClear[st] = true;
-  const T = { senju: ['トバトーバンを鎮めた！', '北千住（トバトーバン）'], joban: ['上野に到着！', '常磐線（北千住→上野）'], ueno: ['ヨシノシンを鎮めた！', '上野駅前（ヨシノシン）'] }[st];
+  const T = { senju: ['トバトーバンを鎮めた！', '北千住（トバトーバン）'], joban: ['上野に到着！', '常磐線（北千住→上野）'], ueno_street: ['居酒屋通りを突破！', '上野の居酒屋通り'], ueno: ['ヨシノシンを鎮めた！', '上野駅前（ヨシノシン）'], akiba_platform: ['ホームの2人を倒した！', '秋葉原駅ホーム（オガ・カエ）'], akiba_plaza: ['星と中を鎮めた！', '秋葉原駅前広場（星・中）'] }[st];
   $('#resEyebrow').textContent = win ? (jb ? '電車クリア' : '勝利') : '敗北'; $('#resTitle').textContent = win ? T[0] : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
   const kv = $('#resKv'); kv.textContent = '';
   const rows = [['ステージ', T[1]], ['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : `協力プレイ（${v.H || 1}人）`]];
-  if (jb || ue) rows.splice(2, 0, ['倒した部下', ue ? `${v.kills}体` : `${v.kills} / ${v.total}`]);
+  if (jb || ue || sr) rows.splice(2, 0, ['倒した部下', ue ? `${v.kills}体` : `${v.kills} / ${v.total}`]);
   for (const [k, val] of rows) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
   const grid = $('#resGrid'); grid.textContent = '';
   const stats = S.sim ? S.sim.allies.map(a => a.stats) : null;
@@ -7635,14 +8265,19 @@ function showResult(v) {
   renderResExp(res);
   let msg = '';
   if (st === 'senju') msg = win ? (firstClear ? '🔓 上野編「常磐線」が解放された！（推奨Lv20）' : '') : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
-  else if (jb) msg = win ? (res && res.unlocked === 'ueno' ? '🔓 上野のヨシノシン戦が解放された！（推奨Lv40）　電車の報酬は確定しました。' : '電車の報酬は確定しました。') : 'もう一度挑戦できます。狭い車内では囲まれないように、救助の円とキャンディーを使おう。';
-  else msg = win ? 'ヨシノシンを鎮めた！' : 'ボスから再挑戦できます（電車をやり直す必要はありません）。';
+  else if (jb) msg = win ? (res && res.unlocked === 'ueno_street' ? '🔓 上野の居酒屋通りと、装備の2枠目が解放された！　電車の報酬は確定しました。' : '電車の報酬は確定しました。') : 'もう一度挑戦できます。前後から来るので、救助の円とキャンディーを使おう。';
+  else if (sr) msg = win ? (res && res.unlocked === 'ueno' ? '🔓 上野駅前のヨシノシン戦が解放された！（推奨Lv40）　通りの報酬は確定しました。' : '通りの報酬は確定しました。') : 'もう一度挑戦できます。';
+  else if (ue) msg = win ? (res && res.unlocked === 'akiba_platform' ? '🔓 秋葉原編が解放された！（推奨Lv60）' : 'ヨシノシンを鎮めた！') : 'ボスから再挑戦できます（電車と通りをやり直す必要はありません）。';
+  else if (st === 'akiba_platform') msg = win ? '🔓 秋葉原駅前広場が解放された！　ホームの報酬は確定しました。' : 'もう一度挑戦できます。前方の攻撃をよけて背後へ回ろう。';
+  else msg = win ? '星と中を鎮めた！　秋葉原編クリア！' : 'ボスから再挑戦できます（ホームをやり直す必要はありません）。星と中は、片方を倒してから15秒以内にもう片方も。';
   $('#resReward').textContent = msg;
   const host = S.kind !== 'client';
-  G.nextPrep = !G.coop && jb && win;
-  G.carry = G.nextPrep ? v.allies.map(a => a.items.map(i => i.n)) : null;
+  // 次へ進むボタン：電車→居酒屋通り→ボスの準備→秋葉原（徒歩の演出）→駅前広場の準備
+  G.next = G.coop ? null : !win ? null : jb ? 'street' : sr ? 'prep' : ue ? 'akiba' : st === 'akiba_platform' ? 'prepAkiba' : null;
+  G.nextPrep = G.next === 'prep';
+  G.carry = G.next === 'street' ? v.allies.map(a => a.items.map(i => i.n)) : null; // 電車から通りへ続けるときだけ所持数を引き継ぐ（無限に増やさない）
   $('#btnRetry').hidden = !host; $('#btnReteam').hidden = !host && G.coop;
-  $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : G.nextPrep ? '上野へ進む' : ue && !win ? 'ボスから再挑戦' : '再出動';
+  $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : { street: '居酒屋通りへ進む', prep: '上野ボスの準備へ', akiba: '秋葉原へ進む', prepAkiba: '駅前広場の準備へ' }[G.next] || ((ue || st === 'akiba_plaza') && !win ? 'ボスから再挑戦' : '再出動');
   $('#btnResGacha').hidden = !(res && res.ticket > 0) && !((G.acct || G.guest).tickets > 0);
   if (!host) $('#resReward').textContent += '　ホストがロビーへ戻ると次の戦いを始められます。';
   refreshResSave();
@@ -7678,7 +8313,8 @@ function frame(ts) {
         stepDmg(dt);
         if ((v.stage === 'won' || v.stage === 'lost') && v.stageT > (v.stage === 'won' ? 3.4 : 2.6) && G.mode === 'play') showResult(v);
       }
-    } else titleCam(G.T);
+    } else if (G.mode === 'walk') { let end = true; try { end = WALK.step(dt, G.T); } catch (e) { console.error(e); } if (end) finishWalk(false); }
+    else titleCam(G.T);
   } catch (e) { console.error(e); }
   R.render(dt);
   requestAnimationFrame(frame);
@@ -7758,9 +8394,14 @@ function renderSortie() {
   G.party.forEach((id, i) => { const m = el('span', 'mini'); const im = el('img'); im.src = G.thumbs[id] || ''; im.alt = ''; m.append(im, el('span', '', `${DATA.CHI[id].nm} Lv${lvOf(id)}${i ? '（AI）' : ''}`)); sp.appendChild(m); });
 }
 /* ---------- 上野の準備（電車クリアのあと） ---------- */
-function openPrep() {
-  fixParty(); const kv = $('#prepKv'); kv.textContent = ''; const P = avgLv(G.party);
-  for (const [k, v] of [['推奨Lv', '40'], ['いまの平均Lv', String(P)], ['編成', G.party.map(id => `${DATA.CHI[id].nm} Lv${lvOf(id)}`).join('・')], ['回復', 'HP・スタミナ全回復、気絶は解除、必殺ゲージは50%から']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
+/** ボス戦の準備（上野ボス／秋葉原の駅前広場）。HP・スタミナ全回復、気絶解除、妖気は最低50、重玉は0 */
+function openPrep(st) {
+  st = st || G.prepStage || 'ueno'; G.prepStage = st;
+  fixParty(); const kv = $('#prepKv'); kv.textContent = ''; const P = avgLv(G.party), ak = st === 'akiba_plaza', k = DATA.lvAdjust(ak ? 'akiba' : 'ueno', P);
+  $('#prepEyebrow').textContent = ak ? '秋葉原駅前' : '上野駅前'; $('#prepTitle').textContent = ak ? '星と中が待っている' : 'ヨシノシンが待っている';
+  $('#prepLead').textContent = ak ? 'ホームの報酬は確定しました。装備・アイテムを見直してから挑めます。' : '居酒屋通りの報酬は確定しました。このまま挑むか、編成・装備を見直してから挑めます。';
+  $('#btnPrepGo').textContent = ak ? 'このまま駅前広場へ' : 'このままヨシノシンへ';
+  for (const [kk, v] of [['推奨Lv', ak ? '60' : '40'], ['いまの平均Lv', String(P)], ['Lv補正', `与えるダメージ×${k.out.toFixed(2)}・受けるダメージ×${k.in.toFixed(2)}`], ['編成', G.party.map(id => `${DATA.CHI[id].nm} Lv${lvOf(id)}${eqOf(id).length ? '（' + eqOf(id).map(e => DATA.EQUIP_I[e].ic).join('') + '）' : ''}`).join('・')], ['回復', 'HP・スタミナ全回復、気絶は解除、必殺ゲージは50%から、重玉は0']]) { kv.appendChild(el('b', '', kk)); kv.appendChild(el('span', '', v)); }
   show('prep');
 }
 /** 戦闘から抜けて（結果を見たあと）メニューへ */
@@ -7952,7 +8593,7 @@ function bindHub() {
   $('#btnEquip').onclick = () => { AUDIO.sfx('ok'); openTeam('title'); mtoast('キャラを選ぶと、右の詳細で装備を付け替えられます', 3000); };
   $('#btnStageHub').onclick = () => { AUDIO.sfx('back'); show('title'); };
   document.querySelectorAll('#chTabs .tab').forEach(t => t.onclick = () => { AUDIO.sfx('ui'); G.chTab = +t.dataset.ch; renderSortie(); });
-  $('#btnPrepGo').onclick = () => { AUDIO.sfx('ok'); startSolo('ueno'); };
+  $('#btnPrepGo').onclick = () => { AUDIO.sfx('ok'); startSolo(G.prepStage || 'ueno'); };
   $('#btnPrepTeam').onclick = () => { AUDIO.sfx('ok'); G.carry = null; openTeam('prep'); };
   $('#btnPrepHub').onclick = () => { AUDIO.sfx('back'); G.carry = null; show('title'); };
   $('#btnRecommend').onclick = () => { AUDIO.sfx('ok'); recommendParty(); renderTeam(); mtoast('おすすめ編成にしました（いつでも戻せます）'); };
@@ -8173,7 +8814,199 @@ function bindGacha() {
 }
 bindGacha();
 
-window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX, THREE, GC };
+/* ===== ui_akiba.js ===== */
+/* =====================================================================
+   ui_akiba.js — 秋葉原編の画面表示
+   ・上の体力：星・中（太いバー）／オガ・カエ（細いバー）の2×2。倒れた双子は「復活まで○秒」
+   ・双子の15秒の残り時間、図形の必殺の名前、相方を守る・復活などのお知らせ
+   ・ミニマップ（ホーム：縦長／広場：28m四方）
+   ===================================================================== */
+const AK_WHO = ['hoshi', 'naka', 'oga', 'kae'];
+const AK_NM = { hoshi: '星', naka: '中', oga: 'オガ', kae: 'カエ' };
+const AK_COL = { hoshi: '#f2c94c', naka: '#9ad0ff', oga: '#ff7a5a', kae: '#6ad8a8' };
+function akibaGridInit() {
+  const g = $('#akGrid'); if (g.childElementCount) return;
+  for (const w of AK_WHO) {
+    const d = el('div', 'ak' + (w === 'oga' || w === 'kae' ? ' thin' : '')); d.id = 'ak_' + w;
+    const nm = el('div', 'nm'); nm.appendChild(el('span', 'n', AK_NM[w])); nm.appendChild(el('span', 's', '')); d.appendChild(nm);
+    const bar = el('div', 'hpbar'); const f = el('i', 'fill'); f.style.background = AK_COL[w]; bar.appendChild(f); d.appendChild(bar);
+    g.appendChild(d);
+  }
+}
+/** 毎フレーム：体力2×2と双子の残り時間 */
+function akibaHud(v) {
+  const box = $('#bossbox'), on = v.stageId && v.stageId.startsWith('akiba');
+  box.classList.toggle('akiba', !!on);
+  const tm = $('#timer');
+  if (!on) { $('#akTwin').hidden = true; if (tm.style.marginTop) tm.style.marginTop = ''; return; }
+  akibaGridInit();
+  const X = v.X || {}, plaza = v.stageId === 'akiba_plaza';
+  box.hidden = v.stage === 'intro' && !plaza;
+  for (const w of AK_WHO) {
+    const d = $('#ak_' + w), m = v.mobs.find(o => o.akiba && o.kind === w);
+    d.hidden = !m || (!plaza && (w === 'hoshi' || w === 'naka'));
+    if (!m) continue;
+    const hp = Math.round(m.hpR * (m.maxHp || 0)), down = m.down || (m.dying ? 1 : 0);
+    setBar(d.querySelector('.fill'), m.hpR);
+    let s = down ? '' : hp.toLocaleString();
+    if (down) {
+      if (plaza && X.twinDown === w && X.twinT > 0) s = `復活まで${X.twinT.toFixed(1)}秒`;
+      else if (w === 'oga' || w === 'kae') s = plaza && v.stage === 'intro' ? '起こされる…' : '退場';
+      else s = 'ダウン';
+    } else if (m.buff) s += '・守り↑';
+    d.querySelector('.s').textContent = s;
+    d.classList.toggle('down', !!down);
+    d.classList.toggle('thin', w === 'oga' || w === 'kae');
+  }
+  // 双子：片方が倒れてからの15秒
+  const tw = $('#akTwin'), twOn = plaza && X.twinDown && X.twinT > 0 && v.stage === 'boss';
+  tw.hidden = !twOn;
+  if (twOn) { const other = X.twinDown === 'hoshi' ? 'naka' : 'hoshi'; tw.textContent = `${AK_NM[X.twinDown]}が倒れた！ ${X.twinT.toFixed(1)}秒以内に${AK_NM[other]}も倒せ`; tw.classList.toggle('hurry', X.twinT < 5); }
+  $('#bossSt').textContent = '';
+  // 時計は体力表の下へずらす（重ならない）
+  const over = box.hidden ? 0 : Math.max(0, box.offsetTop + box.offsetHeight + 4 - tm.offsetTop + (parseFloat(tm.style.marginTop) || 0));
+  tm.style.marginTop = over ? over + 'px' : '';
+}
+/** 秋葉原の出来事のお知らせ（onEvent の続き） */
+function akibaEvent(e, v) {
+  const N = w => AK_NM[w] || w;
+  switch (e.type) {
+    case 'twinDown': banner(`${N(e.who)}が倒れた！`, `15秒以内に${N(e.other)}も倒せ（間に合わないと${N(e.who)}がHP4,000で復活）`, 2200); break;
+    case 'twinRevive': notice(`${N(e.who)}が復活した（HP4,000）。もう一度、2人を15秒以内に`, 'warn', 2600); break;
+    case 'akDown': if (e.who === 'oga' || e.who === 'kae') notice(`${N(e.who)}を倒した！${v.stageId === 'akiba_plaza' ? '（もう起きない）' : ''}`, 'sp', 1600); break;
+    case 'akRevive': notice(`星と中が光の糸で${N(e.who)}を起こした（HP4,000）`, 'boss', 2200); break;
+    case 'akGuard': notice(`${N(e.who)}が相方を守る！ ようりょく↑（6秒）`, 'boss', 1800); break;
+    case 'geo': {
+      const whos = (e.whos || []).map(N).join('・'), nm = e.n === 2 ? '二点結び' : e.n === 3 ? '三角結界' : '四角結界';
+      const how = e.n === 2 ? '光の線から横へ離れろ！' : e.n === 3 ? '三角の外へ出ろ！' : '四角の火床から出ろ！（3秒続く）';
+      banner(`${whos}：${nm}！`, how, 1800); break;
+    }
+    case 'geoCancel': notice('図形の必殺が途切れた（結ぶ相手が倒れた）', 'sp', 1500); break;
+    case 'akMark': if (e.slot === G.my) notice('足もとに印！ その場から離れよう', 'warn', 1200); break;
+  }
+}
+/** ミニマップ：ホーム（18m×26m）／広場（28m四方）。上が奥 */
+function drawAkibaMap(v, g, W, H) {
+  const D = DATA.AKIBA, plaza = v.stageId === 'akiba_plaza';
+  const hx = plaza ? D.plaza.half : D.platform.halfX, z0 = plaza ? -D.plaza.half : 0, z1 = plaza ? D.plaza.half : D.platform.zMax;
+  const sc = Math.min(W / (hx * 2 + 2), H / (z1 - z0 + 2)), cz = (z0 + z1) / 2;
+  const P = (x, z) => [W / 2 - x * sc, H / 2 - (z - cz) * sc];
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, W, H);
+  const [a1, b1] = P(hx, z1), [a2, b2] = P(-hx, z0); g.fillStyle = plaza ? '#6a6676' : '#8a8680'; g.fillRect(Math.min(a1, a2), Math.min(b1, b2), Math.abs(a2 - a1), Math.abs(b2 - b1));
+  if (!plaza) { const [tx] = P(D.platform.halfX, 0); g.fillStyle = '#f2c94c'; g.fillRect(tx - 1, Math.min(b1, b2), 2, Math.abs(b2 - b1)); } // 線路側
+  for (const h of v.hz) { if (h.kind !== 'poly' || !h.pts) continue; g.fillStyle = 'rgba(255,90,200,.35)'; g.beginPath(); h.pts.forEach((p, i) => { const [x, z] = P(p[0], p[1]); i ? g.lineTo(x, z) : g.moveTo(x, z); }); g.closePath(); g.fill(); }
+  for (const m of v.mobs) { if (!m.akiba) continue; const [x, z] = P(m.x, m.z); g.globalAlpha = m.down ? 0.35 : 1; g.fillStyle = AK_COL[m.kind] || '#ff5a4a'; g.beginPath(); g.arc(x, z, m.kind === 'hoshi' || m.kind === 'naka' ? 6 : 5, 0, 7); g.fill(); g.strokeStyle = '#1a1030'; g.lineWidth = 1.5; g.stroke(); g.globalAlpha = 1; }
+  v.allies.forEach((a, i) => { if (a.st === 'gone') return; const [x, z] = P(a.x, a.z); g.fillStyle = i === G.my ? '#fff' : pcol(i); g.beginPath(); g.arc(x, z, i === G.my ? 5 : 4, 0, 7); g.fill(); });
+}
+
+/* ===== ui_walk.js ===== */
+/* =====================================================================
+   ui_walk.js — 上野→御徒町→秋葉原の徒歩演出（15秒・戦闘なし）
+   ・ヨシノシンが倒れるショット（勝利の見せ直し。報酬・再戦なし）→ 上野駅 → 飲み屋街 → 御徒町駅 → 高架下 → 秋葉原駅
+   ・カットでつなぐ編集された移動。歩く速さに合わせて歩行周期を進める（足が滑らない）
+   ・駅名は画面に平面の文字も出す。スキップ可。終わると秋葉原駅ホームの戦闘へ
+   ===================================================================== */
+const WALK = (() => {
+  const LEN = 15, SPD = 1.8;
+  // 4体の並び（二列・少しずらして先頭が後ろを隠し続けない）
+  const FORM = [[-0.75, 0], [0.8, -0.35], [-0.95, -1.5], [0.6, -1.85]];
+  // ショット：t0〜t1 のあいだ z0 から速さ spd で進む
+  const SHOTS = [
+    { t0: 0, t1: 3, boss: true },
+    { t0: 3, t1: 5, z0: 1.5, spd: SPD, cam: (zc, k) => [3.6 - k * 1.2, 1.7, zc + 4.2], look: zc => [-1.5, 1.6, zc + 1.5] },
+    { t0: 5, t1: 7, z0: 30, spd: SPD, cam: (zc, k) => [-3.2 + k * 1.0, 1.5, zc + 3.4], look: zc => [0.5, 1.1, zc] },
+    { t0: 7, t1: 10, z0: 61.2, spd: 1.25, okachi: true, cam: (zc, k) => [-2.6, 1.4 + k * 0.25, 69.6 - k * 0.6], look: zc => [2.6, 1.9, zc + 1] },
+    { t0: 10, t1: 12, z0: 80, spd: SPD, cam: (zc, k) => [2.6, 1.3, zc + 3.4 - k * 0.8], look: zc => [0, 1.6, zc] },
+    { t0: 12, t1: 15, z0: 112, spd: SPD, stop: 14.3, cam: (zc, k) => [2.6 - k * 1.0, 1.35 + k * 0.3, zc - 6.4 - k * 0.8], look: (zc, k) => [0, 2.4 + k * 0.8, 124] },
+  ];
+  const CAPS = [[3.1, 5.0, '上野駅', 'UENO'], [7.3, 9.9, '御徒町駅', 'OKACHIMACHI'], [12.4, 15.1, '秋葉原駅', 'AKIHABARA']];
+  let W = null;
+  function shotAt(t) { for (const s of SHOTS) if (t < s.t1) return s; return SHOTS[SHOTS.length - 1]; }
+  function start(party, done) {
+    const scene = R.scene;
+    if (!W || !W.world) { W = W || {}; W.world = GFX.buildWalk(scene); }
+    // 戦闘用の世界はいったん隠す（終わったら元へ戻す）
+    W.hidden = []; for (const o of scene.children) if (o !== W.world.root && o.visible) { o.visible = false; W.hidden.push(o); }
+    W.world.root.visible = true;
+    W.chars = party.slice(0, 4).map(ch => { const m = GFX.makeChar(DATA.CHI[ch]); scene.add(m.root); scene.add(m.shadow); return m; });
+    W.boss = GFX.makeYoshinoshin(); scene.add(W.boss.root); scene.add(W.boss.shadow);
+    W.t = 0; W.done = done; W.capI = -1; W.end = false;
+    $('#walk').hidden = false; $('#wkCap').className = 'wk-cap'; $('#wkTitle').className = 'wk-title';
+    R.camera.clearViewOffset();
+    AUDIO.bgm('title');
+  }
+  function stop() {
+    if (!W || !W.chars) return;
+    const scene = R.scene;
+    for (const m of W.chars) { scene.remove(m.root); scene.remove(m.shadow); }
+    scene.remove(W.boss.root); scene.remove(W.boss.shadow);
+    W.chars = null; W.boss = null; W.world.root.visible = false;
+    for (const o of W.hidden) o.visible = true; W.hidden = [];
+    $('#walk').hidden = true;
+  }
+  /** 1フレーム進める。終わったら true */
+  function step(dt, T) {
+    if (!W || !W.chars) return true;
+    W.t += dt; const t = W.t, s = shotAt(t), cam = R.camera;
+    // ヨシノシン（倒れるショットだけ）
+    const bossOn = !!s.boss;
+    W.boss.root.visible = W.boss.shadow.visible = bossOn;
+    if (bossOn) GFX.animYoshinoshin(W.boss, { x: 0, z: -8.5, y: 0, yaw: 0, st: 'dead', t: Math.min(t, 2.6) * 0.75 }, T, dt, {});
+    W.boss.root.visible = W.boss.shadow.visible = bossOn;
+    let zc = 0;
+    W.chars.forEach((m, i) => {
+      const f = FORM[i];
+      let a;
+      if (s.boss) { // 手前へ並んでヨシノシンへ振り向く
+        a = { x: [-1.6, -0.55, 0.55, 1.6][i], z: 0.6 + (i % 2) * 0.25, yaw: t < 1.4 ? Math.PI : Math.PI - Math.min(1, (t - 1.4) / 0.5) * Math.PI, moving: false, act: '', st: 'ok', slot: i };
+      } else {
+        const tt = Math.min(t, s.stop || s.t1) - s.t0, z = s.z0 + s.spd * tt + f[1];
+        const moving = !(s.stop && t >= s.stop);
+        let yaw = 0;
+        if (s.okachi && t > 7.6 && t < 9.6) yaw = Math.atan2(6.6 - f[0], 66 - z) * 0.55; // 駅名へ顔を向ける
+        a = { x: f[0], z, yaw, moving, act: '', st: 'ok', slot: i };
+        if (i === 0) zc = s.z0 + s.spd * tt;
+      }
+      // 歩行周期を速さへ合わせる（animChar は 10rad/秒 ≒ 1.75m/秒で一周期分の歩幅）
+      const k = a.moving ? (s.spd || SPD) / 1.75 / Math.max(0.6, m.h || 1) : 1;
+      GFX.animChar(m, a, T, dt * k, { me: false });
+    });
+    // カメラ
+    if (s.boss) {
+      const k = Math.min(1, t / 3), e = k * k * (3 - 2 * k);
+      cam.position.set(0.4, 4.6 - e * 3.4, 9.5 - e * 5.8);
+      cam.lookAt(0, 3.6 - e * 2.7, -6 + e * 6);
+    } else {
+      const k = (t - s.t0) / (s.t1 - s.t0), p = s.cam(zc, k), l = s.look(zc, k);
+      cam.position.set(p[0], p[1], p[2]); cam.lookAt(l[0], l[1], l[2]);
+    }
+    const wf = cam.aspect < 1 ? 78 : 55; if (Math.abs(cam.fov - wf) > 0.1) { cam.fov = wf; cam.updateProjectionMatrix(); }
+    // 画面の文字
+    let ci = -1; CAPS.forEach((c, i) => { if (t >= c[0] && t < c[1]) ci = i; });
+    if (ci !== W.capI) { W.capI = ci; const el = $('#wkCap'); if (ci >= 0) { el.innerHTML = `${CAPS[ci][2]}<small>${CAPS[ci][3]}</small>`; el.className = 'wk-cap on'; } else el.className = 'wk-cap'; }
+    $('#wkTitle').className = t > 13.2 ? 'wk-title on' : 'wk-title';
+    return t >= LEN;
+  }
+  return { start, stop, step, LEN, get t() { return W ? W.t : 0; } };
+})();
+
+/** 秋葉原へ（上野勝利のあと）：編成の確定 → 徒歩演出 → 秋葉原駅ホーム */
+function openAkibaWalkPrep(replay) {
+  fixParty && fixParty();
+  show(null); $('#hud').hidden = true; G.mode = 'walk'; G.walkReplay = !!replay;
+  WALK.start(G.party.slice(), null);
+}
+function finishWalk(skipped) {
+  if (G.mode !== 'walk') return;
+  WALK.stop();
+  const a = ACC(); if (!a.walkSeen) { a.walkSeen = true; try { persist(); } catch (e) { } }
+  if (G.walkReplay) { G.walkReplay = false; G.mode = 'title'; openZukan('title'); return; }
+  startSolo('akiba_platform');
+}
+$('#btnWalkSkip').onclick = () => { AUDIO.sfx('ok'); finishWalk(true); };
+$('#btnWalkReplay').onclick = () => { AUDIO.sfx('ok'); openAkibaWalkPrep(true); }; // 図鑑から再視聴（報酬なし）
+
+window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX, THREE, GC, WALK };
 
 </script>
 </body>

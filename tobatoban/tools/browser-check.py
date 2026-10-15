@@ -79,7 +79,7 @@ def ev(js, key=None):
 def check_overlap(key):
     def f(page, res): res[key] = overlaps(page)
     return f
-START_SOLO = '''() => { const g = document.getElementById('btnGuest'); if (g && !document.getElementById('login').hidden) g.click(); document.getElementById('btnSolo').click(); document.querySelector('#stages .stage-card').click(); return __tb.G.mode; }'''
+START_SOLO = '''() => { const g = document.getElementById('btnGuest'); if (g && !document.getElementById('login').hidden) g.click(); document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); return __tb.G.mode; }'''
 TO_BOSS = '''() => { const s = __tb.G.session.sim; s.mobs = []; s.wave = 1; s.barrier = 'none'; s.allies.forEach((a,i) => { a.x = -2 + i; a.z = -1; }); s.allies[0].z = 3; return 'ok'; }'''
 FORCE = '''(mv) => { const s = __tb.G.session.sim; const b = s.boss; if (!b || s.stage !== 'boss') return 'nostage'; b.st='idle'; b.gap=99; b.cds={}; const t = s.allies[0]; s.bossStart(mv, t); return b.st; }'''
 NOHP = '''() => { const t = document.getElementById('hud').innerText; const m = t.match(/\\d+\\s*\\/\\s*\\d+/g); return m || []; }'''
@@ -103,7 +103,7 @@ with sync_playwright() as p:
         ]))
     if SCEN in ('all', 'port'):
         results.append(run(p, 390, 844, 'port', [
-            shot('19_login_port'), ev("() => { document.getElementById('btnGuest').click(); return 1; }"), wait(0.3), shot('20_title_port'), ev("() => { document.getElementById('btnSolo').click(); return 1; }"), wait(0.5), shot('21_team_port'),
+            shot('19_login_port'), ev("() => { document.getElementById('btnGuest').click(); return 1; }"), wait(0.3), shot('20_title_port'), ev("() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); return 1; }"), wait(0.5), shot('21_team_port'),
             ev("() => { document.getElementById('btnGo').click(); return 1; }"), wait(0.4), shot('21b_stage_port'), ev("() => { document.querySelector('#stages .stage-card').click(); return 1; }"), wait(2.5), shot('22_street_port'), check_overlap('overlap_port'),
             ev(TO_BOSS), wait(6.5), shot('23_boss_port'), check_overlap('overlap_port_boss'),
         ]))
@@ -123,8 +123,8 @@ with sync_playwright() as p:
         port = SCEN == 'jobanport'
         W, H = (390, 844) if port else (844, 390)
         pre = 'p' if port else ''
-        steps = [ev("() => { document.getElementById('btnGuest').click(); document.getElementById('btnSolo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return 1; }"), wait(0.4), ev(vis, 'screen'), shot(pre + '60_stage_locked'),
-            ev("() => { __tb.G.guest.clear.senju = 1; __tb.G.party.forEach(c => { __tb.G.guest.chars[c].lv = 20; __tb.G.guest.chars[c].exp = __tb.DATA.GROWTH.cum(__tb.DATA.CHI[c].rank, 20); }); document.getElementById('btnSolo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'cards'), wait(0.3), shot(pre + '61_stage_open'),
+        steps = [ev("() => { document.getElementById('btnGuest').click(); document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return 1; }"), wait(0.4), ev(vis, 'screen'), shot(pre + '60_stage_locked'),
+            ev("() => { __tb.G.guest.clear.senju = 1; __tb.G.party.forEach(c => { __tb.G.guest.chars[c].lv = 20; __tb.G.guest.chars[c].exp = __tb.DATA.GROWTH.cum(__tb.DATA.CHI[c].rank, 20); }); document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'cards'), wait(0.3), shot(pre + '61_stage_open'),
             ev("() => { document.querySelectorAll('#stages .stage-card')[0].click(); return __tb.G.mode + ' ' + " + sim + ".stageId + ' ' + " + sim + ".stage; }", 'start'),
             wait(1.2), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_62_cut_collapse'), shot(pre + '62_cut_collapse'), wait(2.4), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_63_cut_platform'), shot(pre + '63_cut_platform'), wait(1.8), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_64_cut_board'), shot(pre + '64_cut_board'), wait(2.6), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_65_cut_inside'), shot(pre + '65_cut_inside'), wait(2.6), ev("() => { const s=__tb.G.session.sim; return [s.stage, Math.round(s.stageT*10)/10, Math.round(s.t*10)/10]; }", 't_66_cut_depart'), shot(pre + '66_cut_depart'),
             wait(2.0), ev("() => " + sim + ".stage + ' mobs ' + " + sim + ".mobs.length", 'after_intro'), shot(pre + '67_train'), check_overlap('overlap_train'),
@@ -137,9 +137,11 @@ with sync_playwright() as p:
             ev("() => { const s=" + sim + "; __tb.DATA.JOBAN.events.forEach(e => s.fired[e.id] = 1); s.queue = []; s.mobs.forEach(m => { if (m.st === 'ok') s.dealToEnemy(s.allies[0], m, 99999, 'str', 'A', null); }); s.kills = s.total; const t = s.tr; t.at = 3; t.ph = 'run'; t.t = 0; t.d = __tb.DATA.JOBAN.segLen[3] - 100; t.v = 20; return s.stage; }", 'skip'),
             wait(3.0), shot(pre + '71_approach_ueno'), wait(8.5), ev("() => " + sim + ".stage + ' at ' + " + sim + ".tr.at", 'arrive_stage'), shot(pre + '72_ueno'), wait(2.5), shot(pre + '72b_ueno_platform'), wait(3.0), shot(pre + '72c_ueno_platform'), wait(3.0), ev("() => [__tb.G.mode, " + sim + ".result && " + sim + ".result.why]", 'result'), shot(pre + '73_result'),
             ev("() => document.getElementById('result') ? document.getElementById('result').innerText.slice(0, 300) : ''", 'result_text'),
-            ev("() => { document.getElementById('btnRetry').click(); return [document.getElementById('btnRetry').textContent, " + vis + "()]; }", 'to_prep'), wait(0.4), shot(pre + '74_prep'),
-            ev("() => document.getElementById('prep').innerText.replace(/\\n/g, ' | ').slice(0, 300)", 'prep_text'),
-            ev("() => { document.getElementById('btnPrepGo').click(); const s = " + sim + "; return [s.stageId, s.stage, s.allies.map(a => a.items.map(i => i.n).join('/')).join(' '), s.allies.map(a => a.sp).join('/')]; }", 'ueno_start'), wait(2.0), shot(pre + '75_ueno_intro'),
+            ev("() => { const t = document.getElementById('btnRetry').textContent; document.getElementById('btnRetry').click(); const s = " + sim + "; return [t, s.stageId, s.stage, s.allies.map(a => a.items.map(i => i.n).join('/')).join(' ')]; }", 'to_street'), wait(1.5), shot(pre + '74_street_intro'), wait(4.0), shot(pre + '75_street'),
+            ev("() => { const s = " + sim + "; s.allies.forEach(a => a.inv = 1e9); return document.getElementById('bossbox').innerText.replace(/\\n/g,' | '); }", 'street_hud'), wait(4.0), shot(pre + '76_street_fight'),
+            ev("() => { const s = " + sim + "; for (let g = 0; g < 3; g++) { s.mobs.filter(m => m.grpI === g && m.st === 'ok').forEach(m => s.dealToEnemy(s.allies[0], m, 1e6, 'str', 'A', null)); s.step(); } return [s.stage, s.result && s.result.why]; }", 'street_clear'), wait(4.0),
+            ev("() => { const t = document.getElementById('btnRetry').textContent; document.getElementById('btnRetry').click(); return [t, document.getElementById('prep').innerText.replace(/\\n/g, ' | ').slice(0, 300)]; }", 'to_prep'), wait(0.4), shot(pre + '77_prep'),
+            ev("() => { document.getElementById('btnPrepGo').click(); const s = " + sim + "; return [s.stageId, s.stage, s.allies.map(a => a.sp).join('/')]; }", 'ueno_start'), wait(2.0), shot(pre + '78_ueno_intro'),
         ]
         results.append(run(p, W, H, 'joban', steps))
     if SCEN in ('ueno', 'uenoport'):
@@ -149,9 +151,9 @@ with sync_playwright() as p:
         port = SCEN == 'uenoport'
         W, H = (390, 844) if port else (844, 390)
         pre = 'p' if port else ''
-        steps = [ev("() => { document.getElementById('btnGuest').click(); const g = __tb.G.guest; g.clear.senju = 1; g.clear.joban = 1; g.uenoOpen = true; __tb.G.party.forEach(c => { g.chars[c].lv = 40; g.chars[c].exp = __tb.DATA.GROWTH.cum(__tb.DATA.CHI[c].rank, 40); }); document.getElementById('btnSolo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'cards'), wait(0.4), shot(pre + '80_sortie_ueno'),
+        steps = [ev("() => { document.getElementById('btnGuest').click(); const g = __tb.G.guest; g.clear.senju = 1; g.clear.joban = 1; g.clear.ueno_street = 1; g.uenoOpen = true; __tb.G.party.forEach(c => { g.chars[c].lv = 40; g.chars[c].exp = __tb.DATA.GROWTH.cum(__tb.DATA.CHI[c].rank, 40); }); document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'cards'), wait(0.4), shot(pre + '80_sortie_ueno'),
             ev("() => document.getElementById('stages').innerText.replace(/\\n/g, ' | ').slice(0, 400)", 'sortie_text'),
-            ev("() => { document.querySelectorAll('#stages .stage-card')[1].click(); return __tb.G.mode + ' ' + " + sim + ".stageId + ' ' + " + sim + ".stage; }", 'start'),
+            ev("() => { document.querySelectorAll('#stages .stage-card')[2].click(); return __tb.G.mode + ' ' + " + sim + ".stageId + ' ' + " + sim + ".stage; }", 'start'),
             wait(0.6), shot(pre + '81_intro_a'), wait(0.8), shot(pre + '82_intro_snap'), wait(1.0), shot(pre + '83_intro_lean'), wait(1.6), ev("() => [" + sim + ".stage, " + sim + ".mobs.length, " + sim + ".hazards.length]", 'after_intro'), shot(pre + '84_charge'),
             ev("() => { const s=" + sim + "; s.allies.forEach(a => a.inv = 1e9); return 1; }"), wait(3.0), shot(pre + '85_fight'), check_overlap('overlap_ueno'),
             ev("() => { const i = __tb.R.renderer.info; return {calls: i.render.calls, tris: i.render.triangles, geos: i.memory.geometries, tex: i.memory.textures}; }", 'perf'),
@@ -162,10 +164,45 @@ with sync_playwright() as p:
             ev("() => document.getElementById('sleepBox').innerText.replace(/\\n/g,' | ')", 'sleep_text'),
             ev("() => { const s=" + sim + "; s.dealToEnemy(s.allies[0], s.boss, 4000, 'str', 'A', null); return 1; }"), wait(1.2), ev("() => [" + sim + ".boss.st, " + sim + ".U.sleepDone]", 'sleep_ok'), shot(pre + '90_sleep_ok'),
             ev("() => { document.getElementById('map').click(); return 1; }"), wait(0.4), shot(pre + '91_map'), ev("() => { document.getElementById('map').click(); return 1; }"),
-            ev("() => { const s=" + sim + "; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); return s.stage; }", 'kill'), wait(1.5), shot(pre + '92_won'), wait(5.0),
+            ev("() => { const s=" + sim + "; s.U.done = [1, 1, 1]; s.U.sleep = null; s.U.pend = -1; s.boss.st = 'idle'; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); return s.stage; }", 'kill'), wait(1.5), shot(pre + '92_won'), wait(5.0),
             ev("() => [__tb.G.mode, document.getElementById('resExp') ? document.getElementById('resExp').innerText.replace(/\\n/g,' | ') : '']", 'result'), shot(pre + '93_result'),
         ]
         results.append(run(p, W, H, 'ueno', steps))
+    if SCEN in ('akiba', 'akibaport'):
+        # 秋葉原：上野勝利の結果→編成→15秒の徒歩演出→ホーム（オガ・カエ）→結果→広場の準備→広場（星・中）→図形→双子の15秒→勝利
+        sim = "__tb.G.session.sim"
+        port = SCEN == 'akibaport'
+        W, H = (390, 844) if port else (844, 390)
+        pre = 'p' if port else ''
+        def walk_to(t):
+            def f(page, res):
+                end = time.time() + 400
+                while time.time() < end:
+                    m = page.evaluate('[__tb.G.mode, __tb.WALK.t]')
+                    if m[0] != 'walk' or m[1] >= t: break
+                    time.sleep(0.05)
+            return f
+        steps = [ev("() => { document.getElementById('btnGuest').click(); const g = __tb.G.guest; for (const k of ['senju','joban','ueno_street','ueno']) g.clear[k] = 1; g.uenoOpen = true; g.akibaOpen = true; __tb.G.party.forEach(c => { g.chars[c].lv = 60; g.chars[c].exp = __tb.DATA.GROWTH.cum(__tb.DATA.CHI[c].rank, 60); }); __tb.G.next = 'akiba'; document.getElementById('btnRetry').click(); return [__tb.G.teamBack, document.getElementById('btnGo').textContent]; }", 'team'), wait(0.4), shot(pre + 'a0_team'),
+            ev("() => { document.getElementById('btnGo').click(); return __tb.G.mode; }", 'walk_mode'),
+            walk_to(1.6), shot(pre + 'a1_walk_boss'), walk_to(4.0), shot(pre + 'a2_walk_ueno'), walk_to(6.0), shot(pre + 'a3_walk_street'), walk_to(8.4), shot(pre + 'a4_walk_okachi'),
+            ev("() => document.getElementById('wkCap').innerText", 'cap_okachi'), walk_to(11.0), shot(pre + 'a5_walk_under'), walk_to(14.0), shot(pre + 'a6_walk_akiba'), ev("() => document.getElementById('wkCap').innerText + ' / ' + document.getElementById('wkTitle').className", 'cap_akiba'),
+            walk_to(99), wait(0.5), ev("() => [__tb.G.mode, " + sim + ".stageId, " + sim + ".stage, __tb.G.guest.walkSeen]", 'after_walk'), shot(pre + 'a7_platform_intro'),
+            wait(3.0), ev("() => { const s=" + sim + "; s.allies.forEach(a => a.inv = 1e9); return s.stage; }", 'pf_stage'), wait(3.0), shot(pre + 'a8_platform_fight'), check_overlap('overlap_platform'),
+            ev("() => document.getElementById('bossbox').innerText.replace(/\\n/g,' | ')", 'pf_box'),
+            ev("() => { const s=" + sim + "; for (const w of ['oga','kae']) { const m = s.foe(w); s.dealToEnemy(s.allies[0], m, 1e6, 'str', 'A', null); } return s.stage; }", 'pf_kill'), wait(5.0),
+            ev("() => [__tb.G.mode, document.getElementById('btnRetry').textContent, document.getElementById('resReward').innerText]", 'pf_result'), shot(pre + 'a9_pf_result'),
+            ev("() => { document.getElementById('btnRetry').click(); return [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',') + ' ' + document.getElementById('prepTitle').textContent; }", 'prep'), wait(0.3), shot(pre + 'b0_prep'),
+            ev("() => { document.getElementById('btnPrepGo').click(); return " + sim + ".stageId; }", 'plaza'), wait(1.0), shot(pre + 'b1_plaza_intro_a'), wait(1.6), shot(pre + 'b2_plaza_revive'), wait(2.0),
+            ev("() => { const s=" + sim + "; s.allies.forEach(a => a.inv = 1e9); return s.stage; }", 'pz_stage'), wait(2.0), shot(pre + 'b3_plaza_fight'), check_overlap('overlap_plaza'),
+            ev("() => document.getElementById('bossbox').innerText.replace(/\\n/g,' | ')", 'pz_box'),
+            ev("() => { const s=" + sim + "; s.AK.geoT = 0; return 1; }"), wait(0.8), shot(pre + 'b4_geo'), ev("() => { const s=" + sim + "; return s.AK.geo ? [s.AK.geo.n, s.AK.geo.whos.join(',')] : s.AK.geoWait ? 'wait' : 'none'; }", 'geo'), wait(1.2), shot(pre + 'b5_geo_b'),
+            wait(4.0), ev("() => { const s=" + sim + "; s.dealToEnemy(s.allies[0], s.foe('hoshi'), 1e6, 'str', 'A', null); return [s.AK.twinDown, s.AK.twinT]; }", 'twin'), wait(1.0), shot(pre + 'b6_twin'),
+            ev("() => document.getElementById('bossbox').innerText.replace(/\\n/g,' | ')", 'twin_box'),
+            ev("() => { document.getElementById('map').click(); return 1; }"), wait(0.4), shot(pre + 'b7_map'), ev("() => { document.getElementById('map').click(); return 1; }"),
+            ev("() => { const s=" + sim + "; s.dealToEnemy(s.allies[0], s.foe('naka'), 1e6, 'str', 'A', null); return s.stage; }", 'win'), wait(5.0),
+            ev("() => [__tb.G.mode, document.getElementById('resReward').innerText, document.getElementById('resExp') ? document.getElementById('resExp').innerText.replace(/\\n/g,' | ').slice(0, 300) : '']", 'pz_result'), shot(pre + 'b8_result'),
+        ]
+        results.append(run(p, W, H, 'akiba', steps))
     if SCEN in ('gachabug', 'gachabugport'):
         # ガチャから戻れるか：ログイン画面→ガチャ→戻る、タイトル→ガチャ→戻る（2回）、見本の途中で戻る、ログインして引く→取消
         vis = "() => [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',')"
@@ -193,12 +230,12 @@ with sync_playwright() as p:
             ev("() => { const c = [...document.querySelectorAll('#cards .card .det')][3]; c.click(); return document.querySelector('#detail .hd b').textContent; }", 'detail'), wait(0.2), shot('h08_detail'),
             ev("() => { document.getElementById('rsClear').click(); document.querySelectorAll('#cards .card')[2].click(); return __tb.G.party.join(','); }", 'party_after_pick'),
             click('#btnTeamBack'), wait(0.2), click('#btnZukan'), wait(0.4), ev("() => { __tb.G.prefs.owned = false; document.getElementById('rsSort').dispatchEvent(new Event('change')); return document.querySelectorAll('#cards .card.unowned').length; }", 'zukan_unowned'), wait(0.2), shot('h09_zukan'),
-            click('#btnTeamBack'), wait(0.2), click('#btnSolo'), wait(0.3), shot('h10_sortie_senju'), ev("() => { document.querySelectorAll('#chTabs .tab')[1].click(); return document.querySelectorAll('#stages .stage-card.locked').length; }", 'ueno_locked'), wait(0.2), shot('h11_sortie_ueno'),
+            click('#btnTeamBack'), wait(0.2), click('#btnSolo'), click('#btnGo'), wait(0.3), shot('h10_sortie_senju'), ev("() => { document.querySelectorAll('#chTabs .tab')[1].click(); return document.querySelectorAll('#stages .stage-card.locked').length; }", 'ueno_locked'), wait(0.2), shot('h11_sortie_ueno'),
             ev("() => { document.querySelectorAll('#chTabs .tab')[0].click(); document.querySelector('#stages .stage-card').click(); return __tb.G.mode; }", 'start'), wait(2.0),
             ev(TO_BOSS), wait(6.5), ev("() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); return s.stage; }"), wait(5),
             ev("() => document.getElementById('resExp').innerText.replace(/\\n/g,' | ')", 'res_exp'), shot('h12_result'),
             ev("() => { const a = __tb.G.guest; return [a.chars[__tb.G.party[0]].lv, a.chars[__tb.G.party[1]].exp, a.wins.tobatoban, a.clear.senju]; }", 'guest_after'),
-            click('#btnResTitle'), wait(0.3), click('#btnSolo'), wait(0.3), ev("() => { document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'ueno_tab_after_win'), shot('h13_sortie_after'),
+            click('#btnResTitle'), wait(0.3), click('#btnSolo'), click('#btnGo'), wait(0.3), ev("() => { document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'ueno_tab_after_win'), shot('h13_sortie_after'),
         ]))
     if SCEN in ('tap',):
         # 敵をタップ → 注目＋「追尾」の印 → 射撃の弾が追いかけて当たる。遠い敵は「遠すぎて狙えません」
@@ -218,7 +255,7 @@ with sync_playwright() as p:
                 res['notice_' + ('near' if near else 'far')] = page.evaluate("() => document.getElementById('notice').innerText.slice(0, 80)")
             return f
         results.append(run(p, 844, 390, 'tap', [
-            ev("() => { document.getElementById('btnGuest').click(); __tb.G.party = ['hoshisuzume', 'kogemaru', 'burikidon', 'momiji']; __tb.G.sessClear.senju = true; document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelectorAll('#stages .stage-card')[1].click(); return 1; }"),
+            ev("() => { document.getElementById('btnGuest').click(); __tb.G.party = ['hoshisuzume', 'kogemaru', 'burikidon', 'momiji']; __tb.G.sessClear.senju = true; document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.getElementById('btnGo').click(); document.querySelectorAll('#stages .stage-card')[1].click(); return 1; }"),
             wait(0.5), ev("() => { const s=" + sim + "; s.stageT = __tb.DATA.JOBAN.introT; return 1; }"), wait(2.0),
             ev("() => { const s=" + sim + "; s.allies.forEach(a => a.inv = 999); s.mobs.forEach(m => { m.hp = m.maxHp = 50000; }); s.allies.forEach((a, i) => { if (i) { a.x = -1 + i * 0.5; a.z = -12; } }); return s.mobs.length; }", 'mobs'),
             wait(1.5), tap_mob(True), wait(0.3), shot('a0_tap_lock'),
@@ -295,7 +332,7 @@ with sync_playwright() as p:
         res['A_register'] = until(A, "() => !document.querySelector('#lgDone').hidden") and J(A, "() => document.querySelector('#lgDoneId').textContent")
         A.screenshot(path=os.path.join(OUT, '90_cloud_done.png'))
         clk(A, '#btnDoneOk'); time.sleep(0.5); res['A_bar'] = J(A, "() => document.querySelector('#acctWho').textContent")
-        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); }"); time.sleep(2.5)
+        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); }"); time.sleep(2.5)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); }"); time.sleep(1)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs=[]; s.barrier='none'; s.allies.forEach((a,i)=>{a.x=-2+i;a.z=-1;}); s.allies[0].z=3; }"); time.sleep(7)
         J(A, "() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); }")
@@ -359,7 +396,7 @@ with sync_playwright() as p:
         if not res['A_register']: res['A_msg'] = J(A, "() => document.querySelector('#lgMsg').textContent")
         A.screenshot(path=os.path.join(OUT, '90_cloud_done.png'))
         clk(A, '#btnDoneOk'); time.sleep(0.5); res['A_bar'] = J(A, "() => document.querySelector('#acctWho').textContent")
-        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); }"); time.sleep(2.5)
+        J(A, "() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); }"); time.sleep(2.5)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs.forEach(m => s.dealToEnemy(s.allies[0], m, 9999, 'str', 'A', null)); }"); time.sleep(1)
         J(A, "() => { const s=__tb.G.session.sim; s.mobs=[]; s.barrier='none'; s.allies.forEach((a,i)=>{a.x=-2+i;a.z=-1;}); s.allies[0].z=3; }"); time.sleep(7)
         J(A, "() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); }")

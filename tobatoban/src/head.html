@@ -165,6 +165,15 @@ a{color:var(--shu)}
 .grp{font-family:var(--f-disp);font-weight:400;font-size:14px;padding-top:12px}
 
 /* ---------- HUD ---------- */
+#walk{position:absolute;inset:0;z-index:20;pointer-events:none;font-family:var(--f-body)}
+#walk::before,#walk::after{content:'';position:absolute;left:0;right:0;height:9%;background:#000}
+#walk::before{top:0}#walk::after{bottom:0}
+#walk .wk-cap{position:absolute;left:6%;bottom:14%;background:rgba(12,14,34,.82);color:#fff;border-left:6px solid #5ad8ff;padding:8px 16px 8px 12px;border-radius:6px;font-weight:900;font-size:clamp(20px,4.6vmin,34px);letter-spacing:.08em;opacity:0;transition:opacity .3s}
+#walk .wk-cap small{display:block;font-size:.42em;letter-spacing:.2em;opacity:.8}
+#walk .wk-cap.on{opacity:1}
+#walk .wk-title{position:absolute;left:50%;top:22%;transform:translate(-50%,-50%) scale(.9);color:#fff;font-weight:900;font-size:clamp(34px,9vmin,64px);text-shadow:0 0 18px #5ad8ff,0 4px 0 #1d56b8;opacity:0;transition:opacity .5s,transform .5s;white-space:nowrap}
+#walk .wk-title.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#walk .wk-skip{position:absolute;right:max(14px,var(--sar,0px));top:calc(9% + 8px);pointer-events:auto;min-height:40px;background:rgba(255,255,255,.9)}
 #hud{position:absolute;inset:0;pointer-events:none;font-family:var(--f-body)}
 #hud .hb{position:absolute;pointer-events:auto;touch-action:none;transition:opacity .3s}
 #hud.intro .btnc,#hud.intro .itm,#hud.intro .stick,#hud.intro #mebox{opacity:0!important;pointer-events:none}
@@ -176,7 +185,17 @@ a{color:var(--shu)}
 .bossname .ph{font-size:11px;background:#7a1f3a;border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
 .bossname .st{font-size:11px;color:var(--gold)}
 .bossbox .route{display:flex;flex-direction:column;gap:3px}
+.bossbox .ak-grid{display:none}
+.bossbox.akiba>.bossname,.bossbox.akiba>.hpbar{display:none}
+.bossbox.akiba .ak-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+.ak .nm{display:flex;justify-content:space-between;gap:6px;font-weight:900;font-size:12px;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;line-height:15px}
+.ak .nm .s{font-size:11px;opacity:.95}
+.ak .hpbar{height:12px}.ak.thin .hpbar{height:7px;border-width:1px}.ak.thin .nm{font-size:11px;line-height:13px}
+.ak.down .hpbar{opacity:.4}.ak.down .nm .s{color:#ffb0c8}
+.ak-twin{margin-top:3px;background:rgba(120,20,70,.88);color:#fff;font-weight:900;border-radius:8px;padding:3px 8px;text-align:center;font-size:14px;border:2px solid #ff8ad8}
+.ak-twin.hurry{animation:lowp .4s infinite alternate}
 .bossbox.train .bossname,.bossbox.train .hpbar{display:none}
+.bossbox.street .hpbar{display:none}
 .ue-info[hidden]{display:none}
 .ue-info{display:inline-flex;gap:8px;margin-left:auto;align-items:center;font-weight:900;font-size:12px;text-shadow:0 1px 2px #000;white-space:nowrap}
 .ue-info #ueBar{background:#2a5a9a;border-radius:5px;padding:0 6px;color:#fff;text-shadow:none}
@@ -224,6 +243,8 @@ a{color:var(--shu)}
 .hpbar i{position:absolute;inset:0 auto 0 0;border-radius:5px}
 .hpbar i.lag{background:#ffd9b0;transition:width .5s .4s}
 .hpbar i.fill{background:linear-gradient(#ef7a74,#cb4b46 55%,#8f2a26);transition:width .1s}
+.hznum{position:absolute;transform:translate(-50%,-50%);font-family:var(--f-disp);font-size:20px;color:#fff;text-shadow:0 0 6px #6a3aff,0 2px 0 #1b1838;pointer-events:none}
+.orbt{position:absolute;transform:translate(-50%,-100%);font-size:11px;font-weight:900;color:#ffd84a;text-shadow:0 1px 2px #000;pointer-events:none}
 .hpbar .qm{display:none;position:absolute;top:-2px;bottom:-2px;width:3px;background:#9ad0ff;box-shadow:0 0 4px #9ad0ff}
 .bossbox.ueno .hpbar .qm{display:block}.bossbox.ueno .hpbar .third{display:none}
 .hpbar .third{position:absolute;top:0;bottom:0;left:33.3%;width:2px;background:rgba(255,255,255,.55)}
@@ -275,6 +296,7 @@ a{color:var(--shu)}
 .btnc .cdt{position:absolute;bottom:-17px;font-size:11px;font-weight:900;background:rgba(0,0,0,.6);border-radius:5px;padding:0 4px}
 #bA{background:#e9a23b;color:#2a1a08;text-shadow:none}#bA .lb{color:#2a1a08}
 #bX{background:#3f78d6}#bY{background:#187c80}
+#bOrb{background:#3a3260;opacity:.75}#bOrb.on{background:#2a1f5c;border-color:var(--gold);box-shadow:0 0 0 3px #e0b84e,0 0 14px #e0b84e;opacity:1}#bOrb.off{filter:grayscale(.8)}
 #bSP{background:#7446b8}#bSP.full{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold),0 0 18px var(--gold);opacity:.95}
 #bB{background:#475569}
 #bLock,#bCam,#bMenu,#bSig{background:rgba(18,16,40,.75)}
@@ -508,6 +530,7 @@ a{color:var(--shu)}
     <div class="row sticky-actions">
       <button class="btn ghost" id="btnTeamBack">もどる</button>
       <button class="btn" id="btnRecommend" type="button">おすすめ編成</button>
+      <button class="btn" id="btnWalkReplay" type="button" hidden>🚶 徒歩演出を見る</button>
       <button class="btn main" id="btnGo">出撃する</button>
     </div>
   </div>
@@ -527,7 +550,7 @@ a{color:var(--shu)}
 <!-- 上野の準備（電車クリアのあと） -->
 <section class="screen" id="prep" hidden>
   <div class="panel">
-    <div class="eyebrow">上野駅前</div><h2>ヨシノシンが待っている</h2>
+    <div class="eyebrow" id="prepEyebrow">上野駅前</div><h2 id="prepTitle">ヨシノシンが待っている</h2>
     <p class="small" id="prepLead">電車の報酬は確定しました。このままヨシノシンに挑むか、編成を見直してから挑めます。</p>
     <div class="kv" id="prepKv"></div>
     <div class="row"><button class="btn main" id="btnPrepGo" type="button">このままヨシノシンへ</button></div>
@@ -706,9 +729,10 @@ a{color:var(--shu)}
 </section>
 
 <!-- HUD -->
+<div id="walk" hidden><div class="wk-cap" id="wkCap"></div><div class="wk-title" id="wkTitle">秋葉原編</div><button class="btn ghost wk-skip" id="btnWalkSkip" type="button">スキップ ▶</button></div>
 <div id="hud" hidden>
   <div id="touch"></div>
-  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span><span class="qm" style="left:25%"></span><span class="qm" style="left:50%"></span><span class="qm" style="left:75%"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span><span class="ue-info" id="ueInfo" hidden><span id="ueMin">部下 36/40</span><span id="ueBar" hidden></span><span id="ueLv"></span></span></div><div class="ak-grid" id="akGrid"></div><div class="ak-twin" id="akTwin" hidden></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span><span class="qm" style="left:25%"></span><span class="qm" style="left:50%"></span><span class="qm" style="left:75%"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
   <div class="hb party" id="party"></div>
   <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
   <div class="hb" id="map"><canvas id="mapc"></canvas></div>
@@ -717,6 +741,7 @@ a{color:var(--shu)}
   <button class="hb btnc" id="bA" aria-label="A 通常攻撃"><span class="key">A</span><span class="lb" id="lA">攻撃</span></button>
   <button class="hb btnc" id="bX" aria-label="X 技1"><span class="key">X</span><span class="lb" id="lX"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cX"/></svg><span class="cdt" id="tX" hidden></span></button>
   <button class="hb btnc" id="bY" aria-label="Y 技2"><span class="key">Y</span><span class="lb" id="lY"></span><svg class="cd" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="cY"/></svg><span class="cdt" id="tY" hidden></span></button>
+  <button class="hb btnc" id="bOrb" aria-label="重玉（強化必殺）"><span class="key" style="font-size:calc(14px*var(--ui))">重玉</span><span class="lb" id="lOrb">なし</span></button>
   <button class="hb btnc" id="bSP" aria-label="必殺技"><span class="key" style="font-size:calc(15px*var(--ui))">必殺</span><span class="lb" id="lSP">0%</span></button>
   <button class="hb btnc" id="bB" aria-label="B ダッシュ・灯す"><span class="key">B</span><span class="lb ctxB" id="lB">走る</span></button>
   <button class="hb btnc" id="bLock" aria-label="注目"><span class="key" style="font-size:calc(16px*var(--ui))">◎</span><span class="lb">注目</span></button>

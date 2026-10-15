@@ -341,5 +341,37 @@ const NET = {
 };
 p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 10, 'Apple 44pt / Android 48dp の目安より大きく');
 
-const AKIBA = { introT: { akiba_platform: 3, akiba_plaza: 3 } };
+/* ---------------- 秋葉原編：駅ホーム（オガ・カエ）と駅前広場（星・中＋オガ・カエ） ---------------- */
+const AKIBA = {
+  introT: { akiba_platform: p('秋葉原', 'ホームの始まりの演出', 2.5, 's', 'proto'), akiba_plaza: p('秋葉原', '広場の始まり（星と中が2人を起こす）', 3, 's', 'spec') },
+  rec: 60,
+  platform: { halfX: p('秋葉原', 'ホームの安全幅', 18, 'm', 'spec') / 2, zMax: p('秋葉原', 'ホームの長さ', 26, 'm', 'spec'), start: [[-1.5, 3.4], [1.5, 3.4], [-0.5, 2.2], [0.5, 2.2]], foes: { oga: [-3.2, 17], kae: [3.2, 17] } },
+  plaza: { half: p('秋葉原', '駅前広場（歩ける範囲・中心から）', 13, 'm', 'spec'), start: [[-1.5, -9.5], [1.5, -9.5], [-0.5, -10.7], [0.5, -10.7]], foes: { hoshi: [-2.4, 8], naka: [2.4, 8], oga: [-5.5, 4], kae: [5.5, 4] } },
+  // scale：見た目の拡大率（星・中2.0倍／オガ・カエ1.5倍。依頼による変更）。HP・能力・当たり判定の半径は変えない
+  foes: {
+    hoshi: { nm: '星', hp: 8000, str: 750, yo: 813, def: 210, h: 1.60, r: 0.42, scale: 2.0, spd: 2.3, col: 0xf2c94c },
+    naka: { nm: '中', hp: 8000, str: 750, yo: 813, def: 210, h: 1.58, r: 0.42, scale: 2.0, spd: 2.3, col: 0x9ad0ff },
+    oga: { nm: 'オガ', hp: 4000, str: 750, yo: 813, def: 190, h: 1.48, r: 0.42, scale: 1.5, spd: 2.5, col: 0xff7a5a },
+    kae: { nm: 'カエ', hp: 4000, str: 750, yo: 813, def: 180, h: 1.50, r: 0.42, scale: 1.5, spd: 2.5, col: 0x6ad8a8 },
+  },
+  moves: { // 威力・秒数は本作の初期調整値（原作の実測ではない）
+    hoshizuna: { who: 'hoshi', nm: '星砂おとし', pw: 49, stat: 'yo', r: 1.4, warn: 1.1, act: 0.15, cd: 4.5, rng: 9, rec: 0.6 },
+    hoshirai: { who: 'hoshi', nm: '星雷のしるし', pw: 65, stat: 'yo', r: 1.0, n: 3, delay: 0.65, warn: 1.3, act: 0.15, cd: 9, max: 2, rng: 10, rec: 0.8 },
+    hoshimado: { who: 'hoshi', nm: '星まどい', eff: 'strYo', mul: 0.9, dur: 4, r: 1.0, warn: 1.2, act: 0.1, cd: 18, rng: 10, rec: 0.5 },
+    shizuku: { who: 'naka', nm: '中の水しずく', pw: 49, stat: 'yo', w: 0.8, len: 12, speed: 8, warn: 0.9, cd: 4.5, rng: 11, rec: 0.5 },
+    hyoutei: { who: 'naka', nm: '銀氷の小庭', pw: 65, stat: 'yo', r: 1.5, n: 3, warn: 1.4, act: 0.2, cd: 10, rng: 10, rec: 0.8 },
+    mayoi: { who: 'naka', nm: '迷いの銀札', eff: 'spd', mul: 0.9, dur: 4, r: 1.0, warn: 1.2, act: 0.1, cd: 18, rng: 10, rec: 0.5 },
+    ougi: { who: 'oga', nm: '紅扇たたき', pw: 53, stat: 'str', r: 2.5, half: Math.PI / 4, warn: 0.75, act: 0.12, cd: 3.5, rng: 2.3, rec: 0.6 },
+    iki: { who: 'oga', nm: '灯りの息', pw: 49, stat: 'yo', r: 6, half: Math.PI / 6, warn: 1.2, act: 0.8, cd: 7, rng: 5, rec: 1.4 },
+    benibana: { who: 'oga', nm: '紅花おとし', pw: 70, stat: 'str', r: 2.0, warn: 1.5, act: 0.15, cd: 11, rng: 9, rec: 0.8 },
+    nagi: { who: 'kae', nm: '水杖なぎ', pw: 53, stat: 'str', r: 3.0, half: Math.PI * 55 / 180, warn: 0.85, act: 0.12, cd: 3.8, rng: 2.8, rec: 0.6 },
+    meguri: { who: 'kae', nm: '水環めぐり', pw: 49, stat: 'yo', w: 0.8, len: 8, sweep: Math.PI * 2 / 3, dur: 2.5, warn: 1.5, cd: 12, rng: 6, rec: 0.8 },
+    kagami: { who: 'kae', nm: '水鏡の足どめ', r: 1.1, n: 2, life: 4, mul: 0.9, warn: 1.2, cd: 14, rng: 9, rec: 0.6 },
+  },
+  rights: p('秋葉原', '同時に通常攻撃する相手（全体）', 2, '人', 'spec'),
+  twin: { window: p('秋葉原', '星・中：片方が倒れてからの制限時間', 15, 's', 'spec'), revive: p('秋葉原', '失敗したとき倒れていた方が戻るHP', 4000, 'points', 'spec', null, '最大HPの50%。生き残っていた方のHPは変えない') },
+  guard: { dmg: 1200, low: 300, win: 5, mul: 1.10, dur: 6, cd: 15 },
+  geo: { first: 12, every: 18, w: { 2: 0.40, 3: 0.35, 4: 0.25 }, minSep: 3, minArea: 8, maxCover: 0.45, edge: 2.5, reachT: 1.8, rec: 2,
+    line: { nm: '二点結び', pw: 65, w: 1.2, warn: 1.5, act: 0.3 }, tri: { nm: '三角結界', pw: 75, warn: 2.0, act: 0.3 }, quad: { nm: '四角結界', pw: 22, warn: 2.5, dur: 3, iv: 0.75, max: 4 } },
+};
 const DATA = { AKIBA, REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, STREET, UENO, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };

@@ -44,5 +44,10 @@
     if (this.stageId.startsWith('akiba')) return this.akibaCandySpot();
     return [0, 0];
   };
-  P.streetSnap = function () { return [this.gate]; };
+  P.extSnap = function () {
+    if (this.stageId === 'ueno_street') return ['s', this.gate];
+    if (this.stageId.startsWith('akiba') && this.akibaSnap) return ['a'].concat(this.akibaSnap());
+    return 0;
+  };
+  SIMLIB.extDecode = x => x[0] === 's' ? { kind: 'street', gate: x[1] } : x[0] === 'a' && SIMLIB.akibaDecode ? SIMLIB.akibaDecode(x.slice(1)) : null;
 })();

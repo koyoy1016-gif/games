@@ -360,6 +360,61 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   u3.mobs = []; const g3 = u3.allies[0]; g3.ctrlAI = false; g3.x = u3.boss.x + 8; g3.z = u3.boss.z - 6; g3.yaw = Math.PI / 2; u3.boss.st = 'hidden'; const h3 = u3.boss.hp; run(u3, 0, [[0, 'I0']], 1.5);
   ok(u3.boss.hp === h3 && g3.items[0].n === 0, '外れても弾は消費する（ダメージ0）');
 }
+// 7.97) 秋葉原：ホーム（オガ・カエ）・広場（星・中の15秒）・図形の必殺・Lv60の基準
+{
+  const party = (lv, extra) => ['kagetsubame', 'hoshisuzume', 'burikidon', 'momiji'].map(ch => Object.assign({ ch, lv }, extra || {}));
+  const pf = new Sim({ party: party(60), seed: 2, stageId: 'akiba_platform', test: true });
+  const og = pf.foe('oga'), ka = pf.foe('kae');
+  ok(og.hp === 4000 && ka.hp === 4000 && og.def === 190 && ka.def === 180 && og.str === 750 && og.yo === 813, 'ホーム：オガ・カエ（各HP4,000・まもり190/180・ちから750・ようりょく813）');
+  const kg = pf.allies[0]; kg.ctrlAI = false; pf.syncAi(kg); kg.inv = 0;
+  const hit = (pw, st) => { kg.hp = kg.maxHp; kg.act = null; const h0 = kg.hp; pf.dealToAlly(kg, pw, st, og, { src: og }); return h0 - kg.hp; };
+  ok(pf.stat(kg, 'def') === 143 && hit(53, 'str') === 151 && hit(49, 'yo') === 151, `Lv60カゲツバメ（まもり${pf.stat(kg, 'def')}）への通常攻撃：物理53→${hit(53, 'str')}・妖術49→${hit(49, 'yo')}（基準151）`);
+  { const eqp = new Sim({ party: party(60, { eq: ['charm_gold', 'bracer_gold'] }), seed: 2, stageId: 'akiba_platform', test: true }); const k2 = eqp.allies[0]; k2.ctrlAI = false; eqp.syncAi(k2); k2.hp = k2.maxHp; const h0 = k2.hp; eqp.dealToAlly(k2, 49, 'yo', eqp.foe('oga'), {}); ok(eqp.stat(k2, 'def') === 214 && h0 - k2.hp === 119, `まもり＋50%装備（まもり${eqp.stat(k2, 'def')}）では同じ妖術が${h0 - k2.hp}（約119）`); }
+  pf.dealToEnemy(kg, og, 1e6, 'str', 'A', null); for (let i = 0; i < 60 * 20; i++) pf.step();
+  ok(og.st === 'down' && pf.stage !== 'won', 'オガだけ倒しても復活しないし、まだ勝ちではない');
+  pf.dealToEnemy(kg, ka, 1e6, 'str', 'A', null);
+  ok(pf.stage === 'won' && pf.result.why === 'platform', 'ホームの2人を倒すと勝ち');
+  const mk = () => { const s = new Sim({ party: party(60), seed: 4, stageId: 'akiba_plaza' }); s.allies.forEach(a => a.inv = 1e9); return s; };
+  const s = mk();
+  ok(s.foe('oga').st === 'down' && s.foe('kae').st === 'down', '広場の始まり：オガ・カエは倒れている');
+  for (let i = 0; i < 60 * (DATA.AKIBA.introT.akiba_plaza + 0.1); i++) s.step();
+  ok(s.stage === 'boss' && s.foe('oga').hp === 4000 && s.foe('kae').hp === 4000 && s.foe('hoshi').hp === 8000 && s.foe('naka').hp === 8000, '星と中が2人を一度だけ起こす（各4,000）・星と中は各8,000');
+  const ho = s.foe('hoshi'), na = s.foe('naka'), a0 = s.allies[0];
+  s.dealToEnemy(a0, s.foe('oga'), 1e6, 'str', 'A', null); for (let i = 0; i < 60 * 20; i++) s.step(); ok(s.foe('oga').st === 'down', '広場で再び倒れたオガは起きない');
+  na.hp = 5000; s.dealToEnemy(a0, ho, 1e6, 'str', 'A', null);
+  ok(ho.st === 'down' && s.AK.twinDown === 'hoshi' && Math.abs(s.AK.twinT - 15) < 1e-9, '星が倒れると15秒の計測');
+  for (let i = 0; i < Math.round(60 * 14.99) - 1; i++) s.step(); const t1 = s.AK.twinT;
+  s.dealToEnemy(a0, na, 1e6, 'str', 'A', null);
+  ok(t1 > 0 && s.stage === 'won' && s.result.why === 'twins', `14.99秒で中も倒すと勝ち（残り${t1.toFixed(3)}秒）`);
+  const s2 = mk(); for (let i = 0; i < 60 * 3.2; i++) s2.step(); const h2 = s2.foe('hoshi'), n2 = s2.foe('naka'); n2.hp = 6000;
+  s2.dealToEnemy(s2.allies[0], h2, 1e6, 'str', 'A', null); for (let i = 0; i < 60 * 15 + 2; i++) { s2.step(); }
+  ok(h2.st === 'ok' && h2.hp === 4000 && n2.hp <= 6000 && s2.AK.twinT < 0, `15秒を過ぎると倒れていた星だけHP4,000で復活（中は${n2.hp}のまま）`);
+  const s3 = mk(); for (let i = 0; i < 60 * 3.2; i++) s3.step(); const h3 = s3.foe('hoshi'), n3 = s3.foe('naka'); h3.hp = 10; n3.hp = 10; h3.x = n3.x = 0; h3.z = n3.z = 0;
+  const a3 = s3.allies[0]; a3.x = 0; a3.z = -1.5; a3.yaw = 0; s3.blast ? s3.blast(a3, 0, 0, 3, 100, 'str', 'skill', null) : (s3.dealToEnemy(a3, h3, 1e5, 'str', 'A', null), s3.dealToEnemy(a3, n3, 1e5, 'str', 'A', null));
+  ok(s3.stage === 'won', '1つの範囲技で両方を同時に倒しても勝ち');
+  // AI：現在HP（絶対値）が高い方
+  const s4 = mk(); for (let i = 0; i < 60 * 3.2; i++) s4.step(); s4.foe('hoshi').hp = 5000; s4.foe('naka').hp = 7000; const ai = s4.allies[1]; ai.ai.akPickT = 0;
+  ok(s4.aiEnemy(ai).who === 'naka', 'AIは現在HPが高い方（中7,000＞星5,000）をねらう');
+  s4.foe('naka').st = 'down'; ai.ai.akPickT = 0; ok(s4.aiEnemy(ai).who === 'hoshi', '片方が0なら生き残り側へ');
+  // 図形：2点の線は有限・3点一直線は使わない・1点が内側の四角形は使わない・凸四角形・面積8㎡以上
+  const g = mk(), F = ['hoshi', 'naka', 'oga', 'kae'].map(w => g.foe(w)), place = pts => F.forEach((f, i) => { if (pts[i]) { f.x = pts[i][0]; f.z = pts[i][1]; } });
+  place([[-4, 4], [4, 4]]); const L2 = g.geoShape(F.slice(0, 2)); ok(L2 && L2.n === 2 && Math.abs(L2.len - 8) < 1e-9, '2人：2人を結ぶ8mの線分（延長しない）');
+  place([[-4, 0], [0, 0], [4, 0]]); ok(!g.geoShape(F.slice(0, 3)), '3点が一直線なら三角は使わない');
+  place([[-5, -5], [5, -5], [0, 5], [0, -2]]); ok(!g.geoShape(F), '1点が内側にある四角は使わない');
+  place([[-5, -5], [5, -5], [5, 5], [-5, 5]]); const Q = g.geoShape(F); ok(Q && Q.n === 4 && SIMLIB.inPoly(0, 0, Q.pts, 0) && !SIMLIB.inPoly(0, 6, Q.pts, 0.35), '4人：凸四角形の内側（順番がばらばらでも凸包の順に並べる）');
+  place([[-5, -5], [5, -5], [5, 5], [-5, 5]]); g.startGeo(F, Q); const hz = g.AK.geo.hz; g.allies.forEach(a => { a.inv = 0; a.x = 0; a.z = 0; a.hp = a.maxHp; a.act = null; }); const hp0 = g.allies[0].hp; let ticks = 0;
+  for (let i = 0; i < 60 * 6; i++) { g.updateHazards(1 / 60); g.allies.forEach(a => { a.inv = 0; if (a.st !== 'ok') { a.st = 'ok'; a.hp = a.maxHp; } a.x = 0; a.z = 0; }); }
+  ok(hz.hits[0] && hz.hits[0].n === 4, `四角結界の火床は居続けると最大4回（${hz.hits[0] && hz.hits[0].n}回）`);
+  const g2 = mk(); for (let i = 0; i < 60 * 3.2; i++) g2.step(); const F2 = ['hoshi', 'naka', 'oga'].map(w => g2.foe(w)); F2[0].x = -5; F2[0].z = -4; F2[1].x = 5; F2[1].z = -4; F2[2].x = 0; F2[2].z = 6; const T3 = g2.geoShape(F2); g2.startGeo(F2, T3); const h3z = g2.AK.geo.hz;
+  g2.dealToEnemy(g2.allies[0], F2[2], 1e6, 'str', 'A', null); ok(!g2.AK.geo && h3z.dead, '予兆中に参加者が倒れたら、その図形の技は取り消し');
+  // 同時に通常攻撃するのは全体で2人まで
+  const r = mk(); let maxAtk = 0; r.allies.forEach(a => { a.x = 0; a.z = 0; }); for (let i = 0; i < 60 * 30; i++) { r.step(); r.allies.forEach(a => { a.hp = a.maxHp; }); maxAtk = Math.max(maxAtk, r.mobs.filter(m => m.kind === 'akiba' && m.act && !m.geo).length); }
+  ok(maxAtk <= 2 && maxAtk >= 1, `通常攻撃は全体で同時に${maxAtk}人まで（上限2）`);
+  const sn = PROTO.decodeSnap(JSON.parse(JSON.stringify(PROTO.encodeSnap(r))));
+  ok(sn.stageId === 'akiba_plaza' && sn.X && sn.X.kind === 'akiba' && sn.mobs.filter(m => m.akiba).length === 4, 'スナップショットに秋葉原の状態（4人・双子・図形）');
+  const lv = [40, 50, 60, 70].map(P => { const k = DATA.lvAdjust('akiba', P); return k.out.toFixed(3) + '/' + k.in.toFixed(3); });
+  ok(lv.join(' ') === '0.358/2.191 0.599/1.480 1.000/1.000 1.150/0.900', `秋葉原のLv補正（Lv40・50・60・70）：${lv.join('　')}`);
+}
 // 8) 接触してから当たる（離れた所からの空振りは当たらない）
 {
   const s = testSim('kogemaru'); const a = s.allies[0]; a.z = 10 - 3.0;

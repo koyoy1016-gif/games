@@ -4,7 +4,7 @@
    ===================================================================== */
 const R = (() => {
   let renderer, scene, camera, W, canvas;
-  const allies = [], mobs = new Map(), projs = new Map(), hzs = new Map(), traps = new Map(), picks = new Map();
+  const allies = [], mobs = new Map(), projs = new Map(), hzs = new Map(), traps = new Map(), picks = new Map(), orbs = new Map();
   let boss = null;
   const seenEv = new Set(); let seenQ = [];
   const cam = { yaw: 0, pitch: 45, dist: 11.5, fx: 0, fz: -58, fy: 0.5, dragT: 0, shake: 0, reset: false, lock: null, flyPull: 0, introDone: false };
@@ -99,28 +99,39 @@ const R = (() => {
     else { const w = b / 2; strip(-w, 0, -w, a, 0.12); strip(w, 0, w, a, 0.12); strip(-w, 0, w, 0, 0.12); strip(-w, a, w, a, 0.12); }
     grp.userData.mat = m; return grp;
   }
+  function polyOutline(pts) {
+    const m = new THREE.MeshBasicMaterial({ color: 0xffc7a0, transparent: true, opacity: 0.95, depthWrite: false, side: THREE.DoubleSide }), grp = new THREE.Group();
+    for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], len = Math.hypot(b[0] - a[0], b[1] - a[1]), g = new THREE.PlaneGeometry(0.14, len); g.rotateX(-Math.PI / 2); const mm = new THREE.Mesh(g, m); mm.position.set((a[0] + b[0]) / 2, 0, (a[1] + b[1]) / 2); mm.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1]); grp.add(mm); }
+    grp.userData.mat = m; return grp;
+  }
   function makeHz(h) {
     const g = new THREE.Group(); g.position.set(h.x, 0.04 + (h.id % 7) * 0.003, h.z); g.rotation.y = h.yaw; g.renderOrder = 3;
     let geo, fill;
     const isPath = h.kind === 'path';
     const base = new THREE.MeshBasicMaterial({ map: isPath ? chevT() : stripeT(), transparent: true, opacity: isPath ? 0.75 : 0.42, depthWrite: false, side: THREE.DoubleSide });
-    if (h.kind === 'fan') { geo = new THREE.RingGeometry(Math.max(0.01, h.a), h.b, 28, 1, -Math.PI / 2 - h.c, 2 * h.c); geo.rotateX(-Math.PI / 2); }
+    if (h.kind === 'poly' && h.pts) { const sh = new THREE.Shape(); h.pts.forEach((q, i) => i ? sh.lineTo(q[0], -q[1]) : sh.moveTo(q[0], -q[1])); sh.closePath(); geo = new THREE.ShapeGeometry(sh); geo.rotateX(-Math.PI / 2); g.position.set(0, 0.05, 0); g.rotation.y = 0; }
+    else if (h.kind === 'fan') { geo = new THREE.RingGeometry(Math.max(0.01, h.a), h.b, 28, 1, -Math.PI / 2 - h.c, 2 * h.c); geo.rotateX(-Math.PI / 2); }
     else if (h.kind === 'circle') { geo = new THREE.CircleGeometry(h.a, 36); geo.rotateX(-Math.PI / 2); }
     else { geo = new THREE.PlaneGeometry(h.b, h.a); geo.rotateX(-Math.PI / 2); geo.translate(0, 0, h.a / 2); if (isPath) { base.map = chevT().clone(); base.map.needsUpdate = true; base.map.repeat.set(1, h.a / 3); } }
     const bm = new THREE.Mesh(geo, base); g.add(bm);
     const fm = new THREE.MeshBasicMaterial({ color: 0xff6a3a, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide });
     fill = new THREE.Mesh(geo, fm); fill.position.y = 0.005; g.add(fill);
-    const ol = outline(h.kind === 'fan' ? 'fan' : h.kind === 'circle' ? 'circle' : 'rect', h.a, h.b, h.c); ol.position.y = 0.01; g.add(ol);
+    const ol = h.kind === 'poly' && h.pts ? polyOutline(h.pts) : outline(h.kind === 'fan' ? 'fan' : h.kind === 'circle' ? 'circle' : 'rect', h.a, h.b, h.c); ol.position.y = 0.01; g.add(ol);
+    if (h.fx === 'quad4' || h.fx === 'tri3' || h.fx === 'link2') { base.color = new THREE.Color(h.fx === 'quad4' ? 0xff7a2a : h.fx === 'tri3' ? 0xffd84a : 0xb89aff); }
+    if (h.fx === 'water') { base.map = null; base.color = new THREE.Color(0x6ac8ff); fm.color.set(0x6ac8ff); }
+    if (h.fx === 'debuffMark') { base.color = new THREE.Color(0xd89aff); }
     scene.add(g);
     const o = { g, base, fill, fm, ol, kind: h.kind, fx: h.fx };
     if (h.fx === 'otoshi' || h.fx === 'bomb') { const l = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffb060 })); l.scale.set(1, 1.3, 1); scene.add(l); o.lant = l; }
     return o;
   }
   function updHz(o, h, T) {
+    if (o.kind !== 'poly') { o.g.position.x = h.x; o.g.position.z = h.z; o.g.rotation.y = h.yaw; } // 向きを追う予告（連掌・水環めぐり）
     const pre = h.t < h.warn, p = Math.min(1, h.t / Math.max(0.01, h.warn));
     const visible = !(h.brief && pre && h.warn - h.t > h.brief);
     o.g.visible = visible;
     if (o.kind === 'path') { o.base.map.offset.y -= 0.03; o.base.opacity = 0.5 + Math.sin(T * 12) * 0.2; o.fill.visible = false; o.ol.userData.mat.color.set(0xff9ad8); }
+    else if (pre && o.kind === 'poly') { o.fm.opacity = 0.15 + p * 0.35; o.base.opacity = 0.32 + Math.sin(T * 14) * 0.08; o.ol.userData.mat.color.set(0xffc7a0); }
     else if (pre) { if (o.kind === 'fan' || o.kind === 'circle') o.fill.scale.set(p, 1, p); else o.fill.scale.set(1, 1, p); o.fm.opacity = 0.32; o.base.opacity = 0.32 + Math.sin(T * 14) * 0.08; o.ol.userData.mat.color.set(0xffc7a0); }
     else { o.fill.scale.set(1, 1, 1); o.fm.color.set(0xfff0c8); o.fm.opacity = 0.55 + Math.sin(T * 30) * 0.15; o.ol.userData.mat.color.set(0xffffff); }
     if (o.lant) { o.lant.visible = pre; const k = p; o.lant.position.set(h.x, 9 * (1 - k * k) + 0.3, h.z); }
@@ -139,7 +150,10 @@ const R = (() => {
       PJM.leaf = PJM.star;
       const ft = GFX.fudaTex(); PJM.fuda = [new THREE.PlaneGeometry(0.24, 0.42), GFX.lam(0xffffff, { map: ft, side: THREE.DoubleSide, emissive: 0x552211 })];
       PJM.lantern = PJM.fire;
-      PJM.reiko = [new THREE.SphereGeometry(0.3, 12, 10), new THREE.MeshBasicMaterial({ color: 0xd8ff8a })];
+      PJM.reiko = [new THREE.SphereGeometry(DATA.UENO.moves.reiko.r, 16, 12), new THREE.MeshBasicMaterial({ color: 0xd8ff8a, transparent: true, opacity: 0.85 })]; // 判定と同じ太さ（直径1.2m）
+      PJM.gun = [new THREE.CylinderGeometry(0.07, 0.07, 0.9, 8).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xfff6a0 })];
+      PJM.hoshi = [new THREE.OctahedronGeometry(0.3), new THREE.MeshBasicMaterial({ color: 0xffd84a })];
+      PJM.mizu = [new THREE.SphereGeometry(0.4, 12, 10), new THREE.MeshBasicMaterial({ color: 0x7ad0ff, transparent: true, opacity: 0.8 })];
     }
     const [g, m] = PJM[kind] || PJM.star; const mesh = new THREE.Mesh(g, m); scene.add(mesh); return mesh;
   }
@@ -207,12 +221,19 @@ const R = (() => {
     return { x: f[0], z: f[1], yaw: Math.atan2(-4.3 - f[0], 2 - f[1]), moving: false, act: '', st: 'ok' };
   }
   /* ---------- 上野編：駅前の広場 ---------- */
-  let UW = null; const ensureUeno = () => UW || (UW = GFX.buildUeno(scene));
+  let UW = null, SW = null; const ensureUeno = () => UW || (UW = GFX.buildUeno(scene)), ensureStreet = () => SW || (SW = GFX.buildStreet(scene));
   function syncUeno(v, T) {
-    const ue = v.stageId === 'ueno';
-    if (ue) { ensureUeno(); UW.root.visible = true; W.root.visible = false; if (TW) TW.root.visible = false; UW.update(T); }
-    else if (UW) UW.root.visible = false;
-    return ue;
+    const ue = v.stageId === 'ueno', st = v.stageId === 'ueno_street', ak = v.stageId && v.stageId.startsWith('akiba');
+    if (ue) { ensureUeno(); UW.root.visible = true; UW.update(T); } else if (UW) UW.root.visible = false;
+    if (st) { ensureStreet(); SW.root.visible = true; SW.update(T, v.X); } else if (SW) SW.root.visible = false;
+    if (ak && GFX.syncAkibaWorld) GFX.syncAkibaWorld(scene, v, T); else if (GFX.hideAkibaWorld) GFX.hideAkibaWorld();
+    if (ue || st || ak) { W.root.visible = false; if (TW) TW.root.visible = false; }
+    return ue || st || ak;
+  }
+  /** 居酒屋通りの始まり：改札を抜けて通りへ歩いてくる */
+  function streetPose(t, i, a0) {
+    const k = Math.max(0, Math.min(1, (t - 0.6 - i * 0.25) / 3.2)), e = k * k * (3 - 2 * k);
+    return { x: a0.x, z: -6.5 + (a0.z + 6.5) * e, yaw: 0, moving: k > 0 && k < 1, act: '', st: 'ok' };
   }
   function syncTrain(v, dt, T, me) {
     if (syncUeno(v, T)) return;
@@ -258,7 +279,8 @@ const R = (() => {
     const cut = v.stageId === 'joban' && v.stage === 'intro', cutT = v.introWait ? 0 : v.stageT, ot = outroT(v), outro = ot > 1.2;
     // 味方
     v.allies.forEach((a0, i) => {
-      const a = cut ? Object.assign({}, a0, introPose(cutT, i), { hpR: 1 }) : outro && a0.st !== 'gone' ? Object.assign({}, a0, outroPose(ot, i)) : a0;
+      const stIn = v.stageId === 'ueno_street' && v.stage === 'intro';
+      const a = cut ? Object.assign({}, a0, introPose(cutT, i), { hpR: 1 }) : stIn ? Object.assign({}, a0, streetPose(cutT, i, a0)) : outro && a0.st !== 'gone' ? Object.assign({}, a0, outroPose(ot, i)) : a0;
       let m = allies[i];
       if (!m || m.c.id !== a.ch) { if (m) { scene.remove(m.root); scene.remove(m.shadow); } m = GFX.makeChar(DATA.CHI[a.ch]); allies[i] = m; scene.add(m.root); scene.add(m.shadow); }
       GFX.animChar(m, a, T, dt, { me: i === me });
@@ -288,7 +310,7 @@ const R = (() => {
     } else if (boss) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }
     // 札小僧
     const seenM = new Set();
-    for (const e of v.mobs) { seenM.add(e.id); let m = mobs.get(e.id); if (!m) { m = e.yoshi ? GFX.makeYoshi(e.kind) : GFX.makeMob(); m.yoshi = e.yoshi; if (e.yoshi) m.root.scale.setScalar(0.4); mobs.set(e.id, m); scene.add(m.root); scene.add(m.shadow); burst('norm', 10, { x: e.x, y: 0.5, z: e.z, spd: 1.5, life: 0.6, s0: 0.4, s1: 0.8, c: e.yoshi ? 0xb8a8ff : 0xf0e8d8, a: 0.6 }); } if (m.yoshi) { GFX.animYoshi(m, e, T, dt); yoshiOcclude(m, e, v.allies[me]); } else GFX.animMob(m, e, T, dt); } // カメラのすぐ前の部下は消して視界をふさがない
+    for (const e of v.mobs) { seenM.add(e.id); let m = mobs.get(e.id); if (e.akiba) { if (!m) { m = GFX.makeAkiba(e.kind); mobs.set(e.id, m); scene.add(m.root); scene.add(m.shadow); } GFX.animAkiba(m, e, T, dt); continue; } if (!m) { m = e.yoshi ? GFX.makeYoshi(e.kind) : GFX.makeMob(); m.yoshi = e.yoshi; if (e.yoshi) m.root.scale.setScalar(0.4); mobs.set(e.id, m); scene.add(m.root); scene.add(m.shadow); burst('norm', 10, { x: e.x, y: 0.5, z: e.z, spd: 1.5, life: 0.6, s0: 0.4, s1: 0.8, c: e.yoshi ? 0xb8a8ff : 0xf0e8d8, a: 0.6 }); } if (m.yoshi) { GFX.animYoshi(m, e, T, dt); yoshiOcclude(m, e, v.allies[me]); } else GFX.animMob(m, e, T, dt); } // カメラのすぐ前の部下は消して視界をふさがない
     for (const [id, m] of mobs) if (!seenM.has(id)) { scene.remove(m.root); scene.remove(m.shadow); mobs.delete(id); }
     // 弾
     const seenP = new Set();
@@ -297,9 +319,20 @@ const R = (() => {
       m.position.set(p.x, p.kind === 'fuda' ? 0.6 : p.kind === 'reiko' ? 1.1 : 0.65, p.z); m.rotation.y = T * 12;
       if (p.kind === 'focus') m.scale.setScalar(Math.max(0.8, p.r / 0.45 * 1.2));
       if (p.kind === 'fuda') { m.rotation.set(0, p.yaw + T * 14, 0.3); }
+      if (p.kind === 'gun') { m.rotation.set(0, p.yaw, 0); m.position.y = 0.8; }
       if (Math.random() < (p.kind === 'fire' ? 0.9 : 0.5)) emit('add', { x: p.x, y: 0.65, z: p.z, life: 0.25, s0: p.kind === 'fire' ? 0.5 : 0.25, s1: 0.02, c: { star: 0xffe27a, can: 0xbfd8ff, focus: 0xfff6c0, fire: 0xff7a2a, mark: 0xff4a2a, fuda: 0xff8a6a, reiko: 0xc8ff6a }[p.kind] || 0xffffff });
     }
     for (const [id, m] of projs) if (!seenP.has(id)) { scene.remove(m); projs.delete(id); }
+    // 重玉（紫紺の球に金の輪・残り3秒で明滅）
+    const seenO = new Set();
+    for (const ob of v.orbs || []) {
+      seenO.add(ob.id); let m = orbs.get(ob.id);
+      if (!m) { m = new THREE.Group(); const ball = new THREE.Mesh(new THREE.SphereGeometry(DATA.SIM.orb.r, 18, 14), new THREE.MeshStandardMaterial({ color: 0x2a1f6a, emissive: 0x3a2a8a, emissiveIntensity: 0.6, metalness: 0.3, roughness: 0.3 })); m.add(ball); for (let i = 0; i < 2; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(DATA.SIM.orb.r + 0.07 + i * 0.05, 0.018, 6, 28), new THREE.MeshBasicMaterial({ color: 0xffd84a })); r.rotation.x = i ? 1.2 : 0.4; m.add(r); } m.userData.ball = ball; orbs.set(ob.id, m); scene.add(m); burst('add', 14, { x: ob.x, y: 0.4, z: ob.z, spd: 2, life: 0.5, s0: 0.3, s1: 0.05, c: 0xffd84a }); }
+      m.position.set(ob.x, 0.42 + Math.sin(T * 5 + ob.id) * 0.05, ob.z); m.rotation.y = T * 2; m.children[1].rotation.z = T * 3; m.children[2].rotation.y = T * 2.4;
+      m.visible = ob.life > 3 || Math.floor(T * 6) % 2 === 0;
+      if (Math.random() < 0.5) emit('add', { x: ob.x, y: 0.42, z: ob.z, life: 0.35, s0: 0.22, s1: 0.03, c: 0xb89aff });
+    }
+    for (const [id, m] of orbs) if (!seenO.has(id)) { scene.remove(m); orbs.delete(id); }
     // 予兆
     const seenH = new Set();
     for (const h of v.hz) { seenH.add(h.id); let o = hzs.get(h.id); if (!o) { o = makeHz(h); hzs.set(h.id, o); } updHz(o, h, T); }
@@ -417,6 +450,7 @@ const R = (() => {
         const a = v.allies[e.slot]; A('spCut', a ? a.x : null, a ? a.z : null);
         if (listeners.notice) listeners.notice({ k: 'sp', slot: e.slot, nm: e.nm, me: e.slot === me });
         if (a) burst('add', 24, { x: a.x, y: 0.6, z: a.z, spd: 3, up: 1, life: 0.6, s0: 0.35, s1: 0.03, c: SPC[e.ch] || 0xfff0c0 });
+        if (a && e.heavy) { A('bossDown', a.x, a.z, 0.6); for (let i = 0; i < 36; i++) { const g = i / 36 * Math.PI * 2; emit('add', { x: a.x + Math.cos(g) * 0.9, y: 0.1, z: a.z + Math.sin(g) * 0.9, vy: 2.2, life: 0.7, s0: 0.35, s1: 0.05, c: i % 2 ? 0xffd84a : 0x8a6aff }); } }
         break;
       }
       case 'sphit': {
@@ -495,6 +529,9 @@ const R = (() => {
       case 'bhit': A('crit', e.x, e.z); burst('add', 24, { x: e.x, y: 1.8, z: e.z, spd: 5, life: 0.4, s0: 0.4, s1: 0.05, c: e.n >= 2 ? 0xffffff : 0xff6a4a }); shake(0.2); break;
       case 'barrier': A(e.on ? 'protect' : e.broken ? 'crit' : 'ui', v.boss ? v.boss.x : null, v.boss ? v.boss.z : null); if (e.broken && v.boss) burst('add', 40, { x: v.boss.x, y: 1.8, z: v.boss.z, spd: 6, life: 0.6, s0: 0.5, s1: 0.05, c: 0x9ad0ff }); break;
       case 'warpIn': burst('add', 26, { x: e.x, y: 1.5, z: e.z, spd: 3, life: 0.5, s0: 0.45, s1: 0.05, c: 0xb89aff }); A('whoosh', e.x, e.z); break;
+      case 'orb': A('ready', e.x, e.z, 0.6); break;
+      case 'orbGet': A('pick', e.x, e.z); burst('add', 20, { x: e.x, y: 0.6, z: e.z, spd: 2.5, up: 1.5, life: 0.6, s0: 0.3, s1: 0.04, c: 0xffd84a }); if (listeners.notice) listeners.notice({ k: 'orb', slot: e.slot }); break;
+      case 'gun': A('shot_focus', e.x, e.z); burst('add', 10, { x: e.x + Math.sin(e.yaw) * 0.6, y: 0.8, z: e.z + Math.cos(e.yaw) * 0.6, spd: 3, life: 0.2, s0: 0.3, s1: 0.03, c: 0xfff6a0 }); break;
       case 'yLand': burst('norm', 6, { x: e.x, y: 0.2, z: e.z, spd: 1.5, life: 0.4, s0: 0.3, s1: 0.6, c: 0xd8d0e8, a: 0.6 }); break;
       case 'waveWarn': A('summon'); break;
       case 'sleep': A('bossDown'); break;
@@ -581,13 +618,17 @@ const R = (() => {
     const dist = fr.dist + cam.flyPull + (v.stageId === 'ueno' ? 2.2 : 0), p = cam.pitch * Math.PI / 180; // 上野は広いので少し引く（9〜13m）
     let cx = cam.fx - Math.sin(cam.yaw) * Math.cos(p) * dist, cz = cam.fz - Math.cos(cam.yaw) * Math.cos(p) * dist, cy = 0.5 + Math.sin(p) * dist;
     let lx = cam.fx, ly = 0.5, lz = cam.fz;
+    if (v.stageId === 'ueno_street' && v.stage === 'intro') { // 改札の先から、歩いてくる4体を見る
+      const t = v.introWait ? 0 : v.stageT, k = Math.min(1, t / DATA.STREET.introT), e = k * k * (3 - 2 * k);
+      cx = 2.8 - e * 2.8; cy = 2.2 + e * (cy - 2.2); cz = 7 + e * (cz - 7); lx = 0; ly = 1.0; lz = -4 + e * 6; cam.yaw = 0; cam.fx = a.x; cam.fz = a.z;
+    }
     // 登場演出（4.5秒・入力無効の間だけ低い視点）
     if (v.stage === 'intro' && B) {
       const t = v.introWait ? 0 : v.stageT, bx = B.x, bz = B.z;
       const shots = v.stageId === 'ueno' ? [ // 上野：部下の列の奥で指を鳴らす→通常のカメラへ
-        { t: 0, c: [0, 3.2, 7], l: [0, 1.2, 16] },
-        { t: 0.9, c: [2.5, 2.6, bz - 7], l: [bx, 2.6, bz] },
-        { t: 2.0, c: [1.5, 2.4, bz - 6], l: [bx, 2.8, bz] },
+        { t: 0, c: [0, 4.2, 6], l: [0, 1.6, 17] },
+        { t: 0.9, c: [4.5, 3.6, bz - 12.5], l: [bx, 4.2, bz] },
+        { t: 2.0, c: [2.5, 3.4, bz - 11.5], l: [bx, 4.6, bz] },
         { t: DATA.UENO.introT, c: [cx, cy, cz], l: [lx, ly, lz] },
         { t: DATA.UENO.introT + 1, c: [cx, cy, cz], l: [lx, ly, lz] },
       ] : [
@@ -632,10 +673,10 @@ const R = (() => {
     if (boss) { scene.remove(boss.root); scene.remove(boss.shadow); boss = null; }
     for (const [, m] of mobs) { scene.remove(m.root); scene.remove(m.shadow); } mobs.clear();
     for (const [, m] of projs) scene.remove(m); projs.clear(); for (const [, o] of hzs) dropHz(o); hzs.clear();
-    for (const [, m] of traps) scene.remove(m); traps.clear(); for (const [, m] of picks) scene.remove(m); picks.clear();
+    for (const [, m] of traps) scene.remove(m); traps.clear(); for (const [, m] of picks) scene.remove(m); picks.clear(); for (const [, m] of orbs) scene.remove(m); orbs.clear();
     cam.lanT = 0; if (W) for (const L of W.lanternsStreet) if (L.lit) W.setStreetLantern(L, false);
     for (const p of [PA, PN]) if (p) for (const q of p.P) q.life = 0;
-    if (W && W.root) W.root.visible = true; if (TW) TW.root.visible = false; if (UW) UW.root.visible = false; if (JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; } JT.dist = 0; JT.rail = 0; JT.lcd = '';
+    if (W && W.root) W.root.visible = true; if (TW) TW.root.visible = false; if (UW) UW.root.visible = false; if (SW) SW.root.visible = false; if (GFX.hideAkibaWorld) GFX.hideAkibaWorld(); if (JT.cutBoss) { W.root.remove(JT.cutBoss.root); W.root.remove(JT.cutBoss.shadow); JT.cutBoss = null; } JT.dist = 0; JT.rail = 0; JT.lcd = '';
     for (const b of beams) scene.remove(b.g); beams.length = 0; resize();
   }
   function snapCam(v, me) { const a = v && v.allies[me]; if (!a) return; cam.fx = a.x; cam.fz = a.z; cam.yaw = 0; }

@@ -30,25 +30,28 @@ md += `| 技 | 威力 | 使う能力 | Lv40コゲマル（まもり${ko40.def}�
 for (const k of ['fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou']) { const m = M[k]; const atk = m.stat === 'yo' ? bossYo : bossStr; md += `| ${m.nm} | ${m.pw} | ${m.stat === 'yo' ? 'ようりょく' : 'ちから'} | ${dmg(m.pw, atk, ko40.def)}／${dmg(m.pw, atk, nr40.def)} | ${m.wind}秒 |\n`; }
 const Mo = D.MOB;
 md += `\n## 札小僧（北千住のザコ）\n\n| HP | ちから | ようりょく | まもり | 攻撃 |\n|---:|---:|---:|---:|---|\n| ${B.mobHp} | ${Mo.str} | ${Mo.yo} | ${Mo.def} | 札を投げる（威力${Mo.shotPw}・${Mo.shotPeriod}秒ごと） |\n\n`;
-const J = D.JOBAN;
-md += `## ヨシノシンの部下（常磐線・全135体・推奨Lv20）\n\n| 種類 | HP | ちから | ようりょく | まもり | 攻撃 | 予兆／最短周期 | 移動 | Lv20コゲマル（まもり${st(D.CHI.kogemaru, 20).def}）への1発 |\n|---|---:|---:|---:|---:|---|---|---:|---:|\n`;
-for (const k of ['melee', 'beam', 'guard']) { const T = J.types[k]; md += `| ${T.nm} | ${T.hp} | ${T.str} | ${T.yo} | ${T.def} | ${T.stat === 'yo' ? '妖術' : '物理'}${T.pw} | ${T.warn}秒／${T.period}秒 | ${T.spd}m/秒 | ${dmg(T.pw, T.stat === 'yo' ? T.yo : T.str, st(D.CHI.kogemaru, 20).def)} |\n`; }
-md += `\n防御役は最大${J.types.guard.gMax}秒だけガード（受けるダメージ×${J.types.guard.gMul}・再使用${J.types.guard.gCd}秒）。同時に攻撃を始めるのは近接・防御${J.rights.melee}体、ビーム${J.rights.beam}体まで（車内には最大${J.maxActive}体）。各イベントの内訳は近接60%・ビーム25%・防御15%（最大剰余法）。\n\n`;
-md += `| イベント | 発生 | 数 | 入り方 |\n|---|---|---:|---|\n`;
-const at = a => a === 'start' ? '乗車して戦闘開始' : a.startsWith('kill:') ? `${a.slice(5)}を全部倒す` : a.startsWith('st:') ? `${J.stations[+a.slice(3)]}に停車してドアが開く` : `${J.stations[+a.slice(4)]}→${J.stations[+a.slice(4) + 1]}の走行距離50%`;
-for (const e of J.events) md += `| ${e.id} | ${at(e.at)} | ${e.n} | ${{ in: '2号車にいる', front: '1号車から', door: 'ホーム側のドア' }[e.from]} |\n`;
-md += `\n合計 ${J.events.reduce((s, e) => s + e.n, 0)}体。全イベント発生済み・待機0・車内0で上野に着く。\n\n`;
+const J = D.JOBAN, k20 = st(D.CHI.kogemaru, 20);
+const typeRow = (T, def) => `| ${T.nm} | ${T.hp} | ${T.str} | ${T.yo} | ${T.def} | ${T.stat === 'yo' ? '妖術' : '物理'}${T.pw} | ${T.warn}秒／${T.period}秒 | ${T.spd}m/秒 | ${dmg(T.pw, T.stat === 'yo' ? T.yo : T.str, def)} |\n`;
+md += `## ヨシノシンの部下（常磐線・全${J.events.reduce((s, e) => s + e.n, 0)}体・推奨Lv20）\n\n| 種類 | HP | ちから | ようりょく | まもり | 攻撃 | 予兆／最短周期 | 移動 | Lv20コゲマル（まもり${k20.def}）への1発 |\n|---|---:|---:|---:|---:|---|---|---:|---:|\n`;
+for (const k in J.types) md += typeRow(J.types[k], k20.def);
+md += `\n攻撃権：同時に攻撃権を持つのは近接${J.rights.melee}体・ビーム${J.rights.beam}体まで（権利は予兆開始から最短周期のあいだ保持して交代）。車内の生存上限${J.maxActive}体。\n\n`;
+md += `| イベント | 数（前／後） |\n|---|---|\n`;
+for (const e of J.events) md += `| ${e.nm || e.id} | ${e.n}${e.front != null ? `（${e.front}／${e.back}）` : ''} |\n`;
+const SR = D.STREET;
+if (SR) md += `\n## 上野の居酒屋通り\n\n小型の部下${SR.n || 30}体（電車の部下の値×${SR.mul || 1.25}）。暖簾の結界3つを順に開けて進む。\n\n`;
 const U = D.UENO, UM = U.moves;
 md += `## ヨシノシン（上野編のボス・推奨Lv40）\n\n| HP | ちから | ようりょく | まもり | 身長 |\n|---:|---:|---:|---:|---:|\n| ${U.hp} | ${U.str} | ${U.yo} | ${U.def} | ${U.bossH}m |\n\n`;
-md += `| 技 | 内容 | 威力 | 予兆 | 再使用 | Lv40コゲマル（まもり${ko40.def}）／Lv40ノレン坊（まもり${nr40.def}） |\n|---|---|---:|---:|---:|---|\n`;
-const urow = (m, desc, stat) => `| ${m.nm} | ${desc} | ${m.pw || '－'} | ${m.warn}秒 | ${m.cd || '－'}秒 | ${m.pw ? dmg(m.pw, stat === 'yo' ? U.yo : U.str, ko40.def) + '／' + dmg(m.pw, stat === 'yo' ? U.yo : U.str, nr40.def) : '－'} |\n`;
-md += urow(UM.reiko, `3方向の光弾（弾速${UM.reiko.speed}m/秒）`, 'yo') + urow(UM.shosho, '近づいた味方へ両腕を打ち下ろす（最後0.25秒は向きを固定）', 'str') + urow(UM.stamp, `広場中央へワープして踏み下ろす（半径${UM.stamp.r}m）`, 'str') + urow(UM.shosha, '上空ビーム：前方横並び4本／周囲4本／追跡3発（0.9秒ずつ）を交代', 'yo');
-md += urow(UM.warp, '奥へワープ（到着印0.7秒）', '') + urow(UM.summon, `部下が${UM.summon.at}体以下のとき${UM.summon.n}体を奥から呼ぶ`, '') + urow(UM.barrier, `本体へのダメージを遮る。射撃部下のビームを${UM.barrier.hits}回本体に通すと破壊。最大${UM.barrier.max}秒`, '');
-md += `| ${UM.throw20.nm} | HP75%・25%で各1回（1戦2回まで）。生存20体以下になってから20体を0.18秒間隔で投げる（着弾 威力${UM.throw20.pw}・半径${UM.throw20.r}m・同じ投げで1人2回まで） | ${UM.throw20.pw} | ${UM.throw20.warn}秒 | － | ${dmg(UM.throw20.pw, U.yo, ko40.def)}／${dmg(UM.throw20.pw, U.yo, nr40.def)} |\n`;
-md += `| ${UM.sleep.nm} | HP50%をまたぐと10秒眠る。4体合計${UM.sleep.need.toLocaleString()}ダメージで阻止（被ダメージ×${UM.sleep.mul}）→${UM.sleep.down}秒ダウン・以後なし。失敗は全回復して再挑戦 | － | － | － | － |\n\n`;
-md += `直接攻撃（霊光・連掌・スタンプ・上空ビーム）の開始は最低${U.minGap}秒あける。上野だけのLv補正：平均Lv P（切り捨て）で 与ダメージ×clamp(1+0.02(P−40), 0.75, 1.25)、被ダメージ×clamp(1−0.015(P−40), 0.80, 1.20)。\n\n`;
-md += `### 上野の部下（最初36体：近接${U.init.melee}・防御${U.init.guard}・射撃${U.init.beam}／生存上限${U.cap}体／同時に攻撃するのは近接・防御${U.rights.melee}＋射撃${U.rights.beam}）\n\n| 種類 | HP | ちから | ようりょく | まもり | 攻撃 | 予兆／最短周期 | 身長 |\n|---|---:|---:|---:|---:|---|---|---:|\n`;
-for (const k of ['melee', 'guard', 'beam', 'thrown']) { const T = U.minions[k]; md += `| ${T.nm} | ${T.hp} | ${T.str} | ${T.yo} | ${T.def} | ${T.stat === 'yo' ? '妖術' : '物理'}${T.pw} | ${T.warn}秒／${T.period}秒 | ${(T.scale * 1.45).toFixed(2)}m |\n`; }
+md += `| 技 | 威力 | 予兆 | 再使用 | Lv40コゲマル（まもり${ko40.def}）への1発 |\n|---|---:|---:|---:|---:|\n`;
+for (const k in UM) { const m = UM[k]; md += `| ${m.nm} | ${m.pw || '－'} | ${m.warn != null ? m.warn + '秒' : '－'} | ${m.cd ? m.cd + '秒' : '－'} | ${m.pw ? dmg(m.pw, m.stat === 'yo' ? U.yo : U.str, ko40.def) : '－'} |\n`; }
+md += `\n30分睡眠チャージ：${UM.sleep.stages.map(x => `HP${x.at.toLocaleString()}で10秒に${x.need.toLocaleString()}`).join('・')}（被ダメージ×${UM.sleep.mul}、失敗は全回復して1段目から）。\n\n`;
+md += `### 上野の部下（最初 ビーム${U.init.beam}・剣${U.init.sword}・パンチ${U.init.punch}／生存上限${U.cap}体／同時攻撃 近接${U.rights.melee}＋ビーム${U.rights.beam}）\n\n| 種類 | HP | ちから | ようりょく | まもり | 攻撃 | 予兆／最短周期 | 移動 | Lv40コゲマルへの1発 |\n|---|---:|---:|---:|---:|---|---|---:|---:|\n`;
+for (const k in U.minions) md += typeRow(U.minions[k], ko40.def);
+const A = D.AKIBA, k60 = st(D.CHI.kogemaru, 60);
+md += `\n## 秋葉原編（推奨Lv${A.rec}）\n\n| 敵 | HP | ちから | ようりょく | まもり | 身長（見た目） |\n|---|---:|---:|---:|---:|---:|\n`;
+for (const k in A.foes) { const f = A.foes[k]; md += `| ${f.nm} | ${f.hp.toLocaleString()} | ${f.str} | ${f.yo} | ${f.def} | ${(f.h * (f.scale || 1)).toFixed(2)}m（×${f.scale || 1}） |\n`; }
+md += `\n| 技 | 使う人 | 威力 | 予兆 | 再使用 | Lv60コゲマル（まもり${k60.def}）への1発 |\n|---|---|---:|---:|---:|---:|\n`;
+for (const k in A.moves) { const m = A.moves[k], f = A.foes[m.who]; md += `| ${m.nm} | ${f.nm} | ${m.pw || '－'} | ${m.warn}秒 | ${m.cd}秒 | ${m.pw ? dmg(m.pw, m.stat === 'yo' ? f.yo : f.str, k60.def) : '－'} |\n`; }
+md += `\n星と中：片方が倒れてから${A.twin.window}秒以内にもう片方も倒すと勝ち。間に合わなければ倒れた方だけHP${A.twin.revive.toLocaleString()}で復活。同時に通常攻撃する相手は全体で${A.rights}人。\n`;
 md += `\n## 回復・救助\n\n| もの | 効果 |\n|---|---|\n| 救助 | 気絶した仲間のまわりの円に${S.reviveTime}秒いると復活 |\n| キャンディー | ${S.candyPeriod}秒ごとに1つ（最大${S.candyMax}個）。取るとHP全回復 |\n| おにぎり | HPを${Math.round(D.ITEMS.onigiri.heal * 100)}%回復 |\n`;
 fs.writeFileSync(path.join(root, 'CHARACTERS.md'), md);
 console.log('CHARACTERS.md', md.split('\n').length, 'lines');

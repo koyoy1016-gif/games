@@ -9,7 +9,7 @@ const PROTO = (() => {
   const SK_IDS = Object.keys(DATA.SKILLS), SK_I = Object.fromEntries(SK_IDS.map((k, i) => [k, i]));
   const IT_I = Object.fromEntries(DATA.ITEM_IDS.map((k, i) => [k, i]));
   const ST = ['ok', 'down', 'gone'], ST_I = { ok: 0, down: 1, gone: 2 };
-  const STAGES = ['street', 'intro', 'boss', 'won', 'lost', 'train', 'arrive'], STAGE_IDS = ['senju', 'joban', 'ueno', 'ueno_street', 'akiba_platform', 'akiba_plaza'], TRPH = ['stop', 'run'], MK = ['fuda', 'sword', 'fist', 'beam', 'shield'], STAGE_I = Object.fromEntries(STAGES.map((k, i) => [k, i]));
+  const STAGES = ['street', 'intro', 'boss', 'won', 'lost', 'train', 'arrive'], STAGE_IDS = ['senju', 'joban', 'ueno', 'ueno_street', 'akiba_platform', 'akiba_plaza'], TRPH = ['stop', 'run'], MK = ['fuda', 'sword', 'fist', 'beam', 'shield', 'hoshi', 'naka', 'oga', 'kae'], STAGE_I = Object.fromEntries(STAGES.map((k, i) => [k, i]));
   const BARR = ['street', 'none', 'plaza'], BARR_I = { street: 0, none: 1, plaza: 2 };
   const PK = ['food', 'bag', 'candy'], PK_I = { food: 0, bag: 1, candy: 2 };
   const CTX = ['dash', 'revive', 'lantern'], CTX_I = { dash: 0, revive: 1, lantern: 2, '': 0 };
@@ -40,7 +40,7 @@ const PROTO = (() => {
     const b = sim.boss;
     const B = b ? [r2(b.x), r2(b.z), r2(b.y), r2(b.yaw), Math.round(b.hp / b.maxHp * 1000), BST_I[b.st], b.mv ? BMV_I[b.mv] : 0, r2(b.t), b.phase, (b.defDown > 0 ? 1 : 0) | (b.st === 'stun' ? 2 : 0) | (b.dots && b.dots.length ? 4 : 0),
       b.fl ? [FLPH_I[b.fl.ph], r2(b.fl.yaw || 0), b.fl.i, b.fl.n, r2(b.fl.len || 0), r2(b.fl.t)] : 0, b.target, b.downT || 0] : 0;
-    const M = sim.mobs.map(m => [m.id, r2(m.x), r2(m.z), r2(m.yaw), Math.round(Math.max(0, m.hp) / m.maxHp * 1000), m.st === 'ok' || m.st === 'fly' ? 0 : 1, m.wind > 0 ? 1 : 0, m.para > 0 ? 1 : 0].concat(m.kind === 'yoshi' ? [MK.indexOf(m.wpn), m.act ? (m.act.t < m.act.w ? 1 : 2) : 0, m.enterT > 0 ? 1 : 0, m.moving ? 1 : 0, m.gT > 0 ? 1 : 0, Math.round((m.scale || 1) * 100), m.air ? r2(m.air) : 0] : []));
+    const M = sim.mobs.map(m => [m.id, r2(m.x), r2(m.z), r2(m.yaw), Math.round(Math.max(0, m.hp) / m.maxHp * 1000), m.st === 'ok' || m.st === 'fly' ? 0 : 1, m.wind > 0 ? 1 : 0, m.para > 0 ? 1 : 0].concat(m.kind === 'akiba' ? [MK.indexOf(m.who), m.act ? (m.act.t < m.act.w ? 1 : 2) : m.geo ? 3 : 0, m.act ? (DATA.AKIBA.moves[m.act.k] ? Object.keys(DATA.AKIBA.moves).indexOf(m.act.k) + 1 : 0) : 0, m.moving ? 1 : 0, m.st === 'down' ? (m.leave ? 2 : 1) : 0, m.yoMul > 1 ? 1 : 0, r2(m.jump || 0), Math.round(m.maxHp)] : m.kind === 'yoshi' ? [MK.indexOf(m.wpn), m.act ? (m.act.t < m.act.w ? 1 : 2) : 0, m.enterT > 0 ? 1 : 0, m.moving ? 1 : 0, m.gT > 0 ? 1 : 0, Math.round((m.scale || 1) * 100), m.air ? r2(m.air) : 0] : []));
     let P = sim.projs.map(p => [p.id, PJ_I[p.kind], r2(p.x), r2(p.z), r2(p.yaw || 0), p.team === 'ally' ? 0 : 1, p.owner == null ? -1 : p.owner, r2(p.r)]);
     const H = sim.hazards.map(h => [h.id, HZ_I[h.kind], r2(h.x), r2(h.z), r2(h.yaw || 0),
       r2(h.kind === 'fan' ? h.r0 : h.kind === 'circle' ? h.r : h.len), r2(h.kind === 'fan' ? h.r1 : h.w || 0), r2(h.kind === 'fan' ? h.half : 0),
@@ -78,7 +78,7 @@ const PROTO = (() => {
     }));
     const b = s.b;
     v.boss = b ? { x: b[0], z: b[1], y: b[2], yaw: b[3], hpR: b[4] / 1000, st: BST[b[5]], mv: BMV[b[6]], t: b[7], phase: b[8], defDown: !!(b[9] & 1), stun: !!(b[9] & 2), dot: !!(b[9] & 4), fl: b[10] ? { ph: FLPH[b[10][0]], yaw: b[10][1], i: b[10][2], n: b[10][3], len: b[10][4], t: b[10][5] } : null, target: b[11], downT: b[12] } : null;
-    v.mobs = s.m.map(r => ({ id: r[0], x: r[1], z: r[2], yaw: r[3], hpR: r[4] / 1000, dying: !!r[5], wind: !!r[6], para: !!r[7], kind: MK[r[8] || 0], yoshi: r.length > 8, ph: r[9] || 0, enter: !!r[10], moving: !!r[11], guard: !!r[12], scale: (r[13] || 100) / 100, air: r[14] || 0 }));
+    v.mobs = s.m.map(r => ({ id: r[0], x: r[1], z: r[2], yaw: r[3], hpR: r[4] / 1000, dying: !!r[5], wind: !!r[6], para: !!r[7], kind: MK[r[8] || 0], yoshi: r.length > 8 && r[8] <= 4, akiba: r.length > 8 && r[8] >= 5, ph: r[9] || 0, enter: r[8] >= 5 ? false : !!r[10], mv: r[8] >= 5 ? (Object.keys(DATA.AKIBA.moves)[(r[10] || 0) - 1] || '') : '', moving: !!r[11], guard: r[8] >= 5 ? false : !!r[12], down: r[8] >= 5 ? r[12] : 0, buff: r[8] >= 5 ? !!r[13] : false, scale: r[8] >= 5 ? 1 : (r[13] || 100) / 100, air: r[8] >= 5 ? r[14] || 0 : r[14] || 0, maxHp: r[8] >= 5 ? r[15] : 0 }));
     v.projs = s.p.map(r => ({ id: r[0], kind: PJ[r[1]], x: r[2], z: r[3], yaw: r[4], team: r[5] ? 'enemy' : 'ally', owner: r[6], r: r[7] }));
     v.hz = s.h.map(r => ({ id: r[0], kind: HZ[r[1]], x: r[2], z: r[3], yaw: r[4], a: r[5], b: r[6], c: r[7], t: r[8], warn: r[9], act: r[10], fx: FX[r[11]], brief: r[12], num: r[13] || 0, pts: r[14] || null }));
     v.traps = s.k.map(r => ({ id: r[0], kind: r[1] ? 'mine' : 'para', x: r[2], z: r[3], armed: !!r[4] }));

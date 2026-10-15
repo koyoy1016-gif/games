@@ -29,6 +29,21 @@ function inFan(px, pz, ox, oz, yaw, r0, r1, half, tr) {
   const a = Math.abs(angDiff(yaw, yawTo(px - ox, pz - oz)));
   return a <= half + Math.asin(Math.min(1, tr / Math.max(d, tr)));
 }
+/** 多角形（xz平面・頂点の順番どおり）の内側か、辺から tr 以内か（三角結界・四角結界の床判定） */
+function inPoly(px, pz, pts, tr) {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const xi = pts[i][0], zi = pts[i][1], xj = pts[j][0], zj = pts[j][1];
+    if ((zi > pz) !== (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) inside = !inside;
+  }
+  if (inside) return true;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { // 辺までの距離
+    const ax = pts[j][0], az = pts[j][1], bx = pts[i][0], bz = pts[i][1], ex = bx - ax, ez = bz - az, L = ex * ex + ez * ez || 1e-9;
+    const t = Math.max(0, Math.min(1, ((px - ax) * ex + (pz - az) * ez) / L)), dx = px - (ax + ex * t), dz = pz - (az + ez * t);
+    if (dx * dx + dz * dz <= tr * tr) return true;
+  }
+  return false;
+}
 function inLine(px, pz, ox, oz, yaw, len, halfW, tr) {
   const fx = Math.sin(yaw), fz = Math.cos(yaw), dx = px - ox, dz = pz - oz;
   const f = dx * fx + dz * fz, s = dx * fz - dz * fx;
@@ -121,7 +136,7 @@ class Sim {
   /** AIが動かしているキャラは能力をすべて90%にする（プレイヤーが操作を交代すると元に戻る） */
   aiK(a) { return a.ctrlAI ? DATA.SIM.aiMul : 1; }
   /** 能力：レベルの値（AIなら各×0.9の切り捨て）× 強化（同じ能力は一番強いものだけ） */
-  stat(a, k) { return a.stt[k] * this.buffMul(a, k); }
+  stat(a, k) { return a.stt[k] * this.buffMul(a, k) * (a.dl && a.dl.length ? this.debuffMul(a, k) : 1); } // 秋葉原の「星まどい」など、味方への能力低下も（おはらいで解除）
   /** AIと人の切り替え：能力を計算し直し、HPは割合を保つ（気絶中は0のまま。切り替えで回復しない） */
   syncAi(a) {
     const on = !!a.ctrlAI; if (a._ai === on) return; a._ai = on;
@@ -135,7 +150,7 @@ class Sim {
   debuffMul(e, k) { let m = 1; if (e && e.dl) for (const b of e.dl) if (b.k === k && b.t > 0 && b.mul < m) m = b.mul; if (k === 'spd' && e === this.boss) m = Math.max(0.95, m); return Math.max(0.25, m); }
   updateEnemyStatus(dt) {
     const tick = e => { if (!e.dl || !e.dl.length) return; for (const b of e.dl) b.t -= dt; e.dl = e.dl.filter(b => b.t > 0); };
-    if (this.boss) tick(this.boss); for (const m of this.mobs) tick(m);
+    if (this.boss) tick(this.boss); for (const m of this.mobs) tick(m); for (const a of this.allies) tick(a);
   }
   free(a) { return a.st === 'ok' && !a.act; }
   canMove(a) {
@@ -209,7 +224,7 @@ class Sim {
       let spd = S.walk;
       const wantDash = inp.hold.B && !a.rev && !a.lan && (!a.act);
       if (wantDash && !a.tired && (a.stam > 0 || a.buffs.ramune > 0)) { spd = S.dash; a.dashing = true; }
-      spd *= mv * this.aiK(a) * this.buffMul(a, 'spd');
+      spd *= mv * this.aiK(a) * this.buffMul(a, 'spd') * (a.dl && a.dl.length ? this.debuffMul(a, 'spd') : 1) * (this.allyMoveMul ? this.allyMoveMul(a) : 1);
       this.moveAlly(a, mx * spd * dt, mz * spd * dt);
       const ty = yawTo(mx, mz); a.yaw += clamp(angDiff(a.yaw, ty), -12 * dt, 12 * dt);
       a.moving = true;
@@ -946,6 +961,7 @@ class Sim {
     if (m.st === 'fly') return this.updateFly(m, dt); // 上野：投げられて飛んでいる部下
     if (m.st !== 'ok') return;
     if (m.kind === 'yoshi') return this.updateYoshi(m, dt);
+    if (m.kind === 'akiba') return this.updateAkibaEnemy(m, dt);
     if (m.para > 0) { m.para -= dt; return; }
     if (this.stage === 'intro') return;
     const tg = this.mobTarget(m); if (!tg) { m.tgt = -1; return; }
@@ -969,6 +985,7 @@ class Sim {
     this.ev('sfx', { s: 'fudaShot', x: m.x, z: m.z });
   }
   mobDie(m, by) {
+    if (m.kind === 'akiba') return this.akibaDown(m, by); // 秋葉原の4人は倒れて待機（双子の復活・補助役の判定）
     m.st = 'dying'; m.dieT = 0.6; this.ev('mobdie', { x: m.x, z: m.z });
     if (by && by.stats) by.stats.kills++; // セーブの記録（倒した敵の数）
     if (m.kind === 'yoshi') { this.yoshiDie(m); return; }
@@ -1203,8 +1220,10 @@ class Sim {
         if (h.kind === 'fan') inside = inFan(o.x, o.z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, DATA.MOB.allyR);
         else if (h.kind === 'circle') inside = dist2(o.x, o.z, h.x, h.z) <= h.r + DATA.MOB.allyR;
         else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR);
+        else if (h.kind === 'poly') inside = inPoly(o.x, o.z, h.pts, DATA.MOB.allyR);
         if (!inside) continue;
         h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t }; if (h.grp) h.grp.hits[o.slot] = gr + 1;
+        if (h.eff) { if (this.hazardEffect) this.hazardEffect(h, o); continue; } // ダメージのない状態マーク（秋葉原の星まどい・迷いの銀札）
         this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: h.kx != null ? h.kx : o.x - h.x, kz: h.kz != null ? h.kz : o.z - h.z, src: h.src === 'boss' ? b : (h.srcEnt || null), mul: h.mul });
       }
     }
@@ -1238,6 +1257,7 @@ class Sim {
       let inside = false;
       if (h.kind === 'fan') inside = inFan(x, z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, margin);
       else if (h.kind === 'circle') inside = dist2(x, z, h.x, h.z) <= h.r + margin;
+      else if (h.kind === 'poly') inside = inPoly(x, z, h.pts, margin);
       else inside = inLine(x, z, h.x, h.z, h.yaw, h.len, h.w / 2, margin);
       if (inside) return h;
     }
@@ -1420,4 +1440,4 @@ class Sim {
     return best;
   }
 }
-const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I, HZ, HZ_I, PJ, PJ_I, angDiff, yawTo, clamp, dist2, inFan, inLine, RNG };
+const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I, HZ, HZ_I, PJ, PJ_I, angDiff, yawTo, clamp, dist2, inFan, inLine, RNG };

@@ -54,6 +54,7 @@ function onViewChange() { applyRotation(); R.resize(); layoutHud(); }
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id);
   $('#hud').hidden = !(G.mode === 'play' && !id);
+  if (id === 'team' && $('#btnWalkReplay')) $('#btnWalkReplay').hidden = !(G.teamMode === 'zukan' && typeof ACC === 'function' && ACC().walkSeen);
 }
 function goTitle() {
   if (G.session) { try { G.session.leave(); } catch (e) { } }
@@ -130,7 +131,16 @@ function bindMenus() {
   $('#btnPSave').onclick = () => doSave('pause');
   $('#btnQuit').onclick = () => { AUDIO.sfx('back'); goTitle(); }; // 撤退は報酬なし（記録もしない）
   $('#btnSkip').onclick = () => { const s = G.session; if (s && s.sim && s.sim.stage === 'intro' && s.kind === 'solo') s.sim.stageT = s.sim.introLen(); resume(); };
-  $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else if (G.nextPrep) { leaveBattle(); openPrep(); } else startSolo(G.stageId || 'senju'); };
+  $('#btnRetry').onclick = () => {
+    AUDIO.sfx('ok');
+    if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } return; }
+    const nx = G.next; G.next = null;
+    if (nx === 'street') { leaveBattle(); startSolo('ueno_street'); }
+    else if (nx === 'prep') { leaveBattle(); openPrep('ueno'); }
+    else if (nx === 'akiba') { leaveBattle(); openTeam('akiba'); }
+    else if (nx === 'prepAkiba') { leaveBattle(); openPrep('akiba_plaza'); }
+    else startSolo(G.stageId || 'senju');
+  };
   $('#btnReteam').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') G.session.backToLobby(); openLobby(); } else { leaveBattle(); openTeam('stage'); } };
   $('#btnResGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop && G.session) goTitle(); else leaveBattle(); openGacha(); };
   $('#btnResTitle').onclick = () => { AUDIO.sfx('back'); goTitle(); };
@@ -385,7 +395,7 @@ function startSolo(stageId) {
   G.stageId = stageOpen(stageId) ? stageId : 'senju';
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
   S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
-  const carry = G.stageId === 'ueno' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
+  const carry = G.stageId === 'ueno_street' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
   S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch), eq: eqOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
@@ -416,7 +426,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && G.m
 const LAYOUT = {
   land: { W: 844, H: 390,
     stick: { c: [92, 294], d: 120, ax: 'L', ay: 'B' }, bA: { c: [748, 294], d: 76, ax: 'R', ay: 'B' }, bX: { c: [663, 244], d: 64, ax: 'R', ay: 'B' }, bY: { c: [746, 207], d: 64, ax: 'R', ay: 'B' },
-    bSP: { c: [657, 324], d: 64, ax: 'R', ay: 'B' }, bB: { c: [184, 316], d: 52, ax: 'L', ay: 'B' }, bLock: { c: [786, 140], d: 48, ax: 'R', ay: 'T' }, bCam: { c: [728, 140], d: 48, ax: 'R', ay: 'T' },
+    bSP: { c: [657, 324], d: 64, ax: 'R', ay: 'B' }, bOrb: { c: [582, 296], d: 60, ax: 'R', ay: 'B' }, bB: { c: [184, 316], d: 52, ax: 'L', ay: 'B' }, bLock: { c: [786, 140], d: 48, ax: 'R', ay: 'T' }, bCam: { c: [728, 140], d: 48, ax: 'R', ay: 'T' },
     bI0: { c: [282, 266], d: 48, ax: 'L', ay: 'B' }, bI1: { c: [338, 266], d: 48, ax: 'L', ay: 'B' }, bSig: { c: [232, 206], d: 48, ax: 'L', ay: 'B' }, bMenu: { c: [656, 40], d: 48, ax: 'R', ay: 'T' },
     party: { r: [16, 16, 160, 204], ax: 'L', ay: 'T' }, bossbox: { r: [230, 10, 380, 40], ax: 'L', ay: 'T' }, mebox: { r: [260, 312, 260, 34], ax: 'L', ay: 'B' }, map: { r: [690, 16, 112, 92], ax: 'R', ay: 'T' }, timer: { r: [230, 54, 200, 24], ax: 'L', ay: 'T' },
     area: [0, 1] },
@@ -424,7 +434,7 @@ const LAYOUT = {
     bossbox: { r: [16, 10, 358, 40], ax: 'L', ay: 'T' }, party: { r: [16, 56, 358, 48], ax: 'L', ay: 'T', row: true }, map: { r: [278, 116, 96, 96], ax: 'R', ay: 'T' },
     bLock: { c: [246, 140], d: 48, ax: 'R', ay: 'T' }, bCam: { c: [190, 140], d: 48, ax: 'R', ay: 'T' }, bMenu: { c: [40, 140], d: 48, ax: 'L', ay: 'T' }, timer: { r: [72, 128, 120, 24], ax: 'L', ay: 'T' },
     stick: { c: [82, 742], d: 120, ax: 'L', ay: 'B' }, bA: { c: [314, 746], d: 76, ax: 'R', ay: 'B' }, bX: { c: [228, 690], d: 64, ax: 'R', ay: 'B' }, bY: { c: [314, 654], d: 64, ax: 'R', ay: 'B' },
-    bSP: { c: [230, 786], d: 64, ax: 'R', ay: 'B' }, bB: { c: [168, 742], d: 48, ax: 'L', ay: 'B' }, bI0: { c: [172, 610], d: 48, ax: 'L', ay: 'B' }, bI1: { c: [228, 610], d: 48, ax: 'L', ay: 'B' },
+    bSP: { c: [230, 786], d: 64, ax: 'R', ay: 'B' }, bOrb: { c: [300, 572], d: 60, ax: 'R', ay: 'B' }, bB: { c: [168, 742], d: 48, ax: 'L', ay: 'B' }, bI0: { c: [172, 610], d: 48, ax: 'L', ay: 'B' }, bI1: { c: [228, 610], d: 48, ax: 'L', ay: 'B' },
     bSig: { c: [44, 610], d: 48, ax: 'L', ay: 'B' }, mebox: { r: [16, 524, 220, 34], ax: 'L', ay: 'B' },
     area: [108, 604] },
 };
@@ -515,6 +525,7 @@ function bindHud() {
   btn('bX', () => press('X+', 'X'), () => release('X-', 'X'));
   btn('bY', () => press('Y+', 'Y'), () => release('Y-', 'Y'));
   btn('bSP', () => press('SP'));
+  btn('bOrb', () => press('O+'));
   btn('bB', () => press('B+', 'B'), () => release('B-', 'B'));
   btn('bLock', () => toggleLock());
   btn('bCam', () => { R.cam.reset = true; AUDIO.sfx('ui'); });
@@ -524,7 +535,7 @@ function bindHud() {
   document.querySelectorAll('#sigmenu button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); press('sig', undefined); const L = local(); if (L) { L.ev[L.ev.length - 1] = [L.evId, 'sig', b.dataset.sig]; } $('#sigmenu').hidden = true; AUDIO.sfx('ok'); }));
   $('#map').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); $('#map').classList.toggle('big'); sizeMapCanvas(); });
   // キーボード（パソコンでの確認用）
-  const KM = { KeyJ: ['A'], KeyK: ['X+', 'X', 'X-'], KeyL: ['Y+', 'Y', 'Y-'], KeyU: ['SP'], Space: ['B+', 'B', 'B-'], Digit1: ['I0'], Digit2: ['I1'] };
+  const KM = { KeyJ: ['A'], KeyK: ['X+', 'X', 'X-'], KeyL: ['Y+', 'Y', 'Y-'], KeyU: ['SP'], KeyO: ['O+'], Space: ['B+', 'B', 'B-'], Digit1: ['I0'], Digit2: ['I1'] };
   addEventListener('keydown', e => {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     if (e.code === 'Escape') { if (G.mode === 'play') pause(); else if (G.mode === 'pause') resume(); return; }
@@ -603,6 +614,7 @@ function onNotice(o) {
   if (o.k === 'sp') {
     if (o.me) { const c = $('#cutin'); $('#cutImg').src = G.thumbs[v.allies[o.slot].ch] || ''; $('#cutWho').textContent = 'P' + (o.slot + 1) + '　必殺技'; $('#cutNm').textContent = o.nm; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show'); }
     else notice(`P${o.slot + 1}：${o.nm}！`, 'sp', 1300);
+  } else if (o.k === 'orb') { notice(o.slot === G.my ? '重玉を拾った！「重玉」ボタンで強化必殺（効果2倍）' : `P${o.slot + 1}が重玉を拾った`, 'sp', 2200);
   } else if (o.k === 'boss') { const M = (G.v && G.v.stageId === 'ueno' ? DATA.UENO.moves : DATA.BMOVES)[o.mv]; if (M && o.mv !== 'cmd') notice(M.nm, 'boss', 1100); }
   else if (o.k === 'phase2') { banner('トバトーバンが本気を出した', '空を飛ぶ巡行が3回に増える。ミニマップと矢印を見よう', 2400); AUDIO.bgm('boss2'); }
   else if (o.k === 'unlock') { if (G.lock === 'boss') { G.lock = null; G.relockWanted = SET.relock; } notice('ボスが飛んだ！ 注目が外れた', 'warn', 1500); }
@@ -649,6 +661,7 @@ function onEvent(e, v) {
     case 'pick': if (e.slot === me) notice(DATA.ITEMS[e.it].nm + 'を拾った', '', 1000); break;
     case 'candy': notice('🍬 キャンディーが出た！（取ると全回復）', 'info', 1800); break;
     case 'eatCandy': notice(e.slot === me ? '🍬 キャンディーで全回復！' : `P${e.slot + 1}がキャンディーで全回復`, '', 1400); break;
+    default: akibaEvent(e, v);
   }
 }
 /* ---------- ダメージ数字 ---------- */
@@ -687,9 +700,9 @@ function trainHud(v) {
   const L = J.segLen[Math.min(3, tr.at)], frac = tr.ph === 'stop' ? 0 : Math.max(0, Math.min(1, (L - tr.rem) / L));
   const pos = Math.min(4, tr.at + frac) / 4; $('#rtFill').style.width = `calc(${pos.toFixed(4)} * (100% - 18px))`; $('#rtTr').style.left = at(pos);
   const nx = Math.min(4, tr.at + 1);
-  $('#rtNext').textContent = v.stage === 'arrive' || tr.at >= 4 ? '上野 到着' : tr.ph === 'stop' ? `${J.stations[tr.at]} 停車中` : tr.at === 3 && tr.rem > 300 && v.kills < v.total ? `車内の敵を倒すと上野に到着` : `次は ${J.stations[nx]}`;
+  $('#rtNext').textContent = v.stage === 'arrive' || tr.at >= 4 ? '上野 到着' : tr.ph === 'stop' ? `${J.stations[tr.at]} 停車中` : v.hold ? '上野進入待ち（車内の敵を倒すと到着）' : tr.at === 3 && tr.rem > 300 && v.kills < v.total ? `車内の敵を倒すと上野に到着` : `次は ${J.stations[nx]}`;
   const alive = v.mobs.filter(m => m.yoshi && !m.dying).length;
-  $('#rtKills').textContent = `撃破 ${v.kills}/${v.total}` + `・車内${alive}` + (v.wait ? `・待機${v.wait}` : '');
+  $('#rtKills').textContent = `撃破 ${v.kills}/${v.total}・車内${alive}` + (v.wait ? `・待機${v.wait}` : '') + (v.inF || v.waitF ? '・⬆前から' : '') + (v.inR || v.waitR ? '・⬇後ろから' : '');
 }
 
 /* ---------- HUD更新 ---------- */
@@ -705,7 +718,9 @@ function updateHud(v, dt) {
   // ボス
   const showBoss = jb ? v.stage !== 'intro' : v.boss && (v.stage === 'boss' || v.stage === 'won' || v.stage === 'lost');
   $('#bossbox').hidden = !showBoss;
-  const ue = v.stageId === 'ueno', U = v.U;
+  const ue = v.stageId === 'ueno', U = v.U, sr = v.stageId === 'ueno_street';
+  $('#bossbox').classList.toggle('street', sr);
+  if (sr) { $('#bossbox').hidden = v.stage === 'intro'; $('#bossNm').textContent = '上野の居酒屋通り'; $('#bossSt').textContent = `撃破 ${v.kills}/${v.total}・結界 ${v.X ? v.X.gate : 0}/3`; }
   $('#ueInfo').hidden = !(ue && showBoss);
   $('#bossbox').classList.toggle('ueno', ue);
   if (showBoss && !jb) {
@@ -714,11 +729,12 @@ function updateHud(v, dt) {
     $('#bossNm').textContent = ue ? 'ヨシノシン' : 'トバトーバン';
     $('#bossSt').textContent = b.st === 'sleep' ? '睡眠中・被ダメージ×2.25' : ue && U && U.pend >= 0 ? '睡眠準備' : b.st === 'down' ? 'ダウン中' : b.stun ? (ue ? 'よろめき' : '麻痺') : b.st === 'fly' ? '飛行中' : ue && U && U.sleepNear ? '睡眠チャージが近い' : b.defDown ? '守り↓' : '';
     if (ue && U) {
-      $('#ueMin').textContent = `部下 ${U.alive}/100${U.waveWait ? `（待機${U.waveWait}）` : ''}・増援まで${Math.ceil(U.waveIn)}秒`;
+      $('#ueMin').textContent = `部下${U.alive}/100${U.waveWait ? `(待${U.waveWait})` : ''}・増援${Math.ceil(U.waveIn)}秒`;
       const bb = $('#ueBar'); bb.hidden = !U.barrier; if (U.barrier) { bb.textContent = `バリア ${U.bhits}/2・${Math.max(0, Math.ceil(DATA.UENO.moves.barrier.max - U.barrierT))}秒`; bb.classList.toggle('hit', U.bhits >= 1); }
-      $('#ueLv').textContent = U.barrier ? '' : `Lv${U.lv} 与×${U.lvOut.toFixed(2)}/被×${U.lvIn.toFixed(2)}`;
+      $('#ueLv').textContent = '';
     }
   }
+  akibaHud(v);
   // 上野：睡眠チェックの10秒と合計ダメージ
   const sb = $('#sleepBox'), sleepOn = ue && U && U.sleep && v.stage === 'boss';
   sb.hidden = !sleepOn;
@@ -742,6 +758,7 @@ function updateHud(v, dt) {
     circ.setAttribute('stroke-dashoffset', String(113 * (1 - ratio)));
     t.hidden = !txt; t.textContent = txt;
   }
+  const ob = $('#bOrb'); ob.classList.toggle('on', !!me.orb); ob.classList.toggle('off', !me.orb || me.st !== 'ok'); $('#lOrb').textContent = me.orb ? '1' : 'なし';
   const spb = $('#bSP'); spb.classList.toggle('full', me.sp >= 100); $('#lSP').textContent = me.sp >= 100 ? '満タン' : me.sp + '%';
   if (me.sp >= 100 && !G.spReadyShown) { G.spReadyShown = true; AUDIO.sfx('ready'); } if (me.sp < 100) G.spReadyShown = false;
   $('#lB').textContent = me.ctx === 'lantern' ? '灯す' : '走る';
@@ -788,8 +805,10 @@ function overlays(v, me) {
   });
   for (const mo of v.mobs) {
     if (mo.dying) continue; const d = Math.hypot(mo.x - me.x, mo.z - me.z); if (d > 16 && G.lock !== mo.id) continue;
-    put('m' + mo.id, mo.x, 1.15, mo.z, () => { const e = el('div', 'label3d'); const hp = el('div', 'mini hp'); hp.style.width = '34px'; const hi = el('i'); hi.style.background = '#ff6a5a'; hp.appendChild(hi); e.appendChild(hp); return { e, hi }; }, o => setBar(o.hi, mo.hpR));
+    put('m' + mo.id, mo.x, mo.akiba && DATA.AKIBA.foes[mo.kind] ? DATA.AKIBA.foes[mo.kind].h * (DATA.AKIBA.foes[mo.kind].scale || 1) + 0.3 : 1.15, mo.z, () => { const e = el('div', 'label3d'); const hp = el('div', 'mini hp'); hp.style.width = '34px'; const hi = el('i'); hi.style.background = '#ff6a5a'; hp.appendChild(hi); e.appendChild(hp); return { e, hi }; }, o => setBar(o.hi, mo.hpR));
   }
+  for (const h of v.hz) if (h.num && h.t < h.warn + 0.05) put('hz' + h.id, h.x, 0.2, h.z, () => { const e = el('div', 'hznum'); return { e }; }, o => { o.e.textContent = String(h.num); o.e.style.opacity = 0.6 + 0.4 * Math.min(1, h.t / h.warn); }); // 天蓋乱射の着弾順
+  for (const ob of v.orbs || []) if (ob.life <= 3) put('ob' + ob.id, ob.x, 0.9, ob.z, () => ({ e: el('div', 'orbt') }), o => { o.e.textContent = Math.ceil(ob.life) + '秒'; });
   if (v.boss && (v.stage === 'boss') && v.boss.st !== 'dead') edge('boss', v.boss.x, v.boss.y + 2, v.boss.z, '#cb4b46', v.boss.st === 'fly' ? '飛行' : 'ボス');
   // 注目のレティクル
   let tgt = null; if (G.lock === 'boss' && v.boss) tgt = { x: v.boss.x, y: v.boss.y + 2.6, z: v.boss.z }; else if (G.lock) { const mo = v.mobs.find(q => q.id === G.lock); if (mo) tgt = { x: mo.x, y: 0.6, z: mo.z }; else G.lock = null; }
@@ -816,6 +835,8 @@ function drawMap(v) {
   const c = $('#mapc'); const g = c.getContext('2d'); const W = c.width, H = c.height; g.clearRect(0, 0, W, H);
   if (v.stageId === 'joban') return drawTrainMap(v, g, W, H);
   if (v.stageId === 'ueno') return drawUenoMap(v, g, W, H);
+  if (v.stageId === 'ueno_street') return drawStreetMap(v, g, W, H);
+  if (v.stageId && v.stageId.startsWith('akiba') && typeof drawAkibaMap === 'function') return drawAkibaMap(v, g, W, H);
   const big = $('#map').classList.contains('big');
   const me = v.allies[G.my];
   const inPlaza = v.stage !== 'street';
@@ -851,6 +872,16 @@ function drawMap(v) {
   const [mx, mz] = P(me.x, me.z), cy = R.cam.yaw; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy - 0.45) * 28, mz - Math.cos(cy - 0.45) * 28); g.moveTo(mx, mz); g.lineTo(mx + Math.sin(cy + 0.45) * 28, mz - Math.cos(cy + 0.45) * 28); g.stroke();
 }
 
+/** 居酒屋通りのミニマップ：細長い通り。上が奥 */
+function drawStreetMap(v, g, W, H) {
+  const D = DATA.STREET, me = v.allies[G.my], span = 26, z0 = Math.max(0, Math.min(D.zMax - span, me.z - 8)), sc = H / span;
+  const P = (x, z) => [W / 2 - x * sc, H - (z - z0) * sc];
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, W, H);
+  let [a1] = P(D.halfX, 0), [a2] = P(-D.halfX, 0); g.fillStyle = '#5a5060'; g.fillRect(Math.min(a1, a2), 0, Math.abs(a2 - a1), H);
+  const gate = v.X ? v.X.gate : 0; D.gates.forEach((gz, i) => { if (i < gate) return; const [, y] = P(0, gz); g.fillStyle = '#b06aff'; g.fillRect(Math.min(a1, a2), y - 2, Math.abs(a2 - a1), 4); });
+  for (const m of v.mobs) { if (m.dying) continue; const [x, z] = P(m.x, m.z); if (z < -4 || z > H + 4) continue; g.fillStyle = m.kind === 'beam' ? '#c8ff6a' : '#ff5a4a'; g.beginPath(); g.arc(x, z, 3, 0, 7); g.fill(); }
+  v.allies.forEach((a, i) => { if (a.st === 'gone') return; const [x, z] = P(a.x, a.z); g.fillStyle = i === G.my ? '#fff' : pcol(i); g.beginPath(); g.arc(x, z, i === G.my ? 5.5 : 4.5, 0, 7); g.fill(); });
+}
 /** 上野のミニマップ：広場（34m×28m）。上が奥（駅舎） */
 function drawUenoMap(v, g, W, H) {
   const D = DATA.UENO, me = v.allies[G.my], sc = Math.min(W / (D.halfX * 2 + 2), H / (D.zMax + 2));
@@ -891,14 +922,14 @@ function drawTrainMap(v, g, W, H) {
 function showResult(v) {
   if (G.resultShown) return; G.resultShown = true; G.mode = 'result';
   const S = G.session, win = v.result && v.result.win, st = v.stageId || 'senju';
-  const jb = st === 'joban', ue = st === 'ueno', firstClear = win && !cleared(st);
+  const jb = st === 'joban', ue = st === 'ueno', sr = st === 'ueno_street', ak = st.startsWith('akiba'), firstClear = win && !cleared(st);
   const res = checkpoint(v, true, '戦いが終わった');
   if (win) G.sessClear[st] = true;
-  const T = { senju: ['トバトーバンを鎮めた！', '北千住（トバトーバン）'], joban: ['上野に到着！', '常磐線（北千住→上野）'], ueno: ['ヨシノシンを鎮めた！', '上野駅前（ヨシノシン）'] }[st];
+  const T = { senju: ['トバトーバンを鎮めた！', '北千住（トバトーバン）'], joban: ['上野に到着！', '常磐線（北千住→上野）'], ueno_street: ['居酒屋通りを突破！', '上野の居酒屋通り'], ueno: ['ヨシノシンを鎮めた！', '上野駅前（ヨシノシン）'], akiba_platform: ['ホームの2人を倒した！', '秋葉原駅ホーム（オガ・カエ）'], akiba_plaza: ['星と中を鎮めた！', '秋葉原駅前広場（星・中）'] }[st];
   $('#resEyebrow').textContent = win ? (jb ? '電車クリア' : '勝利') : '敗北'; $('#resTitle').textContent = win ? T[0] : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
   const kv = $('#resKv'); kv.textContent = '';
   const rows = [['ステージ', T[1]], ['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : `協力プレイ（${v.H || 1}人）`]];
-  if (jb || ue) rows.splice(2, 0, ['倒した部下', ue ? `${v.kills}体` : `${v.kills} / ${v.total}`]);
+  if (jb || ue || sr) rows.splice(2, 0, ['倒した部下', ue ? `${v.kills}体` : `${v.kills} / ${v.total}`]);
   for (const [k, val] of rows) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
   const grid = $('#resGrid'); grid.textContent = '';
   const stats = S.sim ? S.sim.allies.map(a => a.stats) : null;
@@ -906,14 +937,19 @@ function showResult(v) {
   renderResExp(res);
   let msg = '';
   if (st === 'senju') msg = win ? (firstClear ? '🔓 上野編「常磐線」が解放された！（推奨Lv20）' : '') : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
-  else if (jb) msg = win ? (res && res.unlocked === 'ueno' ? '🔓 上野のヨシノシン戦が解放された！（推奨Lv40）　電車の報酬は確定しました。' : '電車の報酬は確定しました。') : 'もう一度挑戦できます。狭い車内では囲まれないように、救助の円とキャンディーを使おう。';
-  else msg = win ? 'ヨシノシンを鎮めた！' : 'ボスから再挑戦できます（電車をやり直す必要はありません）。';
+  else if (jb) msg = win ? (res && res.unlocked === 'ueno_street' ? '🔓 上野の居酒屋通りと、装備の2枠目が解放された！　電車の報酬は確定しました。' : '電車の報酬は確定しました。') : 'もう一度挑戦できます。前後から来るので、救助の円とキャンディーを使おう。';
+  else if (sr) msg = win ? (res && res.unlocked === 'ueno' ? '🔓 上野駅前のヨシノシン戦が解放された！（推奨Lv40）　通りの報酬は確定しました。' : '通りの報酬は確定しました。') : 'もう一度挑戦できます。';
+  else if (ue) msg = win ? (res && res.unlocked === 'akiba_platform' ? '🔓 秋葉原編が解放された！（推奨Lv60）' : 'ヨシノシンを鎮めた！') : 'ボスから再挑戦できます（電車と通りをやり直す必要はありません）。';
+  else if (st === 'akiba_platform') msg = win ? '🔓 秋葉原駅前広場が解放された！　ホームの報酬は確定しました。' : 'もう一度挑戦できます。前方の攻撃をよけて背後へ回ろう。';
+  else msg = win ? '星と中を鎮めた！　秋葉原編クリア！' : 'ボスから再挑戦できます（ホームをやり直す必要はありません）。星と中は、片方を倒してから15秒以内にもう片方も。';
   $('#resReward').textContent = msg;
   const host = S.kind !== 'client';
-  G.nextPrep = !G.coop && jb && win;
-  G.carry = G.nextPrep ? v.allies.map(a => a.items.map(i => i.n)) : null;
+  // 次へ進むボタン：電車→居酒屋通り→ボスの準備→秋葉原（徒歩の演出）→駅前広場の準備
+  G.next = G.coop ? null : !win ? null : jb ? 'street' : sr ? 'prep' : ue ? 'akiba' : st === 'akiba_platform' ? 'prepAkiba' : null;
+  G.nextPrep = G.next === 'prep';
+  G.carry = G.next === 'street' ? v.allies.map(a => a.items.map(i => i.n)) : null; // 電車から通りへ続けるときだけ所持数を引き継ぐ（無限に増やさない）
   $('#btnRetry').hidden = !host; $('#btnReteam').hidden = !host && G.coop;
-  $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : G.nextPrep ? '上野へ進む' : ue && !win ? 'ボスから再挑戦' : '再出動';
+  $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : { street: '居酒屋通りへ進む', prep: '上野ボスの準備へ', akiba: '秋葉原へ進む', prepAkiba: '駅前広場の準備へ' }[G.next] || ((ue || st === 'akiba_plaza') && !win ? 'ボスから再挑戦' : '再出動');
   $('#btnResGacha').hidden = !(res && res.ticket > 0) && !((G.acct || G.guest).tickets > 0);
   if (!host) $('#resReward').textContent += '　ホストがロビーへ戻ると次の戦いを始められます。';
   refreshResSave();
@@ -949,7 +985,8 @@ function frame(ts) {
         stepDmg(dt);
         if ((v.stage === 'won' || v.stage === 'lost') && v.stageT > (v.stage === 'won' ? 3.4 : 2.6) && G.mode === 'play') showResult(v);
       }
-    } else titleCam(G.T);
+    } else if (G.mode === 'walk') { let end = true; try { end = WALK.step(dt, G.T); } catch (e) { console.error(e); } if (end) finishWalk(false); }
+    else titleCam(G.T);
   } catch (e) { console.error(e); }
   R.render(dt);
   requestAnimationFrame(frame);

@@ -66,6 +66,52 @@
     return W;
   };
 
+  /* ---------- 上野の居酒屋通り（架空）：暖簾・赤提灯・縦看板・電線の提灯。3つの暖簾の結界 ---------- */
+  GFX.buildStreet = function (scene) {
+    const D = DATA.STREET, HX = D.halfX, ZM = D.zMax;
+    const W = { root: new THREE.Group(), gates: [] }; scene.add(W.root); W.root.visible = false; const root = W.root;
+    root.add(new THREE.HemisphereLight(0xffe8d0, 0x3a2a40, 1.0));
+    const dl = new THREE.DirectionalLight(0xffd8b0, 0.55); dl.position.set(4, 12, 10); root.add(dl);
+    const sky = new THREE.Mesh(new THREE.SphereGeometry(160, 20, 10), new THREE.MeshBasicMaterial({ side: THREE.BackSide, map: GFX.tex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#1a1638'); gr.addColorStop(0.5, '#4a2e5a'); gr.addColorStop(0.62, '#a8584a'); gr.addColorStop(1, '#2a2030'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }), depthWrite: false }));
+    sky.position.set(0, 0, ZM / 2); root.add(sky);
+    const roadT = GFX.tex(128, 128, (g, w, h) => { g.fillStyle = '#4a4650'; g.fillRect(0, 0, w, h); for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(${200 + Math.random() * 40},${190 + Math.random() * 40},${180},${Math.random() * 0.08})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); } g.strokeStyle = 'rgba(30,26,34,.5)'; g.lineWidth = 2; g.strokeRect(1, 1, 126, 126); }, [4, 26]);
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(HX * 2 + 1, ZM + 12), L(0xffffff, { map: roadT })); road.rotation.x = -Math.PI / 2; road.position.set(0, 0, ZM / 2 - 4); root.add(road);
+    // 改札（入口）と「上野駅」
+    const darkM = L(0x2a2630), steel = L(0x9aa0a8);
+    for (let i = -2; i <= 2; i++) { B(root, 0.25, 1.0, 1.4, steel, i * 1.8, 0.5, -2.2); B(root, 0.32, 0.08, 1.45, L(0x3a8ad8, { emissive: 0x103050 }), i * 1.8, 1.02, -2.2); }
+    const gateT = GFX.tex(512, 96, (g, w, h) => { g.fillStyle = '#1d2a48'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = `bold 46px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('上野駅　広小路口', w / 2, h / 2 + 2); });
+    const gs = new THREE.Mesh(new THREE.PlaneGeometry(8, 1.5), BAS(0xffffff, { map: gateT })); gs.position.set(0, 3.4, -2.6); root.add(gs);
+    B(root, 10, 0.4, 0.4, darkM, 0, 4.25, -2.6);
+    // 両側の店（ゲーム用の架空の店名）
+    const names = ['やきとり 鳥吉', '呑み処 さくら', 'もつ煮 まるや', '立ち飲み 灯', '大衆酒場 ひさご', '串かつ 福', '海鮮 浜の家', 'おでん 千歳', 'ホルモン 炎', '居酒屋 ふくろう', '餃子 天竜', 'そば処 藤'];
+    const norenCols = [0x1d3a6a, 0x7a1f2a, 0x2a4a2a, 0x3a2a5a, 0x8a5a1a];
+    let ni = 0;
+    for (const sd of [-1, 1]) for (let z = 2; z < ZM + 4; z += 5.2) {
+      const x = sd * (HX + 1.6), h = 3.4 + ((ni * 7) % 3) * 0.5;
+      B(root, 3.2, h, 5.0, L([0x6a4a3a, 0x5a4a52, 0x7a5a40, 0x4a3a3a][ni % 4]), x, h / 2, z);
+      B(root, 0.1, 1.6, 3.6, L(0xffe0a8, { emissive: 0x6a4a20, emissiveIntensity: 0.8 }), x - sd * 1.62, 1.1, z); // 明かりのついた店先
+      const nc = norenCols[ni % norenCols.length], nm = names[ni % names.length];
+      const nt = GFX.tex(256, 128, (g, w, h) => { g.fillStyle = '#' + nc.toString(16).padStart(6, '0'); g.fillRect(0, 0, w, h); g.fillStyle = '#f6eedc'; g.font = `bold 40px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(nm.split(' ')[1] || nm, w / 2, h / 2); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3; for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(i * 64, 40); g.lineTo(i * 64, h); g.stroke(); } });
+      const nr = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.9), L(0xffffff, { map: nt, side: THREE.DoubleSide })); nr.position.set(x - sd * 1.66, 2.25, z); nr.rotation.y = sd > 0 ? -Math.PI / 2 : Math.PI / 2; root.add(nr); // 暖簾
+      const vt = GFX.tex(64, 256, (g, w, h) => { g.fillStyle = '#f4ecd8'; g.fillRect(0, 0, w, h); g.fillStyle = '#b02a2a'; g.font = `bold 34px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'top'; const t = nm.split(' ')[1] || nm; for (let i = 0; i < t.length && i < 6; i++) g.fillText(t[i], w / 2, 8 + i * 40); g.strokeStyle = '#3a2a20'; g.lineWidth = 6; g.strokeRect(2, 2, w - 4, h - 4); });
+      const vs = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 2.0), BAS(0xffffff, { map: vt, side: THREE.DoubleSide })); vs.position.set(x - sd * 1.35, 3.7, z + 2.0); vs.rotation.y = Math.PI; root.add(vs); // 縦看板（通りに向けて）
+      const lan = S(root, 0.28, BAS(0xff5a3a), x - sd * 1.95, 2.9, z - 1.6, 1, 1.3, 1); W.lan = W.lan || []; W.lan.push(lan); // 赤提灯
+      ni++;
+    }
+    // 頭上の提灯の列（電線）
+    for (let z = 4; z < ZM; z += 6) { B(root, HX * 2 + 3, 0.02, 0.02, darkM, 0, 4.6, z); for (let i = -3; i <= 3; i++) { const l = S(root, 0.14, BAS(i % 2 ? 0xffd27a : 0xff8a5a), i * 1.2, 4.35 - Math.abs(i) * 0.04, z, 1, 1.25, 1); W.lan.push(l); } }
+    // 暖簾の結界（地点を片付けると開く）
+    for (const gz of D.gates) {
+      const g = new THREE.Group(); g.position.set(0, 0, gz); root.add(g);
+      const bt = GFX.tex(256, 128, (gg, w, h) => { gg.fillStyle = 'rgba(120,60,200,.55)'; gg.fillRect(0, 0, w, h); gg.strokeStyle = 'rgba(255,220,255,.8)'; gg.lineWidth = 6; for (let i = -128; i < 256; i += 32) { gg.beginPath(); gg.moveTo(i, 0); gg.lineTo(i + 128, h); gg.stroke(); } gg.fillStyle = '#fff'; gg.font = `bold 30px ${GFX.FONT_UI}`; gg.textAlign = 'center'; gg.fillText('結界', w / 2, h / 2 + 10); });
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(HX * 2, 3), new THREE.MeshBasicMaterial({ map: bt, transparent: true, side: THREE.DoubleSide, depthWrite: false })); m.position.y = 1.5; g.add(m);
+      for (const sd of [-1, 1]) C(g, 0.12, 0.12, 3.4, L(0x8a2a2a), sd * HX, 1.7, 0);
+      W.gates.push(g);
+    }
+    W.update = (T, X) => { const gate = X && X.kind === 'street' ? X.gate : 0; W.gates.forEach((g, i) => { g.visible = i >= gate; if (g.visible) g.children[0].material.opacity = 0.75 + Math.sin(T * 3 + i) * 0.15; }); for (let i = 0; i < W.lan.length; i += 7) W.lan[i].scale.y = 1.25 + Math.sin(T * 2 + i) * 0.03; };
+    return W;
+  };
+
   /* ---------- ヨシノシン（3.2m） ---------- */
   GFX.makeYoshinoshin = function () {
     const M = {
@@ -122,7 +168,8 @@
     const glow = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), new THREE.MeshBasicMaterial({ color: 0xc8ff7a, transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending })); glow.position.set(0, -0.22, 0.05); fuda.add(glow);
     // バリア（半透明の殻：青→赤）
     const barrier = new THREE.Mesh(new THREE.SphereGeometry(2.0, 28, 18), new THREE.MeshBasicMaterial({ color: 0x6ab8ff, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })); barrier.position.y = 1.7; barrier.visible = false; root.add(barrier);
-    const shadow = GFX.blob(1.1);
+    root.scale.setScalar(DATA.UENO.bossScale || 1); // 本体だけ1.85倍（5.92m）
+    const shadow = GFX.blob(1.1 * (DATA.UENO.bossScale || 1));
     return { root, body, spine, neck, head, armL, armR, legL, legR, sleeveL, handR, fuda, glow, dolls, lidL, lidR, skirt, barrier, shadow, ph: 0, kind: 'yoshinoshin', fadeT: 1 };
   };
 

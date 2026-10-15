@@ -65,9 +65,14 @@ function renderSortie() {
   G.party.forEach((id, i) => { const m = el('span', 'mini'); const im = el('img'); im.src = G.thumbs[id] || ''; im.alt = ''; m.append(im, el('span', '', `${DATA.CHI[id].nm} Lv${lvOf(id)}${i ? '（AI）' : ''}`)); sp.appendChild(m); });
 }
 /* ---------- 上野の準備（電車クリアのあと） ---------- */
-function openPrep() {
-  fixParty(); const kv = $('#prepKv'); kv.textContent = ''; const P = avgLv(G.party);
-  for (const [k, v] of [['推奨Lv', '40'], ['いまの平均Lv', String(P)], ['編成', G.party.map(id => `${DATA.CHI[id].nm} Lv${lvOf(id)}`).join('・')], ['回復', 'HP・スタミナ全回復、気絶は解除、必殺ゲージは50%から']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
+/** ボス戦の準備（上野ボス／秋葉原の駅前広場）。HP・スタミナ全回復、気絶解除、妖気は最低50、重玉は0 */
+function openPrep(st) {
+  st = st || G.prepStage || 'ueno'; G.prepStage = st;
+  fixParty(); const kv = $('#prepKv'); kv.textContent = ''; const P = avgLv(G.party), ak = st === 'akiba_plaza', k = DATA.lvAdjust(ak ? 'akiba' : 'ueno', P);
+  $('#prepEyebrow').textContent = ak ? '秋葉原駅前' : '上野駅前'; $('#prepTitle').textContent = ak ? '星と中が待っている' : 'ヨシノシンが待っている';
+  $('#prepLead').textContent = ak ? 'ホームの報酬は確定しました。装備・アイテムを見直してから挑めます。' : '居酒屋通りの報酬は確定しました。このまま挑むか、編成・装備を見直してから挑めます。';
+  $('#btnPrepGo').textContent = ak ? 'このまま駅前広場へ' : 'このままヨシノシンへ';
+  for (const [kk, v] of [['推奨Lv', ak ? '60' : '40'], ['いまの平均Lv', String(P)], ['Lv補正', `与えるダメージ×${k.out.toFixed(2)}・受けるダメージ×${k.in.toFixed(2)}`], ['編成', G.party.map(id => `${DATA.CHI[id].nm} Lv${lvOf(id)}${eqOf(id).length ? '（' + eqOf(id).map(e => DATA.EQUIP_I[e].ic).join('') + '）' : ''}`).join('・')], ['回復', 'HP・スタミナ全回復、気絶は解除、必殺ゲージは50%から、重玉は0']]) { kv.appendChild(el('b', '', kk)); kv.appendChild(el('span', '', v)); }
   show('prep');
 }
 /** 戦闘から抜けて（結果を見たあと）メニューへ */
@@ -259,7 +264,7 @@ function bindHub() {
   $('#btnEquip').onclick = () => { AUDIO.sfx('ok'); openTeam('title'); mtoast('キャラを選ぶと、右の詳細で装備を付け替えられます', 3000); };
   $('#btnStageHub').onclick = () => { AUDIO.sfx('back'); show('title'); };
   document.querySelectorAll('#chTabs .tab').forEach(t => t.onclick = () => { AUDIO.sfx('ui'); G.chTab = +t.dataset.ch; renderSortie(); });
-  $('#btnPrepGo').onclick = () => { AUDIO.sfx('ok'); startSolo('ueno'); };
+  $('#btnPrepGo').onclick = () => { AUDIO.sfx('ok'); startSolo(G.prepStage || 'ueno'); };
   $('#btnPrepTeam').onclick = () => { AUDIO.sfx('ok'); G.carry = null; openTeam('prep'); };
   $('#btnPrepHub').onclick = () => { AUDIO.sfx('back'); G.carry = null; show('title'); };
   $('#btnRecommend').onclick = () => { AUDIO.sfx('ok'); recommendParty(); renderTeam(); mtoast('おすすめ編成にしました（いつでも戻せます）'); };

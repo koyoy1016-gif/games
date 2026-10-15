@@ -140,11 +140,11 @@
   };
   /** 動いてよい場面か（電車：走行中の戦い／上野：ボス戦・睡眠中は止まる） */
   P.yoshiLive = function (m) { return this.stageId === 'ueno' ? this.uenoMinionsLive() : this.stageId === 'ueno_street' ? this.streetLive(m) : this.stage === 'train'; };
-  /** 攻撃権：同時に攻撃を始められるのは 近接・防御で最大4体、ビームで最大1体（上野は2体） */
+  /** 攻撃権：同時に攻撃権を持てるのは 電車＝近接4体・ビーム2体／上野＝近接4＋ビーム6（計10）。権利は最短周期のあいだ保持 */
   P.yoshiCanAttack = function (m) {
     const R = this.ycfg.rights, beam = m.typ === 'beam'; let n = 0, all = 0;
     if (beam && this.U && this.U.tengai) return false; // 天蓋乱射の間は射撃を遅らせて逃げ道を残す
-    for (const o of this.mobs) if (o !== m && o.kind === 'yoshi' && o.act && o.st === 'ok') { all++; if ((o.typ === 'beam') === beam) n++; }
+    for (const o of this.mobs) if (o !== m && o.kind === 'yoshi' && o.st === 'ok' && (o.act || o.rightT > 0)) { all++; if ((o.typ === 'beam') === beam) n++; } // 攻撃権は予兆開始から最短周期（剣3.2/拳3.5/ビーム5秒）のあいだ持ち続け、その後に交代
     if (R.all != null && all >= R.all) return false;
     return n < (beam ? R.beam : R.melee);
   };
@@ -153,8 +153,9 @@
   P.updateYoshi = function (m, dt) {
     const J = DATA.JOBAN, W = J.wpn[m.wpn === 'shield' ? 'shield' : m.wpn], T = m.T;
     m.wind = m.act && m.act.t < m.act.w ? 1 : 0; m.moving = 0;
+    if (m.rightT > 0) m.rightT -= dt;
     if (!this.yoshiLive(m)) return;
-    if (m.para > 0) { m.para -= dt; m.act = null; return; }
+    if (m.para > 0) { m.rightT = 0; m.para -= dt; m.act = null; return; }
     m.cd -= dt; m.gCd -= dt; if (m.gT > 0) m.gT -= dt;
     if (m.act) { m.act.t += dt; if (m.act.t >= m.act.end) m.act = null; else return; }
     if (m.enterT > 0) { // 乗り込む／前の車両から入ってくる
@@ -202,6 +203,7 @@
   P.afterEnemyHit = function (e, dmg, a, kind) {
     if (e.kind === 'yoshi' && e.typ === 'guard' && e.gT <= 0 && e.gCd <= 0 && e.hp > 0 && !e.act) this.yoshiGuard(e); // 殴られたら構える
     if (this.uenoAfterHit) this.uenoAfterHit(e, dmg, a, kind);
+    if (this.akibaAfterHit) this.akibaAfterHit(e, dmg, a, kind);
   };
 
   /** 攻撃：予兆を出してから当たる。ダメージは共通式（威力×ちから or ようりょく÷(120＋まもり)） */
@@ -212,10 +214,11 @@
     const base = { warn, act: W.act, pw: T.pw, stat: T.stat, srcStats: { str: m.str, yo: m.yo }, src: 'mob', srcEnt: m, srcId: m.id, knock: W.knock, kx: fx, kz: fz, max: 1, iv: 99 };
     let h;
     if (m.wpn === 'sword') h = this.hz(Object.assign(base, { kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: W.r, half: W.half, fx: 'ysword', dodge: true }));
-    else if (m.wpn === 'fist' || m.wpn === 'shield') h = this.hz(Object.assign(base, { kind: 'rect', x: m.x + fx * 0.25, z: m.z + fz * 0.25, yaw: m.yaw, len: W.len, w: W.w, fx: 'yfist', single: true }));
+    else if (m.wpn === 'fist' || m.wpn === 'shield') h = this.hz(Object.assign(base, { kind: 'rect', x: m.x + fx * 0.25, z: m.z + fz * 0.25, yaw: m.yaw, len: W.len, w: W.w, fx: 'yfist', single: true, dodge: true }));
     else h = this.hz(Object.assign(base, { kind: 'line', x: m.x + fx * 0.5, z: m.z + fz * 0.5, yaw: m.yaw, len: T.len || W.len, w: W.w, fx: 'ybeam', dodge: true, single: true, hook: 'yBeam' })); // 幅0.7m：通路（3m）の左右に逃げ幅が残る
     m.act = { t: 0, w: warn, end: warn + W.act + W.rec };
     m.cd = T.period + this.rng.next() * 0.4; // 準備開始から次の準備開始までの最短周期
+    m.rightT = T.period;
     this.ev('yAtk', { w: m.wpn, x: m.x, z: m.z });
     return h;
   };

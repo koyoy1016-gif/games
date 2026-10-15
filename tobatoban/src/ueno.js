@@ -406,6 +406,11 @@
     if (Us.pend >= 0 && this.bossHittable()) return b;
     const k = this.sleepNext();
     if (k >= 0 && b && b.hp <= U().moves.sleep.stages[k].pre && this.bossHittable() && dist2(a.x, a.z, b.x, b.z) > 6) return b; // 次の段階が近い：本体に寄っておく
+    if (mobs.length) { // 射撃部下（被ダメージの大半）を先に減らす：距離を短く見積もる
+      const w = m => dist2(a.x, a.z, m.x, m.z) * (m.typ === 'beam' ? 0.4 : 1);
+      const m = mobs.reduce((p, q) => w(q) < w(p) ? q : p);
+      if (!this.bossHittable() || a.c.ai === 'melee' || a.c.ai === 'ranged' || dist2(a.x, a.z, m.x, m.z) < 8) return m;
+    }
     return aiEnemy0.call(this, a);
   };
   const aiDecide0 = P.aiDecide;

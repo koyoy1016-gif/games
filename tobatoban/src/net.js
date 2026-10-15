@@ -6,7 +6,7 @@
    自分の移動だけ予測して表示する。
    ===================================================================== */
 const NETLIB = (() => {
-  const VERSION = 'tb5'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
+  const VERSION = 'tb6'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
   const hashStr = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
   const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
