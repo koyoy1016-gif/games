@@ -11,6 +11,7 @@
   const CAP = (p, r, l, c, x, y, z, o) => { const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, l, 4, 8), c.isMaterial ? c : L(c, o)); m.position.set(x, y, z); p.add(m); return m; };
   const G = (p, x, y, z) => { const g = new THREE.Group(); g.position.set(x || 0, y || 0, z || 0); if (p) p.add(g); return g; };
   GFX.parts = { S, B, C, K, CAP, G };
+  GFX.NEW_BUILDERS = {};
   function eyes(p, y, z, sep, r, col) { for (const s of [-1, 1]) { S(p, r, col || 0x16131a, s * sep, y, z); S(p, r * 0.38, 0xffffff, s * sep + r * 0.3, y + r * 0.35, z + r * 0.75); } }
   const shadowT = () => GFX._shT || (GFX._shT = GFX.tex(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, 'rgba(8,6,20,.62)'); gr.addColorStop(0.6, 'rgba(8,6,20,.35)'); gr.addColorStop(1, 'rgba(8,6,20,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }));
   GFX.blob = (r) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2), new THREE.MeshBasicMaterial({ map: shadowT(), transparent: true, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.renderOrder = 1; return m; };
@@ -153,8 +154,9 @@
     burikidon: { legH: 0.16, headY: 0.92, shX: 0.29, shY: 0.6, hipX: 0.12 }, norenbou: { legH: 0.12, headY: 0.8, shX: 0.17, shY: 0.6, hipX: 0.08 },
     kemuridama: { legH: 0.1, headY: 0.6, shX: 0.3, shY: 0.4, hipX: 0.12 }, momiji: { legH: 0.08, headY: 0.84, shX: 0.2, shY: 0.6, hipX: 0.08 },
   };
+  GFX.bipedParts = { biped, limbs, eyes };
   GFX.makeChar = (c) => {
-    const d = DIMS[c.id], m = biped(d); BUILDERS[c.id](m);
+    const d = DIMS[c.id] || GFX.newDims(c), m = biped(d); (BUILDERS[c.id] || GFX.NEW_BUILDERS[c.id] || GFX.NEW_BUILDERS._default)(m, c, d);
     m.root.scale.setScalar(c.h); m.c = c; m.h = c.h; m.d = d;
     m.shadow = GFX.blob(0.45 * c.h); m.shadow.position.y = 0.02;
     m.mats = []; m.root.traverse(o => { if (o.material && !Array.isArray(o.material)) { o.material = o.material.clone(); o.material.transparent = true; m.mats.push(o.material); } });
@@ -231,7 +233,7 @@
     const id = m.c.id, S = DATA.SPECIALS[m.c.sp];
     const prep = S.prep, k0 = sat(t / prep);
     m.glow.visible = true; m.glow.position.set(0, 0.5, 0.3);
-    const gc = { kogemaru: 0xff7a2a, hoshisuzume: 0xffe27a, akaneten: 0xff5a2a, kagetsubame: 0x8aa0ff, sayanosuke: 0xfff0c0, taiko: 0xff4a4a, burikidon: 0x9ad0ff, norenbou: 0xc0d8ff, kemuridama: 0xd8d8d8, momiji: 0x9aff8a }[id];
+    const gc = { kogemaru: 0xff7a2a, hoshisuzume: 0xffe27a, akaneten: 0xff5a2a, kagetsubame: 0x8aa0ff, sayanosuke: 0xfff0c0, taiko: 0xff4a4a, burikidon: 0x9ad0ff, norenbou: 0xc0d8ff, kemuridama: 0xd8d8d8, momiji: 0x9aff8a }[id] || m.c.acc || 0xffffff;
     m.glow.material.color.set(gc); const gs = 0.4 + k0 * 0.8; m.glow.scale.set(gs, gs, 1);
     if (t < prep) { P.bodyY += 0.05 * k0; P.aLz = -1.2 * k0; P.aRz = 1.2 * k0; P.lean = -0.1 * k0; return; }
     const tt = t - prep;

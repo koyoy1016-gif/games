@@ -2,7 +2,7 @@
 // 使い方: node tobatoban/tools/sim-test.mjs
 import fs from 'fs'; import vm from 'vm'; import path from 'path'; import { fileURLToPath } from 'url';
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
-const src = ['data.js', 'sim.js', 'joban.js', 'proto.js'].filter(f => fs.existsSync(path.join(dir, f))).map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+const src = ['data.js', 'roster_data.js', 'roster.js', 'sim.js', 'joban.js', 'proto.js'].filter(f => fs.existsSync(path.join(dir, f))).map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console, Math, Set, Map, JSON, Object, Array, Number, String, Date });
 vm.runInContext(src + '\n;globalThis.__ = { DATA, SIMLIB, PROTO: typeof PROTO!=="undefined"?PROTO:null };', ctx);
 const { DATA, SIMLIB, PROTO } = ctx.__;
@@ -157,37 +157,62 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   s.candyT = 0.01; for (let i = 0; i < 5; i++) { s.candyT = 0.01; s.step(); }
   ok(s.pickups.filter(p => p.kind === 'candy').length === DATA.SIM.candyMax, `同時に置かれるのは${DATA.SIM.candyMax}個まで`);
 }
-// 7.8) 常磐線：部下の体力・ダメージ・波・駅・上野到着・車内の壁
+// 7.8) 常磐線：135体・9イベント・敵の種類と共通ダメージ式・攻撃権・区間中央は一度だけ・上野到着
 {
-  const party = ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(c => ({ ch: c }));
+  const party = ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(c => ({ ch: c, lv: 20 }));
   const s = new Sim({ party, seed: 11, stageId: 'joban' }); const J = DATA.JOBAN;
   ok(s.stage === 'intro' && !s.boss, '常磐線は演出（intro）から始まり、ボスはいない');
+  ok(s.total === 135 && J.events.length === 9, `9イベントで合計${s.total}体`);
+  const mc = Sim.mixCounts(10, J.mix), mc25 = Sim.mixCounts(25, J.mix), mc15 = Sim.mixCounts(15, J.mix);
+  ok(mc.melee + mc.beam + mc.guard === 10 && mc25.melee + mc25.beam + mc25.guard === 25 && mc15.melee === 9, `内訳は最大剰余法（10体→近接${mc.melee}・ビーム${mc.beam}・防御${mc.guard}／25体→${mc25.melee}・${mc25.beam}・${mc25.guard}）`);
   for (let i = 0; i < 60 * (J.introT + 0.2); i++) s.step();
   const ys = s.mobs.filter(m => m.kind === 'yoshi');
-  ok(s.stage === 'train' && ys.length === J.waves[0] && ys.every(m => m.z > 1), `発車すると2号車に部下が${J.waves[0]}体（${ys.length}）`);
-  ok(ys.every(m => m.maxHp >= 450 && m.maxHp <= 500), `部下の体力は450〜500（${Math.min(...ys.map(m => m.maxHp))}〜${Math.max(...ys.map(m => m.maxHp))}）`);
-  ok(new Set(ys.map(m => m.wpn)).size >= 2, `武器は剣・拳・大砲がまざる（${[...new Set(ys.map(m => m.wpn))].join('・')}）`);
-  // 1発のダメージ
-  const o = s.allies[0]; o.ctrlAI = false; const dmgs = [];
-  for (let k = 0; k < 40; k++) { o.hp = o.maxHp; o.inv = 0; o.act = null; o.st = 'ok'; const h = s.hz({ kind: 'circle', x: o.x, z: o.z, r: 1, warn: 0, act: 0.1, pw: 0, stat: 'str', fixed: J.dmg, src: 'mob' }); const hp0 = o.hp; s.updateHazards(1 / 60); dmgs.push(hp0 - o.hp); s.hazards = []; }
-  ok(Math.min(...dmgs) >= 50 && Math.max(...dmgs) <= 80, `部下の1発は50〜80（${Math.min(...dmgs)}〜${Math.max(...dmgs)}）`);
+  ok(s.stage === 'train' && ys.length === 10 && ys.every(m => m.z > 1), `発車すると2号車に部下が10体（${ys.length}）`);
+  const hpOk = ys.every(m => m.maxHp === J.types[m.typ].hp && m.def === J.types[m.typ].def);
+  ok(hpOk && new Set(ys.map(m => m.typ)).size === 3, `種類ごとの体力・まもり（${[...new Set(ys.map(m => m.typ + ':' + m.maxHp))].join('・')}）`);
+  // 共通ダメージ式：近接60×ちから120÷(120＋まもり)
+  const o = s.allies[0]; o.ctrlAI = false; s.syncAi(o); o.hp = o.maxHp; o.inv = 0; o.act = null;
+  const mel = ys.find(m => m.typ === 'melee'), want = Math.max(1, Math.round(60 * 120 / (120 + s.stat(o, 'def'))));
+  const hp0 = o.hp; const h = s.hz({ kind: 'circle', x: o.x, z: o.z, r: 1, warn: 0, act: 0.1, pw: 60, stat: 'str', srcStats: { str: mel.str, yo: mel.yo }, src: 'mob', srcEnt: mel }); s.updateHazards(1 / 60); s.hazards = [];
+  ok(hp0 - o.hp === want, `部下の攻撃は共通式（近接→Lv20コゲマル：${hp0 - o.hp}＝${want}）`);
+  // 防御役のガード：受けるダメージ×0.7
+  const gd = ys.find(m => m.typ === 'guard'); gd.hp = gd.maxHp = 1e6; s.dealToEnemy(s.allies[1], gd, 100, 'str', 'A', null); const g0 = gd.maxHp - gd.hp, gT0 = gd.gT, gC0 = gd.gCd; gd.hp = gd.maxHp; gd.gT = 0;
+  ok(gT0 > 0 && gC0 > 3, `防御役は殴られると構える（${gT0.toFixed(1)}秒・再使用${gC0.toFixed(1)}秒）`);
+  gd.gT = 1.5; s.dealToEnemy(s.allies[1], gd, 100, 'str', 'A', null); const g1 = gd.maxHp - gd.hp;
+  ok(Math.abs(g1 / g0 - 0.7) < 0.08, `ガード中は×0.7（${g0}→${g1}）`); gd.hp = gd.maxHp = 160; gd.gT = 0;
+  // 攻撃権：近接・防御は同時4体、ビームは1体
+  { let maxM = 0, maxB = 0; s.allies.forEach(a => { a.inv = 1e9; a.x = 0; a.z = 8; });
+    for (let i = 0; i < 60 * 12; i++) { s.step(); const at = s.mobs.filter(m => m.kind === 'yoshi' && m.act && m.st === 'ok'); maxM = Math.max(maxM, at.filter(m => m.typ !== 'beam').length); maxB = Math.max(maxB, at.filter(m => m.typ === 'beam').length); }
+    ok(maxM <= 4 && maxB <= 1 && maxM >= 2, `同時に攻撃するのは近接・防御${maxM}体（最大4）・ビーム${maxB}体（最大1）`); }
   // 車内の壁と連結部
   const c1 = s.clampTrain(0, -5, 3, -5, 0.35), c2 = s.clampTrain(1.2, -3, 1.2, 0, 0.35), c3 = s.clampTrain(0, 19, 0, 30, 0.35);
   ok(Math.abs(c1[0]) <= J.halfW && c2[1] <= -1.3 && c3[1] < J.zMax, '車内の壁・連結部の細い通路・1号車へは行けない');
-  // 波：10体倒すと15体、15体倒すと20体
-  const kill = n => { for (const m of s.mobs.filter(m => m.st === 'ok' && m.kind === 'yoshi').slice(0, n)) s.dealToEnemy(s.allies[1], m, 1e6, 'str', 'A', null); };
+  // 波：10体倒すと15体（駅・区間中央の撃破では進まない）
+  const kill = (n, f) => { for (const m of s.mobs.filter(m => m.st === 'ok' && m.kind === 'yoshi' && (!f || f(m))).slice(0, n)) s.dealToEnemy(s.allies[1], m, 1e6, 'str', 'A', null); };
   kill(10); s.step();
-  ok(s.phase === 2 && s.queue.filter(q => q.grp === 'p2').length >= 14, `10体倒すと1号車から15体（第${s.phase}波・待ち${s.queue.length}）`);
-  const allies = s.allies; allies.forEach(a => { a.inv = 1e9; });
-  let stations = [], boarded = 0, boardBy = [];
-  for (let i = 0; i < 60 * 600 && s.stage !== 'won'; i++) {
-    s.step(); for (const e of s.events) if (!e._c) { e._c = 1; if (e.type === 'arriveSt') stations.push(J.stations[e.st]); if (e.type === 'board') { boarded += e.n; boardBy.push(e.n); } }
-    if (i % 30 === 0) kill(3); // どんどん倒す
+  ok(s.fired.p2 && s.queue.filter(q => q.grp === 'p2').length >= 14, `10体倒すと1号車から15体（待ち${s.queue.length}）`);
+  let stations = [], boardBy = [], evs = [], maxAlive = 0, midAt = {};
+  for (let i = 0; i < 60 * 900 && s.stage !== 'won'; i++) {
+    s.step(); for (const e of s.events) if (!e._c) { e._c = 1; if (e.type === 'arriveSt') stations.push(J.stations[e.st]); if (e.type === 'board') boardBy.push(e.n); if (e.type === 'jev') { evs.push(e.id); if (e.id.startsWith('mid_')) midAt[e.id] = (s.tr.d / J.segLen[s.tr.at]).toFixed(3); } }
+    maxAlive = Math.max(maxAlive, s.mobs.filter(m => m.st === 'ok').length);
+    if (i % 30 === 0) kill(3, s.fired.p3 ? null : (m => !m.grp.startsWith('p'))); // 第3波が出るまでは駅・区間の敵だけ倒す
+    if (i % 30 === 15 && s.fired.station_minami && !s.fired.p3) kill(15, m => m.grp === 'p2');
   }
   ok(stations.join('→') === '南千住→三河島→日暮里→上野', `停車駅：${stations.join('→')}`);
-  ok(boardBy.join(',') === '10,10,15', `南千住10体・三河島10体・日暮里15体が乗ってくる（${boardBy.join('・')}）`);
-  ok(s.kills === s.total && s.total === 80, `全部で${s.total}体（45体＋駅の35体）を倒した（${s.kills}）`);
+  ok(boardBy.join(',') === '15,15,25', `南千住15体・三河島15体・日暮里25体（${boardBy.join('・')}）`);
+  ok(evs.length === 8 && new Set(evs).size === 8 && !evs.includes('p1') && Object.keys(s.fired).length === 9, `9イベントがそれぞれ一度だけ（p1,${evs.join(',')}）`);
+  ok(Object.values(midAt).every(f => +f >= 0.5 && +f < 0.53), `区間中央は走行距離50%の通過で発生（${Object.entries(midAt).map(([k, f]) => k + '@' + f).join('・')}）`);
+  ok(maxAlive <= 20, `同時に車内にいるのは最大20体（${maxAlive}）`);
+  ok(s.kills === s.total && s.total === 135, `全部で${s.total}体を倒した（${s.kills}）`);
   ok(s.stage === 'won' && s.result.why === 'ueno', `全部倒すと上野に到着して勝ち（${s.stage}）`);
+}
+{ // 区間中央：49%→52%へ飛んでも一度だけ、50%に居続けても増えない
+  const party = ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(c => ({ ch: c }));
+  const s = new Sim({ party, seed: 13, stageId: 'joban', test: true }); const J = DATA.JOBAN;
+  s.tr.at = 1; s.tr.ph = 'run'; s.tr.d = J.segLen[1] * 0.49; s.tr.v = 0; s.updateTrainMotion(0); const q0 = s.queue.length;
+  s.tr.d = J.segLen[1] * 0.52; s.updateTrainMotion(0); const q1 = s.queue.length;
+  for (let i = 0; i < 30; i++) { s.tr.d = J.segLen[1] * 0.5; s.updateTrainMotion(0); }
+  ok(q0 === 0 && q1 === 10 && s.queue.length === 10, `49%→52%で一度だけ10体（${q0}→${q1}→${s.queue.length}）`);
 }
 { // 部下が残っている間は上野に着かない
   const party = ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(c => ({ ch: c }));

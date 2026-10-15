@@ -2,14 +2,14 @@
    render_train.js — ステージ2「常磐線」の見た目
    ・青い帯の常磐線（2号車・3号車で戦う。前の1号車には入れない）
    ・走る車窓（建物・架線柱・線路が流れる）、駅のホーム（北千住・南千住・三河島・日暮里・上野）
-   ・ヨシノシの部下（＝ヨシノシと同じ見た目。猫背・気味の悪い目・知的な眼鏡と角帽。手の武器だけ違う）
+   ・ヨシノシンの部下（＝ヨシノシンを小さくした人形。猫背・気味の悪い目・知的な眼鏡と角帽。手の武器だけ違う）
    座標は sim と同じ：x＝左右、z＝前後（+zが上野方面）。車内の床が y=0。
    ===================================================================== */
 (() => {
   const P = GFX.parts, S = P.S, B = P.B, C = P.C, K = P.K, G = P.G;
   const L = GFX.lam, BAS = GFX.bas;
 
-  /* ---------- ヨシノシ（部下も同じ見た目） ---------- */
+  /* ---------- ヨシノシンの部下（妖怪人形） ---------- */
   let YM = null;
   const ymats = () => YM || (YM = {
     coat: L(0x2b2552), trim: L(0x7a68c8), collar: L(0xebe6d8), skin: L(0xc6bfd4), skinD: L(0x8f86a6), hair: L(0x3a3550),
@@ -59,7 +59,7 @@
       C(w, 0.025, 0.025, 0.18, M.hilt, 0, -0.02, 0); B(w, 0.16, 0.03, 0.05, M.guard, 0, -0.12, 0);
       B(w, 0.045, 0.85, 0.012, M.blade, 0, -0.56, 0);
       K(w, 0.032, 0.08, M.blade, 0, -1.02, 0).rotation.z = Math.PI;
-    } else if (wpn === 'fist') {
+    } else if (wpn === 'fist' || wpn === 'shield') {
       B(w, 0.2, 0.2, 0.22, M.iron, 0, -0.03, 0.02);
       C(w, 0.09, 0.1, 0.14, M.ironD, 0, 0.11, 0);
       for (const x of [-0.06, 0, 0.06]) K(w, 0.025, 0.07, M.iron, x, -0.08, 0.15).rotation.x = Math.PI / 2;
@@ -69,6 +69,11 @@
       const mz = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.02, 6, 16), M.iron); mz.position.set(0, -0.56, 0); mz.rotation.x = Math.PI / 2; w.add(mz);
       C(w, 0.09, 0.09, 0.08, M.ironD, 0, 0.02, 0);
       glow = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), M.glow); glow.position.set(0, -0.6, 0); w.add(glow); glow.name = 'glow'; glow.userData.keep = true;
+    }
+    if (wpn === 'shield') { // 防御役：左手に大きな決裁板（紫の板に金の判）
+      const lh = G(armL, 0, -0.55, 0.08); lh.name = 'shieldG';
+      B(lh, 0.62, 0.78, 0.06, M.coat, 0, -0.05, 0.08); B(lh, 0.66, 0.06, 0.08, M.trim, 0, 0.35, 0.08); B(lh, 0.66, 0.06, 0.08, M.trim, 0, -0.45, 0.08);
+      C(lh, 0.12, 0.12, 0.03, M.gold, 0, -0.05, 0.12).rotation.x = Math.PI / 2;
     }
     return root;
   };
@@ -126,15 +131,18 @@
     if (e.wind || e.ph === 2) {
       const wind = e.ph === 1, k = wind ? 1 : 0;
       if (m.wpn === 'sword') { aR = wind ? -2.7 : 0.5; lunge = wind ? -0.1 : 0.25; }
-      else if (m.wpn === 'fist') { aR = wind ? 0.7 : -1.55; lunge = wind ? -0.15 : 0.3; }
+      else if (m.wpn === 'fist' || m.wpn === 'shield') { aR = wind ? 0.7 : -1.55; lunge = wind ? -0.15 : 0.3; }
       else { aR = wind ? -1.2 : -0.9; lunge = wind ? 0 : -0.12; }
       aL = -0.6 - k * 0.2;
     } else if (m.wpn === 'beam') aR = -1.1 + Math.sin(T * 2 + ph) * 0.05;
+    if (m.wpn === 'shield') aL = e.guard ? -1.45 : -0.75; // ガード中は板を前に構える
     m.armR.rotation.x = aR; m.armL.rotation.x = aL; m.spine.rotation.x += lunge;
     if (m.glow) { const on = e.ph === 1 ? 0.7 + Math.sin(T * 30) * 0.3 : e.ph === 2 ? 1.8 : 0.35; m.glow.scale.setScalar(on); }
     if (e.para) m.root.rotation.z = Math.sin(T * 40) * 0.08;
-    if (e.enter) { m.root.scale.setScalar(Math.min(1, (m.root.scale.x || 0.4) + dt * 2.5)); } else if (!e.dying) m.root.scale.setScalar(1);
-    if (e.dying) { m.die += dt; const k = Math.min(1, m.die / 0.55); m.root.rotation.x = k * 1.3; m.root.position.y = -k * 0.5; m.root.scale.setScalar(Math.max(0.01, 1 - k * 0.6)); m.shadow.visible = k < 0.8; }
+    const sc = (e.scale || 1) * (m.base || 1);
+    if (e.air) m.root.position.y = e.air; // 投げられて飛んでくる途中
+    if (e.enter) { m.root.scale.setScalar(Math.min(sc, (m.root.scale.x || 0.4 * sc) + dt * 2.5 * sc)); } else if (!e.dying) m.root.scale.setScalar(sc);
+    if (e.dying) { m.die += dt; const k = Math.min(1, m.die / 0.55); m.root.rotation.x = k * 1.3; m.root.position.y = -k * 0.5; m.root.scale.setScalar(Math.max(0.01, (1 - k * 0.6) * sc)); m.shadow.visible = k < 0.8; }
   };
 
   /* ---------- 常磐線（車内・車外・車窓・ホーム） ---------- */
@@ -234,7 +242,7 @@
     for (const s of [-1, 1]) { GFX.mesh(T.train, box(0.5, 0.5, 10), L(0x1f3d78), s * (IN - 0.27), 0.25, 27.5); GFX.mesh(T.train, box(0.06, CEIL, 12), dim, s * IN, CEIL / 2, 27); }
     GFX.mesh(T.train, plane(IN * 2, CEIL), L(0x40424a), 0, CEIL / 2, 33, Math.PI);
     // 中づり広告（架空）
-    const ads = ['北千住 宵町まつり', '常磐線で上野へ', 'ヨシノシ研究所 生徒募集', 'よいまち湯 本日あつ湯'].map((t, i) => GFX.tex(256, 128, (g, w, h) => { g.fillStyle = ['#fff4d6', '#e3f1ff', '#efe6ff', '#ffe8e0'][i]; g.fillRect(0, 0, w, h); g.fillStyle = ['#c0392b', '#1d56b8', '#4a2a8a', '#b8402a'][i]; g.font = `bold 28px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, w / 2, h / 2, w - 16); g.strokeStyle = g.fillStyle; g.lineWidth = 4; g.strokeRect(4, 4, w - 8, h - 8); }));
+    const ads = ['北千住 宵町まつり', '常磐線で上野へ', 'ヨシノシン研究所 生徒募集', 'よいまち湯 本日あつ湯'].map((t, i) => GFX.tex(256, 128, (g, w, h) => { g.fillStyle = ['#fff4d6', '#e3f1ff', '#efe6ff', '#ffe8e0'][i]; g.fillRect(0, 0, w, h); g.fillStyle = ['#c0392b', '#1d56b8', '#4a2a8a', '#b8402a'][i]; g.font = `bold 28px ${GFX.FONT_UI}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, w / 2, h / 2, w - 16); g.strokeStyle = g.fillStyle; g.lineWidth = 4; g.strokeRect(4, 4, w - 8, h - 8); }));
     let ai = 0;
     const adIt = ads.map(() => []);
     for (const car of cars) for (const dz of [-6, -1, 4, 8.5]) { const a = adIt[ai++ % ads.length]; a.push({ geo: plane(0.8, 0.4), m: GFX.M(0, CEIL - 0.32, car.c + dz) }, { geo: plane(0.8, 0.4), m: GFX.M(0, CEIL - 0.32, car.c + dz, Math.PI) }); } // 表と裏（裏返しの文字にならない）

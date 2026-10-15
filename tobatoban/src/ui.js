@@ -75,6 +75,7 @@ async function boot() {
   makeThumbs();
   bindMenus(); bindHud(); bindRotScroll(); applySettings();
   detectNet();
+  G.guest = SAVE.fresh(0, ''); fixParty(); // ログインしていない間の所持・レベル（この画面を開いている間だけ）
   ACCT.setup(); G.mode = 'title'; updateAcctBar(); openLogin('title'); // 開くたびにログインをたずねる
   requestAnimationFrame(frame);
 }
@@ -112,24 +113,26 @@ async function detectNet() {
 function bindMenus() {
   const unlock = () => { AUDIO.init(); AUDIO.setVol(SET.bgm / 100, SET.sfx / 100); if (G.mode === 'title') AUDIO.bgm('title'); };
   document.addEventListener('pointerdown', unlock, { once: false, passive: true });
-  $('#btnSolo').onclick = () => { AUDIO.sfx('ok'); G.coop = false; openTeam(); };
+  $('#btnSolo').onclick = () => { AUDIO.sfx('ok'); G.coop = false; openSortie(); };
   $('#btnCoop').onclick = () => { AUDIO.sfx('ok'); $('#nick').value = G.nick; show('coop'); };
   $('#btnCoopBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
   $('#btnHow').onclick = () => openSub('how', 'title');
   $('#btnSet').onclick = () => openSub('settings', 'title');
   $('#btnHost').onclick = () => startHost();
   $('#btnJoin').onclick = () => startJoin();
-  $('#btnTeamBack').onclick = () => { AUDIO.sfx('back'); if (G.coop) goTitle(); else show('title'); };
-  $('#btnGo').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session && G.session.kind === 'host') { const S = G.session; S.lobby.diff = G.diff; if (!stageOpen(S.lobby.stage)) S.lobby.stage = 'senju'; S.startGame(); enterGame(); } } else openStage(); };
-  $('#btnStageBack').onclick = () => { AUDIO.sfx('back'); show('team'); };
+  $('#btnTeamBack').onclick = () => { AUDIO.sfx('back'); if (G.coop) goTitle(); else { persistPrefs(); show(G.teamBack || 'title'); } };
+  $('#btnGo').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session && G.session.kind === 'host') { const S = G.session; S.lobby.diff = G.diff; if (!stageOpen(S.lobby.stage)) S.lobby.stage = 'senju'; S.startGame({ bid: newBid() }); enterGame(); } } else { persistPrefs(); openSortie(); } };
+  $('#btnStageBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
+  bindHub();
   $('#btnResume').onclick = () => resume();
   $('#btnPSet').onclick = () => openSub('settings', 'pause');
   $('#btnPHow').onclick = () => openSub('how', 'pause');
   $('#btnPSave').onclick = () => doSave('pause');
-  $('#btnQuit').onclick = () => { AUDIO.sfx('back'); goTitle(); };
+  $('#btnQuit').onclick = () => { AUDIO.sfx('back'); goTitle(); }; // 撤退は報酬なし（記録もしない）
   $('#btnSkip').onclick = () => { const s = G.session; if (s && s.sim && s.sim.stage === 'intro' && s.kind === 'solo') s.sim.stageT = s.sim.introLen(); resume(); };
-  $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else startSolo(G.stageId || 'senju'); };
-  $('#btnReteam').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') G.session.backToLobby(); openLobby(); } else openTeam(); };
+  $('#btnRetry').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') { G.session.backToLobby(); openLobby(); } } else if (G.nextPrep) { leaveBattle(); openPrep(); } else startSolo(G.stageId || 'senju'); };
+  $('#btnReteam').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { if (G.session.kind === 'host') G.session.backToLobby(); openLobby(); } else { leaveBattle(); openTeam('stage'); } };
+  $('#btnResGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop && G.session) goTitle(); else leaveBattle(); openGacha('title'); };
   $('#btnResTitle').onclick = () => { AUDIO.sfx('back'); goTitle(); };
   $('#btnLostOk').onclick = () => goTitle();
   $('#rotateX').onclick = () => { G.rotateDismissed = true; $('#rotateHint').hidden = true; layoutHud(); };
@@ -171,106 +174,18 @@ function applySettings() {
 }
 
 /* ---------- 編成・ロビー ---------- */
-function openTeam() {
-  G.coop = false; $('#teamEyebrow').textContent = '編成（ソロ：1体を操作＋AI3体）'; $('#teamTitle').textContent = '4体を選ぶ';
-  $('#lobCode').hidden = true; $('#lobStatus').hidden = true; $('#btnGo').disabled = false; $('#btnGo').textContent = '出撃する';
+function openTeam(back) {
+  G.coop = false; G.teamMode = 'solo'; G.teamBack = back || 'title'; $('#teamEyebrow').textContent = '編成（1体を操作＋AI3体）'; $('#teamTitle').textContent = '4体を選ぶ';
+  $('#lobCode').hidden = true; $('#lobStatus').hidden = true; $('#btnGo').disabled = false; $('#btnGo').textContent = '出動へ'; $('#btnRecommend').hidden = false; $('#itemsBox').hidden = false;
   G.focus = G.party[G.selSlot]; renderTeam(); show('team');
 }
 function openLobby() {
-  G.coop = true; G.mode = 'lobby'; $('#hud').hidden = true;
-  $('#teamEyebrow').textContent = '協力プレイのロビー'; $('#teamTitle').textContent = '自分のもののけを選ぶ';
+  G.coop = true; G.mode = 'lobby'; G.teamMode = 'lobby'; $('#hud').hidden = true;
+  $('#teamEyebrow').textContent = '協力プレイのロビー'; $('#teamTitle').textContent = '自分のもののけを選ぶ'; $('#btnRecommend').hidden = true; $('#itemsBox').hidden = false;
   $('#lobCode').hidden = false; $('#lobStatus').hidden = false;
   G.focus = G.party[0]; renderTeam(); show('team');
 }
 function myLobbySlot() { const s = G.session; if (!s) return 0; return s.kind === 'host' ? 0 : s.mySlot; }
-function renderTeam() {
-  const box = $('#slots'); box.textContent = '';
-  const coop = G.coop, S = G.session;
-  let lob = null; if (coop && S) lob = S.kind === 'host' ? S.lobbyMsg() : S.lobby;
-  for (let i = 0; i < 4; i++) {
-    const b = el('button', 'slot'); b.type = 'button';
-    let ch = G.party[i], nm = DATA.CHI[ch].nm, tag = i === 0 ? 'あなた' : 'AI', lv = lvOf(ch);
-    if (coop) {
-      const s = lob && lob.slots[i];
-      if (s) { ch = s.ch; nm = s.nick; tag = s.peer === (S.tr && S.tr.self) ? 'あなた' : '参加者'; lv = s.peer === (S.tr && S.tr.self) ? lvOf(ch) : (s.lv || 1); }
-      else if (lob && lob.ai) { ch = lob.ai[i] || 'kogemaru'; nm = DATA.CHI[ch].nm; tag = 'AI'; lv = (lob.aiLv && lob.aiLv[i]) || 1; }
-      else { tag = '空き'; }
-      if (i === myLobbySlot()) b.classList.add('sel');
-    } else if (i === G.selSlot) b.classList.add('sel');
-    const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); b.appendChild(pn);
-    const im = el('img'); im.src = G.thumbs[ch] || ''; im.alt = ''; b.appendChild(im);
-    b.appendChild(el('span', 'nm', nm)); b.appendChild(el('span', 'lv', 'Lv.' + lv)); const t = el('span', 'tag', tag); if (tag === 'あなた') t.style.background = 'var(--shu)'; b.appendChild(t);
-    if (!coop) b.onclick = () => { G.selSlot = i; G.focus = G.party[i]; AUDIO.sfx('ui'); renderTeam(); };
-    box.appendChild(b);
-  }
-  // 10体
-  const cards = $('#cards'); cards.textContent = '';
-  const mySel = coop ? G.party[0] : G.party[G.selSlot];
-  for (const c of DATA.CHARS) {
-    const b = el('button', 'card' + (c.id === G.focus ? ' cur' : '')); b.type = 'button';
-    const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; b.appendChild(im);
-    b.appendChild(el('span', 'nm', c.nm)); const mt = el('span', 'meta'); const e = el('span', 'el', c.el); e.style.background = DATA.ELEM_COL[c.el]; mt.append(el('span', 'lv', 'Lv.' + lvOf(c.id)), e); b.appendChild(mt);
-    const used = el('span', 'used');
-    (coop ? [mySel] : G.party).forEach((id, i) => { if (id === c.id) { const p = el('span', 'pn', 'P' + (coop ? myLobbySlot() + 1 : i + 1)); p.style.background = pcol(coop ? myLobbySlot() : i); used.appendChild(p); } });
-    b.appendChild(used);
-    b.onclick = () => {
-      AUDIO.sfx('ui'); G.focus = c.id;
-      if (coop) { G.party[0] = c.id; sendMine(); }
-      else { const j = G.party.indexOf(c.id); if (j >= 0 && j !== G.selSlot) { G.party[j] = G.party[G.selSlot]; const sw = G.swap[j]; G.swap[j] = G.swap[G.selSlot]; G.swap[G.selSlot] = sw; } G.party[G.selSlot] = c.id; }
-      STORE.set('party', G.party); renderTeam();
-    };
-    cards.appendChild(b);
-  }
-  renderDetail();
-  // アイテム
-  const it = $('#items'); it.textContent = '';
-  for (const id of DATA.ITEM_IDS) {
-    const I = DATA.ITEMS[id], on = G.items.includes(id);
-    const b = el('button', 'item' + (on ? ' on' : '')); b.type = 'button'; b.appendChild(el('b', '', I.icon)); b.appendChild(el('span', '', I.nm)); b.appendChild(el('span', 'small', I.desc));
-    b.onclick = () => { AUDIO.sfx('ui'); if (on) { if (G.items.length > 1) G.items = G.items.filter(x => x !== id); } else { G.items.push(id); if (G.items.length > 2) G.items.shift(); } if (G.items.length < 2) G.items.push(DATA.ITEM_IDS.find(x => !G.items.includes(x))); STORE.set('items', G.items); sendMine(); renderTeam(); };
-    it.appendChild(b);
-  }
-  // 協力プレイ：ステージ（ホストが選ぶ）
-  $('#stageRow').hidden = !coop;
-  if (coop && S) {
-    const sc = $('#stageChips'); sc.textContent = ''; const cur = (lob && lob.stage) || 'senju', host = S.kind === 'host';
-    for (const st of STAGES) {
-      const open = host ? stageOpen(st.id) : true, b = el('button', 'chip' + (cur === st.id ? ' on' : ''), (open ? st.ic + ' ' : '🔒 ') + st.nm); b.type = 'button'; b.disabled = !host || !open;
-      if (host) b.onclick = () => { S.lobby.stage = st.id; S.dirtyLobby = true; AUDIO.sfx('ui'); renderTeam(); };
-      sc.appendChild(b);
-    }
-  }
-  if (coop && S) {
-    $('#lobCode').textContent = ''; const cb = el('div', 'code-big', S.code); $('#lobCode').appendChild(cb);
-    const st = $('#lobStatus');
-    if (S.kind === 'host') { const n = lob.slots.filter(Boolean).length; st.textContent = `合言葉「${S.code}」を友だちに伝えてください。いま${n}人（空きはAIが入ります）。${G.netMode === 'p2p' ? '同じURL（' + PUBLIC_URL + '）を開いてもらいます。' : ''}`; $('#btnGo').disabled = false; $('#btnGo').textContent = n > 1 ? `${n}人で出撃する` : '出撃する（ひとり＋AI）'; }
-    else { st.textContent = S.lobby ? (S.mySlot >= 0 ? `P${S.mySlot + 1}として参加中。ホストの出撃を待っています。` : '部屋に入っています…') : 'ホストを探しています…（合言葉が同じか確認してください）'; $('#btnGo').disabled = true; $('#btnGo').textContent = 'ホストの出撃待ち'; }
-  }
-}
-function renderDetail() {
-  const c = DATA.CHI[G.focus] || DATA.CHARS[0], d = $('#detail'); d.textContent = '';
-  const hd = el('div', 'hd'); hd.appendChild(el('b', '', c.nm)); hd.appendChild(el('span', 'lv', 'Lv.' + lvOf(c.id))); const r = el('span', 'chip', c.role); hd.appendChild(r); const e = el('span', 'badge', c.el + '属性'); e.style.background = DATA.ELEM_COL[c.el]; hd.appendChild(e); d.appendChild(hd);
-  d.appendChild(el('p', 'small', c.blurb));
-  const st = el('div', 'stat');
-  for (const [l, v, col] of [['ちから', c.str, '#e4572e'], ['ようりょく', c.yo, '#7446b8'], ['まもり', c.def, '#3f78d6']]) { st.appendChild(el('span', '', `${l} ${v}`)); const b = el('div', 'bar'); const i = el('i'); i.style.width = Math.round(v / 260 * 100) + '%'; i.style.background = col; b.appendChild(i); st.appendChild(b); }
-  d.appendChild(st);
-  const slotI = G.coop ? 0 : G.selSlot, sw = G.swap[slotI] && G.party[slotI] === c.id;
-  const X = DATA.SKILLS[sw ? c.Y : c.X], Y = DATA.SKILLS[sw ? c.X : c.Y], S = DATA.SPECIALS[c.sp];
-  const aTxt = c.A === 'combo3' ? `三連（威力 ${c.Apw.join('/')}）` : c.A === 'shot' ? `射撃（威力 ${c.Apw[0]}）` : `近接打撃（威力 ${c.Apw[0]}）`;
-  const spTxt = S.type === 'multi' ? `${c.spNm}（${S.pw}×${S.n}${S.defDown ? '＋守り低下' : ''}）` : S.type === 'buff' ? `${c.spNm}（周りの味方のちから強化）` : S.type === 'guardup' ? `${c.spNm}（自分の守り強化＋敵を引きつける）` : `${c.spNm}（全員を回復＋気絶した仲間を蘇生）`;
-  const mv = el('div', 'moves');
-  for (const [k, cls, t] of [['A', 'kA', aTxt], ['X', 'kX', skillDesc(X)], ['Y', 'kY', skillDesc(Y)], ['必殺', 'kS', spTxt], ['特性', 'kP', c.psv]]) { mv.appendChild(el('span', 'k ' + cls, k)); mv.appendChild(el('span', '', t)); }
-  d.appendChild(mv);
-  if (G.party[slotI] === c.id) {
-    const b = el('button', 'chip' + (sw ? ' on' : ''), sw ? 'X・Y入れ替え中' : 'X・Yを入れ替える'); b.type = 'button';
-    b.onclick = () => { G.swap[slotI] = !G.swap[slotI]; STORE.set('swap', G.swap); sendMine(); AUDIO.sfx('ui'); renderTeam(); };
-    d.appendChild(b);
-  } else d.appendChild(el('p', 'small', G.coop ? 'カードを押すと自分のもののけになります。' : '選んだ枠に入れるにはカードを押してください。'));
-}
-function skillDesc(s) {
-  const m = { charge: `${s.nm}：長押しでため、離して発動（基礎威力${s.pw}）`, dodge: '回避：押した方向へすばやく移動（一瞬無敵）', dot: `${s.nm}：当てた敵に${s.dur}秒の継続ダメージ`, retreat: `${s.nm}：攻撃しながら後ろへ下がる（威力${s.pw}）`, stealth: `${s.nm}：${s.dur}秒狙われにくくなる`, parry: `${s.nm}：構えて攻撃を受けると反撃`, heavy: `${s.nm}：ためて重い一撃（威力${s.pw}）`, trap: `${s.nm}：足元に麻痺のワナ`, protect: `${s.nm}：周りの味方を一瞬無敵にする`, guard: `${s.nm}：押している間ダメージを減らす${s.reflect ? '・一部を跳ね返す' : ''}`, taunt: `${s.nm}：敵を引きつける一撃（威力${s.pw}）`, mine: `${s.nm}：足元に地雷（威力${s.pw}・味方も巻き込む）`, heal: `${s.nm}：ためるほど回復量アップ（基礎${s.pw}）`, healRing: `${s.nm}：ためるほど範囲が広がる回復（基礎${s.pw}）` };
-  return m[s.kind] || s.nm;
-}
 function sendMine() {
   const S = G.session; if (!G.coop || !S) return;
   const o = { nick: G.nick || 'もののけ', ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2), lv: lvOf(G.party[0]) };
@@ -282,28 +197,7 @@ function sendMine() {
    ログインはこの画面を開いている間だけ有効。開き直すたびにログインをたずねる。
    ログイン中は「セーブ」を押すだけで保存。戦いが終わったときに自動セーブ。 */
 G.acct = null; G.pending = []; G.run = null;
-const lvOf = id => (G.acct && G.acct.chars[id] ? G.acct.chars[id].lv : 1);
-/* ---------- ステージ（2はトバトーバンを1回倒すと解放） ---------- */
-G.sessClear = {};
-const cleared = id => !!((G.acct && G.acct.clear && G.acct.clear[id] > 0) || G.sessClear[id]);
-const stageOpen = id => id !== 'joban' || cleared('senju');
-const STAGES = [
-  { id: 'senju', cls: 's1', ic: '🏮', no: 'ステージ1', nm: '北千住 祭り広場', en: 'トバトーバン（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。' },
-  { id: 'joban', cls: 's2', ic: '🚃', no: 'ステージ2', nm: '常磐線 北千住→上野', en: `ヨシノシの部下 ${DATA.JOBAN.waves.reduce((a, b) => a + b, 0) + DATA.JOBAN.boardN.reduce((a, b) => a + b, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車から次々に来る部下と、南千住・三河島・日暮里で乗ってくる部下を倒して上野へ。' },
-];
-function openStage() { renderStages(); show('stage'); }
-function renderStages() {
-  const box = $('#stages'); box.textContent = '';
-  for (const s of STAGES) {
-    const open = stageOpen(s.id), b = el('button', 'stage-card ' + s.cls + (open ? '' : ' locked')); b.type = 'button';
-    const top = el('div', 'sc-top'); top.append(el('span', 'ic', s.ic)); const tt = el('div'); tt.append(el('small', '', s.no), el('b', '', s.nm)); top.appendChild(tt);
-    const body = el('div', 'sc-body'); body.append(el('span', 'en', '敵：' + s.en), el('span', '', s.d)); if (cleared(s.id)) body.appendChild(el('span', 'clr', 'クリア済み'));
-    b.append(top, body);
-    if (!open) { const lk = el('div', 'lock'); lk.append(el('span', 'lk', '🔒'), el('span', '', 'トバトーバンを1回倒すと解放')); b.appendChild(lk); }
-    b.onclick = () => { if (!open) { AUDIO.sfx('back'); mtoast('ステージ1でトバトーバンを倒すと遊べます'); return; } AUDIO.sfx('ok'); startSolo(s.id); };
-    box.appendChild(b);
-  }
-}
+/* 所持・レベル・ステージの解放・編成画面などは ui_hub.js */
 const fmtDate = ts => { if (!ts) return 'まだ'; const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
 const cloud = () => ACCT.mode === 'cloud';
 function mtoast(t, ms) { const m = $('#mtoast'); m.textContent = t; m.classList.add('show'); clearTimeout(G.mtT); G.mtT = setTimeout(() => m.classList.remove('show'), ms || 2400); }
@@ -345,11 +239,12 @@ async function loginOk(save, msg) {
   if (Array.isArray(save.swap) && save.swap.length === 4) G.swap = save.swap.map(Boolean);
   if (Array.isArray(save.items) && save.items.length === 2 && save.items.every(i => DATA.ITEMS[i])) G.items = save.items.slice();
   if (save.nick) G.nick = save.nick;
+  fixParty();
   let extra = '';
   const hadPending = G.pending.length > 0;
   if (hadPending) { for (const op of G.pending) SAVE.apply(save, op); G.pending = []; }
   updateAcctBar(); AUDIO.sfx('ok');
-  const back = G.loginBack || 'title'; show(back);
+  const back = G.loginBack || 'title'; show(back); if (back === 'gacha') openGacha(G.gcBack || 'title');
   if (hadPending) { const ok = await persist(); extra = ok ? '。ログイン前の戦いの記録もセーブしました' : '。ログイン前の戦いの記録はセーブできませんでした'; if (G.run) G.lastAuto = ok ? `ID ${save.id} にセーブしました` : 'セーブできませんでした'; }
   if (back === 'result') refreshResSave();
   mtoast(msg + extra, 2800);
@@ -370,23 +265,31 @@ async function doSave(from) {
   else mtoast(cloud() ? 'セーブできませんでした（サーバーとつながりません。電波のよい所でもう一度）' : 'セーブできませんでした（このブラウザでは保存できません）', 3600);
   return ok;
 }
-/** この戦いでまだ記録していない分（倒した敵・出撃・勝敗）をまとめる */
+/** この戦いでまだ記録していない分（倒した敵・出撃・勝敗・EXP）をまとめる。
+    自分の操作キャラと、自分が編成したAI（ソロ・ホスト）だけ。操作率は人が操作していた有効時間の割合 */
 function runOp(v, fin) {
   if (!G.run || !v) return null;
-  const slots = G.coop ? [G.my] : [0, 1, 2, 3], op = { kills: {}, fin: null };
+  const S = G.session, sim = S && S.sim, host = S && S.kind !== 'client';
+  const slots = !G.coop ? [0, 1, 2, 3] : host ? v.allies.map((a, i) => i).filter(i => i === G.my || (sim && sim.allies[i] && sim.allies[i].ctrlAI && !(S.lobby && S.lobby.slots && S.lobby.slots[i]))) : [G.my];
+  const op = { kills: {}, fin: null };
   for (const i of slots) { const a = v.allies[i]; if (!a) continue; const k = Math.max(0, (a.kills || 0) - G.run.applied[i]); if (k) { op.kills[a.ch] = (op.kills[a.ch] || 0) + k; G.run.applied[i] += k; } }
-  if (fin) op.fin = { ids: slots.map(i => v.allies[i] && v.allies[i].ch).filter(Boolean), win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0, stage: v.stageId || 'senju' };
+  if (fin) {
+    const rateOf = i => { if (!sim) return 1; const a = sim.allies[i], T = sim.actT || 0; return DATA.REWARD.rate(T > 0 ? a.humT / T : (a.ctrlAI ? 0 : 1)); };
+    op.fin = { bid: v.bid || (G.run.bid), stage: v.stageId || 'senju', win: !!(v.result && v.result.win), time: v.result ? v.result.time : 0, H: v.H || 1, slots: slots.filter(i => v.allies[i]).map(i => ({ ch: v.allies[i].ch, rate: rateOf(i) })) };
+  }
   return op;
 }
-/** 自動セーブ（戦いが終わったとき） */
-async function checkpoint(v, fin, label) {
-  const op = runOp(v, fin); if (!op) return;
-  if (!G.acct) { G.pending.push(op); return; }
-  SAVE.apply(G.acct, op);
-  G.lastAuto = cloud() ? '自動セーブしています…' : null; refreshResSave();
-  const ok = await persist();
-  G.lastAuto = ok ? `${label}ので自動セーブしました（ID ${G.acct ? G.acct.id : ''}）` : (cloud() ? '自動セーブできませんでした。電波のよい所で「セーブ」を押してください' : '自動セーブできませんでした（このブラウザでは保存できません）');
-  if (G.mode === 'result') refreshResSave();
+/** 戦いの記録を足して自動セーブ。結果（EXP・レベル・チケット）を返す */
+function checkpoint(v, fin, label) {
+  const op = runOp(v, fin); if (!op) return null;
+  const target = G.acct || G.guest;
+  if (!G.acct) G.pending.push(JSON.parse(JSON.stringify({ kills: op.kills, fin: op.fin }))); // ログインしたらアカウントに足す（同じ戦闘IDは一度だけ）
+  SAVE.apply(target, op);
+  if (G.acct) {
+    G.lastAuto = cloud() ? '自動セーブしています…' : null; refreshResSave();
+    persist().then(ok => { G.lastAuto = ok ? `${label}ので自動セーブしました（ID ${G.acct ? G.acct.id : ''}）` : (cloud() ? '自動セーブできませんでした。電波のよい所で「セーブ」を押してください' : '自動セーブできませんでした（このブラウザでは保存できません）'); if (G.mode === 'result') refreshResSave(); });
+  }
+  return op.res;
 }
 function refreshResSave() {
   const t = $('#resSave'), b = $('#btnResLogin');
@@ -397,9 +300,9 @@ function openAccount(from) { if (!G.acct) { openLogin(from || 'title'); return; 
 function renderAccount() {
   const s = G.acct; $('#acTitle').textContent = `ID ${s.id}`;
   const kv = $('#acKv'); kv.textContent = '';
-  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['トバトーバン戦', (s.clear && s.clear.senju ? `クリア ${s.clear.senju}回` : 'まだ') + (s.rec.best ? `（最速 ${fmt(s.rec.best)}）` : '')], ['常磐線', s.clear && s.clear.joban ? `クリア ${s.clear.joban}回` : stageOpen('joban') ? 'まだ' : '🔒 トバトーバンを倒すと解放']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
+  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['トバトーバン戦', (s.clear && s.clear.senju ? `クリア ${s.clear.senju}回` : 'まだ') + (s.rec.best ? `（最速 ${fmt(s.rec.best)}）` : '')], ['常磐線', s.clear && s.clear.joban ? `クリア ${s.clear.joban}回` : stageOpen('joban') ? 'まだ' : '🔒 トバトーバンを倒すと解放'], ['ヨシノシン', s.clear && s.clear.ueno ? `クリア ${s.clear.ueno}回` : stageOpen('ueno') ? 'まだ' : '🔒 電車をクリアすると解放'], ['チケット', `${s.tickets}枚（トバトーバン ${s.wins.tobatoban % 3}/3・ヨシノシン ${s.wins.yoshinoshin % 2}/2）`], ['所持', `${Object.keys(s.chars).length} / ${DATA.CHARS.length}体`]]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
   const ro = $('#acRoster'); ro.textContent = '';
-  for (const c of DATA.CHARS) { const d = el('div'); const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; d.append(im, el('b', '', c.nm), el('span', 'lv', 'Lv.' + s.chars[c.id].lv)); ro.appendChild(d); }
+  for (const c of DATA.CHARS) { if (!s.chars[c.id]) continue; const d = el('div'); const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; d.append(im, el('b', '', c.nm), el('span', 'lv', 'Lv.' + s.chars[c.id].lv)); ro.appendChild(d); }
   const cl = cloud(); $('#acCodeBox').hidden = cl; $('#btnAcCopy').hidden = cl; $('#acCloud').hidden = !cl;
   if (!cl) $('#acCode').textContent = SAVE.encode(s);
 }
@@ -432,7 +335,7 @@ function bindAccount() {
     if (!r.ok) { AUDIO.sfx('back'); lgMsg(r.msg); G.restoreConfirm = r.confirm ? key : null; return; }
     G.restoreConfirm = null; $('#lgCode').value = ''; loginOk(r.save, r.msg);
   };
-  $('#btnGuest').onclick = () => { AUDIO.sfx('back'); show(G.loginBack || 'title'); };
+  $('#btnGuest').onclick = () => { AUDIO.sfx('back'); const b = G.loginBack || 'title'; if (b === 'gacha') openGacha(G.gcBack); else show(b); };
   $('#btnDoneOk').onclick = () => { const s = G.acct; showDone(false); setRegMode(false); if (s) loginOk(s, `ID ${s.id} でログインしました。全員Lv.1からスタート`); };
   for (const id of ['#lgId', '#lgPw', '#lgPw2']) $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); (G.regMode ? $('#btnRegister') : $('#btnLogin')).click(); } });
   $('#btnAcSave').onclick = async () => { await doSave('account'); renderAccount(); };
@@ -479,7 +382,7 @@ function startSolo(stageId) {
   G.stageId = stageOpen(stageId) ? stageId : 'senju';
   const S = new NETLIB.HostSession({ nick: 'P1', ch: G.party[0], swap: G.swap[0], items: G.items });
   S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
-  S.startGame({ stageId: G.stageId, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
+  S.startGame({ stageId: G.stageId, bid: newBid(), party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch) })) });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {
@@ -494,7 +397,7 @@ function enterGame() {
   if (!G.coop) { // 最初に：仲間アイコンをタップで操作キャラを切り替えられる
     setTimeout(() => { if (G.mode !== 'play') return; notice((curLayout && curLayout.portrait ? '上' : '左上') + 'の仲間アイコンをタップすると、そのキャラに切り替えられます', 'tip', 5200); const p = $('#party'); p.classList.add('tip'); setTimeout(() => p.classList.remove('tip'), 5200); }, 700 + d0);
   }
-  if (G.firstRun && !G.coop) { setTimeout(() => notice('スティックで移動・Aで攻撃。' + (jb ? 'ヨシノシの部下' : '札小僧') + 'をやっつけよう', 'info', 4000), 6200 + d0); setTimeout(() => notice('Xは技1、Yは技2。ためる技は長押しして離す', 'info', 4000), 10400 + d0); STORE.set('played', true); G.firstRun = false; }
+  if (G.firstRun && !G.coop) { setTimeout(() => notice('スティックで移動・Aで攻撃。' + (jb ? 'ヨシノシンの部下' : '札小僧') + 'をやっつけよう', 'info', 4000), 6200 + d0); setTimeout(() => notice('Xは技1、Yは技2。ためる技は長押しして離す', 'info', 4000), 10400 + d0); STORE.set('played', true); G.firstRun = false; }
 }
 function pause() {
   if (G.mode !== 'play') return; const S = G.session;
@@ -704,10 +607,10 @@ function onNotice(o) {
     if (o.s === 'wave2') notice('札小僧がまた出た！', 'info', 1500);
     if (o.s === 'open') { banner('結界が解けた', '奥の祭り広場へ進もう', 2200); AUDIO.sfx('lantern'); }
     if (o.s === 'intro') { AUDIO.bgmStop(); G.lock = null; setTimeout(() => $('#bossCard').classList.add('show'), 3300); setTimeout(() => $('#bossCard').classList.remove('show'), 5400); }
-    if (o.s === 'train') { AUDIO.bgm('boss'); banner('ヨシノシの部下が現れた！', '上野に着くまでに、車内の部下をすべて倒せ', 2400); }
-    if (o.s === 'arrive') { banner('上野に到着！', 'ヨシノシは上野で待っている……', 3000); }
+    if (o.s === 'train') { AUDIO.bgm('boss'); banner('ヨシノシンの部下が現れた！', '上野に着くまでに、車内の部下をすべて倒せ', 2400); }
+    if (o.s === 'arrive') { banner('上野に到着！', 'ヨシノシンは上野で待っている……', 3000); }
     if (o.s === 'fight') { AUDIO.bgm('boss'); banner('鎮めよ！', '赤い縞は攻撃の予兆。灯籠4基で動きを止められる', 2000); }
-    if (o.s === 'won') { AUDIO.jingle(true); if (v && v.stageId === 'joban') banner('ヨシノシの部下を全員倒した！', '常磐線は無事に上野へ着いた', 3000); else banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
+    if (o.s === 'won') { AUDIO.jingle(true); if (v && v.stageId === 'joban') banner('ヨシノシンの部下を全員倒した！', '常磐線は無事に上野へ着いた', 3000); else banner('鎮まった！', 'トバトーバンは静かな看板に戻った', 3000); }
     if (o.s === 'lost') { AUDIO.jingle(false); banner(G.v && G.v.result && G.v.result.why === 'time' ? '時間切れ' : '全滅', '', 2500); }
   }
 }
@@ -717,7 +620,8 @@ function onEvent(e, v) {
     case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.kind === 'sp' ? 'sp' : e.crit ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e); break;
     case 'hurt': dmgNum(e.x, 1.2, e.z, e.v, 'hurt'); if (e.slot === me) vib(25); break;
     case 'wave': if (e.n >= 2) notice(`1号車から${e.cnt}体が来る！（第${e.n}波）`, 'warn', 2200); break;
-    case 'board': notice(`${DATA.JOBAN.stations[e.st]}：部下が${e.n}体乗ってきた！`, 'warn', 2200); break;
+    case 'board': notice(`${DATA.JOBAN.stations[e.st]}：ホームから部下が${e.n}体乗ってくる！`, 'warn', 2200); break;
+    case 'jev': if (e.id && e.id.startsWith('mid_')) notice(`前の車両に潜んでいた部下${e.n}体が出てくる！`, 'warn', 2200); break;
     case 'arriveSt': if (e.st < 4) notice(`${DATA.JOBAN.stations[e.st]}に到着`, 'info', 1500); break;
     case 'heal': if (e.v > 0) dmgNum(e.x, 1.2, e.z, '+' + e.v, 'heal'); break;
     case 'down': notice(`P${e.slot + 1}が気絶した${e.slot === me ? '…' : '（まわりの円に入って4秒で救助）'}`, 'warn', 2200); if (e.slot === me && G.session.kind === 'solo') setTimeout(() => notice('仲間のカードを押すと操作を交代できます', 'info', 2600), 900); break;
@@ -758,7 +662,7 @@ function trainHud(v) {
   $('#fade').style.opacity = v.stage === 'intro' ? (t < 3.0 ? 0 : t < 3.5 ? (t - 3) / 0.5 : t < 4.0 ? 1 - (t - 3.5) / 0.5 : 0) : 0;
   if (v.stage === 'intro') {
     const C = G.cut || (G.cut = {});
-    if (t > 0.3 && !C.a) { C.a = 1; banner('トバトーバンを鎮めた！', 'そのころ、常磐線にヨシノシの部下が現れたという知らせが……', 2600); }
+    if (t > 0.3 && !C.a) { C.a = 1; banner('トバトーバンを鎮めた！', 'そのころ、常磐線にヨシノシンの部下が現れたという知らせが……', 2600); }
     if (t > 4.1 && !C.b) { C.b = 1; banner('北千住駅', '常磐線 上野行きに乗りこもう', 2200); }
     if (t > 9.4 && !C.c) { C.c = 1; AUDIO.sfx('trainChime'); AUDIO.sfx('doorClose'); notice('ドアが閉まります', 'info', 1400); }
   }
@@ -770,8 +674,9 @@ function trainHud(v) {
   const L = J.segLen[Math.min(3, tr.at)], frac = tr.ph === 'stop' ? 0 : Math.max(0, Math.min(1, (L - tr.rem) / L));
   const pos = Math.min(4, tr.at + frac) / 4; $('#rtFill').style.width = `calc(${pos.toFixed(4)} * (100% - 18px))`; $('#rtTr').style.left = at(pos);
   const nx = Math.min(4, tr.at + 1);
-  $('#rtNext').textContent = v.stage === 'arrive' || tr.at >= 4 ? '上野 到着' : tr.ph === 'stop' ? `${J.stations[tr.at]} 停車中` : tr.at === 3 && tr.rem > 300 && v.kills < v.total ? `次は 上野（全部倒すと到着）` : `次は ${J.stations[nx]}`;
-  $('#rtKills').textContent = `撃破 ${v.kills}/${v.total}` + (v.phase ? `・第${v.phase}波` : '');
+  $('#rtNext').textContent = v.stage === 'arrive' || tr.at >= 4 ? '上野 到着' : tr.ph === 'stop' ? `${J.stations[tr.at]} 停車中` : tr.at === 3 && tr.rem > 300 && v.kills < v.total ? `車内の敵を倒すと上野に到着` : `次は ${J.stations[nx]}`;
+  const alive = v.mobs.filter(m => m.yoshi && !m.dying).length;
+  $('#rtKills').textContent = `撃破 ${v.kills}/${v.total}` + `・車内${alive}` + (v.wait ? `・待機${v.wait}` : '');
 }
 
 /* ---------- HUD更新 ---------- */
@@ -938,28 +843,34 @@ function drawTrainMap(v, g, W, H) {
 /* ---------- 結果 ---------- */
 function showResult(v) {
   if (G.resultShown) return; G.resultShown = true; G.mode = 'result';
-  const S = G.session, win = v.result && v.result.win;
-  const jb = v.stageId === 'joban', firstClear = win && !cleared(v.stageId);
-  if (win) G.sessClear[v.stageId] = true;
-  $('#resEyebrow').textContent = win ? (jb ? 'クリア' : '勝利') : '敗北'; $('#resTitle').textContent = win ? (jb ? '上野に到着！' : 'トバトーバンを鎮めた！') : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
+  const S = G.session, win = v.result && v.result.win, st = v.stageId || 'senju';
+  const jb = st === 'joban', ue = st === 'ueno', firstClear = win && !cleared(st);
+  const res = checkpoint(v, true, '戦いが終わった');
+  if (win) G.sessClear[st] = true;
+  const T = { senju: ['トバトーバンを鎮めた！', '北千住（トバトーバン）'], joban: ['上野に到着！', '常磐線（北千住→上野）'], ueno: ['ヨシノシンを鎮めた！', '上野駅前（ヨシノシン）'] }[st];
+  $('#resEyebrow').textContent = win ? (jb ? '電車クリア' : '勝利') : '敗北'; $('#resTitle').textContent = win ? T[0] : (v.result && v.result.why === 'time' ? '時間切れ…' : '全員が戦闘不能…');
   const kv = $('#resKv'); kv.textContent = '';
-  const rows = [['ステージ', jb ? '常磐線（北千住→上野）' : '北千住（トバトーバン）'], ['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : '協力プレイ']];
-  if (jb) rows.splice(2, 0, ['倒した部下', `${v.kills} / ${v.total}`]);
+  const rows = [['ステージ', T[1]], ['かかった時間', fmt(v.result ? v.result.time : 0)], ['モード', S.kind === 'solo' ? 'ソロ（AI3体）' : `協力プレイ（${v.H || 1}人）`]];
+  if (jb || ue) rows.splice(2, 0, ['倒した部下', `${v.kills} / ${v.total}`]);
   for (const [k, val] of rows) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', val)); }
   const grid = $('#resGrid'); grid.textContent = '';
   const stats = S.sim ? S.sim.allies.map(a => a.stats) : null;
   v.allies.forEach((a, i) => { const c = el('div', 'res-c'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const im = el('img'); im.src = G.thumbs[a.ch] || ''; im.alt = ''; c.append(pn, im, el('b', '', DATA.CHI[a.ch].nm), el('span', 'lv', 'Lv.' + (a.lv || 1))); if (stats) { c.appendChild(el('span', '', `与えたダメージ ${stats[i].dmg}`)); c.appendChild(el('span', '', `救助 ${stats[i].revives}・必殺 ${stats[i].specials}`)); } c.appendChild(el('span', 'small', a.st === 'ok' ? '元気' : a.st === 'down' ? '気絶' : '昇天')); grid.appendChild(c); });
-  const rw = '金の提灯芯';
-  $('#resReward').textContent = jb ? (win ? 'ヨシノシは上野で待っている……（つづく）' : 'もう一度挑戦できます。狭い車内では囲まれないように、救助の円とキャンディーを使おう。')
-    : win ? `獲得：${rw} ×${v.result.time < 240 ? 3 : v.result.time < 480 ? 2 : 1}（育成は今後の拡張で使う予定です）${firstClear ? '　🔓 ステージ2「常磐線」が解放された！' : ''}` : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
+  renderResExp(res);
+  let msg = '';
+  if (st === 'senju') msg = win ? (firstClear ? '🔓 上野編「常磐線」が解放された！（推奨Lv20）' : '') : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
+  else if (jb) msg = win ? (res && res.unlocked === 'ueno' ? '🔓 上野のヨシノシン戦が解放された！（推奨Lv40）　電車の報酬は確定しました。' : '電車の報酬は確定しました。') : 'もう一度挑戦できます。狭い車内では囲まれないように、救助の円とキャンディーを使おう。';
+  else msg = win ? 'ヨシノシンを鎮めた！' : 'ボスから再挑戦できます（電車をやり直す必要はありません）。';
+  $('#resReward').textContent = msg;
   const host = S.kind !== 'client';
+  G.nextPrep = !G.coop && jb && win;
   $('#btnRetry').hidden = !host; $('#btnReteam').hidden = !host && G.coop;
-  $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : 'もう一度';
+  $('#btnRetry').textContent = G.coop ? 'ロビーへ戻る' : G.nextPrep ? '上野へ進む' : ue && !win ? 'ボスから再挑戦' : '再出動';
+  $('#btnResGacha').hidden = !(res && res.ticket > 0) && !((G.acct || G.guest).tickets > 0);
   if (!host) $('#resReward').textContent += '　ホストがロビーへ戻ると次の戦いを始められます。';
-  checkpoint(v, true, '戦いが終わった'); refreshResSave();
+  refreshResSave();
   $('#hud').hidden = true; show('result');
 }
-
 /* ---------- メインループ ---------- */
 let last = performance.now();
 function frame(ts) {

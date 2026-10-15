@@ -79,7 +79,7 @@ def ev(js, key=None):
 def check_overlap(key):
     def f(page, res): res[key] = overlaps(page)
     return f
-START_SOLO = '''() => { document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelector('#stages .stage-card').click(); return __tb.G.mode; }'''
+START_SOLO = '''() => { const g = document.getElementById('btnGuest'); if (g && !document.getElementById('login').hidden) g.click(); document.getElementById('btnSolo').click(); document.querySelector('#stages .stage-card').click(); return __tb.G.mode; }'''
 TO_BOSS = '''() => { const s = __tb.G.session.sim; s.mobs = []; s.wave = 1; s.barrier = 'none'; s.allies.forEach((a,i) => { a.x = -2 + i; a.z = -1; }); s.allies[0].z = 3; return 'ok'; }'''
 FORCE = '''(mv) => { const s = __tb.G.session.sim; const b = s.boss; if (!b || s.stage !== 'boss') return 'nostage'; b.st='idle'; b.gap=99; b.cds={}; const t = s.allies[0]; s.bossStart(mv, t); return b.st; }'''
 NOHP = '''() => { const t = document.getElementById('hud').innerText; const m = t.match(/\\d+\\s*\\/\\s*\\d+/g); return m || []; }'''
@@ -140,6 +140,26 @@ with sync_playwright() as p:
             ev("() => document.getElementById('result') ? document.getElementById('result').innerText.slice(0, 300) : ''", 'result_text'),
         ]
         results.append(run(p, W, H, 'joban', steps))
+    if SCEN in ('hub',):
+        # 四人でバスターズ：ログイン画面のガチャ入口→演出見本→拠点→編成（絞り込み・詳細）→図鑑→出動（章タブ）→北千住で勝つ→結果のEXP
+        vis = "() => [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(',')"
+        click = lambda sel: ev("() => { document.querySelector('%s').click(); return 1; }" % sel)
+        results.append(run(p, 844, 390, 'hub', [
+            shot('h00_login'), click('#btnLgGacha'), wait(0.6), ev(vis, 'gacha_screen'), shot('h01_gacha_guest'),
+            ev("() => { __tb.G.thumbs; const ids = __tb.DATA.GACHA_IDS.filter(id => __tb.DATA.CHI[id].rank === 'S'); return ids.length; }"),
+            ev("() => { document.getElementById('btnGcSample').click(); return 1; }"), wait(1.2), shot('h02_gacha_turn'), wait(1.4), shot('h03_gacha_open'), wait(2.6), shot('h04_gacha_show'),
+            click('#btnGcBack'), wait(0.3), click('#btnGuest'), wait(0.3), ev(vis, 'after_guest'), shot('h05_hub'),
+            click('#btnTeam'), wait(0.4), shot('h06_team'), ev("() => { const p = document.querySelector('#team .panel'); p.scrollTop = 170; return p.scrollHeight; }", 'team_scroll'), wait(0.2), shot('h06b_team_scroll'), ev("() => { document.querySelector('#team .panel').scrollTop = 0; return 1; }"), click('#rsFilterBtn'), ev("() => { [...document.querySelectorAll('#rsRank .chip')].find(b => b.textContent === 'D').click(); return document.querySelectorAll('#cards .card').length; }", 'cards_D'), wait(0.2), shot('h07_team_filter'),
+            ev("() => { const c = [...document.querySelectorAll('#cards .card .det')][3]; c.click(); return document.querySelector('#detail .hd b').textContent; }", 'detail'), wait(0.2), shot('h08_detail'),
+            ev("() => { document.getElementById('rsClear').click(); document.querySelectorAll('#cards .card')[2].click(); return __tb.G.party.join(','); }", 'party_after_pick'),
+            click('#btnTeamBack'), wait(0.2), click('#btnZukan'), wait(0.4), ev("() => { __tb.G.prefs.owned = false; document.getElementById('rsSort').dispatchEvent(new Event('change')); return document.querySelectorAll('#cards .card.unowned').length; }", 'zukan_unowned'), wait(0.2), shot('h09_zukan'),
+            click('#btnTeamBack'), wait(0.2), click('#btnSolo'), wait(0.3), shot('h10_sortie_senju'), ev("() => { document.querySelectorAll('#chTabs .tab')[1].click(); return document.querySelectorAll('#stages .stage-card.locked').length; }", 'ueno_locked'), wait(0.2), shot('h11_sortie_ueno'),
+            ev("() => { document.querySelectorAll('#chTabs .tab')[0].click(); document.querySelector('#stages .stage-card').click(); return __tb.G.mode; }", 'start'), wait(2.0),
+            ev(TO_BOSS), wait(6.5), ev("() => { const s=__tb.G.session.sim; s.boss.hp = 1; s.dealToEnemy(s.allies[0], s.boss, 999, 'str', 'A', null); return s.stage; }"), wait(5),
+            ev("() => document.getElementById('resExp').innerText.replace(/\\n/g,' | ')", 'res_exp'), shot('h12_result'),
+            ev("() => { const a = __tb.G.guest; return [a.chars[__tb.G.party[0]].lv, a.chars[__tb.G.party[1]].exp, a.wins.tobatoban, a.clear.senju]; }", 'guest_after'),
+            click('#btnResTitle'), wait(0.3), click('#btnSolo'), wait(0.3), ev("() => { document.querySelectorAll('#chTabs .tab')[1].click(); return [...document.querySelectorAll('#stages .stage-card')].map(c => c.className); }", 'ueno_tab_after_win'), shot('h13_sortie_after'),
+        ]))
     if SCEN in ('tap',):
         # 敵をタップ → 注目＋「追尾」の印 → 射撃の弾が追いかけて当たる。遠い敵は「遠すぎて狙えません」
         sim = "__tb.G.session.sim"

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#1b1838">
-<title>北千住もののけ夜警隊</title>
+<title>四人でバスターズ</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -327,6 +327,81 @@ a{color:var(--shu)}
 .code-big{font-family:var(--f-disp);font-size:34px;letter-spacing:.2em;background:var(--ink);color:var(--gold);border-radius:12px;padding:4px 14px;text-align:center}
 .lob-slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 @container app (max-width:520px){.lob-slots{grid-template-columns:repeat(2,1fr)}}
+
+/* ---- 拠点・編成・ガチャ（四人でバスターズ） ---- */
+.tix{display:inline-block;min-width:1.6em;border-radius:9px;background:var(--shu);color:#fff;font-size:12px;padding:0 6px;margin-left:4px}
+.lg-sub .btn{flex:1 1 120px}
+.party-sum{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;font-weight:900;align-items:center}
+.party-sum .adv{font-weight:700;color:#7a4a20}
+.slot .rk,.card .rk,.dt-rk{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:900;color:#fff;border-radius:5px;padding:0 5px;line-height:15px}
+.slot .ai-t{font-size:9.5px;color:#6a5a40;font-weight:700}
+.slot .role,.card .role{font-size:10px;font-weight:900;border:1.5px solid var(--ink);border-radius:5px;padding:0 4px;line-height:14px;background:#fff}
+.rs-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.rs-bar h3{margin:0;flex:1 1 auto}
+.rs-bar select{color:var(--ink);font:900 13px var(--f-body);border:2px solid var(--ink);border-radius:10px;padding:6px 8px;background:#fff;min-height:40px}
+.rs-filters{display:flex;flex-direction:column;gap:6px;background:#fff7e8;border:2px dashed #d9cfba;border-radius:12px;padding:8px;margin-bottom:6px}
+.rs-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.rs-row .small{min-width:3em}
+.rs-row .chip{min-height:34px;padding:3px 10px;font-size:12px}
+.rs-row input{flex:1 1 120px;font-size:14px;padding:7px 10px}
+.rs-empty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px;font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:6px;max-height:min(46vh,420px);overflow-y:auto;padding:2px}
+@container app (max-height:520px) and (min-width:600px){
+  .slot{display:grid;grid-template-columns:38px minmax(0,1fr);grid-template-areas:"im nm" "im mt" "tg tg";align-items:center;justify-items:start;column-gap:6px;row-gap:1px;padding:4px 6px 4px 6px;min-height:0}
+  .slot img{grid-area:im;width:38px;height:38px}.slot .nm{grid-area:nm;font-size:11.5px}.slot .meta{grid-area:mt}
+  .slot .tag,.slot .ai-t{grid-column:1/3;justify-self:center}.slot .tag{font-size:9px;line-height:13px}.slot .tag.ai{display:none}.slot .ai-t{font-size:9px}
+  .slot .pn{left:2px;top:2px;font-size:9px;padding:0 3px}
+  .cards{max-height:none}
+  #team .panel{gap:8px}
+}
+.card .xp{width:90%;height:4px;background:#efe6d3;border-radius:3px;overflow:hidden}
+.card .xp i{display:block;height:100%;background:linear-gradient(90deg,#3c8cff,#19d6b8)}
+.card .new{position:absolute;left:2px;top:2px;background:var(--shu);color:#fff;font-size:9px;font-weight:900;border-radius:5px;padding:0 4px}
+.card .det{font-size:10px;border:1.5px solid var(--ink);border-radius:6px;background:#fff7e8;padding:0 5px;margin-top:1px;min-height:22px;color:var(--ink)}
+.card.unowned img{filter:brightness(0) opacity(.35)}
+.card.unowned .nm{color:#9a8f7a}
+.card.cand{box-shadow:0 0 0 2px #3c8cff}
+.dt-stats{display:grid;grid-template-columns:auto 1fr auto auto;gap:3px 8px;font-size:12px;align-items:center}
+.dt-stats b{font-weight:900}
+.dt-stats .ai{color:#7a6a50;font-size:11px}
+.dt-tags{display:flex;gap:4px;flex-wrap:wrap}
+.dt-tags span{font-size:11px;background:#efe6d3;border-radius:6px;padding:1px 6px;font-weight:700}
+.tabs{display:flex;gap:6px}
+.tab{flex:1 1 0;border:2.5px solid var(--ink);border-radius:12px 12px 4px 4px;background:#fff;font-weight:900;font-size:15px;padding:10px;min-height:48px;color:var(--ink)}
+.tab.on{background:var(--ink);color:var(--paper)}
+.stage-card .rec{font-size:11px;font-weight:900;background:#fff2;border:1.5px solid #fff8;border-radius:6px;padding:0 6px;margin-left:auto;align-self:center;white-space:nowrap}
+.stage-card .go{align-self:flex-start;font-size:13px;font-weight:900;background:var(--shu);color:#fff;border-radius:8px;padding:4px 10px;margin-top:2px}
+.stage-card.s3 .sc-top{background:linear-gradient(120deg,#5a3a8a,#c0306a)}
+.sortie-party{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;font-weight:900}
+.sortie-party .mini{display:flex;align-items:center;gap:4px;background:#fff;border:2px solid #e6dcc6;border-radius:10px;padding:2px 8px 2px 2px}
+.sortie-party img{width:30px;height:30px;object-fit:contain}
+.res-exp{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px}
+.res-exp .ex{display:flex;align-items:center;gap:6px;background:#fff;border:2px solid #e6dcc6;border-radius:10px;padding:3px 8px 3px 3px;font-size:12px}
+.res-exp .ex img{width:34px;height:34px;object-fit:contain}
+.res-exp .ex b{color:#2f7a3a}
+.res-exp .up{color:var(--shu);font-weight:900}
+.res-tix{grid-column:1/-1;font-weight:900;background:#fff4c8;border:2px solid var(--gold);border-radius:10px;padding:6px 10px}
+.gacha-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:12px}
+@container app (max-width:640px){.gacha-grid{grid-template-columns:1fr}}
+.gc-stage{position:relative;border-radius:14px;overflow:hidden;background:#241c3a;border:2.5px solid var(--ink);aspect-ratio:4/3}
+.gc-stage canvas{width:100%;height:100%;display:block}
+.gc-skip{position:absolute;right:8px;bottom:8px}
+.gc-res{position:absolute;left:8px;right:8px;top:8px;background:rgba(255,246,230,.94);border:2.5px solid var(--ink);border-radius:12px;padding:6px 10px;display:flex;flex-direction:column;gap:2px}
+.gc-res .hd{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.gc-res .hd b{font-family:var(--f-disp);font-weight:400;font-size:20px}
+.gc-tix{display:flex;flex-direction:column;align-items:center;background:#fff;border:2.5px solid var(--gold);border-radius:12px;padding:2px 12px}
+.gc-tix b{font-family:var(--f-disp);font-weight:400;font-size:28px;line-height:1.1;color:var(--shu)}
+.gc-tix span{font-size:11px;font-weight:900}
+.gc-prog{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:900}
+.gc-prog .pg{display:flex;align-items:center;gap:6px}
+.gc-prog .pips{display:flex;gap:3px}
+.gc-prog .pips i{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);background:#fff}
+.gc-prog .pips i.on{background:var(--gold)}
+.gc-rates{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.gc-rates div{border:2px solid var(--ink);border-radius:10px;text-align:center;padding:2px;font-size:11px;font-weight:900;color:#fff}
+.gc-rates div b{display:block;font-size:16px}
+.gc-ex{display:flex;flex-direction:column;gap:6px;background:#fff7e8;border:2px dashed #d9cfba;border-radius:12px;padding:8px;font-size:12.5px}
+.gc-ex select{color:var(--ink);font:900 14px var(--f-body);border:2px solid var(--ink);border-radius:10px;padding:6px;min-height:40px}
 </style>
 </head>
 <body>
@@ -339,20 +414,23 @@ a{color:var(--shu)}
   <div class="panel">
     <div class="titlebar">
       <div>
-        <div class="eyebrow">足立区・北千住　宵町の夜</div>
-        <h1>北千住<br><span class="em">もののけ</span>夜警隊</h1>
+        <div class="eyebrow">北千住編・上野編</div>
+        <h1>四人で<br><span class="em">バスターズ</span></h1>
       </div>
-      <div class="lantern-badge">トバトーバン戦</div>
+      <div class="lantern-badge">拠点</div>
     </div>
-    <p class="lead">駅前のアーケード通りに、古い大看板の付喪神「トバトーバン」が現れた。小さなもののけ4体で力を合わせ、祭り広場で鎮めよう。</p>
+    <p class="lead">北千住の商店街にトバトーバン、常磐線の先の上野にはヨシノシン。小さなもののけ4体で力を合わせて鎮めよう。</p>
     <div class="menu-list">
       <div class="acct-bar span" id="acctBar"><span class="who" id="acctWho">ログインしていません<small>セーブするにはログイン</small></span><button class="chip" id="btnTSave" type="button" hidden>セーブ</button><button class="chip" id="btnAcct" type="button">ログイン</button></div>
-      <button class="btn main span" id="btnSolo">ひとりで遊ぶ（AIの仲間3体）</button>
+      <button class="btn main span" id="btnSolo">出動（ひとり＋AIの仲間3体）</button>
       <button class="btn gold span" id="btnCoop">協力プレイ（2〜4人）</button>
+      <button class="btn" id="btnTeam">編成</button>
+      <button class="btn" id="btnGacha">ガチャ <span class="tix" id="tTix"></span></button>
+      <button class="btn" id="btnZukan">図鑑</button>
       <button class="btn" id="btnHow">遊び方</button>
-      <button class="btn" id="btnSet">設定</button>
+      <button class="btn span" id="btnSet">設定</button>
     </div>
-    <p class="small note">キャラクター・技名・音楽・効果音はこの作品用の新規制作です。</p>
+    <p class="small note">キャラクター・技名・音楽・効果音はこの作品用の新規制作です。追加の50体は、原作にある戦い方の種類を参考にしたオリジナルです。</p>
   </div>
 </section>
 
@@ -382,25 +460,83 @@ a{color:var(--shu)}
     </div>
     <div id="lobStatus" class="small" hidden></div>
     <div class="slots" id="slots"></div>
+    <div class="party-sum" id="partySum"></div>
     <div class="team">
-      <div><h3 style="margin-bottom:6px">もののけ（10体）</h3><div class="cards" id="cards"></div></div>
+      <div class="roster-col">
+        <div class="rs-bar">
+          <h3 id="rsTitle">もののけ</h3>
+          <select id="rsSort" aria-label="並び替え"><option value="level_desc">レベル高い順</option><option value="rank_desc">ランクS→D</option><option value="level_asc">レベル低い順</option><option value="newest">入手が新しい順</option></select>
+          <button class="chip" id="rsFilterBtn" type="button">絞り込み</button>
+        </div>
+        <div class="rs-filters" id="rsFilters" hidden>
+          <div class="rs-row"><span class="small">ランク</span><span id="rsRank"></span></div>
+          <div class="rs-row"><span class="small">役割</span><span id="rsRole"></span></div>
+          <div class="rs-row"><span class="small">得意</span><span id="rsTags"></span></div>
+          <div class="rs-row"><input type="text" id="rsQ" maxlength="12" placeholder="名前で探す" autocomplete="off"><button class="chip" id="rsNew" type="button">NEWのみ</button><button class="chip" id="rsClear" type="button">解除</button></div>
+        </div>
+        <div class="cards" id="cards"></div>
+        <div class="rs-empty" id="rsEmpty" hidden><span id="rsEmptyMsg">条件に合うキャラがいません</span><button class="chip" id="rsEmptyClear" type="button">絞り込みを解除</button></div>
+      </div>
       <div class="detail" id="detail"></div>
     </div>
-    <div><h3 style="margin-bottom:6px">持ち込むアイテム（2つ）</h3><div class="items" id="items"></div></div>
+    <div id="itemsBox"><h3 style="margin-bottom:6px">持ち込むアイテム（2つ）</h3><div class="items" id="items"></div></div>
     <div id="stageRow" hidden><h3 style="margin-bottom:6px">ステージ（ホストが選ぶ）</h3><div class="row" id="stageChips"></div></div>
     <div class="row sticky-actions">
       <button class="btn ghost" id="btnTeamBack">もどる</button>
+      <button class="btn" id="btnRecommend" type="button">おすすめ編成</button>
       <button class="btn main" id="btnGo">出撃する</button>
     </div>
   </div>
 </section>
 
-<!-- ステージ選択（ソロ：編成のあと） -->
+<!-- 出動（章タブ・ステージ） -->
 <section class="screen" id="stage" hidden>
   <div class="panel wide">
-    <div class="eyebrow">ステージ選択</div><h2>どこで戦う？</h2>
+    <div class="eyebrow">出動</div><h2>どこへ行く？</h2>
+    <div class="tabs" id="chTabs"><button class="tab on" data-ch="0" type="button">北千住編</button><button class="tab" data-ch="1" type="button">上野編</button></div>
     <div class="stages" id="stages"></div>
-    <div class="row"><button class="btn ghost" id="btnStageBack" type="button">編成にもどる</button></div>
+    <div class="sortie-party" id="sortieParty"></div>
+    <div class="row"><button class="btn ghost" id="btnStageBack" type="button">拠点へ</button><button class="btn" id="btnStageTeam" type="button">編成</button></div>
+  </div>
+</section>
+
+<!-- 上野の準備（電車クリアのあと） -->
+<section class="screen" id="prep" hidden>
+  <div class="panel">
+    <div class="eyebrow">上野駅前</div><h2>ヨシノシンが待っている</h2>
+    <p class="small" id="prepLead">電車の報酬は確定しました。このままヨシノシンに挑むか、編成を見直してから挑めます。</p>
+    <div class="kv" id="prepKv"></div>
+    <div class="row"><button class="btn main" id="btnPrepGo" type="button">このままヨシノシンへ</button></div>
+    <div class="row"><button class="btn" id="btnPrepTeam" type="button">編成</button><button class="btn ghost" id="btnPrepHub" type="button">拠点へ</button></div>
+  </div>
+</section>
+
+<!-- ガチャ（通常カプセル） -->
+<section class="screen" id="gacha" hidden>
+  <div class="panel wide gacha-panel">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div><div class="eyebrow">通常ガチャ</div><h2>カプセル販売機</h2></div>
+      <div class="gc-tix"><b id="gcTix">0</b><span>チケット</span></div>
+    </div>
+    <div class="gacha-grid">
+      <div class="gc-stage"><canvas id="gcCanvas" width="640" height="480"></canvas><div class="gc-res" id="gcRes" hidden></div><button class="chip gc-skip" id="gcSkip" type="button" hidden>スキップ</button></div>
+      <div class="gc-side">
+        <div class="gc-prog" id="gcProg"></div>
+        <div class="gc-rates" id="gcRates"></div>
+        <p class="small" id="gcNote">トバトーバンに3勝、ヨシノシンに2勝するごとにチケット1枚。チケットは貯めておけます（自動では回しません）。</p>
+        <div class="row" id="gcBtns">
+          <button class="btn main" id="btnGcDraw" type="button">1回まわす（1枚）</button>
+          <button class="btn" id="btnGcSample" type="button">演出見本</button>
+        </div>
+        <div class="gc-ex" id="gcEx" hidden></div>
+        <div class="row" id="gcAfter" hidden>
+          <button class="btn main" id="btnGcTeam" type="button">編成へ</button>
+          <button class="btn" id="btnGcLook" type="button">このキャラを見る</button>
+          <button class="btn gold" id="btnGcAgain" type="button">続けて引く</button>
+        </div>
+        <div class="row"><button class="btn ghost" id="btnGcBack" type="button">戻る</button></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -474,7 +610,8 @@ a{color:var(--shu)}
       <textarea id="lgCode" rows="2" placeholder="XXXX-XXXX-XXXX-…" autocomplete="off" spellcheck="false"></textarea>
       <button class="btn" id="btnRestore" type="button">コードで引き継ぐ</button>
     </details>
-    <div class="row"><button class="btn ghost" id="btnGuest" type="button">ログインせずに遊ぶ（セーブなし）</button></div>
+    <div class="row"><button class="btn ghost" id="btnGuest" type="button">ログインせずにはじめる（セーブなし）</button></div>
+    <div class="row lg-sub"><button class="btn" id="btnLgGacha" type="button">ガチャ</button><button class="btn" id="btnLgSet" type="button">設定</button></div>
     <p class="url-tip">📱 スマホでURLを直接タップして開くと、画面がブレることがあります。URLをメモ帳などに貼り付けてから、そこから開くのがおすすめです。</p>
     <p class="small" id="lgNote">セーブはこの端末のブラウザに保存されます。ほかのサービスと同じパスワードは使わないでください。</p>
   </div></div></div>
@@ -513,7 +650,7 @@ a{color:var(--shu)}
       <button class="btn" id="btnPHow">遊び方</button>
       <button class="btn gold" id="btnPSave">セーブする</button>
       <button class="btn span" id="btnSkip" hidden>登場演出をとばす</button>
-      <button class="btn span ghost" id="btnQuit">タイトルへもどる</button>
+      <button class="btn span ghost" id="btnQuit">撤退して拠点へ（報酬なし）</button>
     </div>
   </div>
 </section>
@@ -524,12 +661,14 @@ a{color:var(--shu)}
     <div class="eyebrow" id="resEyebrow">結果</div><h2 id="resTitle"></h2>
     <div class="kv" id="resKv"></div>
     <div class="res-grid" id="resGrid"></div>
+    <div class="res-exp" id="resExp"></div>
     <div class="small" id="resReward"></div>
     <div class="row" id="resSaveRow"><span class="small" id="resSave" style="flex:1 1 220px"></span><button class="btn gold" id="btnResLogin" hidden style="flex:0 1 220px">ログインしてセーブ</button></div>
     <div class="row" id="resBtns">
-      <button class="btn main" id="btnRetry">もう一度</button>
-      <button class="btn" id="btnReteam">編成を変える</button>
-      <button class="btn ghost" id="btnResTitle">タイトルへ</button>
+      <button class="btn main" id="btnRetry">再出動</button>
+      <button class="btn" id="btnReteam">編成</button>
+      <button class="btn" id="btnResGacha" hidden>ガチャへ</button>
+      <button class="btn ghost" id="btnResTitle">拠点へ</button>
     </div>
   </div>
 </section>
@@ -546,7 +685,7 @@ a{color:var(--shu)}
 <!-- HUD -->
 <div id="hud" hidden>
   <div id="touch"></div>
-  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/90</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
+  <div class="hb bossbox" id="bossbox"><div class="bossname"><span id="bossNm">トバトーバン</span><span class="ph" id="bossPh" hidden>終盤</span><span class="st" id="bossSt"></span></div><div class="hpbar"><i class="lag" id="bossLag"></i><i class="fill" id="bossFill"></i><span class="third"></span></div><div class="route" id="route" hidden><div class="rt-top"><b>常磐線 上野行</b><span id="rtNext">次は 南千住</span><span class="rt-k" id="rtKills">撃破 0/135</span></div><div class="rt-bar" id="rtBar"><i id="rtFill"></i><span class="rt-tr" id="rtTr">🚃</span></div></div></div>
   <div class="hb party" id="party"></div>
   <div class="hb" id="timer"><span id="timeTxt">20:00</span><span class="net" id="netTxt" hidden></span></div>
   <div class="hb" id="map"><canvas id="mapc"></canvas></div>

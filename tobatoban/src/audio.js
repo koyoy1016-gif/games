@@ -181,6 +181,14 @@ const AUDIO = (() => {
       case 'rail': N({ type: 'lowpass', f: 260, dur: 0.07, g: 0.32 }); N({ type: 'lowpass', f: 220, dur: 0.07, g: 0.26, at: t + 0.13 }); N({ type: 'lowpass', f: 260, dur: 0.07, g: 0.3, at: t + 0.42 }); N({ type: 'lowpass', f: 210, dur: 0.08, g: 0.26, at: t + 0.55 }); break;
       case 'doorOpen': case 'doorClose': N({ type: 'bandpass', f: 1800, f1: 600, q: 0.6, dur: 0.45, g: 0.18 }); O({ f: name === 'doorOpen' ? 880 : 660, dur: 0.12, type: 'triangle', g: 0.06, at: t + 0.4 }); break;
       case 'trainChime': [0, 0.28].forEach((o, i) => O({ f: [784, 659][i], dur: 0.6, type: 'sine', g: 0.12, at: t + o, rev: 0.5 })); break;
+      // ガチャ：取っ手・落下・ランク別の開封（C短いチャイム／B2音／A光の音／S和太鼓＋鐘）
+      case 'gHandle': N({ type: 'bandpass', f: 500, f1: 260, q: 3, dur: 0.35, g: 0.18 }); O({ f: 180, dur: 0.08, type: 'square', g: 0.05, at: t + 0.32 }); break;
+      case 'gRoll': for (let i = 0; i < 6; i++) N({ type: 'bandpass', f: 1400 + i * 120, q: 6, dur: 0.04, g: 0.08, at: t + i * 0.07 }); break;
+      case 'gDrop': O({ f: 320, f1: 140, dur: 0.18, type: 'triangle', g: 0.16 }); N({ type: 'lowpass', f: 600, dur: 0.12, g: 0.14 }); break;
+      case 'gOpenC': O({ f: 1046, dur: 0.35, type: 'sine', g: 0.12, rev: 0.4 }); break;
+      case 'gOpenB': [0, 0.16].forEach((o, i) => O({ f: [880, 1318][i], dur: 0.45, type: 'sine', g: 0.12, at: t + o, rev: 0.5 })); break;
+      case 'gOpenA': [0, 0.1, 0.2, 0.3].forEach((o, i) => O({ f: [784, 988, 1175, 1568][i], dur: 0.5, type: 'triangle', g: 0.09, at: t + o, rev: 0.6 })); break;
+      case 'gOpenS': N({ type: 'lowpass', f: 160, dur: 0.35, g: 0.5 }); N({ type: 'lowpass', f: 160, dur: 0.35, g: 0.45, at: t + 0.22 }); [0, 0.45].forEach(o => [1568, 2093, 2637].forEach((f, i) => O({ f, dur: 1.4, type: 'sine', g: 0.07 / (i + 1), at: t + 0.3 + o, rev: 0.8 }))); break;
       case 'food': O({ f: 600, f1: 900, dur: 0.08, type: 'triangle', g: 0.12 }); break;
       case 'eat': N({ type: 'bandpass', f: 900, q: 2, dur: 0.06, g: 0.15 }); N({ type: 'bandpass', f: 900, q: 2, dur: 0.06, g: 0.15, at: t + 0.1 }); O({ f: 800, f1: 1200, dur: 0.15, type: 'triangle', g: 0.08, at: t + 0.2 }); break;
       case 'pick': O({ f: 900, f1: 1400, dur: 0.1, type: 'triangle', g: 0.1 }); break;

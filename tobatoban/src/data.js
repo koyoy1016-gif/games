@@ -28,7 +28,7 @@ const REFS = {
   27: 'https://busters.g-takumi.com/attack2.html',
   28: 'https://youkai.gamepedia.jp/busters/archives/1107',
 };
-const STATUS_LABEL = { doc: '資料で確認', approx: '資料の目安', meas: '実測', proto: '新作の仮値' };
+const STATUS_LABEL = { doc: '資料で確認', approx: '資料の目安', meas: '実測', proto: '新作の仮値', spec: '制作仕様v3の指定値' };
 const REG = [];
 /** 値を登録して生の値を返す。group=一覧の見出し, hidden=画面に数値を出さない */
 function p(group, label, v, unit, status, src, notes, hidden) {
@@ -165,7 +165,7 @@ const SKILLS = {
   yobikomi: { kind: 'taunt', nm: '呼び込み打ち', short: '呼込み', pw: 80, stat: 'str', threat: p('敵視', '呼び込み打ちの敵視', 300, 'points', 'proto'), cd: p('呼び込み打ち', '再使用', 6, 's', 'proto'), start: 0.22, end: 0.55, range: 1.35, arc: 1.2, attack: true },
   hansha: { kind: 'guard', nm: '反射暖簾', short: '反射', max: p('反射ガード', '最大持続', 6, 's', 'proto'), refill: p('反射ガード', '使い切って再使用まで', 20, 's', 'proto'), threshold: 0.15, mul: SIM.guardMul, reflect: p('反射ガード', '反射率', 0.3, 'ratio', 'proto', null, '原作未確認の独立係数') },
   suiKemuri: { kind: 'charge', nm: '吸い煙', short: '吸い煙', pw: 30, stat: 'yo', form: 'drain', range: 3.0, arc: 0.9, drain: p('吸収', '吸収率', 0.5, 'ratio', 'proto'), attack: true },
-  okiKayaku: { kind: 'mine', nm: '置き火薬', short: '火薬', pw: 600, stat: 'mix', arm: p('地雷', '作動可能まで', 1.0, 's', 'proto'), cd: p('地雷', '再使用', 12, 's', 'proto'), trig: 1.2, r: 2.4, allyMul: p('地雷', '味方が巻き込まれたときの倍率', 0.3, 'ratio', 'proto', null, '敵味方どちらでも起爆'), life: 30, attack: true },
+  okiKayaku: { kind: 'mine', nm: '置き火薬', short: '火薬', pw: 600, stat: 'mix', arm: p('地雷', '作動可能まで', 1.0, 's', 'proto'), cd: p('地雷', '再使用', 45, 's', 'proto', null, '地雷は1人同時1個・再使用45秒（v3の初期仮値）'), trig: 1.2, r: 2.4, allyMul: p('地雷', '味方が巻き込まれたときの倍率', 0.25, 'ratio', 'proto', null, '敵味方どちらでも起爆'), life: 30, attack: true },
   megumi: { kind: 'heal', nm: '恵みの葉', short: '恵み', pw: 80, max: p('回復技', '最大ため', 1.3, 's', 'approx', 26, '同名技の攻略記事の目安'), cd: p('回復技', '再使用', 9, 's', 'approx', 26), mul: p('回復技', 'ため最大の回復倍率', 2.0, 'ratio', 'proto'), range: 14 },
   kaedeWa: { kind: 'healRing', nm: '楓の輪', short: '楓の輪', pw: 80, max: 1.3, cd: 9, r0: p('回復技', '楓の輪：最小範囲', 3, 'm', 'proto'), r1: p('回復技', '楓の輪：最大範囲', 6, 'm', 'proto') },
 };
@@ -236,10 +236,10 @@ const STAGE = {
   bossSpawn: [0, 13.3],
   waves: [[[-3, -44], [3, -46]], [[-5, -24], [0, -22], [5, -25]]],
 };
-/* ---------------- ステージ2：常磐線（北千住→上野）ヨシノシの部下 ---------------- */
+/* ---------------- ステージ2：常磐線（北千住→上野）ヨシノシンの部下 ---------------- */
 // 車内の座標：x＝左右（通路の幅）、z＝前後（+zが上野方面＝前）。3号車 z -21〜-1、連結部 -1〜1、2号車 1〜21（その先の1号車には入れない）
 const JOBAN = {
-  nm: '常磐線', boss: 'ヨシノシ', minion: 'ヨシノシの部下',
+  nm: '常磐線', boss: 'ヨシノシン', minion: 'ヨシノシンの部下',
   halfW: p('常磐線', '車内の通路の半幅', 1.5, 'm', 'proto', null, '遊びやすさのため実物より少し広い'),
   gwHalf: 1.0, gwHalfW: 0.8, zMin: -20.6, zMax: 20.6, frontZ: 20.3,
   carDoors: [-18.5, -13.5, -8.5, -3.5, 3.5, 8.5, 13.5, 18.5], // 乗り降りのドア（左右）
@@ -248,16 +248,33 @@ const JOBAN = {
   segLen: p('常磐線', '駅と駅の間（ゲーム内の距離）', [800, 700, 700, 900], 'm', 'proto', null, '北千住→南千住→三河島→日暮里→上野'),
   vmax: p('常磐線', '電車の最高速度', 24, 'm/s', 'proto'), acc: 2.0,
   stopT: p('常磐線', '途中駅の停車時間', 8, 's', 'proto'),
-  boardN: p('常磐線', '途中駅（南千住・三河島・日暮里）で乗ってくる部下', [10, 10, 15], '体', 'proto', null, '南千住10体・三河島10体・日暮里15体'),
-  waves: p('常磐線', '1号車から来る部下（3段階）', [10, 15, 20], '体', 'proto', null, '最初に10体。10体倒すと15体、その15体を倒すと20体（駅の35体と合わせて80体）'),
-  hp: p('ヨシノシの部下', '体力（1体ごとにこの間で決まる）', [450, 500], 'points', 'proto'),
-  dmg: p('ヨシノシの部下', '1発のダメージ（この間で決まる）', [50, 80], 'points', 'proto', null, 'まもりに関係なくこのダメージ（ガード・AIの体力90%は反映）'),
-  def: p('ヨシノシの部下', 'まもり', 70, 'points', 'proto'), r: 0.38,
-  speed: [2.4, 2.9], maxActive: p('ヨシノシの部下', '同時に車内にいる最大数', 20, '体', 'proto', null, '多いときは1号車で待ち、空いた分だけ出てくる'),
+  // 9つのイベント（合計135体）。初期3波は撃破で、駅は停車してドアが開いたら、区間中央は走行距離50%の通過で、それぞれ一度だけ
+  events: [
+    { id: 'p1', n: 10, at: 'start', from: 'in', nm: '第1波' },
+    { id: 'p2', n: 15, at: 'kill:p1', from: 'front', nm: '第2波' },
+    { id: 'p3', n: 20, at: 'kill:p2', from: 'front', nm: '第3波' },
+    { id: 'station_minami', n: 15, at: 'st:1', from: 'door', nm: '南千住' },
+    { id: 'mid_1', n: 10, at: 'mid:1', from: 'front', nm: '南千住→三河島の途中' },
+    { id: 'station_mikawa', n: 15, at: 'st:2', from: 'door', nm: '三河島' },
+    { id: 'mid_2', n: 15, at: 'mid:2', from: 'front', nm: '三河島→日暮里の途中' },
+    { id: 'station_nippori', n: 25, at: 'st:3', from: 'door', nm: '日暮里' },
+    { id: 'mid_3', n: 10, at: 'mid:3', from: 'front', nm: '日暮里→上野の途中' },
+  ],
+  midFrac: p('常磐線', '区間中央イベントの位置（区間走行距離の割合）', 0.5, 'ratio', 'spec', null, '残り時間ではなく走行距離50%の通過で一度だけ'),
+  mix: p('ヨシノシンの部下', '各イベント内の内訳（近接・ビーム・防御）', { melee: 0.6, beam: 0.25, guard: 0.15 }, 'ratio', 'spec', null, '整数は最大剰余法で指定人数に合わせる'),
+  types: {
+    melee: { nm: '近接', hp: 110, str: 120, yo: 80, def: 45, spd: 2.6, pw: 60, stat: 'str', warn: 0.65, period: 3.2 },
+    beam: { nm: 'ビーム', hp: 85, str: 60, yo: 150, def: 35, spd: 2.4, pw: 70, stat: 'yo', warn: 1.1, period: 4.5 },
+    guard: { nm: '防御', hp: 160, str: 135, yo: 80, def: 70, spd: 2.3, pw: 60, stat: 'str', warn: 0.8, period: 4.0, gMul: 0.7, gMax: 2, gCd: 5 },
+  },
+  rights: p('ヨシノシンの部下', '同時に攻撃を始められる数（近接・防御／ビーム）', { melee: 4, beam: 1 }, '体', 'spec', null, '20体全員が動き、攻撃する権利だけを交代する'),
+  r: 0.38,
+  maxActive: p('ヨシノシンの部下', '同時に車内にいる最大数', 20, '体', 'spec', null, '多いときは1号車で待ち、空いた分だけ出てくる'),
   wpn: {
     sword: { nm: '剣', reach: 1.6, wind: 0.65, act: 0.12, rec: 0.75, cd: [3.2, 4.2], r: 1.75, half: 0.6, knock: 2 },
     fist: { nm: '拳', reach: 1.2, wind: 0.5, act: 0.1, rec: 0.55, cd: [2.8, 3.6], len: 1.5, w: 1.0, knock: 3.5 },
     beam: { nm: '大砲（ビーム）', reach: 9, keep: 6, wind: 0.9, act: 0.25, rec: 0.6, cd: [3.8, 4.8], len: 11, w: 0.7, knock: 0 },
+    shield: { nm: '決裁板（防御）', reach: 1.3, wind: 0.6, act: 0.1, rec: 0.6, cd: [3.6, 4.4], len: 1.6, w: 1.1, knock: 3 },
   },
   introT: p('常磐線', '始まりの演出（トバトーバンが倒れる→乗車→発車）', 12, 's', 'proto'), arriveT: 6,
   dropRate: 0.06,

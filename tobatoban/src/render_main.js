@@ -367,7 +367,7 @@ const R = (() => {
     return out;
   }
   function shake(a) { if (opts.shake) cam.shake = Math.max(cam.shake, a); }
-  /** ヨシノシの部下のビーム（一瞬の光の帯） */
+  /** ヨシノシンの部下のビーム（一瞬の光の帯） */
   const beams = [];
   function beamFlash(e) {
     const len = DATA.JOBAN.wpn.beam.len, g = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, len), new THREE.MeshBasicMaterial({ color: 0xc8ff7a, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }));

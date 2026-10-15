@@ -19,7 +19,7 @@ const BMV = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'zou
 const BMV_I = Object.fromEntries(BMV.map((k, i) => [k, i]));
 const HZ = ['fan2', 'fan', 'line', 'circle', 'rect', 'path'];
 const HZ_I = Object.fromEntries(HZ.map((k, i) => [k, i]));
-const PJ = ['star', 'can', 'focus', 'fire', 'mark', 'leaf', 'fuda', 'lantern'];
+const PJ = ['star', 'can', 'focus', 'fire', 'mark', 'leaf', 'fuda', 'lantern', 'pshot', 'bean', 'orb'];
 const PJ_I = Object.fromEntries(PJ.map((k, i) => [k, i]));
 
 function inFan(px, pz, ox, oz, yaw, r0, r1, half, tr) {
@@ -50,7 +50,8 @@ class Sim {
     this.rng = new RNG(o.seed || 12345);
     this.diffKey = D.DIFF[o.diff] ? o.diff : 'normal'; this.diff = D.DIFF[this.diffKey]; // むずかしさは「通常」の1つだけ
     this.nextId = 1; this.evId = 0; this.events = []; this.mlog = [];
-    this.stageId = o.stageId === 'joban' ? 'joban' : 'senju'; // senju＝北千住（トバトーバン）、joban＝常磐線（ヨシノシの部下）
+    this.bid = String(o.bid || ''); // 戦闘ID（報酬を一度だけにする）
+    this.stageId = ['joban', 'ueno'].includes(o.stageId) ? o.stageId : 'senju'; // senju＝北千住（トバトーバン）、joban＝常磐線（ヨシノシンの部下）、ueno＝上野駅前（ヨシノシン）
     this.stage = o.test ? 'boss' : 'street'; this.stageT = 0; this.timeLeft = D.SIM.timeLimit;
     this.allies = o.party.map((pp, i) => this.makeAlly(pp, i));
     this.inputs = this.allies.map(() => Sim.emptyInput());
@@ -68,16 +69,17 @@ class Sim {
   ev(type, o) { const e = Object.assign({ id: ++this.evId, type, t: this.t }, o || {}); this.events.push(e); return e; }
 
   makeAlly(pp, slot) {
-    const c = DATA.CHI[pp.ch], sw = !!pp.swap;
+    const c = DATA.CHI[pp.ch] || DATA.CHI.kogemaru, sw = !!pp.swap;
+    const lv = Math.max(1, Math.min(DATA.GROWTH.LV_MAX, pp.lv | 0 || 1)), base = DATA.GROWTH.stats(c, lv); // レベルの能力（Lv99の60〜65%から伸びる）
     const sx = [-1.6, 1.6, -0.5, 0.5][slot], sz = [-60, -60, -61.6, -61.6][slot];
     const items = (pp.items || ['onigiri', 'ramune']).slice(0, 2).map(id => ({ id, n: DATA.SIM.itemStart }));
     const a = {
-      id: 'a' + slot, slot, ch: c.id, c, x: sx, z: sz, px: sx, pz: sz, yaw: 0, hp: c.hp, maxHp: c.hp, st: 'ok', downT: 0,
+      id: 'a' + slot, slot, ch: c.id, c, x: sx, z: sz, px: sx, pz: sz, yaw: 0, hp: base.hp, maxHp: base.hp, st: 'ok', downT: 0, base, stt: base, _ai: false, bl: [], dl: [], regen: null, humT: 0,
       act: null, slots: { X: sw ? c.Y : c.X, Y: sw ? c.X : c.Y }, cd: { X: 0, Y: 0 }, cdMax: { X: 1, Y: 1 }, g: { X: 1, Y: 1 }, gLock: { X: false, Y: false },
       sp: 0, stam: DATA.SIM.stamMax, tired: false, dashing: false,
       buf: null, lastEv: 0, aq: 0, buffs: { str: 0, strMul: 1, def: 0, defMul: 1, taunt: 0, stealth: 0, ramune: 0 }, inv: 0,
       kx: 0, kz: 0, threat: 0, rev: null, rv: 0, rvNeed: DATA.SIM.reviveTime, rvBy: -1, lan: null, items, ctx: '', hurtT: 0, foodT: DATA.SIM.foodPeriod,
-      stats: { dmg: 0, revives: 0, specials: 0, downs: 0, kills: 0 }, lv: Math.max(1, pp.lv | 0 || 1), ai: { next: 0, tx: sx, tz: sz + 2, react: 0.3, hold: null, comboT: 0 },
+      stats: { dmg: 0, revives: 0, specials: 0, downs: 0, kills: 0 }, lv, ai: { next: 0, tx: sx, tz: sz + 2, react: 0.3, hold: null, comboT: 0 },
       nick: pp.nick || '', moving: false, _act: null,
     };
     const sim = this;
@@ -95,8 +97,11 @@ class Sim {
     if (this.stage === 'won' || this.stage === 'lost') { this.cleanupEvents(); return; }
     const active = this.stage === 'street' || this.stage === 'boss' || this.stage === 'train';
     if (active && !this.test) { this.timeLeft -= dt; if (this.timeLeft <= 0) { this.timeLeft = 0; this.finish(false, 'time'); } }
-    for (const a of this.allies) { a.px = a.x; a.pz = a.z; }
+    for (const a of this.allies) { a.px = a.x; a.pz = a.z; this.syncAi(a); }
+    if (this.H0 == null) this.H0 = Math.max(1, this.allies.filter(a => !a.ctrlAI).length); // 人が操作する人数（協力ボーナス用・開始時に決める）
+    if (active) { this.actT = (this.actT || 0) + dt; for (const a of this.allies) if (!a.ctrlAI) a.humT += dt; } // 操作率（人が操作していた有効時間）
     if (this.stage !== 'intro') for (const a of this.allies) this.updateAlly(a, this.inputs[a.slot], dt);
+    this.updateEnemyStatus(dt);
     if (this.boss) this.updateBoss(dt);
     for (const m of this.mobs) this.updateMob(m, dt);
     this.mobs = this.mobs.filter(m => m.st !== 'gone');
@@ -110,7 +115,23 @@ class Sim {
   /* ---------- 味方 ---------- */
   /** AIが動かしているキャラは能力をすべて90%にする（プレイヤーが操作を交代すると元に戻る） */
   aiK(a) { return a.ctrlAI ? DATA.SIM.aiMul : 1; }
-  stat(a, k) { return a.c[k] * this.aiK(a); }
+  /** 能力：レベルの値（AIなら各×0.9の切り捨て）× 強化（同じ能力は一番強いものだけ） */
+  stat(a, k) { return a.stt[k] * this.buffMul(a, k); }
+  /** AIと人の切り替え：能力を計算し直し、HPは割合を保つ（気絶中は0のまま。切り替えで回復しない） */
+  syncAi(a) {
+    const on = !!a.ctrlAI; if (a._ai === on) return; a._ai = on;
+    const s = on ? DATA.GROWTH.aiStats(a.base) : a.base, r = a.maxHp > 0 ? a.hp / a.maxHp : 1;
+    a.stt = s; a.maxHp = s.hp; a.hp = a.st === 'ok' ? Math.max(1, Math.min(s.hp, Math.floor(s.hp * r + 1e-9))) : 0;
+  }
+  /* ---------- 強化（味方）・弱体（敵）：同じ種類は一番強い値だけ。術者ごとに時間を持つ ---------- */
+  addBuff(o, k, mul, dur, src) { const e = o.bl.find(b => b.k === k && b.src === src); if (e) { e.mul = mul; e.t = dur; } else o.bl.push({ k, mul, t: dur, src }); if (k === 'str') o.buffs.str = Math.max(o.buffs.str, dur); if (k === 'def') o.buffs.def = Math.max(o.buffs.def, dur); }
+  buffMul(o, k) { let m = 1; if (o.bl) for (const b of o.bl) if (b.k === k && b.t > 0 && b.mul > m) m = b.mul; return m; }
+  addDebuff(e, k, mul, dur, src) { const L = e.dl || (e.dl = []); const x = L.find(b => b.k === k && b.src === src); if (x) { x.mul = mul; x.t = dur; } else L.push({ k, mul, t: dur, src }); if (k === 'def') e.defDown = Math.max(e.defDown || 0, dur); }
+  debuffMul(e, k) { let m = 1; if (e && e.dl) for (const b of e.dl) if (b.k === k && b.t > 0 && b.mul < m) m = b.mul; if (k === 'spd' && e === this.boss) m = Math.max(0.95, m); return Math.max(0.25, m); }
+  updateEnemyStatus(dt) {
+    const tick = e => { if (!e.dl || !e.dl.length) return; for (const b of e.dl) b.t -= dt; e.dl = e.dl.filter(b => b.t > 0); };
+    if (this.boss) tick(this.boss); for (const m of this.mobs) tick(m);
+  }
   free(a) { return a.st === 'ok' && !a.act; }
   canMove(a) {
     if (a.st !== 'ok' || a.rev || a.lan) return 0;
@@ -155,6 +176,8 @@ class Sim {
     if (a.inv > 0) a.inv -= dt;
     if (a.hurtT > 0) a.hurtT -= dt;
     for (const k of ['str', 'def', 'taunt', 'stealth', 'ramune']) if (a.buffs[k] > 0) a.buffs[k] = Math.max(0, a.buffs[k] - dt);
+    if (a.bl.length) { for (const b of a.bl) b.t -= dt; a.bl = a.bl.filter(b => b.t > 0); }
+    if (a.regen && a.st === 'ok') { const g = a.regen; g.t -= dt; if (g.t <= 0) { g.t += 1; g.n--; this.healAlly(a, g.v, this.allies[g.src], true); if (g.n <= 0) a.regen = null; } } else if (a.st !== 'ok') a.regen = null;
     a.threat *= (1 - S.threatDecay * dt);
     if (a.c.passive === 'food' && a.st === 'ok' && (this.stage === 'boss' || this.stage === 'street' || this.stage === 'train')) {
       a.foodT -= dt; if (a.foodT <= 0) { a.foodT = S.foodPeriod; this.spawnPickup('food', a.x + Math.sin(a.yaw) * 1.2, a.z + Math.cos(a.yaw) * 1.2); this.ev('sfx', { s: 'food', x: a.x, z: a.z }); }
@@ -181,7 +204,7 @@ class Sim {
       let spd = S.walk;
       const wantDash = inp.hold.B && !a.rev && !a.lan && (!a.act);
       if (wantDash && !a.tired && (a.stam > 0 || a.buffs.ramune > 0)) { spd = S.dash; a.dashing = true; }
-      spd *= mv * this.aiK(a);
+      spd *= mv * this.aiK(a) * this.buffMul(a, 'spd');
       this.moveAlly(a, mx * spd * dt, mz * spd * dt);
       const ty = yawTo(mx, mz); a.yaw += clamp(angDiff(a.yaw, ty), -12 * dt, 12 * dt);
       a.moving = true;
@@ -289,32 +312,32 @@ class Sim {
     if (!this.free(a)) { a.buf = { code: 'A', t: this.t }; return; }
     this.faceForAttack(a, inp);
     if (kind === 'combo3') a.act = { k: 'combo', t: 0, h: [0, 0, 0], q2: 0, q3: 0, log: this.logStart(a, '三連') };
-    else if (kind === 'melee1') a.act = { k: 'melee', t: 0, done: 0, log: this.logStart(a, '近接打撃') };
-    else a.act = { k: 'shot', t: 0, done: 0, log: this.logStart(a, '射撃') };
+    else if (kind === 'melee1' || kind === 'melee1n') a.act = { k: 'melee', t: 0, done: 0, M: M[kind], log: this.logStart(a, a.c.Anm || '近接打撃') };
+    else a.act = { k: 'shot', t: 0, done: 0, M: M[kind] || M.shot, log: this.logStart(a, a.c.Anm || '射撃') };
   }
   pressSkill(a, inp, k) {
     const sk = DATA.SKILLS[a.slots[k]];
     if (!this.free(a)) { if (sk.kind !== 'guard') a.buf = { code: k + '+', t: this.t }; return; }
     if (sk.kind === 'guard') {
       if (a.gLock[k] || a.g[k] < sk.threshold) return;
-      a.act = { k: 'guard', slot: k, t: 0, sk }; a.threat += 40; return;
+      a.act = { k: 'guard', slot: k, t: 0, sk }; a.threat += 40; if (sk.taunt) { a.threat += 400; a.buffs.taunt = Math.max(a.buffs.taunt, 1.5); this.ev('taunt', { slot: a.slot, x: a.x, z: a.z }); } return; // 開始時に敵視（攻撃とは同時に使えない）
     }
     if (a.cd[k] > 0) return;
     this.faceForAttack(a, inp);
     const lg = this.logStart(a, sk.nm);
     switch (sk.kind) {
-      case 'charge': case 'heal': case 'healRing': a.act = { k: 'charge', slot: k, t: 0, sk, log: lg }; break;
+      case 'charge': case 'heal': case 'healRing': case 'aura': case 'regen': a.act = { k: 'charge', slot: k, t: 0, sk, log: lg }; break;
       case 'dodge': {
         let dx = inp.mx || 0, dz = inp.mz || 0; const l = Math.hypot(dx, dz);
         if (l < 0.2) { dx = Math.sin(a.yaw); dz = Math.cos(a.yaw); } else { dx /= l; dz /= l; a.yaw = yawTo(dx, dz); }
-        a.act = { k: 'dodge', slot: k, t: 0, dx, dz, log: lg }; this.setCd(a, k, DATA.DODGE.cd); this.ev('sfx', { s: 'dodge', x: a.x, z: a.z }); break;
+        a.act = { k: 'dodge', slot: k, t: 0, dx, dz, sk, log: lg }; this.setCd(a, k, sk.cd || DATA.DODGE.cd); this.ev('sfx', { s: 'dodge', x: a.x, z: a.z }); break;
       }
       case 'retreat': a.act = { k: 'retreat', slot: k, t: 0, sk, done: 0, log: lg }; this.setCd(a, k, DATA.RETREAT.cd); break;
       case 'dot': a.act = { k: 'cast', slot: k, t: 0, sk, done: 0, end: 0.32, log: lg }; this.setCd(a, k, sk.cd); break;
       case 'stealth': a.act = { k: 'stealth', slot: k, t: 0, sk, done: 0, end: 0.3, log: lg }; this.setCd(a, k, sk.cd); break;
       case 'parry': a.act = { k: 'parry', slot: k, t: 0, sk, log: lg }; this.setCd(a, k, sk.cd); this.ev('sfx', { s: 'parryStance', x: a.x, z: a.z }); break;
       case 'heavy': a.act = { k: 'heavy', slot: k, t: 0, sk, done: 0, log: lg }; this.setCd(a, k, sk.cd); this.ev('sfx', { s: 'heavyWind', x: a.x, z: a.z }); break;
-      case 'trap': case 'mine': a.act = { k: 'cast', slot: k, t: 0, sk, done: 0, end: 0.35, log: lg }; this.setCd(a, k, sk.cd); break;
+      case 'trap': case 'mine': case 'bomb': a.act = { k: 'cast', slot: k, t: 0, sk, done: 0, end: sk.kind === 'trap' ? 0.35 : 0.6, log: lg }; this.setCd(a, k, sk.cd); break;
       case 'protect': a.act = { k: 'cast', slot: k, t: 0, sk, done: 0, end: 0.35, log: lg }; this.setCd(a, k, sk.cd); break;
       case 'taunt': a.act = { k: 'taunt', slot: k, t: 0, sk, done: 0, log: lg }; this.setCd(a, k, sk.cd); break;
     }
@@ -326,8 +349,8 @@ class Sim {
     const sk = a.act.sk, max = sk.kind === 'charge' ? DATA.CHARGE.max : sk.max;
     const ratio = clamp(a.act.t / max, 0, 1);
     if (sk.kind === 'charge') this.faceForAttack(a, inp);
-    a.act = { k: 'release', slot: k, t: 0, sk, ratio, done: 0, healT: inp.healT, log: a.act.log };
-    this.setCd(a, k, sk.kind === 'charge' ? DATA.CHARGE.cd : sk.cd);
+    a.act = { k: 'release', slot: k, t: 0, sk, ratio, done: 0, healT: inp.healT, lock: inp.lock, log: a.act.log };
+    this.setCd(a, k, sk.kind === 'charge' ? (sk.cd || DATA.CHARGE.cd) : sk.cd);
   }
   pressSP(a, inp) {
     if (a.sp < 100 || a.st !== 'ok') return;
@@ -356,12 +379,16 @@ class Sim {
         if ((!A.q2 && t >= H[1]) || (A.q2 && !A.q3 && t >= H[2]) || t >= M.combo3.end) this.endAct(a);
         break;
       }
-      case 'melee':
-        if (!A.done && t >= M.melee1.start) { A.done = 1; this.meleeHit(a, a.c.Apw[0], 'str', M.melee1.range, M.melee1.arc, 'A', A.log, 'hit'); }
-        if (t >= M.melee1.end) this.endAct(a); break;
-      case 'shot':
-        if (!A.done && t >= M.shot.fire) { A.done = 1; this.fireProj(a, a.c.id === 'burikidon' ? 'can' : 'star', a.c.Apw[0], 'str', M.shot.speed, M.shot.life, M.shot.r, 'A', A.log); }
-        if (t >= M.shot.end) this.endAct(a); break;
+      case 'melee': {
+        const W = A.M || M.melee1;
+        if (!A.done && t >= W.start) { A.done = 1; this.meleeHit(a, a.c.Apw[0], 'str', W.range, W.arc, 'A', A.log, 'hit'); }
+        if (t >= W.end) this.endAct(a); break;
+      }
+      case 'shot': {
+        const W = A.M || M.shot;
+        if (!A.done && t >= W.fire) { A.done = 1; this.fireProj(a, a.c.id === 'burikidon' ? 'can' : a.c.isNew ? 'bean' : 'star', a.c.Apw[0], 'str', W.speed, W.life, W.r, 'A', A.log); }
+        if (t >= W.end) this.endAct(a); break;
+      }
       case 'charge': {
         const max = A.sk.kind === 'charge' ? DATA.CHARGE.max : A.sk.max;
         A.ratio = clamp(t / max, 0, 1);
@@ -375,10 +402,10 @@ class Sim {
         if (t >= C.start + C.rec) this.endAct(a); break;
       }
       case 'dodge': {
-        const D = DATA.DODGE, ivEnd = D.iv1 + (a.c.passive === 'dodgePlus' ? D.kogePlus : 0);
-        if (t >= D.iv0 && t <= ivEnd) a.inv = Math.max(a.inv, dt * 1.01);
-        if (t <= D.moveT) { const s = D.dist / D.moveT; this.moveAlly(a, A.dx * s * dt, A.dz * s * dt); }
-        if (t >= D.end) this.endAct(a); break;
+        const D = DATA.DODGE, K = A.sk || {}, iv0 = K.iv0 != null ? K.iv0 : D.iv0, ivEnd = (K.iv1 != null ? K.iv1 : D.iv1) + (a.c.passive === 'dodgePlus' ? D.kogePlus : 0);
+        if (t >= iv0 && t <= ivEnd) a.inv = Math.max(a.inv, dt * 1.01);
+        if (t <= D.moveT) { const s = (K.dist || D.dist) / D.moveT; this.moveAlly(a, A.dx * s * dt, A.dz * s * dt); }
+        if (t >= (K.end || D.end)) this.endAct(a); break;
       }
       case 'retreat': {
         const R = DATA.RETREAT;
@@ -393,7 +420,7 @@ class Sim {
           A.done = 1;
           if (sk.kind === 'dot') this.fireProj(a, 'mark', 0, 'yo', sk.speed, 1.0, 0.4, 'skill', A.log, sk);
           else if (sk.kind === 'trap') { this.placeTrap(a, 'para', sk); }
-          else if (sk.kind === 'mine') { this.placeTrap(a, 'mine', sk); }
+          else if (sk.kind === 'mine' || sk.kind === 'bomb') { this.placeTrap(a, sk.kind, sk); }
           else if (sk.kind === 'protect') { for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= sk.r) o.inv = Math.max(o.inv, sk.inv); this.ev('protect', { slot: a.slot, x: a.x, z: a.z, r: sk.r }); }
         }
         if (t >= (A.end || 0.35)) this.endAct(a); break;
@@ -444,6 +471,8 @@ class Sim {
       else if (sk.form === 'shot') this.fireProj(a, 'focus', pw, sk.stat, sk.speed, 0.8, 0.45 + 0.35 * A.ratio, A.slot === 'X' ? 'skillX' : 'skill', A.log, { ratio: A.ratio });
       else if (sk.form === 'blast') this.fireProj(a, 'fire', pw, sk.stat, sk.speed, 0.9, 0.5, 'skill', A.log, { blast: sk.blastR * (1 + 0.3 * A.ratio), ratio: A.ratio });
       else if (sk.form === 'drain') { const got = this.meleeHit(a, pw, sk.stat, sk.range, sk.arc, 'skill', A.log, 'smoke'); if (got > 0) this.healAlly(a, Math.round(got * sk.drain), a, true); }
+      else if (sk.form === 'pshot') this.fireProj(a, 'pshot', pw, sk.stat, sk.speed, sk.range / sk.speed, 0.35 + 0.2 * A.ratio, A.slot === 'X' ? 'skillX' : 'skill', A.log, { ratio: A.ratio });
+      else if (sk.form === 'spell') this.castSpell(a, sk, pw, A); // 狙った位置へ当てる妖術（風・氷）
     } else if (sk.kind === 'heal') {
       const mul = 1 + (sk.mul - 1) * A.ratio;
       let tg = A.healT != null ? this.allies[A.healT] : null;
@@ -451,10 +480,37 @@ class Sim {
       if (tg) { const v = Math.round(sk.pw * mul * this.stat(a, 'yo') / 100); this.ev('leaf', { from: a.slot, to: tg.slot }); if (this.healAlly(tg, v, a) > 0) this.gainSp(a, DATA.SIM.spHeal); }
     } else if (sk.kind === 'healRing') {
       const r = sk.r0 + (sk.r1 - sk.r0) * A.ratio, v = Math.round(sk.pw * this.stat(a, 'yo') / 100); let any = 0;
-      for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= r) any += this.healAlly(o, v, a);
-      this.ev('ring', { slot: a.slot, x: a.x, z: a.z, r });
+      for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= r) { any += this.healAlly(o, v, a); if (sk.cleanse) this.cleanse(o); }
+      this.ev('ring', { slot: a.slot, x: a.x, z: a.z, r, k: sk.cleanse ? 'purify' : '' });
       if (any > 0) this.gainSp(a, DATA.SIM.spHeal);
+    } else if (sk.kind === 'regen') { // 1秒ごとに少しずつ回復（同じ術者なら更新）
+      const r = sk.r0 + (sk.r1 - sk.r0) * A.ratio, v = Math.round(sk.pw * this.stat(a, 'yo') / 100);
+      for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= r) o.regen = { v, n: sk.n, t: 1, src: a.slot };
+      this.ev('ring', { slot: a.slot, x: a.x, z: a.z, r, k: 'regen' }); this.gainSp(a, DATA.SIM.spHeal);
+    } else if (sk.kind === 'aura') { // 範囲の味方を強化／敵を弱体（ためで半径2→4m）
+      const r = sk.r0 + (sk.r1 - sk.r0) * A.ratio, src = a.slot + ':' + a.c.id + ':' + A.slot;
+      if (sk.side === 'ally') { for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= r) for (const k of sk.stats) this.addBuff(o, k, sk.mul, sk.dur, src); }
+      else { let n = 0; for (const e of this.enemiesAlive()) if (this.hitCircle(e, a.x, a.z, r)) { for (const k of sk.stats) this.addDebuff(e, k, sk.mul, sk.dur, src); n++; } if (n) this.spForHit(a, 'skill', A.log); }
+      this.ev('aura', { slot: a.slot, x: a.x, z: a.z, r, side: sk.side === 'ally' ? 1 : 0, st: sk.stats.length > 1 ? 'all' : sk.stats[0] });
     }
+  }
+  /** 悪いとりつきを治す（味方の弱体だけ。部下の数やボスの睡眠チェックは変えない） */
+  cleanse(o) { if (o.dl && o.dl.length) o.dl = []; }
+  /** 妖術：注目している敵（届けば）か前の一番近い敵の位置へ。風は小さな範囲、氷は単発 */
+  castSpell(a, sk, pw, A) {
+    let tg = A.lock ? this.findTarget(A.lock) : null;
+    if (tg && this.gapTo(a.x, a.z, tg).g > sk.range) tg = null;
+    if (!tg) { let bd = sk.range; for (const e of this.enemiesAlive()) { const { g, q } = this.gapTo(a.x, a.z, e); if (g < bd && Math.abs(angDiff(a.yaw, yawTo(q.x - a.x, q.z - a.z))) < 1.1) { bd = g; tg = e; } } }
+    let px, pz;
+    if (tg) { const { q } = this.gapTo(a.x, a.z, tg); px = q.x; pz = q.z; a.yaw = yawTo(px - a.x, pz - a.z); }
+    else { px = a.x + Math.sin(a.yaw) * 4; pz = a.z + Math.cos(a.yaw) * 4; }
+    let n = 0;
+    for (const e of this.enemiesAlive()) {
+      if (sk.el === '氷' && tg && e !== tg) continue;
+      const h = this.hitCircle(e, px, pz, sk.r * (sk.el === '氷' ? 0.6 : 1)); if (h) { this.dealToEnemy(a, e, pw, 'yo', A.slot === 'X' ? 'skillX' : 'skill', A.log, h, { el: sk.el }); n++; }
+    }
+    if (n) this.spForHit(a, 'skill', A.log);
+    this.ev('spell', { slot: a.slot, x: px, z: pz, r: sk.r, el: sk.el === '氷' ? 1 : 0 });
   }
   healAlly(o, v, by, silent) {
     if (o.st !== 'ok') return 0;
@@ -482,23 +538,26 @@ class Sim {
   }
   undetected(a) { return a.buffs.stealth > 0 || (!(this.boss && this.boss.st !== 'dead' && this.boss.target === a.slot) && !this.mobs.some(m => m.st === 'ok' && m.tgt === a.slot)); }
   partyHas(pass) { return this.allies.some(o => o.c.passive === pass && o.st !== 'gone'); }
-  dealToEnemy(a, e, pw, stat, kind, log, hit) {
+  dealToEnemy(a, e, pw, stat, kind, log, hit, opt) {
     if (e === this.boss && !this.bossHittable()) return 0;
     if (e.st && e.st !== 'ok' && e !== this.boss) return 0;
     const S = DATA.SIM, P = DATA.PASSIVE;
     let atk = stat === 'yo' ? this.stat(a, 'yo') : stat === 'mix' ? (this.stat(a, 'str') + this.stat(a, 'yo')) / 2 : this.stat(a, 'str');
     let state = 1;
-    if (stat !== 'yo') { if (a.buffs.str > 0) state *= a.buffs.strMul; if (this.partyHas('partyStr')) state *= P.partyStr; }
+    if (stat !== 'yo') { if (this.partyHas('partyStr')) state *= P.partyStr; } // 強化（ちから等）は stat() に含む
     if (a.c.passive === 'fullHp' && a.hp >= a.maxHp) state *= P.fullHp;
     if (a.c.passive === 'xPower' && kind === 'skillX') state *= P.xPower;
-    let def = e.def * (e.defDown > 0 ? DATA.SPECIALS.weaken.defDown : 1);
-    let elem = 1; if (e === this.boss) { if (a.c.el === DATA.BOSS.weak) elem = S.elemGood; else if (a.c.el === DATA.BOSS.strong) elem = S.elemBad; }
+    let def = e.def * this.debuffMul(e, 'def');
+    const el = (opt && opt.el) || a.c.el; // 技に属性があれば技の属性
+    let elem = 1; if (e === this.boss && this.stageId === 'senju') { if (el === DATA.BOSS.weak) elem = S.elemGood; else if (el === DATA.BOSS.strong) elem = S.elemBad; } // ヨシノシンは全属性×1
     let rate = S.critRate + (this.partyHas('partyCrit') ? DATA.PASSIVE.partyCrit : 0);
     let crit = this.rng.next() < rate;
     if (a.c.passive === 'stealthCrit' && this.undetected(a)) crit = true;
     const cm = crit ? (a.c.passive === 'critPower' ? P.critPower : S.critMul) : 1;
-    const dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm));
+    const extra = (this.lvOut || 1) * (this.enemyDmgMul ? this.enemyDmgMul(e) : 1); // 上野だけ：平均Lvの補正・睡眠中の隙
+    const dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm * extra));
     e.hp -= dmg; a.threat += dmg; a.stats.dmg += dmg;
+    if (this.afterEnemyHit) this.afterEnemyHit(e, dmg, a, kind);
     if (log) { log.hits.push(+this.t.toFixed(3)); log.dmg.push(dmg); log.def = Math.round(def); log.buff = (state !== 1 ? '×' + state.toFixed(2) : '') + (crit ? ' 会心' : '') + (elem !== 1 ? ' 属性×' + elem : ''); }
     this.ev('dmg', { v: dmg, crit: crit ? 1 : 0, x: hit ? hit.x : e.x, z: hit ? hit.z : e.z, y: e === this.boss ? (e.st === 'down' ? 1.6 : 1.0) : 0.6, src: a.slot, kind, el: elem > 1 ? 1 : elem < 1 ? -1 : 0 });
     if (e.hp <= 0) { e.hp = 0; if (e === this.boss) this.bossDie(); else this.mobDie(e, a); }
@@ -516,17 +575,17 @@ class Sim {
       if (src && src.hp > 0 && (src !== this.boss || this.bossHittable())) { const { q } = this.gapTo(o.x, o.z, src); o.yaw = yawTo(q.x - o.x, q.z - o.z); this.dealToEnemy(o, src, sk.pw, sk.stat, 'skill', null, contactPt(q, o.x, o.z)); }
       return 0;
     }
-    const fixed = opt.fixed != null; // ヨシノシの部下：まもりに関係なく決まったダメージ
-    const atk = fixed ? 0 : stat === 'yo' ? srcStats.yo : srcStats.str;
-    const def = this.stat(o, 'def') * (o.buffs.def > 0 ? o.buffs.defMul : 1);
-    let dmg = (fixed ? opt.fixed : pw * atk / (DATA.SIM.defBase + def)) / this.aiK(o); // AIが動かすキャラは体力も90%相当
+    const srcE = opt.src && opt.src !== 'none' && typeof opt.src === 'object' ? opt.src : null;
+    const atk = (stat === 'yo' ? srcStats.yo : srcStats.str) * (srcE ? this.debuffMul(srcE, stat === 'yo' ? 'yo' : 'str') : 1); // 敵の弱体
+    const def = this.stat(o, 'def'); // AIは能力×0.9（stt）、強化を含む
+    let dmg = pw * atk / (DATA.SIM.defBase + def) * (this.lvIn || 1) * (opt.mul || 1);
     const guarding = o.act && o.act.k === 'guard';
     if (guarding) {
-      dmg *= o.c.passive === 'guardPlus' ? DATA.PASSIVE.guardPlus : o.act.sk.mul;
+      dmg *= Math.max(0.25, o.c.passive === 'guardPlus' ? DATA.PASSIVE.guardPlus : o.act.sk.mul); // 軽減は一度だけ（下限0.25）
       this.ev('block', { slot: o.slot, x: o.x, z: o.z });
-      if (o.act.sk.reflect && opt.src && opt.src.hp > 0) { const rv = Math.max(1, Math.round((fixed ? opt.fixed : pw * atk / (DATA.SIM.defBase + def)) * o.act.sk.reflect * this.aiK(o))); this.reflectTo(o, opt.src, rv); }
     }
     dmg = Math.max(1, Math.round(dmg));
+    if (guarding && o.act.sk.reflect && srcE && srcE.hp > 0) { const rv = Math.round(dmg * o.act.sk.reflect); if (rv > 0) this.reflectTo(o, srcE, rv); } // 軽減後に実際に受けた分から（会心・再反射なし）
     o.hp -= dmg; o.hurtT = 0.25; o.rev = null; o.lan = null;
     this.gainSp(o, DATA.SIM.spHurt);
     this.ev('hurt', { slot: o.slot, v: dmg, x: o.x, z: o.z, g: guarding ? 1 : 0 });
@@ -552,24 +611,33 @@ class Sim {
         let hits = 0;
         for (const e of this.enemiesAlive()) {
           const inside = S.shape === 'fan' ? this.hitFan(e, a.x, a.z, a.yaw, 0, S.range, S.arc) : this.hitLine(e, a.x, a.z, a.yaw, S.len, S.w / 2);
-          if (inside) { this.dealToEnemy(a, e, S.pw, a.c.id === 'akaneten' || a.c.id === 'kemuridama' ? 'yo' : 'str', 'sp', A.log, inside); hits++; if (S.defDown) { e.defDown = S.defDownT; this.ev('defdown', { x: e.x, z: e.z }); } }
+          if (inside) { this.dealToEnemy(a, e, S.pw, S.stat || (a.c.id === 'akaneten' || a.c.id === 'kemuridama' ? 'yo' : 'str'), 'sp', A.log, inside); hits++; if (S.defDown) { this.addDebuff(e, 'def', S.defDown, S.defDownT, a.slot + ':sp'); this.ev('defdown', { x: e.x, z: e.z }); } }
         }
         this.ev('sphit', { slot: a.slot, n: A.n, ch: a.c.id, x: a.x, z: a.z, yaw: a.yaw, hit: hits });
       }
       if (t >= S.prep + (S.n - 1) * S.iv + S.tail) this.endAct(a);
     } else if (S.type === 'buff') {
-      if (!A.done && t >= S.prep) { A.done = 1; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= S.r) { o.buffs.str = S.dur; o.buffs.strMul = S.mul; } this.ev('spfx', { slot: a.slot, k: 'buff', x: a.x, z: a.z }); }
+      if (!A.done && t >= S.prep) { A.done = 1; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= S.r) for (const k of (S.stats || ['str'])) this.addBuff(o, k, S.mul, S.dur, a.slot + ':sp'); this.ev('spfx', { slot: a.slot, k: 'buff', x: a.x, z: a.z }); }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'guardup') {
-      if (!A.done && t >= S.prep) { A.done = 1; a.buffs.def = S.dur; a.buffs.defMul = S.mul; a.buffs.taunt = S.dur; a.threat += S.threat; this.ev('spfx', { slot: a.slot, k: 'guardup', x: a.x, z: a.z }); }
+      if (!A.done && t >= S.prep) { A.done = 1; this.addBuff(a, 'def', S.mul, S.dur, a.slot + ':sp'); a.buffs.taunt = S.dur; a.threat += S.threat; this.ev('spfx', { slot: a.slot, k: 'guardup', x: a.x, z: a.z }); }
       if (t >= S.end) this.endAct(a);
     } else if (S.type === 'heal') {
       if (!A.done && t >= S.prep) {
-        A.done = 1; const v = Math.round(S.pw * this.stat(a, 'yo') / 100);
-        for (const o of this.allies) { if (o.st === 'down') this.revive(o, S.revHp, a); }
-        for (const o of this.allies) if (o.st === 'ok') this.healAlly(o, v, a);
+        A.done = 1; const v = Math.round(S.pw * this.stat(a, 'yo') / 100), inR = o => !S.r || dist2(a.x, a.z, o.x, o.z) <= S.r;
+        if (S.revive !== false) for (const o of this.allies) { if (o.st === 'down') this.revive(o, S.revHp, a); } // 追加50体の回復必殺は蘇生しない
+        for (const o of this.allies) if (o.st === 'ok' && inR(o)) { this.healAlly(o, v, a); if (S.cleanse) this.cleanse(o); }
         this.ev('spfx', { slot: a.slot, k: 'heal', x: a.x, z: a.z });
       }
+      if (t >= S.end) this.endAct(a);
+    } else if (S.type === 'debuff') { // 敵の能力低下（眠らせない・行動を止めない）
+      if (!A.done && t >= S.prep) { A.done = 1; for (const e of this.enemiesAlive()) if (this.hitCircle(e, a.x, a.z, S.r)) for (const k of S.stats) this.addDebuff(e, k, S.mul, S.dur, a.slot + ':sp'); this.ev('aura', { slot: a.slot, x: a.x, z: a.z, r: S.r, side: 0, st: 'all', sp: 1 }); }
+      if (t >= S.end) this.endAct(a);
+    } else if (S.type === 'protect') { // 周りの味方を短く無敵（壁やバリアは作らない）
+      if (!A.done && t >= S.prep) { A.done = 1; for (const o of this.allies) if (o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) <= S.r) o.inv = Math.max(o.inv, S.inv); this.ev('protect', { slot: a.slot, x: a.x, z: a.z, r: S.r }); }
+      if (t >= S.end) this.endAct(a);
+    } else if (S.type === 'field') { // 地面の回復陣：1秒ごとに回復。同じ術者の陣は1つ
+      if (!A.done && t >= S.prep) { A.done = 1; this.traps = this.traps.filter(tr => !(tr.kind === 'field' && tr.owner === a.slot)); this.traps.push({ id: this.id(), kind: 'field', owner: a.slot, x: a.x, z: a.z, t: 0, arm: 0, life: S.n + 0.2, next: 1, n: S.n, v: Math.round(S.pw * this.stat(a, 'yo') / 100), sk: S }); this.ev('ring', { slot: a.slot, x: a.x, z: a.z, r: S.r, k: 'field' }); }
       if (t >= S.end) this.endAct(a);
     }
   }
@@ -611,7 +679,7 @@ class Sim {
           const h = this.hitCircle(e, p.x, p.z, p.r);
           if (h) {
             p.hit.add(e.id);
-            if (p.kind === 'mark') { (e.dots || (e.dots = [])).push({ src: p.owner, left: p.ex.dur, next: p.ex.tick, pw: p.ex.pw, stat: p.ex.stat }); this.ev('mark', { x: e.x, z: e.z }); this.spForHit(a, 'skill', p.log); p.life = 0; break; }
+            if (p.kind === 'mark') { const D0 = e.dots || (e.dots = []), old = D0.find(d => d.src === p.owner); if (old) { old.left = p.ex.dur; old.pw = p.ex.pw; } else D0.push({ src: p.owner, left: p.ex.dur, next: p.ex.tick, pw: p.ex.pw, stat: p.ex.stat }); this.ev('mark', { x: e.x, z: e.z }); this.spForHit(a, 'skill', p.log); p.life = 0; break; } // 同じ術者は重ねずに更新
             if (p.ex && p.ex.blast) { this.blast(a, p.x, p.z, p.ex.blast, p.pw, p.stat, p.hk, p.log); p.life = 0; break; }
             this.dealToEnemy(a, e, p.pw, p.stat, p.hk, p.log, h); this.spForHit(a, p.hk, p.log);
             this.ev('phit', { x: h.x, z: h.z, k: p.kind });
@@ -645,7 +713,9 @@ class Sim {
   }
   placeTrap(a, kind, sk) {
     const fx = Math.sin(a.yaw), fz = Math.cos(a.yaw);
-    this.traps.push({ id: this.id(), kind, owner: a.slot, x: a.x + fx * 0.6, z: a.z + fz * 0.6, t: 0, arm: sk.arm, life: sk.life, sk });
+    if (kind === 'mine' || kind === 'bomb') this.traps = this.traps.filter(tr => !((tr.kind === 'mine' || tr.kind === 'bomb') && tr.owner === a.slot)); // ボム・地雷は合わせて1人1個
+    const off = kind === 'bomb' ? 0.2 : 0.6, p = this.clampPos(a.x, a.z, a.x + fx * off, a.z + fz * off, 0.2);
+    this.traps.push({ id: this.id(), kind, owner: a.slot, x: p[0], z: p[1], t: 0, arm: kind === 'bomb' ? sk.fuse : sk.arm, life: kind === 'bomb' ? sk.fuse + 0.1 : sk.life, sk });
     this.ev('sfx', { s: kind === 'mine' ? 'minePlace' : 'trapPlace', x: a.x, z: a.z });
   }
   updateTraps(dt) {
@@ -661,21 +731,24 @@ class Sim {
             this.ev('para', { x: e.x, z: e.z }); tr.dead = 1; break;
           }
         }
-      } else if (tr.kind === 'mine') {
-        let trig = false;
-        for (const e of this.enemiesAlive()) if (this.hitCircle(e, tr.x, tr.z, sk.trig)) trig = true;
-        for (const o of this.allies) if (o.st === 'ok' && o.slot !== tr.owner && dist2(tr.x, tr.z, o.x, o.z) <= 0.7) trig = true;
-        if (trig) {
-          tr.dead = 1; const hitSet = new Set();
-          for (const e of this.enemiesAlive()) { const h = !hitSet.has(e.id) && this.hitCircle(e, tr.x, tr.z, sk.r); if (h) { hitSet.add(e.id); this.dealToEnemy(a, e, sk.pw, 'mix', 'skill', null, h); } }
-          for (const o of this.allies) if (o.st === 'ok' && dist2(tr.x, tr.z, o.x, o.z) <= sk.r) { // 味方も巻き込む（1爆発につき1回）
-            const dx = o.x - tr.x, dz = o.z - tr.z; this.dealToAlly(o, sk.pw * sk.allyMul, 'str', { str: (this.stat(a, 'str') + this.stat(a, 'yo')) / 2, yo: this.stat(a, 'yo') }, { knock: 4, kx: dx, kz: dz, src: 'none' });
-          }
-          this.ev('boom', { x: tr.x, z: tr.z, r: sk.r, k: 'mine' });
-        }
+      } else if (tr.kind === 'mine' || tr.kind === 'bomb') {
+        let trig = tr.kind === 'bomb'; // ボムは時間で、地雷は敵か味方（自分も）が近づくと
+        if (!trig) { for (const e of this.enemiesAlive()) if (this.hitCircle(e, tr.x, tr.z, sk.trig)) trig = true; for (const o of this.allies) if (o.st === 'ok' && (o.slot !== tr.owner || tr.t > sk.arm + 0.8) && dist2(tr.x, tr.z, o.x, o.z) <= 0.7) trig = true; }
+        if (trig) this.explode(tr, a);
+      } else if (tr.kind === 'field') { // 回復陣
+        tr.next -= dt;
+        if (tr.next <= 0 && tr.n > 0) { tr.next += 1; tr.n--; for (const o of this.allies) if (o.st === 'ok' && dist2(tr.x, tr.z, o.x, o.z) <= sk.r) this.healAlly(o, tr.v, a, true); if (tr.n <= 0) tr.dead = 1; }
       }
     }
     this.traps = this.traps.filter(t => !t.dead);
+  }
+  /** ボム・地雷の爆発：敵には通常、味方（自分を含む）には25%・会心なし。1対象1回、連鎖しない */
+  explode(tr, a) {
+    const sk = tr.sk, st = sk.stat || 'mix'; tr.dead = 1; const hitSet = new Set();
+    for (const e of this.enemiesAlive()) { const h = !hitSet.has(e.id) && this.hitCircle(e, tr.x, tr.z, sk.r); if (h) { hitSet.add(e.id); this.dealToEnemy(a, e, sk.pw, st, 'skill', null, h); } }
+    const src = { str: st === 'mix' ? (this.stat(a, 'str') + this.stat(a, 'yo')) / 2 : this.stat(a, 'str'), yo: this.stat(a, 'yo') };
+    for (const o of this.allies) if (o.st === 'ok' && dist2(tr.x, tr.z, o.x, o.z) <= sk.r) { const dx = o.x - tr.x, dz = o.z - tr.z; this.dealToAlly(o, sk.pw * (sk.allyMul || 0.25), st === 'yo' ? 'yo' : 'str', src, { knock: 4, kx: dx, kz: dz, src: 'none' }); }
+    this.ev('boom', { x: tr.x, z: tr.z, r: sk.r, k: tr.kind });
   }
   spawnPickup(kind, x, z, item, life) { const r = this.clampPos(x, z, x, z, 0.3); const pk = { id: this.id(), kind, x: r[0], z: r[1], item, life: life || 40 }; this.pickups.push(pk); return pk; }
   /** キャンディー：20秒ごとに、いま遊んでいる場所のどこかへ1つ（取ると全回復） */
@@ -1018,9 +1091,9 @@ class Sim {
       h.t += dt;
       if (h.act <= 0) { if (h.t >= h.warn + (h.keep || 0)) h.dead = 1; continue; }
       if (h.t < h.warn || h.t > h.warn + h.act) { if (h.t > h.warn + h.act + 0.05) h.dead = 1; continue; }
-      if (h.t - dt < h.warn) this.ev('hzfire', { fx: h.fx, x: h.x, z: h.z, yaw: h.yaw, r: h.r || 0 });
+      if (h.t - dt < h.warn) { this.ev('hzfire', { fx: h.fx, x: h.x, z: h.z, yaw: h.yaw, r: h.r || 0 }); if (h.hook && this.hzHook) this.hzHook(h); }
       const b = this.boss, srcStats = h.src === 'boss' ? b : h.srcStats;
-      // single：最初に当たった1人だけ（ヨシノシの部下のビームは手前の1人で止まる）
+      // single：最初に当たった1人だけ（ヨシノシンの部下のビームは手前の1人で止まる）
       let only = null;
       if (h.single) { let bd = 1e9; const fx = Math.sin(h.yaw), fz = Math.cos(h.yaw); for (const o of this.allies) { if (o.st !== 'ok' || !inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR)) continue; const f = (o.x - h.x) * fx + (o.z - h.z) * fz; if (f < bd) { bd = f; only = o; } } }
       for (const o of this.allies) {
@@ -1034,8 +1107,7 @@ class Sim {
         else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR);
         if (!inside) continue;
         h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t };
-        const fixed = h.fixed ? Math.round(h.fixed[0] + this.rng.next() * (h.fixed[1] - h.fixed[0])) : null;
-        this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: h.kx != null ? h.kx : o.x - h.x, kz: h.kz != null ? h.kz : o.z - h.z, src: h.src === 'boss' ? b : (h.srcEnt || null), fixed });
+        this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: h.kx != null ? h.kx : o.x - h.x, kz: h.kz != null ? h.kz : o.z - h.z, src: h.src === 'boss' ? b : (h.srcEnt || null), mul: h.mul });
       }
     }
     this.hazards = this.hazards.filter(h => !h.dead);
@@ -1095,6 +1167,10 @@ class Sim {
       return;
     }
     if (ai.hold) { ai.stay = ai.hold.stay !== false; return; }
+    // 1.5) 置かれたボム・地雷から離れる（味方の爆発にも巻き込まれるため）
+    for (const tr of this.traps) if ((tr.kind === 'bomb' || (tr.kind === 'mine' && tr.owner !== a.slot)) && dist2(a.x, a.z, tr.x, tr.z) < tr.sk.r + 0.6) {
+      const dx = a.x - tr.x, dz = a.z - tr.z, l = Math.hypot(dx, dz) || 1, p = this.clampPos(a.x, a.z, tr.x + dx / l * (tr.sk.r + 1.2), tr.z + dz / l * (tr.sk.r + 1.2), 0.4); ai.tx = p[0]; ai.tz = p[1]; return;
+    }
     // 2) 気絶した仲間の救助
     const down = this.allies.filter(o => o.st === 'down');
     if (down.length) {
@@ -1124,7 +1200,7 @@ class Sim {
         for (const k of ['X', 'Y']) {
           const sk = DATA.SKILLS[a.slots[k]];
           if (a.cd[k] > 0 || !this.free(a)) continue;
-          if (sk.kind === 'heal' || (sk.kind === 'healRing' && low.filter(o => dist2(a.x, a.z, o.x, o.z) < sk.r1).length >= 2)) {
+          if (sk.kind === 'heal' || ((sk.kind === 'healRing' || sk.kind === 'regen') && low.filter(o => dist2(a.x, a.z, o.x, o.z) < sk.r1).length >= (sk.kind === 'regen' ? 1 : 2))) {
             push(k + '+'); out.hold[k] = 1; ai.hold = { k, t: 0.5 + this.rng.next() * 0.8, stay: false }; out.healT = low[0].slot; ai.tx = (a.x + low[0].x) / 2; ai.tz = (a.z + low[0].z) / 2; return;
           }
         }
@@ -1136,9 +1212,12 @@ class Sim {
       const bossOpen = b && (b.st === 'down' || b.st === 'stun' || b.st === 'rec');
       const S = DATA.SPECIALS[a.c.sp];
       let use = false;
-      if (S.type === 'heal') use = this.allies.some(o => o.st === 'down') || this.allies.filter(o => o.st === 'ok' && o.hp / o.maxHp < 0.5).length >= 2;
+      if (S.type === 'heal') use = (S.revive !== false && this.allies.some(o => o.st === 'down')) || this.allies.filter(o => o.st === 'ok' && o.hp / o.maxHp < 0.5 && (!S.r || dist2(a.x, a.z, o.x, o.z) < S.r)).length >= 2;
       else if (S.type === 'buff') use = bossOpen || this.allies.filter(o => o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) < S.r).length >= 3;
-      else if (S.type === 'guardup') use = b && b.st !== 'fly' && b.target !== a.slot;
+      else if (S.type === 'guardup') use = (b && b.st !== 'fly' && b.target !== a.slot) || this.mobs.filter(m => m.st === 'ok' && dist2(a.x, a.z, m.x, m.z) < 6).length >= 3;
+      else if (S.type === 'debuff') use = !!tgtE && this.enemiesAlive().filter(e => this.gapTo(a.x, a.z, e).g < S.r * 0.8).length >= (bossOpen || tgtE === b ? 1 : 3);
+      else if (S.type === 'protect') use = !!this.inDanger(a.x, a.z, 1.5, 1.0) && this.allies.filter(o => o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) < S.r).length >= 2;
+      else if (S.type === 'field') use = this.allies.filter(o => o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) < S.r && o.hp / o.maxHp < 0.75).length >= 2;
       else if (tgtE) { const reach = S.shape === 'line' ? S.len : S.range; use = this.gapTo(a.x, a.z, tgtE).g < reach * 0.8 && (bossOpen || this.rng.next() < 0.35 || tgtE !== b); }
       if (use) { if (tgtE) out.lock = tgtE.id; push('SP'); return; }
     }
@@ -1167,7 +1246,7 @@ class Sim {
     const isBoss = e === b, d = dist2(a.x, a.z, e.x, e.z), gap = this.gapTo(a.x, a.z, e).g;
     const bf = isBoss ? Math.abs(angDiff(b.yaw, yawTo(a.x - b.x, a.z - b.z))) : 0;
     if (role === 'ranged' || (role === 'mage' && a.c.id === 'akaneten') || (role === 'tank' && a.c.A === 'shot')) {
-      const want = role === 'tank' ? 5.5 : 8;
+      const want = role === 'tank' ? 5.5 : a.c.A === 'shotn' ? 5.5 : 8; // 追加キャラの通常弾は射程8m
       let ang = isBoss ? b.yaw + (a.slot % 2 ? 0.9 : -0.9) : yawTo(a.x - e.x, a.z - e.z);
       if (role === 'tank' && isBoss) ang = b.yaw + (a.slot % 2 ? 0.25 : -0.25);
       const px = e.x + Math.sin(ang) * want, pz = e.z + Math.cos(ang) * want;
@@ -1199,10 +1278,17 @@ class Sim {
     const b = this.boss;
     for (const k of ['X', 'Y']) {
       const sk = DATA.SKILLS[a.slots[k]];
-      if (sk.kind === 'guard' || sk.kind === 'dodge' || sk.kind === 'heal' || sk.kind === 'healRing') continue;
+      if (sk.kind === 'guard' || sk.kind === 'dodge' || sk.kind === 'heal' || sk.kind === 'healRing' || sk.kind === 'regen') continue;
       if (a.cd[k] > 0 || this.rng.next() < 0.45) continue;
       switch (sk.kind) {
-        case 'charge': if (sk.form === 'melee' ? gap < 1.05 : sk.form === 'drain' ? gap < 2.4 : gap < 12) { push(k + '+'); out.hold[k] = 1; a.ai.hold = { k, t: 0.5 + this.rng.next() * 0.5, stay: true }; return; } break;
+        case 'charge': if (sk.form === 'melee' ? gap < 1.05 : sk.form === 'drain' ? gap < 2.4 : (sk.form === 'spell' || sk.form === 'pshot') ? gap < sk.range - 0.5 : gap < 12) { push(k + '+'); out.hold[k] = 1; a.ai.hold = { k, t: 0.5 + this.rng.next() * 0.5, stay: true }; return; } break;
+        case 'aura': {
+          const r = sk.r1;
+          const use = sk.side === 'ally' ? this.allies.filter(o => o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) < r - 0.3).length >= 2 && gap < 6 : this.enemiesAlive().filter(q => this.gapTo(a.x, a.z, q).g < r - 0.5).length >= 1;
+          if (use) { push(k + '+'); out.hold[k] = 1; a.ai.hold = { k, t: 0.7 + this.rng.next() * 0.35, stay: true }; return; }
+          break;
+        }
+        case 'bomb': if (gap < 1.6 && !this.allies.some(o => o !== a && o.st === 'ok' && dist2(a.x, a.z, o.x, o.z) < sk.r + 0.8)) { push(k + '+'); return; } break;
         case 'dot': if (gap < 12) { push(k + '+'); return; } break;
         case 'retreat': case 'heavy': case 'taunt': if (gap < 1.0) { if (sk.kind === 'heavy' && b && e === b && b.st !== 'down' && b.st !== 'stun' && b.st !== 'rec' && this.rng.next() < 0.6) break; push(k + '+'); return; } break;
         case 'stealth': if (b && b.target === a.slot) { push(k + '+'); return; } break;

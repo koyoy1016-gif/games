@@ -8,7 +8,7 @@ const req = createRequire(path.join(process.env.FB_DIR || '.', 'package.json'));
 const fbApp = req('firebase/app'), fbAuth = req('firebase/auth');
 const mem = new Map(); const localStorage = { getItem: k => mem.has(k) ? mem.get(k) : null, setItem: (k, v) => mem.set(k, String(v)), removeItem: k => mem.delete(k), key: i => [...mem.keys()][i] ?? null, get length() { return mem.size; } };
 const ctx = vm.createContext({ console, Math, JSON, Object, Array, Number, String, Date, Promise, Error, localStorage, parseInt, isNaN, setTimeout, location: { search: '' }, window: {} });
-vm.runInContext(['data.js', 'save.js', 'cloud.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n') + ';globalThis.__={DATA,SAVE,CLOUD}', ctx);
+vm.runInContext(['data.js', 'roster_data.js', 'roster.js', 'save.js', 'cloud.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n') + ';globalThis.__={DATA,SAVE,CLOUD}', ctx);
 const { SAVE, CLOUD } = ctx.__;
 
 /* ---- firestore.rules と同じ決まりで動く、検査用の Firestore ---- */
