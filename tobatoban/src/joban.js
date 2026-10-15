@@ -11,7 +11,7 @@
   P.initJoban = function (o) {
     this.stage = o.test ? 'train' : 'intro'; this.barrier = 'none';
     const J = DATA.JOBAN;
-    this.kills = 0; this.total = J.waves.reduce((s, n) => s + n, 0) + J.boardN * 3;
+    this.kills = 0; this.total = J.waves.reduce((s, n) => s + n, 0) + J.boardN.reduce((s, n) => s + n, 0);
     this.phase = 0; this.phaseKills = [0, 0, 0]; this.queue = []; this.spawnT = 0; this.boardedSt = 0;
     this.tr = { at: 0, ph: 'stop', d: 0, v: 0, t: 0, doors: 0 }; // 北千住で停車中（演出の間）
     const pos = [[-0.6, -4.2], [0.6, -4.2], [-0.6, -5.8], [0.6, -5.8]]; // 3号車の前寄り・前向き
@@ -33,7 +33,7 @@
   P.startTrain = function () {
     this.stage = 'train'; this.stageT = 0; this.introWait = false;
     const tr = this.tr; tr.ph = 'run'; tr.at = 0; tr.d = 0; tr.v = 0; tr.t = 0; tr.doors = 0;
-    // 第1波：2号車にすでに5体
+    // 第1波：2号車にすでに10体
     this.phase = 1;
     for (let i = 0; i < DATA.JOBAN.waves[0]; i++) this.spawnYoshi(this.rng.range(-1.1, 1.1), this.rng.range(9, 19), 'p1', 'in');
     this.ev('stage', { k: 'train' }); this.ev('wave', { n: 1, cnt: DATA.JOBAN.waves[0] });
@@ -71,14 +71,14 @@
     }
   };
 
-  /** 途中駅：左側のドアから5体が乗ってくる */
+  /** 途中駅：左側のドアから乗ってくる（南千住10体・三河島10体・日暮里15体） */
   P.boardAt = function (st) {
-    const J = DATA.JOBAN;
-    for (let i = 0; i < J.boardN; i++) this.queue.push({ grp: 'st', from: 'door' });
+    const J = DATA.JOBAN, n = J.boardN[st - 1] || 0;
+    for (let i = 0; i < n; i++) this.queue.push({ grp: 'st', from: 'door' });
     this.boardedSt = Math.max(this.boardedSt, st);
-    this.ev('board', { st, n: J.boardN });
+    this.ev('board', { st, n });
   };
-  /** 最初の5体を倒すと1号車から10体、その10体を倒すと15体 */
+  /** 最初の10体を倒すと1号車から15体、その15体を倒すと20体 */
   P.checkPhases = function () {
     const J = DATA.JOBAN;
     if (this.phase === 1 && this.phaseKills[0] >= J.waves[0]) { this.phase = 2; for (let i = 0; i < J.waves[1]; i++) this.queue.push({ grp: 'p2', from: 'front' }); this.ev('wave', { n: 2, cnt: J.waves[1] }); }

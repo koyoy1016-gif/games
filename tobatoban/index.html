@@ -830,9 +830,9 @@ const JOBAN = {
   segLen: p('常磐線', '駅と駅の間（ゲーム内の距離）', [800, 700, 700, 900], 'm', 'proto', null, '北千住→南千住→三河島→日暮里→上野'),
   vmax: p('常磐線', '電車の最高速度', 24, 'm/s', 'proto'), acc: 2.0,
   stopT: p('常磐線', '途中駅の停車時間', 8, 's', 'proto'),
-  boardN: p('常磐線', '途中駅（南千住・三河島・日暮里）で乗ってくる部下', 5, '体/駅', 'proto'),
-  waves: p('常磐線', '1号車から来る部下（3段階）', [5, 10, 15], '体', 'proto', null, '最初に5体。5体倒すと10体、その10体を倒すと15体（駅の15体と合わせて45体）'),
-  hp: p('ヨシノシの部下', '体力（1体ごとにこの間で決まる）', [600, 700], 'points', 'proto'),
+  boardN: p('常磐線', '途中駅（南千住・三河島・日暮里）で乗ってくる部下', [10, 10, 15], '体', 'proto', null, '南千住10体・三河島10体・日暮里15体'),
+  waves: p('常磐線', '1号車から来る部下（3段階）', [10, 15, 20], '体', 'proto', null, '最初に10体。10体倒すと15体、その15体を倒すと20体（駅の35体と合わせて80体）'),
+  hp: p('ヨシノシの部下', '体力（1体ごとにこの間で決まる）', [450, 500], 'points', 'proto'),
   dmg: p('ヨシノシの部下', '1発のダメージ（この間で決まる）', [50, 80], 'points', 'proto', null, 'まもりに関係なくこのダメージ（ガード・AIの体力90%は反映）'),
   def: p('ヨシノシの部下', 'まもり', 70, 'points', 'proto'), r: 0.38,
   speed: [2.4, 2.9], maxActive: p('ヨシノシの部下', '同時に車内にいる最大数', 20, '体', 'proto', null, '多いときは1号車で待ち、空いた分だけ出てくる'),
@@ -2374,7 +2374,7 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   P.initJoban = function (o) {
     this.stage = o.test ? 'train' : 'intro'; this.barrier = 'none';
     const J = DATA.JOBAN;
-    this.kills = 0; this.total = J.waves.reduce((s, n) => s + n, 0) + J.boardN * 3;
+    this.kills = 0; this.total = J.waves.reduce((s, n) => s + n, 0) + J.boardN.reduce((s, n) => s + n, 0);
     this.phase = 0; this.phaseKills = [0, 0, 0]; this.queue = []; this.spawnT = 0; this.boardedSt = 0;
     this.tr = { at: 0, ph: 'stop', d: 0, v: 0, t: 0, doors: 0 }; // 北千住で停車中（演出の間）
     const pos = [[-0.6, -4.2], [0.6, -4.2], [-0.6, -5.8], [0.6, -5.8]]; // 3号車の前寄り・前向き
@@ -2396,7 +2396,7 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
   P.startTrain = function () {
     this.stage = 'train'; this.stageT = 0; this.introWait = false;
     const tr = this.tr; tr.ph = 'run'; tr.at = 0; tr.d = 0; tr.v = 0; tr.t = 0; tr.doors = 0;
-    // 第1波：2号車にすでに5体
+    // 第1波：2号車にすでに10体
     this.phase = 1;
     for (let i = 0; i < DATA.JOBAN.waves[0]; i++) this.spawnYoshi(this.rng.range(-1.1, 1.1), this.rng.range(9, 19), 'p1', 'in');
     this.ev('stage', { k: 'train' }); this.ev('wave', { n: 1, cnt: DATA.JOBAN.waves[0] });
@@ -2434,14 +2434,14 @@ const SIMLIB = { Sim, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV, BMV_I,
     }
   };
 
-  /** 途中駅：左側のドアから5体が乗ってくる */
+  /** 途中駅：左側のドアから乗ってくる（南千住10体・三河島10体・日暮里15体） */
   P.boardAt = function (st) {
-    const J = DATA.JOBAN;
-    for (let i = 0; i < J.boardN; i++) this.queue.push({ grp: 'st', from: 'door' });
+    const J = DATA.JOBAN, n = J.boardN[st - 1] || 0;
+    for (let i = 0; i < n; i++) this.queue.push({ grp: 'st', from: 'door' });
     this.boardedSt = Math.max(this.boardedSt, st);
-    this.ev('board', { st, n: J.boardN });
+    this.ev('board', { st, n });
   };
-  /** 最初の5体を倒すと1号車から10体、その10体を倒すと15体 */
+  /** 最初の10体を倒すと1号車から15体、その15体を倒すと20体 */
   P.checkPhases = function () {
     const J = DATA.JOBAN;
     if (this.phase === 1 && this.phaseKills[0] >= J.waves[0]) { this.phase = 2; for (let i = 0; i < J.waves[1]; i++) this.queue.push({ grp: 'p2', from: 'front' }); this.ev('wave', { n: 2, cnt: J.waves[1] }); }
@@ -5101,7 +5101,7 @@ const cleared = id => !!((G.acct && G.acct.clear && G.acct.clear[id] > 0) || G.s
 const stageOpen = id => id !== 'joban' || cleared('senju');
 const STAGES = [
   { id: 'senju', cls: 's1', ic: '🏮', no: 'ステージ1', nm: '北千住 祭り広場', en: 'トバトーバン（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。' },
-  { id: 'joban', cls: 's2', ic: '🚃', no: 'ステージ2', nm: '常磐線 北千住→上野', en: `ヨシノシの部下 ${DATA.JOBAN.waves.reduce((a, b) => a + b, 0) + DATA.JOBAN.boardN * 3}体`, d: '青い常磐線の2号車・3号車で戦う。1号車から次々に来る部下と、南千住・三河島・日暮里で乗ってくる部下を倒して上野へ。' },
+  { id: 'joban', cls: 's2', ic: '🚃', no: 'ステージ2', nm: '常磐線 北千住→上野', en: `ヨシノシの部下 ${DATA.JOBAN.waves.reduce((a, b) => a + b, 0) + DATA.JOBAN.boardN.reduce((a, b) => a + b, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車から次々に来る部下と、南千住・三河島・日暮里で乗ってくる部下を倒して上野へ。' },
 ];
 function openStage() { renderStages(); show('stage'); }
 function renderStages() {
