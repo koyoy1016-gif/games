@@ -15,6 +15,19 @@ const vib = p => { try { if (SET.vib && navigator.vibrate) navigator.vibrate(p);
 const pcol = i => DATA.PCOL[i % 4];
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 
+/* ---------- 拡大しないように画面を固定（ダブルタップ・ピンチ） ---------- */
+(function lockZoom() {
+  try { const m = document.querySelector('meta[name=viewport]'); if (m) m.setAttribute('content', 'width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover'); } catch (e) { }
+  const isField = t => t && t.closest && t.closest('input,textarea,select');
+  let lastEnd = 0;
+  document.addEventListener('touchend', e => { const now = Date.now(); if (now - lastEnd < 350 && !isField(e.target)) { e.preventDefault(); const b = e.target.closest && e.target.closest('.screen button'); if (b && !b.disabled) b.click(); } lastEnd = now; }, { passive: false }); // 2回目のタップも押した扱いにする
+  document.addEventListener('touchmove', e => { if (e.touches && e.touches.length > 1) e.preventDefault(); if (typeof e.scale === 'number' && e.scale !== 1) e.preventDefault(); }, { passive: false });
+  document.addEventListener('dblclick', e => { if (!isField(e.target)) e.preventDefault(); }, { passive: false });
+  for (const t of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(t, e => e.preventDefault(), { passive: false });
+  document.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+  document.addEventListener('contextmenu', e => { if (!isField(e.target)) e.preventDefault(); });
+})();
+
 /* ---------- 横向き固定（縦持ちの端末では画面全体を90度回す） ---------- */
 function applyRotation() {
   const app = $('#app'); const vw = window.innerWidth, vh = window.innerHeight;

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#1b1838">
 <title>北千住もののけ夜警隊</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -20,9 +20,10 @@
   --ui:1;
   color-scheme:dark;
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box;touch-action:manipulation}
+html{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{margin:0;height:100%;overflow:hidden;background:#1b1838;color:var(--paper);font-family:var(--f-body)}
-body{touch-action:none;}
+body{touch-action:none;-webkit-touch-callout:none}
 #app.rot .screen,#app.rot #dataTable{touch-action:none}
 body{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 #app{position:fixed;left:0;top:0;width:100vw;height:100vh;overflow:hidden;transform-origin:0 0;transform:translate(0,0);container-type:size;container-name:app;--aw:1vw;--ah:1vh;background:#1b1838}
