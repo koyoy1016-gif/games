@@ -279,6 +279,11 @@ a{color:var(--shu)}
 .edge .tri{position:absolute;inset:0;clip-path:polygon(100% 50%,20% 10%,35% 50%,20% 90%)}
 .edge .t{position:relative;font-size:10px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
 .reticle{position:absolute;width:70px;height:70px;margin:-35px 0 0 -35px;border:2.5px dashed #ff6a5a;border-radius:50%;pointer-events:none;animation:spin 3s linear infinite}
+.reticle-w{position:absolute;width:0;height:0;pointer-events:none}
+.reticle-w .reticle{left:0;top:0}
+.reticle-w.home .reticle{border:3px solid #ffd23a;border-left-color:transparent;border-right-color:transparent;box-shadow:0 0 10px rgba(255,210,58,.6)}
+.reticle-w .tag{position:absolute;left:0;top:30px;transform:translateX(-50%);font-size:11px;font-weight:900;line-height:16px;padding:0 6px;border-radius:6px;background:#ffd23a;color:#2a1a00;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.reticle-w.far .tag{background:#4a4a5a;color:#fff}
 @keyframes spin{to{transform:rotate(360deg)}}
 #notice{position:absolute;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
 .nt{background:var(--veil);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;padding:4px 14px;font-size:13px;font-weight:900;animation:ntIn .2s ease-out;max-width:calc(var(--aw)*92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -413,6 +418,7 @@ a{color:var(--shu)}
       <span class="k kP">救助</span><span>気絶した仲間のまわりに出る緑の円に入って4秒いると復活（HPは3分の1）。ボタンはいらない</span>
       <span class="k kP">🍬</span><span>20秒ごとにキャンディーがどこかに出る。拾うとHPが全回復（満タンのときは拾わない）</span>
       <span class="k kP">注目</span><span>ボスや敵にカメラと向きを合わせる。もう一度押すと解除。ボスが飛ぶと外れる</span>
+      <span class="k kP">敵をタップ</span><span>その敵に注目する（12mまで。もう一度タップで解除）。射撃・投げ技などの弾は、その敵を追いかけて当たる（「追尾」の印）</span>
       <span class="k kP">画面</span><span>右側の何もない所をドラッグするとカメラを回せる。「カメラ」で後ろに戻す</span>
       <span class="k kP">仲間</span><span>ソロでは左上の仲間をタップで操作キャラを交代。回復をためている間は回復対象の指定になる</span>
     </div>
@@ -656,6 +662,8 @@ const SIM = {
   candyPeriod: p('キャンディー', '出てくる間隔', 20, 'seconds', 'proto', null, 'いま遊んでいる場所（通り／祭り広場）のどこかにランダム'),
   candyMax: p('キャンディー', '同時に置かれる最大数', 3, 'count', 'proto'),
   candyHeal: p('キャンディー', '回復量', 1, 'ratio(最大HP)', 'proto', null, '全回復。HPが満タンの仲間は拾わない'),
+  homeRange: p('追尾', 'タップした敵へ弾が追尾する距離（体の表面まで）', 12, 'm', 'proto', null, 'これより遠い敵はタップしても狙えない。人が操作するキャラの弾だけ（AIの弾は追尾しない）'),
+  homeMaxT: p('追尾', '追尾する弾の最長の飛行時間', 2.5, 'seconds', 'proto'),
   hitStagger: p('被弾', '重い攻撃でのけぞる時間', 0.45, 'seconds', 'proto'),
   aiMul: p('AI', 'AIが動かすキャラの能力', 0.9, 'ratio', 'proto', null, 'ちから・ようりょく・まもり・体力・移動速度をすべて90%にする（操作を交代すると元に戻る）'),
 };
@@ -1268,7 +1276,7 @@ class Sim {
     if (bq) a.yaw = yawTo(bq.x - a.x, bq.z - a.z);
   }
   updateAlly(a, inp, dt) {
-    const S = DATA.SIM;
+    const S = DATA.SIM; a.lockId = inp.lock || null; // 注目（タップ）している敵：弾の追尾に使う
     // 時間経過
     for (const k of ['X', 'Y']) {
       const sk = DATA.SKILLS[a.slots[k]];
@@ -1712,15 +1720,27 @@ class Sim {
   fireProj(a, kind, pw, stat, speed, life, r, hk, log, extra) {
     const fx = Math.sin(a.yaw), fz = Math.cos(a.yaw);
     const p = { id: this.id(), kind, team: 'ally', owner: a.slot, x: a.x + fx * 0.6, y: 0.6, z: a.z + fz * 0.6, vx: fx * speed, vz: fz * speed, life, r, pw, stat, hk, log, hit: new Set(), ex: extra || null, yaw: a.yaw };
+    // タップ（注目）した敵が追尾距離の内にいれば、弾はその敵を追いかけて必ず当たる（人が操作するキャラだけ）
+    const tg = !a.ctrlAI && a.lockId ? this.findTarget(a.lockId) : null;
+    if (tg) {
+      const { g, q } = this.gapTo(a.x, a.z, tg);
+      if (g <= DATA.SIM.homeRange) { const dx = q.x - p.x, dz = q.z - p.z, d = Math.hypot(dx, dz) || 1e-3; p.vx = dx / d * speed; p.vz = dz / d * speed; p.yaw = yawTo(dx, dz); p.tgt = tg.id; p.homeT = 0; p.life = Math.max(life, Math.min(DATA.SIM.homeMaxT, d / speed + 0.4)); }
+    }
     this.projs.push(p); this.ev('sfx', { s: 'shot_' + kind, x: a.x, z: a.z });
   }
   updateProjs(dt) {
     for (const p of this.projs) {
       p.life -= dt; p.x += p.vx * dt; p.z += p.vz * dt;
+      if (p.tgt) { // 追尾：いまの敵の体へ向きを直す（敵が倒れた・飛んだら、そのまままっすぐ）
+        const tg = this.findTarget(p.tgt); p.homeT += dt;
+        if (!tg || p.homeT > DATA.SIM.homeMaxT) p.tgt = null;
+        else { const { q } = this.gapTo(p.x, p.z, tg), sp = Math.hypot(p.vx, p.vz), dx = q.x - p.x, dz = q.z - p.z, d = Math.hypot(dx, dz) || 1e-3; p.vx = dx / d * sp; p.vz = dz / d * sp; p.yaw = yawTo(dx, dz); p.life = Math.max(p.life, dt * 2); }
+      }
       if (p.team === 'ally') {
         const a = this.allies[p.owner];
         for (const e of this.enemiesAlive()) {
           if (p.hit.has(e.id)) continue;
+          if (p.tgt && e.id !== p.tgt && p.kind !== 'focus') continue; // 追尾中は狙った敵にだけ当たる（貫通弾は途中の敵にも当たる）
           const h = this.hitCircle(e, p.x, p.z, p.r);
           if (h) {
             p.hit.add(e.id);
@@ -1728,6 +1748,7 @@ class Sim {
             if (p.ex && p.ex.blast) { this.blast(a, p.x, p.z, p.ex.blast, p.pw, p.stat, p.hk, p.log); p.life = 0; break; }
             this.dealToEnemy(a, e, p.pw, p.stat, p.hk, p.log, h); this.spForHit(a, p.hk, p.log);
             this.ev('phit', { x: h.x, z: h.z, k: p.kind });
+            if (e.id === p.tgt) p.tgt = null; // 貫通弾は当たったあとまっすぐ進む
             if (p.kind !== 'focus') { p.life = 0; break; }
           }
         }
@@ -5386,16 +5407,21 @@ function bindHud() {
     e.preventDefault(); touch.setPointerCapture(e.pointerId);
     const [ax, ay] = toApp(e);
     const leftSide = SET.mirror ? ax > VIEW.w * 0.55 : ax < VIEW.w * 0.45;
+    INP.tap = { id: e.pointerId, x: ax, y: ay, t: performance.now(), moved: 0 }; // 短く押して離したら「敵をタップ」
     if (SET.stick === 'follow' && leftSide && INP.stick == null && (curLayout && (curLayout.portrait ? ay > VIEW.h * 0.55 : true))) {
       const d = parseFloat(stick.style.width); stick.style.left = (ax - d / 2) + 'px'; stick.style.top = (ay - d / 2) + 'px'; startStick(e, ax, ay); INP.touchStick = true; return;
     }
     if (INP.cam == null) { INP.cam = { id: e.pointerId, x: ax, y: ay }; }
   });
   touch.addEventListener('pointermove', e => {
+    if (INP.tap && e.pointerId === INP.tap.id) { const [ax, ay] = toApp(e); INP.tap.moved = Math.max(INP.tap.moved, Math.hypot(ax - INP.tap.x, ay - INP.tap.y)); }
     if (e.pointerId === INP.stick) return moveStick(e);
     if (INP.cam && e.pointerId === INP.cam.id) { const [ax, ay] = toApp(e); const dx = ax - INP.cam.x, dy = ay - INP.cam.y; INP.cam.x = ax; INP.cam.y = ay; R.cam.yaw -= dx * 0.009; R.cam.dragT = 1.2; const C = DATA.CAM; R.cam.userPitch = Math.max(-10, Math.min(10, (R.cam.userPitch || 0) + dy * 0.12)); }
   });
-  for (const t of ['pointerup', 'pointercancel']) touch.addEventListener(t, e => { if (e.pointerId === INP.stick) endStick(); if (INP.cam && e.pointerId === INP.cam.id) INP.cam = null; });
+  for (const t of ['pointerup', 'pointercancel']) touch.addEventListener(t, e => {
+    const tp = INP.tap; if (tp && e.pointerId === tp.id) { INP.tap = null; if (t === 'pointerup' && tp.moved < 14 && performance.now() - tp.t < 350) tapTarget(tp.x, tp.y); }
+    if (e.pointerId === INP.stick) endStick(); if (INP.cam && e.pointerId === INP.cam.id) INP.cam = null;
+  });
   // ボタン
   const btn = (id, down, up) => { const b = document.getElementById(id); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); b.setPointerCapture(e.pointerId); b.classList.add('press'); INP.buttons.set(e.pointerId, id); down && down(); }); const fin = e => { if (INP.buttons.get(e.pointerId) !== id) return; INP.buttons.delete(e.pointerId); b.classList.remove('press'); up && up(); }; b.addEventListener('pointerup', fin); b.addEventListener('pointercancel', fin); b.addEventListener('contextmenu', e => e.preventDefault()); };
   btn('bA', () => press('A'));
@@ -5430,6 +5456,23 @@ function toggleLock() {
   if (v.boss && v.stage === 'boss' && ['idle', 'walk', 'wind', 'act', 'rec', 'down', 'stun'].includes(v.boss.st)) G.lock = 'boss';
   else { let best = null, bd = 22; for (const m of v.mobs) if (!m.dying) { const d = Math.hypot(m.x - me.x, m.z - me.z); if (d < bd) { bd = d; best = m; } } if (best) G.lock = best.id; }
   if (G.lock) AUDIO.sfx('ok');
+}
+/** 画面の敵をタップ：その敵に注目する。追尾距離（12m）の内なら、遠距離攻撃の弾はその敵へ追尾して当たる */
+const LOCKABLE = ['idle', 'walk', 'wind', 'act', 'rec', 'down', 'stun'];
+const hasRanged = ch => { const c = DATA.CHI[ch]; if (!c) return false; if (c.A === 'shot') return true; return ['X', 'Y'].some(k => { const s = DATA.SKILLS[c[k]]; return s && (s.kind === 'dot' || s.form === 'shot' || s.form === 'blast'); }); };
+function tapTarget(ax, ay) {
+  const v = G.v; if (!v || G.mode !== 'play') return;
+  const me = v.allies[G.my]; if (!me || me.st !== 'ok' || v.stage === 'intro') return;
+  let best = null, bd = 52 * (curLayout ? Math.max(0.8, curLayout.posS) : 1);
+  const tryPt = (id, x, y, z, r, extra) => { const p = R.project(x, y, z); if (!p.front) return; const d = Math.hypot(p.x - ax, p.y - ay) - (extra || 0); if (d < bd) { bd = d; best = { id, x, z, r }; } };
+  if (v.boss && v.stage === 'boss' && LOCKABLE.includes(v.boss.st)) for (const y of [0.8, 2.2, 3.6]) tryPt('boss', v.boss.x, v.boss.y + y, v.boss.z, 1.4, 30);
+  for (const m of v.mobs) if (!m.dying) { tryPt(m.id, m.x, m.yoshi ? 0.8 : 0.45, m.z, 0.4); if (m.yoshi) tryPt(m.id, m.x, 1.35, m.z, 0.4); }
+  if (!best) return;
+  if (G.lock === best.id) { G.lock = null; AUDIO.sfx('back'); return; } // もう一度タップで解除
+  const dist = Math.max(0, Math.hypot(best.x - me.x, best.z - me.z) - best.r), R0 = DATA.SIM.homeRange;
+  if (dist > R0) { AUDIO.sfx('back'); notice(`遠すぎて狙えません（${R0}mまで近づいてからタップ）`, 'warn', 1500); return; }
+  G.lock = best.id; G.relockWanted = false; AUDIO.sfx('ok'); vib(10);
+  if (hasRanged(me.ch) && !G.homeTip) { G.homeTip = 1; notice('ねらった敵に弾が追尾します', 'info', 1600); }
 }
 function applyInput() {
   const L = local(); if (!L) return;
@@ -5641,7 +5684,12 @@ function overlays(v, me) {
   let tgt = null; if (G.lock === 'boss' && v.boss) tgt = { x: v.boss.x, y: v.boss.y + 2.6, z: v.boss.z }; else if (G.lock) { const mo = v.mobs.find(q => q.id === G.lock); if (mo) tgt = { x: mo.x, y: 0.6, z: mo.z }; else G.lock = null; }
   if (G.lock === 'boss' && v.boss && !['idle', 'walk', 'wind', 'act', 'rec', 'down', 'stun'].includes(v.boss.st)) { G.lock = null; tgt = null; }
   if (!G.lock && G.relockWanted && v.boss && v.boss.st !== 'fly' && v.stage === 'boss') { G.lock = 'boss'; G.relockWanted = false; }
-  if (tgt) put('ret', tgt.x, tgt.y, tgt.z, () => ({ e: el('div', 'reticle') }), () => { });
+  if (tgt) {
+    const lk = G.lock === 'boss' ? v.boss : v.mobs.find(q => q.id === G.lock), rr = G.lock === 'boss' ? 1.4 : 0.4;
+    const inR = lk && Math.hypot(lk.x - me.x, lk.z - me.z) - rr <= DATA.SIM.homeRange, ranged = hasRanged(me.ch);
+    put('ret', tgt.x, tgt.y, tgt.z, () => { const e = el('div', 'reticle-w'), ring = el('div', 'reticle'), tag = el('span', 'tag'); e.append(ring, tag); return { e, tag }; },
+      o => { const st = !ranged ? '' : inR ? 'home' : 'far'; if (o.st !== st) { o.st = st; o.e.className = 'reticle-w ' + st; o.tag.textContent = st === 'home' ? '追尾' : st === 'far' ? '遠い' : ''; o.tag.style.display = st ? '' : 'none'; } });
+  }
   for (const [k, o] of LBL) if (!seen.has(k)) { o.e.remove(); LBL.delete(k); }
   for (const [k, o] of EDG) if (!seenE.has(k)) { o.e.style.display = 'none'; }
 }

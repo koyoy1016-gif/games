@@ -279,6 +279,11 @@ a{color:var(--shu)}
 .edge .tri{position:absolute;inset:0;clip-path:polygon(100% 50%,20% 10%,35% 50%,20% 90%)}
 .edge .t{position:relative;font-size:10px;font-weight:900;color:#fff;text-shadow:0 1px 2px #000}
 .reticle{position:absolute;width:70px;height:70px;margin:-35px 0 0 -35px;border:2.5px dashed #ff6a5a;border-radius:50%;pointer-events:none;animation:spin 3s linear infinite}
+.reticle-w{position:absolute;width:0;height:0;pointer-events:none}
+.reticle-w .reticle{left:0;top:0}
+.reticle-w.home .reticle{border:3px solid #ffd23a;border-left-color:transparent;border-right-color:transparent;box-shadow:0 0 10px rgba(255,210,58,.6)}
+.reticle-w .tag{position:absolute;left:0;top:30px;transform:translateX(-50%);font-size:11px;font-weight:900;line-height:16px;padding:0 6px;border-radius:6px;background:#ffd23a;color:#2a1a00;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.reticle-w.far .tag{background:#4a4a5a;color:#fff}
 @keyframes spin{to{transform:rotate(360deg)}}
 #notice{position:absolute;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
 .nt{background:var(--veil);border:1.5px solid rgba(255,255,255,.2);border-radius:999px;padding:4px 14px;font-size:13px;font-weight:900;animation:ntIn .2s ease-out;max-width:calc(var(--aw)*92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -413,6 +418,7 @@ a{color:var(--shu)}
       <span class="k kP">救助</span><span>気絶した仲間のまわりに出る緑の円に入って4秒いると復活（HPは3分の1）。ボタンはいらない</span>
       <span class="k kP">🍬</span><span>20秒ごとにキャンディーがどこかに出る。拾うとHPが全回復（満タンのときは拾わない）</span>
       <span class="k kP">注目</span><span>ボスや敵にカメラと向きを合わせる。もう一度押すと解除。ボスが飛ぶと外れる</span>
+      <span class="k kP">敵をタップ</span><span>その敵に注目する（12mまで。もう一度タップで解除）。射撃・投げ技などの弾は、その敵を追いかけて当たる（「追尾」の印）</span>
       <span class="k kP">画面</span><span>右側の何もない所をドラッグするとカメラを回せる。「カメラ」で後ろに戻す</span>
       <span class="k kP">仲間</span><span>ソロでは左上の仲間をタップで操作キャラを交代。回復をためている間は回復対象の指定になる</span>
     </div>

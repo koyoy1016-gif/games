@@ -221,6 +221,21 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   s.boss.st = 'idle'; s.boss.gap = 99; s.boss.cds = {}; a.act = null; a.z = 10 - 2.6; const hp1 = a.hp; s.bossStart('harite', a); for (let i = 0; i < 60; i++) s.step();
   ok(far && a.hp < hp1, `張り手：届かない所では当たらず（${far}）、手の届く所で当たる（${hp1}→${a.hp}）`);
 }
+// 8) タップした敵への追尾：12m以内なら弾が追いかけて当たる（途中の敵には当たらない）。遠い敵・AIの弾は追尾しない
+{
+  const s = testSim('hoshisuzume'); s.boss.x = 35; s.boss.z = -40; s.mobs = []; const a = s.allies[0]; a.x = 0; a.z = 0; a.yaw = 0;
+  const T = s.spawnMob(4, 6, true), Bk = s.spawnMob(2, 3, true); for (const m of [T, Bk]) { m.fireT = 99; m.para = 99; m.hp = m.maxHp = 1e6; }
+  let fired = null;
+  for (let i = 0; i < 60; i++) {
+    const inp = SIMLIB.Sim.emptyInput(); if (i === 0) inp.ev.push([++evId, 'A']); inp.lock = T.id; s.setInput(0, inp); s.step();
+    const p = s.projs.find(q => q.team === 'ally'); if (p && !fired) { fired = { tgt: p.tgt }; T.x += 1.6; } // 撃ったあと敵が横へ動く
+  }
+  ok(fired && fired.tgt === T.id, `注目した敵（約7m）へ弾が追尾する（${fired && fired.tgt}）`);
+  ok(T.hp < T.maxHp && Bk.hp === Bk.maxHp, `撃ったあと横へ動いても当たり、途中の敵には当たらない（狙った敵 ${T.maxHp - T.hp}・途中 ${Bk.maxHp - Bk.hp}）`);
+  const far = s.spawnMob(0, DATA.SIM.homeRange + 3, true); far.fireT = 99; far.para = 99; a.lockId = far.id; a.yaw = 0;
+  s.projs = []; s.fireProj(a, 'star', 35, 'str', 18, 0.85, 0.35, 'A', null); ok(!s.projs[0].tgt, `${DATA.SIM.homeRange}mより遠い敵には追尾しない`);
+  a.ctrlAI = true; a.lockId = T.id; s.projs = []; s.fireProj(a, 'star', 35, 'str', 18, 0.85, 0.35, 'A', null); ok(!s.projs[0].tgt, 'AIが動かすキャラの弾は追尾しない');
+}
 if (PROTO) {
   const party = ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(c => ({ ch: c }));
   const s = new Sim({ party, diff: 'normal', seed: 3 });

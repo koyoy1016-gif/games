@@ -587,16 +587,21 @@ function bindHud() {
     e.preventDefault(); touch.setPointerCapture(e.pointerId);
     const [ax, ay] = toApp(e);
     const leftSide = SET.mirror ? ax > VIEW.w * 0.55 : ax < VIEW.w * 0.45;
+    INP.tap = { id: e.pointerId, x: ax, y: ay, t: performance.now(), moved: 0 }; // 短く押して離したら「敵をタップ」
     if (SET.stick === 'follow' && leftSide && INP.stick == null && (curLayout && (curLayout.portrait ? ay > VIEW.h * 0.55 : true))) {
       const d = parseFloat(stick.style.width); stick.style.left = (ax - d / 2) + 'px'; stick.style.top = (ay - d / 2) + 'px'; startStick(e, ax, ay); INP.touchStick = true; return;
     }
     if (INP.cam == null) { INP.cam = { id: e.pointerId, x: ax, y: ay }; }
   });
   touch.addEventListener('pointermove', e => {
+    if (INP.tap && e.pointerId === INP.tap.id) { const [ax, ay] = toApp(e); INP.tap.moved = Math.max(INP.tap.moved, Math.hypot(ax - INP.tap.x, ay - INP.tap.y)); }
     if (e.pointerId === INP.stick) return moveStick(e);
     if (INP.cam && e.pointerId === INP.cam.id) { const [ax, ay] = toApp(e); const dx = ax - INP.cam.x, dy = ay - INP.cam.y; INP.cam.x = ax; INP.cam.y = ay; R.cam.yaw -= dx * 0.009; R.cam.dragT = 1.2; const C = DATA.CAM; R.cam.userPitch = Math.max(-10, Math.min(10, (R.cam.userPitch || 0) + dy * 0.12)); }
   });
-  for (const t of ['pointerup', 'pointercancel']) touch.addEventListener(t, e => { if (e.pointerId === INP.stick) endStick(); if (INP.cam && e.pointerId === INP.cam.id) INP.cam = null; });
+  for (const t of ['pointerup', 'pointercancel']) touch.addEventListener(t, e => {
+    const tp = INP.tap; if (tp && e.pointerId === tp.id) { INP.tap = null; if (t === 'pointerup' && tp.moved < 14 && performance.now() - tp.t < 350) tapTarget(tp.x, tp.y); }
+    if (e.pointerId === INP.stick) endStick(); if (INP.cam && e.pointerId === INP.cam.id) INP.cam = null;
+  });
   // ボタン
   const btn = (id, down, up) => { const b = document.getElementById(id); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); b.setPointerCapture(e.pointerId); b.classList.add('press'); INP.buttons.set(e.pointerId, id); down && down(); }); const fin = e => { if (INP.buttons.get(e.pointerId) !== id) return; INP.buttons.delete(e.pointerId); b.classList.remove('press'); up && up(); }; b.addEventListener('pointerup', fin); b.addEventListener('pointercancel', fin); b.addEventListener('contextmenu', e => e.preventDefault()); };
   btn('bA', () => press('A'));
@@ -631,6 +636,23 @@ function toggleLock() {
   if (v.boss && v.stage === 'boss' && ['idle', 'walk', 'wind', 'act', 'rec', 'down', 'stun'].includes(v.boss.st)) G.lock = 'boss';
   else { let best = null, bd = 22; for (const m of v.mobs) if (!m.dying) { const d = Math.hypot(m.x - me.x, m.z - me.z); if (d < bd) { bd = d; best = m; } } if (best) G.lock = best.id; }
   if (G.lock) AUDIO.sfx('ok');
+}
+/** 画面の敵をタップ：その敵に注目する。追尾距離（12m）の内なら、遠距離攻撃の弾はその敵へ追尾して当たる */
+const LOCKABLE = ['idle', 'walk', 'wind', 'act', 'rec', 'down', 'stun'];
+const hasRanged = ch => { const c = DATA.CHI[ch]; if (!c) return false; if (c.A === 'shot') return true; return ['X', 'Y'].some(k => { const s = DATA.SKILLS[c[k]]; return s && (s.kind === 'dot' || s.form === 'shot' || s.form === 'blast'); }); };
+function tapTarget(ax, ay) {
+  const v = G.v; if (!v || G.mode !== 'play') return;
+  const me = v.allies[G.my]; if (!me || me.st !== 'ok' || v.stage === 'intro') return;
+  let best = null, bd = 52 * (curLayout ? Math.max(0.8, curLayout.posS) : 1);
+  const tryPt = (id, x, y, z, r, extra) => { const p = R.project(x, y, z); if (!p.front) return; const d = Math.hypot(p.x - ax, p.y - ay) - (extra || 0); if (d < bd) { bd = d; best = { id, x, z, r }; } };
+  if (v.boss && v.stage === 'boss' && LOCKABLE.includes(v.boss.st)) for (const y of [0.8, 2.2, 3.6]) tryPt('boss', v.boss.x, v.boss.y + y, v.boss.z, 1.4, 30);
+  for (const m of v.mobs) if (!m.dying) { tryPt(m.id, m.x, m.yoshi ? 0.8 : 0.45, m.z, 0.4); if (m.yoshi) tryPt(m.id, m.x, 1.35, m.z, 0.4); }
+  if (!best) return;
+  if (G.lock === best.id) { G.lock = null; AUDIO.sfx('back'); return; } // もう一度タップで解除
+  const dist = Math.max(0, Math.hypot(best.x - me.x, best.z - me.z) - best.r), R0 = DATA.SIM.homeRange;
+  if (dist > R0) { AUDIO.sfx('back'); notice(`遠すぎて狙えません（${R0}mまで近づいてからタップ）`, 'warn', 1500); return; }
+  G.lock = best.id; G.relockWanted = false; AUDIO.sfx('ok'); vib(10);
+  if (hasRanged(me.ch) && !G.homeTip) { G.homeTip = 1; notice('ねらった敵に弾が追尾します', 'info', 1600); }
 }
 function applyInput() {
   const L = local(); if (!L) return;
@@ -842,7 +864,12 @@ function overlays(v, me) {
   let tgt = null; if (G.lock === 'boss' && v.boss) tgt = { x: v.boss.x, y: v.boss.y + 2.6, z: v.boss.z }; else if (G.lock) { const mo = v.mobs.find(q => q.id === G.lock); if (mo) tgt = { x: mo.x, y: 0.6, z: mo.z }; else G.lock = null; }
   if (G.lock === 'boss' && v.boss && !['idle', 'walk', 'wind', 'act', 'rec', 'down', 'stun'].includes(v.boss.st)) { G.lock = null; tgt = null; }
   if (!G.lock && G.relockWanted && v.boss && v.boss.st !== 'fly' && v.stage === 'boss') { G.lock = 'boss'; G.relockWanted = false; }
-  if (tgt) put('ret', tgt.x, tgt.y, tgt.z, () => ({ e: el('div', 'reticle') }), () => { });
+  if (tgt) {
+    const lk = G.lock === 'boss' ? v.boss : v.mobs.find(q => q.id === G.lock), rr = G.lock === 'boss' ? 1.4 : 0.4;
+    const inR = lk && Math.hypot(lk.x - me.x, lk.z - me.z) - rr <= DATA.SIM.homeRange, ranged = hasRanged(me.ch);
+    put('ret', tgt.x, tgt.y, tgt.z, () => { const e = el('div', 'reticle-w'), ring = el('div', 'reticle'), tag = el('span', 'tag'); e.append(ring, tag); return { e, tag }; },
+      o => { const st = !ranged ? '' : inR ? 'home' : 'far'; if (o.st !== st) { o.st = st; o.e.className = 'reticle-w ' + st; o.tag.textContent = st === 'home' ? '追尾' : st === 'far' ? '遠い' : ''; o.tag.style.display = st ? '' : 'none'; } });
+  }
   for (const [k, o] of LBL) if (!seen.has(k)) { o.e.remove(); LBL.delete(k); }
   for (const [k, o] of EDG) if (!seenE.has(k)) { o.e.style.display = 'none'; }
 }

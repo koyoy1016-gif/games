@@ -80,6 +80,8 @@ const SIM = {
   candyPeriod: p('キャンディー', '出てくる間隔', 20, 'seconds', 'proto', null, 'いま遊んでいる場所（通り／祭り広場）のどこかにランダム'),
   candyMax: p('キャンディー', '同時に置かれる最大数', 3, 'count', 'proto'),
   candyHeal: p('キャンディー', '回復量', 1, 'ratio(最大HP)', 'proto', null, '全回復。HPが満タンの仲間は拾わない'),
+  homeRange: p('追尾', 'タップした敵へ弾が追尾する距離（体の表面まで）', 12, 'm', 'proto', null, 'これより遠い敵はタップしても狙えない。人が操作するキャラの弾だけ（AIの弾は追尾しない）'),
+  homeMaxT: p('追尾', '追尾する弾の最長の飛行時間', 2.5, 'seconds', 'proto'),
   hitStagger: p('被弾', '重い攻撃でのけぞる時間', 0.45, 'seconds', 'proto'),
   aiMul: p('AI', 'AIが動かすキャラの能力', 0.9, 'ratio', 'proto', null, 'ちから・ようりょく・まもり・体力・移動速度をすべて90%にする（操作を交代すると元に戻る）'),
 };

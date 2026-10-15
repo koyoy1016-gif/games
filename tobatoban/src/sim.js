@@ -143,7 +143,7 @@ class Sim {
     if (bq) a.yaw = yawTo(bq.x - a.x, bq.z - a.z);
   }
   updateAlly(a, inp, dt) {
-    const S = DATA.SIM;
+    const S = DATA.SIM; a.lockId = inp.lock || null; // 注目（タップ）している敵：弾の追尾に使う
     // 時間経過
     for (const k of ['X', 'Y']) {
       const sk = DATA.SKILLS[a.slots[k]];
@@ -587,15 +587,27 @@ class Sim {
   fireProj(a, kind, pw, stat, speed, life, r, hk, log, extra) {
     const fx = Math.sin(a.yaw), fz = Math.cos(a.yaw);
     const p = { id: this.id(), kind, team: 'ally', owner: a.slot, x: a.x + fx * 0.6, y: 0.6, z: a.z + fz * 0.6, vx: fx * speed, vz: fz * speed, life, r, pw, stat, hk, log, hit: new Set(), ex: extra || null, yaw: a.yaw };
+    // タップ（注目）した敵が追尾距離の内にいれば、弾はその敵を追いかけて必ず当たる（人が操作するキャラだけ）
+    const tg = !a.ctrlAI && a.lockId ? this.findTarget(a.lockId) : null;
+    if (tg) {
+      const { g, q } = this.gapTo(a.x, a.z, tg);
+      if (g <= DATA.SIM.homeRange) { const dx = q.x - p.x, dz = q.z - p.z, d = Math.hypot(dx, dz) || 1e-3; p.vx = dx / d * speed; p.vz = dz / d * speed; p.yaw = yawTo(dx, dz); p.tgt = tg.id; p.homeT = 0; p.life = Math.max(life, Math.min(DATA.SIM.homeMaxT, d / speed + 0.4)); }
+    }
     this.projs.push(p); this.ev('sfx', { s: 'shot_' + kind, x: a.x, z: a.z });
   }
   updateProjs(dt) {
     for (const p of this.projs) {
       p.life -= dt; p.x += p.vx * dt; p.z += p.vz * dt;
+      if (p.tgt) { // 追尾：いまの敵の体へ向きを直す（敵が倒れた・飛んだら、そのまままっすぐ）
+        const tg = this.findTarget(p.tgt); p.homeT += dt;
+        if (!tg || p.homeT > DATA.SIM.homeMaxT) p.tgt = null;
+        else { const { q } = this.gapTo(p.x, p.z, tg), sp = Math.hypot(p.vx, p.vz), dx = q.x - p.x, dz = q.z - p.z, d = Math.hypot(dx, dz) || 1e-3; p.vx = dx / d * sp; p.vz = dz / d * sp; p.yaw = yawTo(dx, dz); p.life = Math.max(p.life, dt * 2); }
+      }
       if (p.team === 'ally') {
         const a = this.allies[p.owner];
         for (const e of this.enemiesAlive()) {
           if (p.hit.has(e.id)) continue;
+          if (p.tgt && e.id !== p.tgt && p.kind !== 'focus') continue; // 追尾中は狙った敵にだけ当たる（貫通弾は途中の敵にも当たる）
           const h = this.hitCircle(e, p.x, p.z, p.r);
           if (h) {
             p.hit.add(e.id);
@@ -603,6 +615,7 @@ class Sim {
             if (p.ex && p.ex.blast) { this.blast(a, p.x, p.z, p.ex.blast, p.pw, p.stat, p.hk, p.log); p.life = 0; break; }
             this.dealToEnemy(a, e, p.pw, p.stat, p.hk, p.log, h); this.spForHit(a, p.hk, p.log);
             this.ev('phit', { x: h.x, z: h.z, k: p.kind });
+            if (e.id === p.tgt) p.tgt = null; // 貫通弾は当たったあとまっすぐ進む
             if (p.kind !== 'focus') { p.life = 0; break; }
           }
         }

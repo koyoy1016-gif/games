@@ -140,6 +140,36 @@ with sync_playwright() as p:
             ev("() => document.getElementById('result') ? document.getElementById('result').innerText.slice(0, 300) : ''", 'result_text'),
         ]
         results.append(run(p, W, H, 'joban', steps))
+    if SCEN in ('tap',):
+        # 敵をタップ → 注目＋「追尾」の印 → 射撃の弾が追いかけて当たる。遠い敵は「遠すぎて狙えません」
+        sim = "__tb.G.session.sim"
+        def tap_mob(near):
+            def f(page, res):
+                js = '''(near) => { const s = __tb.G.session.sim, a = s.allies[__tb.G.my], v = __tb.G.v; let best = null;
+                  for (const m of v.mobs) { if (m.dying) continue; const d = Math.hypot(m.x - a.x, m.z - a.z); const p = __tb.R.project(m.x, 0.9, m.z);
+                    if (!p.front || p.x < 120 || p.x > innerWidth - 220 || p.y < 60 || p.y > innerHeight - 90) continue;
+                    if (near ? d < 10 : d > 14.5) { if (!best || (near ? d < best.d : d > best.d)) best = { id: m.id, d, x: p.x, y: p.y }; } }
+                  return best; }'''
+                b = page.evaluate(js, near)
+                res['tap_' + ('near' if near else 'far')] = b
+                if b: page.mouse.click(b['x'], b['y'])
+                time.sleep(0.3)
+                res['lock_after_' + ('near' if near else 'far')] = page.evaluate("() => __tb.G.lock")
+                res['notice_' + ('near' if near else 'far')] = page.evaluate("() => document.getElementById('notice').innerText.slice(0, 80)")
+            return f
+        results.append(run(p, 844, 390, 'tap', [
+            ev("() => { document.getElementById('btnGuest').click(); __tb.G.party = ['hoshisuzume', 'kogemaru', 'burikidon', 'momiji']; __tb.G.sessClear.senju = true; document.getElementById('btnSolo').click(); document.getElementById('btnGo').click(); document.querySelectorAll('#stages .stage-card')[1].click(); return 1; }"),
+            wait(0.5), ev("() => { const s=" + sim + "; s.stageT = __tb.DATA.JOBAN.introT; return 1; }"), wait(2.0),
+            ev("() => { const s=" + sim + "; s.allies.forEach(a => a.inv = 999); s.mobs.forEach(m => { m.hp = m.maxHp = 50000; }); s.allies.forEach((a, i) => { if (i) { a.x = -1 + i * 0.5; a.z = -12; } }); return s.mobs.length; }", 'mobs'),
+            wait(1.5), tap_mob(True), wait(0.3), shot('a0_tap_lock'),
+            ev("() => document.querySelector('.reticle-w') ? document.querySelector('.reticle-w').className + ' / ' + document.querySelector('.reticle-w .tag').textContent : 'none'", 'reticle'),
+            ev("() => { const L = __tb.G.session.local; L.push('A'); return 1; }"), wait(0.15),
+            ev("() => { const s=" + sim + "; return s.projs.filter(p => p.team === 'ally').map(p => p.tgt || null); }", 'proj_tgts'), shot('a1_shot'),
+            ev("() => { const L = __tb.G.session.local; L.push('A'); return 1; }"), wait(0.6), ev("() => { const L = __tb.G.session.local; L.push('A'); return 1; }"), wait(0.8),
+            ev("() => { const s=" + sim + ", m = s.mobs.find(q => q.id === __tb.G.lock); return m ? m.maxHp - m.hp : 'gone'; }", 'target_damage'),
+            ev("() => { const s=" + sim + ", a = s.allies[__tb.G.my]; const m = s.mobs.find(q => q.id !== __tb.G.lock && q.st === 'ok'); m.x = 0.3; m.z = a.z + 17; m.para = 99; return [m.id, Math.round(m.z - a.z)]; }", 'far_mob'), wait(0.4),
+            tap_mob(False), shot('a2_tap_far'),
+        ]))
     if SCEN in ('save',):
         # ログイン（毎回）→ 登録 → 戦う → 自動セーブ → 開き直す → ログインして続きから
         def reload(page, res):
