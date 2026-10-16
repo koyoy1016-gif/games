@@ -7,6 +7,9 @@
    表示はいつも同じ状態（G.party・装備・選択ステージ・協力プレイのロビー）から作る
    ===================================================================== */
 G.stageSel = STORE.get('stageSel', 'senju'); G.selSlot = 0;
+/** 協力中、ホストが選べるAI枠か（空いている P2〜P4） */
+const coopAiSlot = i => { const S = G.session; return !!(G.coop && S && S.kind === 'host' && i >= 1 && i <= 3 && !S.lobby.slots[i]); };
+const coopAiCh = i => { const lob = coopLobby(); return lob && lob.ai ? lob.ai[i] : null; };
 const coopLobby = () => { const S = G.session; if (!G.coop || !S) return null; return S.kind === 'host' ? S.lobbyMsg() : S.lobby; };
 const isHost = () => !G.coop || (G.session && G.session.kind === 'host');
 /** いま選ばれているステージ（協力プレイ中はロビーの値） */
@@ -103,8 +106,18 @@ function renderHome() {
 }
 function tagTap(i) {
   AUDIO.sfx('ui');
-  if (G.coop) { const s = G.homeSlots && G.homeSlots[i]; if (s && s.me) openRoster('home', 0); else mtoast('協力プレイでは自分のキャラだけ選べます', 2000); return; }
+  if (G.coop) { const s = G.homeSlots && G.homeSlots[i], S = G.session;
+    if (s && s.me) openRoster('home', 0);
+    else if (S && S.kind === 'host' && s && !s.human) openRoster('home', i); // ホストは空いているAI枠を選べる
+    else mtoast(s && s.human ? 'ほかの人のキャラは、その人が選びます' : 'AI枠のキャラはホストが選びます', 2000); return; }
   openRoster('home', i);
+}
+/** ホームの画面上の点 (x, y) にいるモデルの枠（なければ −1）。足元〜頭の上の縦長の範囲で判定 */
+function homeModelAt(x, y) {
+  const P = [0, 1, 2, 3].map(i => LOBBY3D.slotScreen(i)); if (P.some(p => !p)) return -1;
+  const hw = Math.abs(P[1].foot.x - P[0].foot.x) * 0.46;
+  for (let i = 0; i < 4; i++) { const p = P[i]; if (G.homeSlots && G.homeSlots[i] && G.homeSlots[i].empty) continue; if (Math.abs(x - p.mid.x) < hw && y > p.head.y - 6 && y < p.foot.y + 16) return i; }
+  return -1;
 }
 /** 毎フレーム：名札を4体の足元（重なるなら頭の上）へ。下の操作欄とは重ねない */
 function lobbyTick() {
@@ -113,7 +126,8 @@ function lobbyTick() {
   const P = [0, 1, 2, 3].map(i => LOBBY3D.slotScreen(i)); if (P.some(p => !p)) return;
   // 足元に置けるならそろえて足元、どれかが右下の出動欄と重なるなら全員を頭の上へ（並びをそろえる）
   const below = P.every((p, i) => { const h = G.tags[i].offsetHeight || 34; return !(p.foot.y + 4 + h > bTop && p.foot.x + 50 > bLeft) && p.foot.y + 4 + h < VIEW.h - 4; });
-  P.forEach((p, i) => { const t = G.tags[i], h = t.offsetHeight || 34; const y = below ? p.foot.y + 4 : Math.max(52, p.head.y - h - 2); t.style.left = Math.round(p.foot.x) + 'px'; t.style.top = Math.round(y) + 'px'; });
+  const rm = $('#hmRoom'), topMin = rm && !rm.hidden && rm.offsetHeight ? rm.offsetTop + rm.offsetHeight + 4 : 52; // 協力のルーム表示とも重ねない
+  P.forEach((p, i) => { const t = G.tags[i], h = t.offsetHeight || 34; const y = below ? p.foot.y + 4 : Math.max(topMin, p.head.y - h - 2); t.style.left = Math.round(p.foot.x) + 'px'; t.style.top = Math.round(y) + 'px'; });
 }
 
 /* ---------- 協力プレイ ---------- */
@@ -122,7 +136,7 @@ function openLobby() { G.coop = true; G.mode = 'lobby'; $('#hud').hidden = true;
 
 /* ---------- 編成（キャラ一覧） ---------- */
 function openRoster(back, slot) {
-  G.rosterBack = back || 'home'; if (slot != null) G.selSlot = slot; if (G.coop) G.selSlot = 0;
+  G.rosterBack = back || 'home'; if (slot != null) G.selSlot = slot; if (G.coop && !coopAiSlot(G.selSlot)) G.selSlot = 0;
   show('roster'); renderRoster(true);
 }
 function sortedChars() {
@@ -143,17 +157,18 @@ function renderRoster(keepScroll) {
   $('#rsTitle').textContent = `キャラクター ${Object.keys(a.chars).length}/${DATA.CHARS.length}`;
   $('#rsSort').value = G.prefs.sort;
   const ss = $('#rsSlots'); ss.textContent = '';
-  for (let i = 0; i < (coop ? 1 : 4); i++) {
-    const b = el('button', i === G.selSlot ? 'on' : '', coop ? 'あなた' : 'P' + (i + 1)); b.type = 'button'; b.style.background = pcol(coop ? 0 : i); b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', i === G.selSlot ? 'true' : 'false');
+  for (let i = 0; i < 4; i++) {
+    if (coop && i > 0 && !coopAiSlot(i)) continue; // 協力：自分の枠＋（ホストなら）空いているAI枠
+    const b = el('button', i === G.selSlot ? 'on' : '', coop ? (i === 0 ? 'あなた' : `P${i + 1} AI`) : 'P' + (i + 1)); b.type = 'button'; b.style.background = pcol(i); b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', i === G.selSlot ? 'true' : 'false');
     b.onclick = () => { G.selSlot = i; AUDIO.sfx('ui'); renderRoster(true); };
     ss.appendChild(b);
   }
-  const cur = coop ? G.party[0] : G.party[G.selSlot];
-  $('#rsNote').textContent = coop ? `あなたのキャラ：${DATA.CHI[cur].nm}（カードを押して「このキャラを選ぶ」）` : `P${G.selSlot + 1}（${G.selSlot === 0 ? 'あなたが操作' : 'AI：能力95%・EXP80%'}）の枠：${DATA.CHI[cur].nm}　カードを押すと詳しく見て選べます`;
+  const cur = coop ? (G.selSlot > 0 ? coopAiCh(G.selSlot) || G.party[0] : G.party[0]) : G.party[G.selSlot];
+  $('#rsNote').textContent = coop ? (G.selSlot > 0 ? `P${G.selSlot + 1}のAI枠（ホストが選ぶ・能力95%）：${DATA.CHI[cur].nm}` : `あなたのキャラ：${DATA.CHI[cur].nm}（カードを押して「このキャラを選ぶ」）`) : `P${G.selSlot + 1}（${G.selSlot === 0 ? 'あなたが操作' : 'AI：能力95%・EXP80%'}）の枠：${DATA.CHI[cur].nm}　カードを押すと詳しく見て選べます`;
   const ft = $('#rsFoot'); ft.hidden = !(G.rosterBack === 'akiba' || G.rosterBack === 'prep');
   $('#btnGo').textContent = G.rosterBack === 'akiba' ? '秋葉原へ向かう ▶' : '準備へもどる ▶';
   rosterSize(); g.textContent = '';
-  const party = coop ? [G.party[0]] : G.party;
+  const party = coop ? [G.party[0]].concat(G.session && G.session.kind === 'host' ? (coopLobby().ai || []).filter(Boolean) : []) : G.party;
   for (const c of sortedChars()) {
     const own = ownsCh(c.id), rec = a.chars[c.id], rk = DATA.RANK_INFO[c.rank];
     const b = el('button', 'rs-card' + (party.includes(c.id) ? ' inparty' : '') + (own ? '' : ' unowned')); b.type = 'button';
@@ -244,22 +259,29 @@ function renderChara() {
   }
   renderCharaStats();
   // 下：このキャラを選ぶ
-  const pick = $('#btnChPick'), inSlot = G.party[slot] === c.id;
-  $('#chSlot').textContent = G.coop ? 'あなたのキャラ' : `P${slot + 1}の枠（${slot === 0 ? 'あなた' : 'AI'}）`;
+  const aiS = G.coop && coopAiSlot(G.selSlot) ? G.selSlot : 0, pick = $('#btnChPick'), inSlot = aiS ? coopAiCh(aiS) === c.id : G.party[slot] === c.id;
+  $('#chSlot').textContent = G.coop ? (aiS ? `P${aiS + 1}のAI枠（ホストが選ぶ）` : 'あなたのキャラ') : `P${slot + 1}の枠（${slot === 0 ? 'あなた' : 'AI'}）`;
   pick.disabled = !own || inSlot; pick.textContent = !own ? '未所持' : inSlot ? '選択中' : 'このキャラを選ぶ';
   LOBBY3D.show('detail', [c.id]);
 }
-/** 右：能力（装備の候補があれば差分を表示）と技の要点 */
+/** 能力バーの共通の目盛り：全60体のLv99の最高値（キャラごとに伸ばさない） */
+function statScale() { if (G._stSc) return G._stSc; const o = { hp: 1, str: 1, yo: 1, def: 1 }; for (const c of DATA.CHARS) { const s = DATA.GROWTH.stats(c, 99); for (const k in o) o[k] = Math.max(o[k], s[k]); } return (G._stSc = o); }
+/** 右：能力（横バー・装備の候補があれば差分を表示）と技の要点 */
 function renderCharaStats() {
   const c = DATA.CHI[G.chId], a = ACC(), own = ownsCh(c.id), rec = a.chars[c.id], lv = rec ? rec.lv : 1;
   const s0 = DATA.GROWTH.stats(c, lv), eqNow = own ? eqOf(c.id) : [], now = DATA.GROWTH.withEquip(s0, eqNow);
   const pv = G.eqEdit ? DATA.GROWTH.withEquip(s0, G.eqEdit.eq) : null;
-  const R = $('#chRight'); R.textContent = ''; const SG = el('div', 'st-grid'); R.appendChild(SG);
+  const R = $('#chRight'); R.textContent = ''; R.appendChild(el('div', 'st-lv', `Lv.${lv}${own ? '' : '（未所持）'}の能力（バーは全60体共通の目盛り・緑＝装備）`)); const SG = el('div', 'st-grid'); R.appendChild(SG);
+  const SC = statScale();
   for (const [lab, k, ic, col] of [['HP', 'hp', '♥', '#2fa36b'], ['ちから', 'str', '✊', '#e4572e'], ['ようりょく', 'yo', '✦', '#7446b8'], ['まもり', 'def', '⛨', '#3c8cff']]) {
     const r = el('div', 'st-row'), si = el('span', 'si', ic); si.style.background = col; const v = el('b', 'ol');
     if (pv && pv[k] !== now[k]) { v.append(String(now[k]) + ' → '); v.appendChild(el('span', pv[k] > now[k] ? 'up' : 'dn', String(pv[k]))); }
     else { v.textContent = String(now[k]); if (now[k] > s0[k]) { v.classList.add('equp'); v.title = `装備で+${now[k] - s0[k]}`; } }
-    r.append(si, el('span', '', lab), v); SG.appendChild(r);
+    const pc = x => Math.min(100, x / SC[k] * 100).toFixed(1) + '%', bar = el('div', 'stb');
+    const iq = el('i', 'eq'); iq.style.width = pc(now[k]); const ib = el('i'); ib.style.width = pc(s0[k]); ib.style.background = col; bar.append(iq, ib);
+    if (pv && pv[k] !== now[k]) { const ip = el('i', 'pv'); ip.style.width = pc(pv[k]); bar.appendChild(ip); }
+    if (now[k] > s0[k]) v.append(el('small', '', `（+${now[k] - s0[k]}）`));
+    r.append(si, el('span', '', lab), v, bar); SG.appendChild(r);
   }
   for (const [k, cls, nm, sh] of charaMoves(c)) { const r = el('div', 'mv-row'), kk = el('span', 'k ' + cls, k), t = el('div'); t.append(el('b', '', nm), el('span', '', sh)); r.append(kk, t); R.appendChild(r); }
   const ib = el('button', 'hm-chip ch-info', 'ⓘ 技と特性をくわしく'); ib.type = 'button'; ib.onclick = () => { AUDIO.sfx('ui'); openInfo(); }; R.appendChild(ib);
@@ -281,21 +303,24 @@ function openEq(slot) {
 function renderEq() {
   const c = DATA.CHI[G.chId], a = ACC(), n = SAVE.eqSlots(a), cur = (a.chars[c.id].eq || []).slice(0, n), E = G.eqEdit, g = $('#eqGrid'); g.textContent = '';
   for (const e of DATA.EQUIP) {
-    const other = cur.some((x, j) => j !== E.slot && x === e.id), tier = e.id.split('_')[1];
-    const b = el('button', 'eq-it t-' + tier + (E.sel === e.id ? ' sel' : '')); b.type = 'button'; b.disabled = other;
-    b.append(el('span', 'ic', e.ic), el('b', 'ol', e.nm), el('span', 'ol', `${e.statLabel}+${e.pct}%`));
+    const other = cur.some((x, j) => j !== E.slot && x === e.id), tier = e.id.split('_')[1], who = SAVE.equipOwner(a, e.id, c.id);
+    const b = el('button', 'eq-it t-' + tier + (E.sel === e.id ? ' sel' : '') + (who ? ' held' : '')); b.type = 'button'; b.disabled = other;
+    b.append(el('span', 'ic', e.ic), el('b', 'ol', e.nm), el('span', 'ol', `${e.statLabel}+${e.pct}%`)); if (who) b.appendChild(el('span', 'eq-who', `${DATA.CHI[who].nm}が装備中`));
     b.onclick = () => { AUDIO.sfx('ui'); E.sel = e.id; const eq = cur.slice(); while (eq.length <= E.slot) eq.push(null); eq[E.slot] = e.id; E.eq = eq.filter(Boolean); renderEq(); renderCharaStats(); };
     g.appendChild(b);
   }
+  const who = E.sel ? SAVE.equipOwner(a, E.sel, c.id) : null; $('#btnEqOk').textContent = who ? `付け替える（${DATA.CHI[who].nm}から外す）` : '決定';
 }
 function eqCommit(id) {
   const c = DATA.CHI[G.chId], E = G.eqEdit; if (!E) return;
-  const r = SAVE.setEquip(ACC(), c.id, E.slot, id); if (!r.ok) { mtoast(r.msg, 2400); return; }
+  const r = SAVE.setEquip(ACC(), c.id, E.slot, id, { move: true }); if (!r.ok) { mtoast(r.msg, 2400); return; } // 決定ボタンが「付け替える（○○から外す）」と表示しているときだけ前のキャラから外れる
+  if (r.moved) mtoast(`${DATA.CHI[r.moved].nm}から外して付けました`, 2200);
   AUDIO.sfx('ok'); G.eqEdit = null; $('#eqPop').hidden = true; if (G.acct) persist(); sendMine(); renderChara();
 }
 function charaPick() {
   const c = DATA.CHI[G.chId]; if (!ownsCh(c.id)) return; AUDIO.sfx('ok');
-  if (G.coop) { G.party[0] = c.id; G.selSlot = 0; }
+  if (G.coop && coopAiSlot(G.selSlot)) { const r = G.session.setAi(G.selSlot, c.id, lvOf(c.id)); if (!r.ok) { mtoast(r.msg, 2000); return; } mtoast(`${c.nm}をP${G.selSlot + 1}のAI枠にしました`, 1800); show('roster'); renderRoster(true); return; }
+  if (G.coop) { if (coopLobby() && (coopLobby().ai || []).includes(c.id) && G.session.kind === 'host') { const j = coopLobby().ai.indexOf(c.id); G.session.lobby.aiPick[j] = G.party[0]; G.session.dirtyLobby = true; } G.party[0] = c.id; G.selSlot = 0; } // 自分がAI枠のキャラを選んだら、そのAI枠は前の自分のキャラと入れ替え
   else { const j = G.party.indexOf(c.id), s = G.selSlot; if (j >= 0 && j !== s) { G.party[j] = G.party[s]; const sw = G.swap[j]; G.swap[j] = G.swap[s]; G.swap[s] = sw; } G.party[s] = c.id; }
   STORE.set('party', G.party); STORE.set('swap', G.swap); sendMine(); if (G.acct) persist();
   mtoast(`${c.nm}を${G.coop ? 'あなたのキャラ' : 'P' + (G.selSlot + 1) + 'の枠'}にしました`, 1800);
@@ -339,6 +364,7 @@ function homeGo() {
     if (!stageOpen(st)) { mtoast('このステージはまだ解放されていません', 2000); return; }
     AUDIO.sfx('ok'); S.lobby.diff = G.diff; S.lobby.stage = st;
     const fill = S.aiFill(), party = S.lobby.slots.map((s, i) => i === 0 ? { eq: eqOf(G.party[0]) } : s ? { eq: (s.eq || []).filter(e => DATA.EQUIP_I[e]).slice(0, 2) } : { eq: eqOf(fill[i]) });
+    { const mine = party.map((p, i) => i === 0 || !S.lobby.slots[i]), u = SAVE.uniqEq(party.map((p, i) => mine[i] ? p.eq : [])); party.forEach((p, i) => { if (mine[i]) p.eq = u[i]; }); } // ホストのアカウントの枠（自分＋AI）どうしで重ねない
     markUsed(G.party.slice(0, 1).concat(fill.filter(Boolean)));
     S.startGame({ bid: newBid(), party }); enterGame(); return;
   }
@@ -382,6 +408,15 @@ function bindLobby() {
   $('#btnSetHow').onclick = () => { G.backPrev = G.back; openSub('how', 'settings'); };
   bindFriend();
   makeHScroll($('#cards')); makeHScroll($('#stages'));
+  // v7 P4-8：ホームの3Dモデル本体をタップ → その枠の編成へ（名札と同じ動き）。ドラッグ・長押し・ボタン上は数えない
+  { let td = null;
+    document.addEventListener('pointerdown', e => { td = $('#title').hidden ? null : { id: e.pointerId, p: toApp(e), t: performance.now() }; }, true);
+    document.addEventListener('pointerup', e => {
+      const d = td; td = null; if (!d || d.id !== e.pointerId || $('#title').hidden || !LOBBY3D.active() || LOBBY3D.mode !== 'home') return;
+      if (e.target.closest && e.target.closest('button,input,textarea,select,a,.hm-tag,.hm-left,.hm-bottom,.hm-top,.hm-room,.bl-pop,.pop,#frInv,#acctPop,.toast')) return;
+      const p = toApp(e); if (Math.hypot(p[0] - d.p[0], p[1] - d.p[1]) > 14 || performance.now() - d.t > 700) return;
+      const i = homeModelAt(p[0], p[1]); if (i >= 0) tagTap(i);
+    }, true); }
   // キャラ詳細：中央を左右にドラッグして回す（一覧の横スワイプとは別の場所）
   const rot = $('#chRot'); let rd = null;
   rot.addEventListener('pointerdown', e => { rd = { id: e.pointerId, x: toApp(e)[0] }; try { rot.setPointerCapture(e.pointerId); } catch (er) { } });

@@ -30,25 +30,38 @@ ok(s.rec.b === 1 && s.rec.w === 1 && s.rec.mobs === 6 && s.rec.best === 201 && s
 ok(s.chars.kogemaru.exp === 10000 && s.chars.kogemaru.lv === 11 && s.chars.hoshisuzume.exp === 8000 && s.chars.momiji.exp === 8000, `操作キャラ10,000（Lv${s.chars.kogemaru.lv}）・AI 8,000`);
 ok(s.chars.akaneten.exp === 0, '控え（出動していないキャラ）は0');
 const op1b = solo(true, 'senju', 'b1'); SAVE.apply(s, op1b); ok(op1b.res.dup && s.chars.kogemaru.exp === 10000 && s.rec.w === 1, '同じ戦闘IDの報酬は二度出ない');
-ok(s.wins.tobatoban === 1 && s.tickets === 0, 'トバトーバ1勝ではチケットなし');
-SAVE.apply(s, solo(false, 'senju', 'b2')); ok(s.wins.tobatoban === 1 && s.chars.kogemaru.exp === 12500, '敗北は2,500・チケットの進捗は進まない');
-SAVE.apply(s, solo(true, 'senju', 'b3')); const op4 = solo(true, 'senju', 'b4'); SAVE.apply(s, op4);
-ok(s.wins.tobatoban === 3 && s.tickets === 1 && op4.res.ticket === 1, `トバトーバ3勝でチケット1枚（${s.tickets}枚）`);
+ok(s.wins.story === 1 && s.tickets === 0, 'v7：ストーリー1回のクリアではチケットなし（残り1回分を保存）');
+SAVE.apply(s, solo(false, 'senju', 'b2')); ok(s.wins.story === 1 && s.chars.kogemaru.exp === 12500, '敗北は2,500・チケットの進捗は進まない');
+const op3 = solo(true, 'senju', 'b3'); SAVE.apply(s, op3); const op4 = solo(true, 'senju', 'b4'); SAVE.apply(s, op4);
+ok(s.wins.story === 3 && s.tickets === 1 && op3.res.ticket === 1 && op4.res.ticket === 0, `同じステージの再クリアでも2回目で1枚・3回目は0枚（${s.tickets}枚）`);
 ok(SAVE.eqSlots(s) === 1 && SAVE.setEquip(s, 'kogemaru', 0, 'bracer_gold').ok && !SAVE.setEquip(s, 'kogemaru', 1, 'charm_gold').ok, '電車クリア前の装備は1枠');
-const op5 = solo(true, 'joban', 'b5'); SAVE.apply(s, op5); ok(s.tickets === 1 && !s.uenoOpen && s.clear.joban === 1 && op5.res.unlocked === 'ueno_street', '電車クリアはチケットに数えず、居酒屋通りが解放される（ボスはまだ）');
+const op5 = solo(true, 'joban', 'b5'); SAVE.apply(s, op5); ok(s.tickets === 2 && s.wins.story === 4 && op5.res.ticket === 1 && !s.uenoOpen && s.clear.joban === 1 && op5.res.unlocked === 'ueno_street', '別のステージ（電車）でも数える：4回目で2枚目。居酒屋通りが解放される（ボスはまだ）');
 ok(SAVE.eqSlots(s) === 2 && SAVE.setEquip(s, 'kogemaru', 1, 'bracer_purple').ok && !SAVE.setEquip(s, 'kogemaru', 1, 'bracer_gold').ok, '電車クリア後は2枠（同じ系統の別段階はOK・同じIDの二重は不可）');
 { const st = DATA.GROWTH.withEquip(DATA.GROWTH.stats(DATA.CHI.kagetsubame, 60), ['bracer_gold', 'charm_gold']), hp2 = DATA.GROWTH.withEquip(DATA.GROWTH.stats(DATA.CHI.kagetsubame, 60), ['magatama_gold']);
   ok(st.hp === 605 && st.str === 475 && st.yo === 193 && st.def === 331 && hp2.hp === 1210, `Lv60大蛇＋ちから50%＋まもり50%＝HP${st.hp}・ちから${st.str}・ようりょく${st.yo}・まもり${st.def}、HP+100%＝${hp2.hp}`);
   const s2 = DATA.GROWTH.withEquip({ hp: 100, str: 100, yo: 100, def: 100 }, ['bracer_purple', 'bracer_gold']); ok(s2.str === 190, `同じ能力は足し算（+40%と+50%で×1.90＝${s2.str}）`); }
+{ // v7 P4：装備はアカウントで1つずつ（キャラをまたいで重ならない）
+  const r1 = SAVE.setEquip(s, 'hoshisuzume', 0, 'bracer_gold');
+  ok(!r1.ok && r1.owner === 'kogemaru' && /装備中/.test(r1.msg) && !s.chars.hoshisuzume.eq.includes('bracer_gold'), `ほかのキャラが付けている装備は付けられない（${r1.msg}）`);
+  const r2 = SAVE.setEquip(s, 'hoshisuzume', 0, 'bracer_gold', { move: true });
+  ok(r2.ok && r2.moved === 'kogemaru' && s.chars.hoshisuzume.eq[0] === 'bracer_gold' && !s.chars.kogemaru.eq.includes('bracer_gold') && SAVE.equipOwner(s, 'bracer_gold') === 'hoshisuzume', '付け替え（明示）なら前のキャラから外して付ける');
+  s.chars.kogemaru.eq = ['bracer_gold', 'bracer_purple']; s.chars.hoshisuzume.eq = []; // 元へ戻す
+  const dup = JSON.parse(JSON.stringify(s)); dup.chars.momiji.eq = ['bracer_gold', 'charm_blue']; dup.chars.taiko.eq = ['charm_blue']; delete dup.mig.eqU;
+  const m1 = SAVE.normalize(dup), m2 = SAVE.normalize(JSON.parse(JSON.stringify(m1)));
+  const all = Object.values(m1.chars).flatMap(c => c.eq);
+  ok(all.length === new Set(all).size && m1.chars.kogemaru.eq.includes('bracer_gold') && m1.chars.momiji.eq.join() === '' && m1.chars.taiko.eq.join() === 'charm_blue' && JSON.stringify(m1.chars) === JSON.stringify(m2.chars), `重複のある旧セーブは一覧の順で1つだけ残す（地縛霊が金の腕輪・鬼神が青のお守り）。読み直しても同じ`);
+  const u = SAVE.uniqEq([['bracer_gold'], ['bracer_gold', 'bell_blue'], ['bell_blue']]); ok(u.map(x => x.join('+')).join('|') === 'bracer_gold|bell_blue|', `出動時も枠どうしで重ねない（${u.map(x => x.join('+') || '−').join('｜')}）`);
+}
 const op5b = solo(true, 'ueno_street', 'b5b'); SAVE.apply(s, op5b); ok(s.uenoOpen && op5b.res.unlocked === 'ueno' && s.chars.kogemaru.exp - 10000 * 3 - 2500 - 20000 === 12000, '居酒屋通りの勝利（EXP12,000）で上野のボスが解放される');
-SAVE.apply(s, solo(true, 'ueno', 'b6')); SAVE.apply(s, solo(true, 'ueno', 'b7')); ok(s.wins.yoshinoshin === 2 && s.tickets === 2 && s.akibaOpen, 'ヨシノシン2勝でチケット1枚・秋葉原編が解放される');
-const op8 = solo(true, 'senju', 'b8'); op8.fin.retreat = true; const e0 = s.chars.kogemaru.exp; SAVE.apply(s, op8); ok(s.chars.kogemaru.exp === e0 && s.wins.tobatoban === 3, '撤退は報酬なし');
+SAVE.apply(s, solo(true, 'ueno', 'b6')); SAVE.apply(s, solo(true, 'ueno', 'b7')); ok(s.wins.story === 7 && s.tickets === 3 && s.akibaOpen, `通り・上野2回で計7回＝3枚（${s.tickets}枚）・秋葉原編が解放される`);
+SAVE.apply(s, solo(true, 'akiba_plaza', 'b7b')); ok(s.wins.story === 8 && s.tickets === 4, '秋葉原も数える（8回で4枚）');
+const op8 = solo(true, 'senju', 'b8'); op8.fin.retreat = true; const e0 = s.chars.kogemaru.exp; SAVE.apply(s, op8); ok(s.chars.kogemaru.exp === e0 && s.wins.story === 8, '撤退は報酬なし・チケットも進まない');
 const coop = { kills: {}, fin: { bid: 'c1', stage: 'senju', win: true, H: 4, slots: [{ ch: 'momiji', rate: 1 }] } }; const m0 = s.chars.momiji.exp; SAVE.apply(s, coop); ok(s.chars.momiji.exp - m0 === 10000, '4人で勝っても人間は100%＝10,000（人数ボーナスは廃止）');
 // ガチャ
 ok(SAVE.gachaPool(s).length === 50, 'v7：ガチャ対象は未所持の50体（Dも出る）');
 const r0 = SAVE.gachaRates(s); ok(Math.abs(r0.D - 4 / 14) < 1e-9 && Math.abs(r0.C - 0.25) < 1e-9 && Math.abs(r0.B - 0.25) < 1e-9 && Math.abs(r0.A - 2.2 / 14) < 1e-9 && Math.abs(r0.S - 0.8 / 14) < 1e-9, `最初の割合 D${(r0.D * 100).toFixed(1)}・C${(r0.C * 100).toFixed(1)}・B${(r0.B * 100).toFixed(1)}・A${(r0.A * 100).toFixed(1)}・S${(r0.S * 100).toFixed(1)}%`);
-const g1 = SAVE.gachaDraw(s, 'q1', 0.999); ok(g1.ok && s.tickets === 1 && s.chars[g1.res.id] && s.chars[g1.res.id].lv === 1 && s.chars[g1.res.id].exp === 0, `1枚で1体（${g1.res.id}・${g1.res.rank}・Lv1・EXP0）`);
-const g1b = SAVE.gachaDraw(s, 'q1', 0.1); ok(g1b.again && g1b.res.id === g1.res.id && s.tickets === 1, '同じ依頼IDの再送では引き直さず、二重に消費しない');
+const tk0 = s.tickets, g1 = SAVE.gachaDraw(s, 'q1', 0.999); ok(g1.ok && s.tickets === tk0 - 1 && s.chars[g1.res.id] && s.chars[g1.res.id].lv === 1 && s.chars[g1.res.id].exp === 0, `1枚で1体（${g1.res.id}・${g1.res.rank}・Lv1・EXP0）`);
+const g1b = SAVE.gachaDraw(s, 'q1', 0.1); ok(g1b.again && g1b.res.id === g1.res.id && s.tickets === tk0 - 1, '同じ依頼IDの再送では引き直さず、二重に消費しない');
 for (let i = 0; i < 49; i++) { s.tickets++; SAVE.gachaDraw(s, 'r' + i, (i * 0.37) % 1); }
 ok(SAVE.gachaPool(s).length === 0 && Object.keys(s.chars).length === 60, `50体すべて重複なしで入手（所持${Object.keys(s.chars).length}体）`);
 const rr = SAVE.gachaRates(s); ok(rr.D === 0 && rr.C === 0 && rr.S === 0, '全員所持のランクは0%');
@@ -57,7 +70,9 @@ const ex = SAVE.gachaExchange(s, 'kogemaru', 'x1'); ok(ex.ok && s.chars.kogemaru
 const old = { id: 5, pw: 'x', chars: { kogemaru: { lv: 12, exp: 0, b: 3, w: 2, k: 9 } }, rec: { b: 3, w: 2, mobs: 9, best: 300 } };
 const n1 = SAVE.normalize(JSON.parse(JSON.stringify(old)));
 ok(n1.chars.kogemaru.lv === 12 && n1.chars.kogemaru.exp === DATA.GROWTH.cum('D', 12) && DATA.NEW_D_IDS.every(id => !n1.chars[id]), `Lvだけの旧セーブはそのLvの累積EXPに（Lv${n1.chars.kogemaru.lv}）、v7では追加Dを配らない`);
-ok(n1.wins.tobatoban === 2 && n1.tickets === 0, '旧セーブの勝ちは進捗として残し、チケットはまとめて配らない');
+ok(n1.wins.tobatoban === 2 && n1.tickets === 0 && n1.wins.story === 0, '旧セーブの勝ちは記録として残し、チケットはまとめて配らない（共通の勝利数は移行時点の0から）');
+{ const v6 = JSON.parse(JSON.stringify(n1)); delete v6.mig.tk2; delete v6.wins.story; v6.wins.tobatoban = 5; v6.tickets = 3; const m1 = SAVE.normalize(v6), m2 = SAVE.normalize(JSON.parse(JSON.stringify(m1)));
+  ok(m1.tickets === 3 && m1.wins.story === 0 && m1.mig.tk2 === 1 && m2.wins.story === 0 && m2.tickets === 3, 'v6セーブ：持っているチケット3枚はそのまま・旧の端数（トバトーバ5勝）は配り直さない・何度読んでも同じ'); }
 n1.chars.new_d_01 = { lv: 1, exp: 5000, got: 1, seen: 1, b: 0, w: 0, k: 0, eq: [] }; const n2 = SAVE.normalize(JSON.parse(JSON.stringify(n1)));
 ok(n2.chars.new_d_01.exp === 5000 && JSON.stringify(SAVE.normalize(JSON.parse(JSON.stringify(n2))).chars) === JSON.stringify(n2.chars), '2回移行しても増えも減りもしない（v6までに入手した追加Dは取り上げず、Lv1に戻さない）');
 ok(SAVE.write(s), '書き込める');

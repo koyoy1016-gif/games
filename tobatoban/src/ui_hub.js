@@ -80,7 +80,7 @@ function renderResExp(res) {
     if (x.lv1 > x.lv0) d.appendChild(el('span', 'up', `Lv${x.lv0}→${x.lv1}`)); else d.appendChild(el('span', 'small', `Lv${x.lv1}`));
     box.appendChild(d);
   }
-  const a = ACC(), tx = el('div', 'res-tix', res.ticket > 0 ? `🎫 チケット＋${res.ticket}／所持${a.tickets}枚` : `🎫 チケット ${a.tickets}枚（トバトーバ ${a.wins.tobatoban % 3}/3・ヨシノシン ${a.wins.yoshinoshin % 2}/2）`);
+  const a = ACC(), tx = el('div', 'res-tix', res.ticket > 0 ? `🎫 チケット＋${res.ticket}／所持${a.tickets}枚` : `🎫 チケット ${a.tickets}枚（次の1枚まで ストーリークリア ${(a.wins.story || 0) % 2}/2）`);
   box.appendChild(tx);
   if (!G.acct) box.appendChild(el('div', 'small', 'ログインしていないので、この記録は画面を閉じると消えます（ログインすればアカウントに足されます）。'));
 }

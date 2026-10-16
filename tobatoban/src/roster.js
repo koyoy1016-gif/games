@@ -68,8 +68,9 @@ const REWARD = {
   /** 最終EXP＝floor(基本×固定枠率) */
   exp(stage, win, H, rate) { const e = this.base[stage]; if (!e) return 0; const base = win ? e.win : e.loss; return Math.floor(base * Math.round((rate == null ? 1 : rate) * 100) / 100 + 1e-6); },
 };
-/** 勝利チケット：トバトーバ3勝ごと・ヨシノシン2勝ごとに1枚。電車・敗北・部下撃破では進まない */
-const TICKET = { senju: { key: 'tobatoban', per: 3 }, ueno: { key: 'yoshinoshin', per: 2 } };
+/** 勝利チケット（v7 P4）：ストーリー6ステージ共通で、勝利2回ごとに1枚（別ステージでも同じステージの再クリアでも数える）。敗北・撤退・演出では進まない
+    1回のクリアで増える枚数＝floor((C+1)/2)−floor(C/2)（Cはそれまでの共通勝利数。奇数回の残り1回分は wins.story に残る） */
+const TICKET = { stages: ['senju', 'joban', 'ueno_street', 'ueno', 'akiba_platform', 'akiba_plaza'], per: 2, key: 'story', text: 'ストーリーを2回クリアするごとにチケット1枚' };
 const GACHA = {
   weight: { D: 4.0, C: 3.5, B: 3.5, A: 2.2, S: 0.8 }, // 未所持1体あたりの重み（v7：Dもガチャへ。各ランク10体＝約28.6/25/25/15.7/5.7%）
   ranks: ['D', 'C', 'B', 'A', 'S'],

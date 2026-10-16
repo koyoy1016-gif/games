@@ -30,9 +30,16 @@ const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) 
 })();
 
 /* ---------- 横向き固定（縦持ちの端末では画面全体を90度回す） ---------- */
+/** 端末そのものの向き（v7 P4-2）：キーボードで表示領域の高さが減っても「縦向き」と誤判定しないよう、画面の向き（screen.orientation など）を優先する */
+function devicePortrait() {
+  const so = screen.orientation && screen.orientation.type; if (so) return so.indexOf('portrait') === 0;
+  if (typeof window.orientation === 'number') return window.orientation % 180 === 0; // iOS Safari の古い版
+  const sw = screen.width || window.innerWidth, sh = screen.height || window.innerHeight; return sh > sw * 1.05;
+}
 function applyRotation() {
   const app = $('#app'); const vw = window.innerWidth, vh = window.innerHeight;
-  const rot = SET.land && vh > vw * 1.05 ? (SET.rotDir === 'right' ? -90 : 90) : 0;
+  // 入力中（G.kbUp）は回さない：OSのキーボードはCSSでは回らないので、入力画面を端末の向きに合わせて立てて表示する
+  const rot = SET.land && !G.kbUp && devicePortrait() && vh > vw * 0.75 ? (SET.rotDir === 'right' ? -90 : 90) : 0;
   VIEW.rot = rot; VIEW.w = rot ? vh : vw; VIEW.h = rot ? vw : vh;
   app.style.width = VIEW.w + 'px'; app.style.height = VIEW.h + 'px';
   app.style.transform = rot === 90 ? `translate(${vw}px,0) rotate(90deg)` : rot === -90 ? `translate(0,${vh}px) rotate(-90deg)` : 'translate(0,0)';
@@ -301,7 +308,7 @@ function openAccount(from) { if (!G.acct) { openLogin(from || 'title'); return; 
 function renderAccount() {
   const s = G.acct; $('#acTitle').textContent = `ID ${s.id}`;
   const kv = $('#acKv'); kv.textContent = '';
-  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['トバトーバ戦', (s.clear && s.clear.senju ? `クリア ${s.clear.senju}回` : 'まだ') + (s.rec.best ? `（最速 ${fmt(s.rec.best)}）` : '')], ['常磐線', s.clear && s.clear.joban ? `クリア ${s.clear.joban}回` : stageOpen('joban') ? 'まだ' : '🔒 トバトーバを倒すと解放'], ['ヨシノシン', s.clear && s.clear.ueno ? `クリア ${s.clear.ueno}回` : stageOpen('ueno') ? 'まだ' : '🔒 電車をクリアすると解放'], ['チケット', `${s.tickets}枚（トバトーバ ${s.wins.tobatoban % 3}/3・ヨシノシン ${s.wins.yoshinoshin % 2}/2）`], ['所持', `${Object.keys(s.chars).length} / ${DATA.CHARS.length}体`]]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
+  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['トバトーバ戦', (s.clear && s.clear.senju ? `クリア ${s.clear.senju}回` : 'まだ') + (s.rec.best ? `（最速 ${fmt(s.rec.best)}）` : '')], ['常磐線', s.clear && s.clear.joban ? `クリア ${s.clear.joban}回` : stageOpen('joban') ? 'まだ' : '🔒 トバトーバを倒すと解放'], ['ヨシノシン', s.clear && s.clear.ueno ? `クリア ${s.clear.ueno}回` : stageOpen('ueno') ? 'まだ' : '🔒 電車をクリアすると解放'], ['チケット', `${s.tickets}枚（次の1枚まで ストーリークリア ${(s.wins.story || 0) % 2}/2）`], ['所持', `${Object.keys(s.chars).length} / ${DATA.CHARS.length}体`]]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
   const ro = $('#acRoster'); ro.textContent = '';
   for (const c of DATA.CHARS) { if (!s.chars[c.id]) continue; const d = el('div'); const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; d.append(im, el('b', '', c.nm), el('span', 'lv', 'Lv.' + s.chars[c.id].lv)); ro.appendChild(d); }
   const cl = cloud(); $('#acCodeBox').hidden = cl; $('#btnAcCopy').hidden = cl; $('#acCloud').hidden = !cl;
@@ -398,7 +405,7 @@ function startSolo(stageId) {
   S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
   const carry = G.stageId === 'ueno_street' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
   markUsed(G.party);
-  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch), eq: eqOf(ch) })) });
+  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: (() => { const u = SAVE.uniqEq(G.party.map(eqOf)); return G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch), eq: u[i] })); })() });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {
@@ -496,7 +503,14 @@ function requestViewChange(delay) {
 addEventListener('resize', () => requestViewChange(80));
 addEventListener('orientationchange', () => requestViewChange(260));
 if (window.visualViewport) visualViewport.addEventListener('resize', () => requestViewChange(80));
-document.addEventListener('focusout', () => requestViewChange(200)); // キーボードを閉じたら、まとめて1回だけ合わせる
+document.addEventListener('focusout', () => { setTimeout(() => { const f = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName); if (G.kbUp && !f) { G.kbUp = false; $('#app').classList.remove('kbup'); onViewChange(); } }, 160); requestViewChange(200); }); // キーボードを閉じたら、まとめて1回だけ合わせる
+// v7 P4-2：横向き表示（CSSで90度回している）で文字を入力するときは、入力の間だけ端末の向きに立てる（キーボードと入力欄の向きをそろえる）
+document.addEventListener('focusin', e => {
+  const t = e.target; if (!t || !/^(INPUT|TEXTAREA)$/.test(t.tagName) || /^(checkbox|radio|range|button)$/.test(t.type || '')) return;
+  if (VIEW.rot) { G.kbUp = true; $('#app').classList.add('kbup'); onViewChange(); }
+  setTimeout(() => { try { t.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (er) { } }, 320); // キーボードが出たあと、入力欄と確定ボタンを見える位置へ
+});
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { const a = document.activeElement; if (a && /^(INPUT|TEXTAREA)$/.test(a.tagName)) setTimeout(() => { try { a.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (er) { } }, 60); });
 function sizeMapCanvas() { const mc = $('#mapc'), mb = $('#map'); mc.width = Math.round(mb.offsetWidth * 2); mc.height = Math.round(mb.offsetHeight * 2); }
 function gameArea() { if (!curLayout) return null; const L = curLayout.L; if (!curLayout.portrait) return { top: safe.t + 30, bottom: VIEW.h - safe.b }; return { top: safe.t + L.area[0] * curLayout.posS, bottom: VIEW.h - safe.b - (L.H - L.area[1]) * curLayout.posS }; }
 
@@ -1037,7 +1051,7 @@ function frame(ts) {
         if ((v.stage === 'won' || v.stage === 'lost') && v.stageT > (v.stage === 'won' ? 3.4 : 2.6) && G.mode === 'play') showResult(v);
       }
     } else if (G.mode === 'walk') { let end = true; try { end = WALK.step(dt, G.T); } catch (e) { console.error(e); } if (end) finishWalk(false); }
-    else if (!LOBBY3D.active()) titleCam(G.T);
+    else if (!LOBBY3D.active()) { if (G.mode !== 'play' && G.mode !== 'boot') LOBBY3D.show('bg', []); else titleCam(G.T); } // v7 P4-3/P5：メニュー・ログインの後ろはいつも動く夜祭り（青い止まった画面にしない）
     if (LOBBY3D.active() && G.mode !== 'play') { LOBBY3D.update(dt, G.T); lobbyTick(); }
   } catch (e) { console.error(e); }
   R.render(dt);

@@ -117,7 +117,7 @@ const NETLIB = (() => {
       this.tr = o.transport || null; this.kind = this.tr ? 'host' : 'solo'; this.code = o.code || '';
       this.local = new LocalInput(); this.mySlot = 0; this.sim = null; this.gid = 0; this.acc = 0; this.snapAcc = 0;
       this.views = []; this.clients = new Map(); this.notices = []; this.timeScale = 1; this.paused = false;
-      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'], lv: o.lv || 1 }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), lvs: o.lvs || {}, stage: 'senju', phase: 'lobby' };
+      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'], lv: o.lv || 1 }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), aiPick: [null].concat((o.aiParty || []).slice(0, 3)), lvs: o.lvs || {}, stage: 'senju', phase: 'lobby' };
       this.lastLobbySend = 0;
       if (this.tr) {
         this.tr.on('msg', (m, from) => this.onMsg(m, from));
@@ -165,7 +165,21 @@ const NETLIB = (() => {
     }
     notice(s) { this.notices.push({ s, t: now() }); }
     lobbyMsg() { return { t: 'lb', v: VERSION, code: this.code, diff: this.lobby.diff, stage: this.lobby.stage || 'senju', phase: this.lobby.phase, gid: this.gid, slots: this.lobby.slots.map(s => s ? { who: s.who, peer: s.peer, nick: s.nick, ch: s.ch, swap: s.swap, items: s.items, lv: s.lv || 1, eq: s.eq || [] } : null), ai: this.aiFill(), aiLv: this.aiFill().map(c => c ? (this.lobby.lvs[c] || 1) : 0) }; }
-    aiFill() { const taken = new Set(this.lobby.slots.filter(Boolean).map(s => s.ch)); const pool = this.lobby.aiParty.concat(DATA.CHARS.map(c => c.id)).filter((c, i, a) => a.indexOf(c) === i && !taken.has(c)); return this.lobby.slots.map(s => s ? null : pool.shift()); }
+    /** v7 P4：空いた枠のAI。ホストが枠ごとに指定したキャラ（aiPick）を優先し、人間と重なる・未指定の枠だけ自動で補う。参加・退出しても指定は残る */
+    aiFill() {
+      const used = new Set(this.lobby.slots.filter(Boolean).map(s => s.ch)), pick = this.lobby.aiPick || [], out = [0, 1, 2, 3].map(() => null);
+      for (let i = 1; i < 4; i++) { const p = pick[i]; if (!this.lobby.slots[i] && p && DATA.CHI[p] && !used.has(p)) { out[i] = p; used.add(p); } }
+      const pool = this.lobby.aiParty.concat(DATA.CHARS.map(c => c.id)).filter((c, k, a) => a.indexOf(c) === k && !used.has(c));
+      return this.lobby.slots.map((s, i) => s ? null : out[i] || pool.shift());
+    }
+    /** ホストがAI枠（空いている P2〜P4）のキャラを選ぶ。人間の枠・人間と同じキャラは不可。ほかのAI枠と同じなら入れ替える */
+    setAi(slot, ch, lv) {
+      if (!(slot >= 1 && slot <= 3) || this.lobby.slots[slot] || !DATA.CHI[ch]) return { ok: false, msg: 'この枠は選べません' };
+      if (this.lobby.slots.some(s => s && s.ch === ch)) return { ok: false, msg: '参加者が使っているキャラです' };
+      const cur = this.aiFill(), j = cur.indexOf(ch); const P = this.lobby.aiPick || (this.lobby.aiPick = [null, null, null, null]);
+      if (j >= 1 && j !== slot) P[j] = cur[slot];
+      P[slot] = ch; if (lv) this.lobby.lvs[ch] = lv; this.dirtyLobby = true; return { ok: true };
+    }
     setMine(o) { Object.assign(this.lobby.slots[0], o); this.dirtyLobby = true; }
     startGame(o) {
       o = o || {};

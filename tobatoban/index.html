@@ -23,6 +23,10 @@
 *{box-sizing:border-box;touch-action:manipulation}
 html{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{margin:0;height:100%;overflow:hidden;background:#1b1838;color:var(--paper);font-family:var(--f-body)}
+/* v7 P4-3/P5：3Dが描かれるまで（読み込み中・描画の再開中・WebGLが使えないとき）の軽い動く夜祭りの背景 */
+body{background:linear-gradient(#0a0620 0%,#26124a 38%,#7a2c5a 52%,#e0703a 60%,#3a1a2a 66%,#140a14 100%)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 10% 30%,#ff8a4a 0 6px,rgba(255,138,74,.25) 7px 22px,transparent 23px),radial-gradient(circle at 25% 26%,#ffd04a 0 6px,rgba(255,208,74,.22) 7px 22px,transparent 23px),radial-gradient(circle at 40% 31%,#ff6a4a 0 6px,rgba(255,106,74,.25) 7px 22px,transparent 23px),radial-gradient(circle at 60% 27%,#f4f0e0 0 6px,rgba(244,240,224,.2) 7px 22px,transparent 23px),radial-gradient(circle at 75% 31%,#ff8a4a 0 6px,rgba(255,138,74,.25) 7px 22px,transparent 23px),radial-gradient(circle at 90% 27%,#ffd04a 0 6px,rgba(255,208,74,.22) 7px 22px,transparent 23px);animation:festSway 3.2s ease-in-out infinite alternate}
+@keyframes festSway{from{transform:translateY(-3px) rotate(-.4deg)}to{transform:translateY(3px) rotate(.4deg)}}
 body{touch-action:none;-webkit-touch-callout:none}
 #app.rot .screen,#app.rot #dataTable{touch-action:none}
 body{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
@@ -640,8 +644,11 @@ a{color:var(--shu)}
 .eqs button.locked{filter:grayscale(1);opacity:.7}
 .eqs small{font-size:10px;font-weight:900;line-height:1.2;text-shadow:0 1px 0 var(--bk);min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .ch-right{position:absolute;right:max(12px,var(--sar,0px));top:58px;bottom:78px;width:clamp(220px,32%,330px);display:flex;flex-direction:column;gap:5px;z-index:3;overflow:auto}
-.st-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-.st-row{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:4px;background:rgba(11,20,64,.62);border:2px solid var(--bk);border-radius:9px;padding:1px 6px 1px 3px;min-width:0}
+.st-grid{display:grid;grid-template-columns:1fr;gap:3px}
+.st-lv{font-size:11px;font-weight:900;opacity:.9;margin:0 0 1px 2px}
+.stb{grid-column:2/4;position:relative;height:8px;border-radius:5px;background:rgba(0,0,0,.45);border:1.5px solid var(--bk);overflow:hidden;margin:0 0 2px}
+.stb i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}.stb i.eq{background:#7dffb0}.stb i.pv{background:repeating-linear-gradient(90deg,#fff6 0 3px,#fff2 3px 6px);border-right:2px solid #fff}
+.st-row{display:grid;grid-template-columns:24px 1fr auto;align-items:center;column-gap:4px;row-gap:0;background:rgba(11,20,64,.62);border:2px solid var(--bk);border-radius:9px;padding:1px 6px 1px 3px;min-width:0}
 .st-row .si{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid var(--bk)}
 .st-row span{font-size:11px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .st-row b{font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -659,6 +666,7 @@ a{color:var(--shu)}
 .eq-it{display:flex;flex-direction:column;align-items:center;gap:1px;border:3px solid var(--bk);border-radius:12px;padding:4px 2px;box-shadow:0 3px 0 var(--bk);min-height:72px}
 .eq-it .ic{font-size:22px}.eq-it b{font-size:11.5px;line-height:1.2;text-align:center}.eq-it span{font-size:11px;font-weight:900}
 .eq-it.t-blue{background:linear-gradient(#5aa8ff,#2b67e6)}.eq-it.t-purple{background:linear-gradient(#c08aff,#7446b8)}.eq-it.t-gold{background:linear-gradient(#ffe46a,#f2a81c)}
+.eq-it.held{opacity:.78}.eq-it .eq-who{font-size:10px;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;padding:0 4px;margin-top:1px}
 .eq-it.sel{outline:4px solid #fff;outline-offset:-2px}
 .eq-it[disabled]{opacity:.4}
 .eq-act{display:flex;gap:8px;justify-content:flex-end}
@@ -829,7 +837,7 @@ a{color:var(--shu)}
       <div class="gc-main"><div class="gc-stage"><canvas id="gcCanvas" width="640" height="480"></canvas><button class="chip gc-skip" id="gcSkip" type="button" hidden>スキップ</button></div><div class="gc-res" id="gcRes" hidden></div></div>
       <div class="gc-side">
         <div class="gc-prog" id="gcProg"></div>
-        <p class="small" id="gcNote">トバトーバに3勝、ヨシノシンに2勝するごとにチケット1枚。チケットは貯めておけます（自動では回しません）。</p>
+        <p class="small" id="gcNote">ストーリーを2回クリアするごとにチケット1枚。チケットは貯めておけます（自動では回しません）。</p>
         <div class="row" id="gcBtns">
           <button class="btn main" id="btnGcDraw" type="button">1回まわす（1枚）</button>
           <button class="btn" id="btnGcSample" type="button">演出見本</button>
@@ -1624,8 +1632,9 @@ const REWARD = {
   /** 最終EXP＝floor(基本×固定枠率) */
   exp(stage, win, H, rate) { const e = this.base[stage]; if (!e) return 0; const base = win ? e.win : e.loss; return Math.floor(base * Math.round((rate == null ? 1 : rate) * 100) / 100 + 1e-6); },
 };
-/** 勝利チケット：トバトーバ3勝ごと・ヨシノシン2勝ごとに1枚。電車・敗北・部下撃破では進まない */
-const TICKET = { senju: { key: 'tobatoban', per: 3 }, ueno: { key: 'yoshinoshin', per: 2 } };
+/** 勝利チケット（v7 P4）：ストーリー6ステージ共通で、勝利2回ごとに1枚（別ステージでも同じステージの再クリアでも数える）。敗北・撤退・演出では進まない
+    1回のクリアで増える枚数＝floor((C+1)/2)−floor(C/2)（Cはそれまでの共通勝利数。奇数回の残り1回分は wins.story に残る） */
+const TICKET = { stages: ['senju', 'joban', 'ueno_street', 'ueno', 'akiba_platform', 'akiba_plaza'], per: 2, key: 'story', text: 'ストーリーを2回クリアするごとにチケット1枚' };
 const GACHA = {
   weight: { D: 4.0, C: 3.5, B: 3.5, A: 2.2, S: 0.8 }, // 未所持1体あたりの重み（v7：Dもガチャへ。各ランク10体＝約28.6/25/25/15.7/5.7%）
   ranks: ['D', 'C', 'B', 'A', 'S'],
@@ -1842,7 +1851,7 @@ Object.assign(DATA, { lvAdjust, LV_BASE, EQUIP, EQUIP_I, GAME, RANKS, RANK_INFO,
    IDは1〜10000。アカウントを作った順に自動で決まる（いまはこの端末の中での順番）。
    ===================================================================== */
 const SAVE = (() => {
-  const ID_MIN = 1, ID_MAX = 10000, VER = 4, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 6, PW_MAX = 32; // Firebase のパスワードは6文字以上
+  const ID_MIN = 1, ID_MAX = 10000, VER = 5, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 6, PW_MAX = 32; // Firebase のパスワードは6文字以上
   // 以前の形式（ID 1001〜）のセーブはいったん消す（1回だけ）
   (function migrate() {
     try {
@@ -1876,7 +1885,7 @@ const SAVE = (() => {
   function fresh(id, pw) {
     const now = Date.now();
     return { v: VER, id, pw, created: now, saved: 0, chars: freshChars(now), rec: { b: 0, w: 0, mobs: 0, best: 0 }, clear: freshClear(),
-      wins: { tobatoban: 0, yoshinoshin: 0 }, tickets: 0, uenoOpen: false, akibaOpen: false, walkSeen: false, rewarded: [], gacha: { log: [] }, prefs: freshPrefs(), party: null, swap: null, items: null, nick: '', fcode: '', mig: { d: 1, exp3: 1, v5: 1 } };
+      wins: { tobatoban: 0, yoshinoshin: 0, story: 0 }, tickets: 0, uenoOpen: false, akibaOpen: false, walkSeen: false, rewarded: [], gacha: { log: [] }, prefs: freshPrefs(), party: null, swap: null, items: null, nick: '', fcode: '', mig: { d: 1, exp3: 1, v5: 1, tk2: 1 } };
   }
   const int = (v, lo) => Math.max(lo || 0, Math.floor(+v || 0));
   /** 古い形式（Lvだけの記録・ステージ1つの頃）からの移行。何度通しても増えも減りもしない */
@@ -1889,6 +1898,8 @@ const SAVE = (() => {
     o.wins = Object.assign({ tobatoban: 0, yoshinoshin: 0 }, s.wins || {}); o.tickets = int(s.tickets); o.prefs = Object.assign(freshPrefs(), s.prefs || {});
     if (!s.wins) o.wins.tobatoban = o.clear.senju; // 進捗は残す（過去の勝ちにチケットをまとめて配り直さない）
     o.wins.tobatoban = int(o.wins.tobatoban); o.wins.yoshinoshin = int(o.wins.yoshinoshin);
+    // v7 P4：チケットはストーリー共通の勝利数へ。移行開始点＝この時点を0回とする（持っているチケットは残し、過去の勝ちに配り直さない。旧版の端数も持ち越さない）
+    if (!mig.tk2 || !s.wins || s.wins.story == null) { o.wins.story = 0; mig.tk2 = 1; } o.wins.story = int(o.wins.story);
     o.rewarded = Array.isArray(s.rewarded) ? s.rewarded.slice(-40) : []; o.gacha = { log: Array.isArray(s.gacha && s.gacha.log) ? s.gacha.log.slice(-30) : [] };
     o.uenoOpen = !!s.uenoOpen || o.clear.ueno_street > 0 || o.clear.ueno > 0; // 旧版でボスを解放済みならそのまま（新規は通りのクリアで解放）
     o.akibaOpen = !!s.akibaOpen || o.clear.ueno > 0; o.walkSeen = !!s.walkSeen; mig.v5 = 1; o.fcode = typeof s.fcode === 'string' ? s.fcode.slice(0, 8) : '';
@@ -1904,6 +1915,8 @@ const SAVE = (() => {
       x.exp = Math.min(x.exp, DATA.GROWTH.cum(c.rank, 99)); x.lv = DATA.GROWTH.levelOf(c.rank, x.exp);
       x.eq = (Array.isArray(x.eq) ? x.eq : []).filter((e, i, a) => DATA.EQUIP_I[e] && a.indexOf(e) === i); // 存在しない・重複の装備は外す
     }
+    { // v7 P4：アカウント全体で同じ装備は1体だけ。キャラ一覧の順（初期10体→追加50体）・各キャラの枠の順で最初の1つを残す（何度読んでも同じ結果）
+      const used = new Set(); for (const c of DATA.CHARS) { const x = ch[c.id]; if (!x) continue; x.eq = x.eq.filter(e => !used.has(e) && (used.add(e), true)); } mig.eqU = 1; }
     o.chars = ch; mig.exp3 = 1; o.mig = mig; o.v = VER;
     const n = eqSlots(o); for (const id in ch) if (ch[id].eq.length > n) ch[id].eq = ch[id].eq.slice(0, n);
     return o;
@@ -1912,14 +1925,22 @@ const SAVE = (() => {
   /** 装備枠：電車を一度クリア（または上野ボス解放・勝利の記録あり）で2枠、それまでは1枠 */
   const eqSlots = s => s && ((s.clear && (s.clear.joban > 0 || s.clear.ueno > 0)) || s.uenoOpen) ? 2 : 1;
   /** 装備を付ける／外す（同じIDの二重は不可・枠の数まで） */
-  function setEquip(s, ch, slot, id) {
+  /** v7 P4：12個の装備はアカウントで1つずつ（キャラごとの複製ではない）。その装備を付けているキャラ（なければ null） */
+  function equipOwner(s, id, except) { if (!s || !id) return null; for (const k in s.chars) if (k !== except && (s.chars[k].eq || []).includes(id)) return k; return null; }
+  /** 付ける・外す。ほかのキャラが付けている装備は、move:true（明示的な付け替え）のときだけ前のキャラから外して付ける */
+  function setEquip(s, ch, slot, id, opt) {
     const c = s && s.chars[ch]; if (!c) return { ok: false, msg: '持っていないキャラです' };
     const n = eqSlots(s); if (slot >= n) return { ok: false, msg: '2つ目の枠は電車をクリアすると使えます' };
     const eq = (c.eq || []).slice(0, n); while (eq.length < n) eq.push(null);
     if (id && !DATA.EQUIP_I[id]) return { ok: false, msg: 'その装備はありません' };
     if (id && eq.some((e, i) => i !== slot && e === id)) return { ok: false, msg: '同じ装備は2つ付けられません（別の段階なら同じ系統も付けられます）' };
-    eq[slot] = id || null; c.eq = eq.filter(Boolean); return { ok: true };
+    const own = id ? equipOwner(s, id, ch) : null;
+    if (own && !(opt && opt.move)) return { ok: false, owner: own, msg: `${DATA.CHI[own] ? DATA.CHI[own].nm : own}が装備中です` };
+    if (own) s.chars[own].eq = (s.chars[own].eq || []).filter(e => e !== id);
+    eq[slot] = id || null; c.eq = eq.filter(Boolean); return { ok: true, moved: own || null };
   }
+  /** 出動時の検査：同じアカウントの枠どうしで同じ装備が重ならないようにする（前の枠を優先） */
+  function uniqEq(list) { const used = new Set(); return list.map(eq => (eq || []).filter(e => DATA.EQUIP_I[e] && !used.has(e) && (used.add(e), true))); }
   const lvOf = (s, id) => (s && s.chars[id] ? s.chars[id].lv : 1);
   function load(id) { try { const j = localStorage.getItem(KEY + id); return j ? normalize(JSON.parse(j)) : null; } catch (e) { return null; } }
   function write(s) { try { s.saved = Date.now(); localStorage.setItem(KEY + s.id, JSON.stringify(s)); return true; } catch (e) { return false; } }
@@ -1954,7 +1975,7 @@ const SAVE = (() => {
   /** 戦いの記録を足す。op = { kills: {キャラID: 数}, fin: null | { bid, stage, win, time, H, retreat, slots: [{ ch, rate }] } }
       ・EXPは出動した各キャラへ（4等分しない）。操作100%／AI80%（途中で替えたら割合）、控え0%、協力は1人増えるごと+10%（最大+30%）
       ・同じ戦闘ID（bid）の報酬は一度だけ。撤退は報酬なし
-      ・チケット：トバトーバ3勝ごと・ヨシノシン2勝ごとに1枚（敗北・電車では進まない） */
+      ・チケット：ストーリー6ステージ共通で勝利2回ごとに1枚（敗北・撤退では進まない） */
   function apply(s, op) {
     for (const id in op.kills || {}) { const c = s.chars[id]; if (!c) continue; const k = op.kills[id] | 0; c.k += k; s.rec.mobs += k; }
     const f = op.fin; op.res = null;
@@ -1970,8 +1991,9 @@ const SAVE = (() => {
       c.exp = DATA.GROWTH.addExp(cd.rank, c.exp, add); c.lv = DATA.GROWTH.levelOf(cd.rank, c.exp);
       res.exp.push({ ch: sl.ch, add, lv0, lv1: c.lv, ai: sl.rate != null && sl.rate < 1 });
     }
-    const T = DATA.TICKET[st];
-    if (f.win && T) { const w0 = s.wins[T.key] | 0, w1 = w0 + 1; s.wins[T.key] = w1; const add = Math.floor(w1 / T.per) - Math.floor(w0 / T.per); s.tickets += add; res.ticket = add; }
+    const T = DATA.TICKET;
+    if (f.win && T.stages.includes(st)) { const C = s.wins[T.key] | 0; s.wins[T.key] = C + 1; const add = Math.floor((C + 1) / T.per) - Math.floor(C / T.per); s.tickets += add; res.ticket = add; }
+    if (f.win && st === 'senju') s.wins.tobatoban = (s.wins.tobatoban | 0) + 1; if (f.win && st === 'ueno') s.wins.yoshinoshin = (s.wins.yoshinoshin | 0) + 1; // 記録用（チケットには使わない）
     if (f.win && st === 'joban' && s.clear.joban === 1) res.unlocked = 'ueno_street'; // 電車の初クリア：居酒屋通りと装備2枠
     if (f.win && st === 'ueno_street' && !s.uenoOpen) { s.uenoOpen = true; res.unlocked = 'ueno'; }
     if (f.win && st === 'ueno' && !s.akibaOpen) { s.akibaOpen = true; res.unlocked = 'akiba_platform'; }
@@ -2018,7 +2040,7 @@ const SAVE = (() => {
     const ph = parseInt(s.pw, 16) >>> 0; b.push(ph >>> 24, (ph >>> 16) & 255, (ph >>> 8) & 255, ph & 255);
     vi(s.rec.b); vi(s.rec.w); vi(s.rec.mobs); vi(s.rec.best);
     vi(STAGES.length); for (const k of STAGES) vi(s.clear[k] || 0);
-    vi(s.wins.tobatoban); vi(s.wins.yoshinoshin); vi(s.tickets); vi((s.uenoOpen ? 1 : 0) | (s.akibaOpen ? 2 : 0) | (s.walkSeen ? 4 : 0));
+    vi(s.wins.tobatoban); vi(s.wins.yoshinoshin); vi(s.tickets); vi((s.uenoOpen ? 1 : 0) | (s.akibaOpen ? 2 : 0) | (s.walkSeen ? 4 : 0)); vi(s.wins.story || 0);
     const n = DATA.CHARS.length; vi(n);
     const own = DATA.CHARS.map(c => !!s.chars[c.id]);
     for (let i = 0; i < n; i += 8) { let m = 0; for (let j = 0; j < 8 && i + j < n; j++) if (own[i + j]) m |= 1 << j; b.push(m); }
@@ -2045,7 +2067,7 @@ const SAVE = (() => {
         const id = vi(); const pw = ((u8() << 24 >>> 0) + (u8() << 16) + (u8() << 8) + u8()).toString(16).padStart(8, '0');
         const s = fresh(id, pw); s.rec.b = vi(); s.rec.w = vi(); s.rec.mobs = vi(); s.rec.best = vi();
         if (ver >= 2) { const ST = ver >= 4 ? STAGES : ['senju', 'joban', 'ueno'], m = vi(); for (let i = 0; i < m; i++) { const c = vi(); if (ST[i]) s.clear[ST[i]] = c; } } else delete s.clear; // 古いコードは勝ち数から
-        if (ver >= 3) { s.wins = { tobatoban: vi(), yoshinoshin: vi() }; s.tickets = vi(); const fl = vi(); s.uenoOpen = !!(fl & 1); s.akibaOpen = !!(fl & 2); s.walkSeen = !!(fl & 4); } else { delete s.wins; s.mig = {}; } // 古いコードは移行（追加Dを一度配る）
+        if (ver >= 3) { s.wins = { tobatoban: vi(), yoshinoshin: vi() }; s.tickets = vi(); const fl = vi(); s.uenoOpen = !!(fl & 1); s.akibaOpen = !!(fl & 2); s.walkSeen = !!(fl & 4); if (ver >= 5) { s.wins.story = vi(); s.mig = { d: 1, exp3: 1, v5: 1, tk2: 1 }; } else delete s.mig.tk2; } else { delete s.wins; s.mig = {}; } // 古いコードは移行（追加Dを一度配る）
         const n = vi(), mask = []; for (let i = 0; i < n; i += 8) { const m = u8(); for (let j = 0; j < 8 && i + j < n; j++) mask.push(!!(m & (1 << j))); }
         if (ver >= 3) { s.chars = {}; for (let i = 0; i < n; i++) { if (!mask[i]) continue; const x = { exp: vi(), b: vi(), w: vi(), k: vi(), got: vi() * 1000, seen: 1, lv: 1, eq: [] }; if (ver >= 4) { const ne = vi(); for (let q = 0; q < ne; q++) { const e = DATA.EQUIP[vi()]; if (e) x.eq.push(e.id); } } const c = DATA.CHARS[i]; if (c) s.chars[c.id] = x; } }
         else for (let i = 0; i < n; i++) { if (!mask[i]) continue; const x = { lv: vi(), exp: vi(), b: vi(), w: vi(), k: vi(), seen: 1 }; const c = DATA.CHARS[i]; if (c) s.chars[c.id] = x; }
@@ -2069,7 +2091,7 @@ const SAVE = (() => {
     try { if (id >= nextId()) localStorage.setItem(NEXT, String(id + 1)); } catch (e) { }
     return { ok: true, save: s, msg: `ID ${id} の続きを引き継ぎました` };
   }
-  return { VER, ID_MIN, ID_MAX, PW_MIN, PW_MAX, STAGES, eqSlots, setEquip, pwHash, validId, parseId, checkPw, storageOk, fresh, normalize, load, write, nextId, register, login, apply, owns, lvOf, gachaPool, gachaRates, gachaDraw, gachaExchange, encode, decode, restore };
+  return { VER, ID_MIN, ID_MAX, PW_MIN, PW_MAX, STAGES, eqSlots, setEquip, equipOwner, uniqEq, pwHash, validId, parseId, checkPw, storageOk, fresh, normalize, load, write, nextId, register, login, apply, owns, lvOf, gachaPool, gachaRates, gachaDraw, gachaExchange, encode, decode, restore };
 })();
 
 /* ===== cloud.js ===== */
@@ -5074,7 +5096,7 @@ const NETLIB = (() => {
       this.tr = o.transport || null; this.kind = this.tr ? 'host' : 'solo'; this.code = o.code || '';
       this.local = new LocalInput(); this.mySlot = 0; this.sim = null; this.gid = 0; this.acc = 0; this.snapAcc = 0;
       this.views = []; this.clients = new Map(); this.notices = []; this.timeScale = 1; this.paused = false;
-      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'], lv: o.lv || 1 }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), lvs: o.lvs || {}, stage: 'senju', phase: 'lobby' };
+      this.lobby = { diff: 'normal', slots: [{ who: 'host', peer: this.tr ? this.tr.self : 'me', nick: o.nick || 'P1', ch: o.ch || 'kogemaru', swap: !!o.swap, items: o.items || ['onigiri', 'ramune'], lv: o.lv || 1 }, null, null, null], aiParty: o.aiParty || DATA.DEFAULT_PARTY.slice(), aiPick: [null].concat((o.aiParty || []).slice(0, 3)), lvs: o.lvs || {}, stage: 'senju', phase: 'lobby' };
       this.lastLobbySend = 0;
       if (this.tr) {
         this.tr.on('msg', (m, from) => this.onMsg(m, from));
@@ -5122,7 +5144,21 @@ const NETLIB = (() => {
     }
     notice(s) { this.notices.push({ s, t: now() }); }
     lobbyMsg() { return { t: 'lb', v: VERSION, code: this.code, diff: this.lobby.diff, stage: this.lobby.stage || 'senju', phase: this.lobby.phase, gid: this.gid, slots: this.lobby.slots.map(s => s ? { who: s.who, peer: s.peer, nick: s.nick, ch: s.ch, swap: s.swap, items: s.items, lv: s.lv || 1, eq: s.eq || [] } : null), ai: this.aiFill(), aiLv: this.aiFill().map(c => c ? (this.lobby.lvs[c] || 1) : 0) }; }
-    aiFill() { const taken = new Set(this.lobby.slots.filter(Boolean).map(s => s.ch)); const pool = this.lobby.aiParty.concat(DATA.CHARS.map(c => c.id)).filter((c, i, a) => a.indexOf(c) === i && !taken.has(c)); return this.lobby.slots.map(s => s ? null : pool.shift()); }
+    /** v7 P4：空いた枠のAI。ホストが枠ごとに指定したキャラ（aiPick）を優先し、人間と重なる・未指定の枠だけ自動で補う。参加・退出しても指定は残る */
+    aiFill() {
+      const used = new Set(this.lobby.slots.filter(Boolean).map(s => s.ch)), pick = this.lobby.aiPick || [], out = [0, 1, 2, 3].map(() => null);
+      for (let i = 1; i < 4; i++) { const p = pick[i]; if (!this.lobby.slots[i] && p && DATA.CHI[p] && !used.has(p)) { out[i] = p; used.add(p); } }
+      const pool = this.lobby.aiParty.concat(DATA.CHARS.map(c => c.id)).filter((c, k, a) => a.indexOf(c) === k && !used.has(c));
+      return this.lobby.slots.map((s, i) => s ? null : out[i] || pool.shift());
+    }
+    /** ホストがAI枠（空いている P2〜P4）のキャラを選ぶ。人間の枠・人間と同じキャラは不可。ほかのAI枠と同じなら入れ替える */
+    setAi(slot, ch, lv) {
+      if (!(slot >= 1 && slot <= 3) || this.lobby.slots[slot] || !DATA.CHI[ch]) return { ok: false, msg: 'この枠は選べません' };
+      if (this.lobby.slots.some(s => s && s.ch === ch)) return { ok: false, msg: '参加者が使っているキャラです' };
+      const cur = this.aiFill(), j = cur.indexOf(ch); const P = this.lobby.aiPick || (this.lobby.aiPick = [null, null, null, null]);
+      if (j >= 1 && j !== slot) P[j] = cur[slot];
+      P[slot] = ch; if (lv) this.lobby.lvs[ch] = lv; this.dirtyLobby = true; return { ok: true };
+    }
     setMine(o) { Object.assign(this.lobby.slots[0], o); this.dirtyLobby = true; }
     startGame(o) {
       o = o || {};
@@ -7459,7 +7495,8 @@ const GFX = {};
   });
 
   /* ---------- 登録：makeChar から使う。身長は見た目の大きさ（当たり判定は別）。style＝かわいい系／かっこいい系 ---------- */
-  for (const id in V7) if (DATA.CHI[id]) { DATA.CHI[id].h = V7[id].h; DATA.CHI[id].style = STYLE[id] || 'cool'; }
+  const LOOK8 = {"kogemaru": "敷石に縛られた霊の武者。黒い紙片の羽織、白い細縄を拳と胸に巻く、紙片が周りを渦巻く。裾は霊気へほどける", "hoshisuzume": "頭が灯る提灯の子。竹骨の輪と琥珀の光、上の紐が尾のように揺れる。法被姿で小さな火を持つ", "akaneten": "立った人型の狐。灰白と墨色のまだら毛、墨色の着物、背に長く平たい九本の尾、手に青い狐火", "kagetsubame": "黒い岩のような鱗の人型。腹に青磁の筋、頭の後ろに二枚の鰭、太い大蛇が胴に巻きつき肩から頭を出す", "sayanosuke": "欠けた古刀を握る侍の霊。紺の着物に袴、腰に黒い木鞘、柄に麻縄。目は鋼色に光る", "taiko": "青銅の肌と短い横角の山の守り手。四角い顎、生成りの布、背に石鼓の輪を背負い素手で音の輪を打つ", "burikidon": "中身のない古い鉄の鎧武者。兜の上に三枚の鉄板が浮き、面頬の奥に二つの光。大袖で守る", "norenbou": "墨色の和傘を頭にかぶった子。傘の縁に切れた紙、ぺろりと舌を出し、一本歯の下駄。攻撃で傘を閉じて突く", "kemuridama": "白い着物に額の三角布の小さな霊。裾はほどけて浮き、袖の先で小さな光をすくう", "momiji": "切り株の頭に白い野花を咲かせた木の子。葉の腰みの、足元に花びらの輪", "new_d_02": "煤色の長毛のぽっちゃり老猫。琥珀の目、着物に黄色い帯、先が二つに分かれた二本の尾、背に灰色の斑点", "new_d_03": "細身の茶褐色の山猫の忍び。欠けた片耳、背に苔色の毛、長い爪、細い一本尾", "new_d_05": "白い蛇の頭巾をかぶった子。腹側は淡い銅色、肩に小さな白蛇が巻きつき、両手の間に光をためる", "new_c_02": "焦げ茶の長毛の大猿の戦士。灰色の顔、赤土色の前腕、肩から垂れる蓑状の毛、長い腕", "new_c_03": "二足で立つ狐のような黒犬の霊。胸の毛は藁色、尾は煙へ薄れ、足元に霜の輪", "new_c_05": "黒褐色の幅広い木面、細い目の裂け目と銅色の牙、稲藁の外套（蓑）、藍の脚絆、長い木の杖", "new_c_06": "青銅色の石の守り獣の子。巻き毛のたてがみ、垂れ耳、腹に銅の鈴、ふさふさの尾", "new_b_02": "薄紫の毛の小さな狐の子。尾の先が灯り、白い芯と灰紫の炎の狐火が三つ周りを回る", "new_b_03": "おかっぱの栗色の癖毛、丸い頬、生成りの作務衣に墨色の前掛け、背に織り座布団、手に紙風車", "new_b_05": "灰銀の毛の猫の妖。獅子のような長い鼻先、肩の両側に燃える黒い轍の輪、足跡に短い炎", "new_b_06": "褐色の肌の若い山の鬼。角のない獣の面、短い黒髪、肩から片側に垂らした灰色の毛皮、大きな掌", "new_a_02": "大きな一つ目の陶土色の小坊主。灰色の短い法衣、丸い木靴、長い袖を拳に巻く。ぺろりと舌", "new_a_03": "赤い顔に長い鼻の山伏。頭に頭襟、鼠色の羽織に白い梵天、背に杉の葉の扇、木の棒、一本歯の下駄", "new_a_06": "青緑の粘土の小鬼。平たい頭の両端に小さな角、薄茶の腰布、丸い石を両手で抱える", "new_s_02": "薄茶の毛のむささびの子。腕と体の間に年輪模様の大きな皮膜、丸い顔、短い鼻先、平たい大きな尾", "new_s_03": "香炉から立ちのぼる煙の子。体は半透明の灰色で裾は煙、顔は輪の光、三本の煙が周りを回る", "new_s_05": "錆びた鉄色の獅子の武者。硬い板状のたてがみ、長方形の口、肩に苔、息に火花", "new_d_01": "青白い釉薬の陶器の山羊の子。銅色の一本角、細い亀裂が暖かく光る、小さなあごひげ、蹄", "new_d_08": "赤土色の肌の小さなおばあちゃん。灰色のぼさぼさ髪、苔色の厚い外套、腰に薬草の束、湯気の立つ木鉢", "new_c_01": "濃紺の筒袖の小坊主。竹の笠を浅くかぶり、四角い盆に乳白色の豆腐、回復で水滴が浮く", "new_c_08": "黒檀色の細身の霊獣。青磁色の鱗、短い一本角、鹿のような鼻先、背に光る金の毛の環、長い尾、蹄", "new_b_01": "灰桃の布を重ねた背の高い女性の霊。長い黒髪、伏せた目、腕に小さな光の包み、足元に淡い水紋", "new_b_08": "淡い青灰色のずんぐりした霊獣の子。額に縦に三つの目、頬の長い毛が筆のよう、小さな角、背に藁紙の札", "new_a_01": "鈍い銅色の鱗の細身の水の女性。髪の代わりに額から後ろへ薄い鰭、小さな角、灰青の長い布、掌から円い水面", "new_a_08": "胡桃の殻のような丸い木の頭の子。深い穴の目、根の脚、背の割れ目に小さな木の実をためる", "new_s_01": "乳白と灰茶のまだらの小さな狐の子。左右で形の違う耳、細い一本尾、周りに浮かぶ三つの石、足元の癒しの光", "new_s_08": "黒褐色のねむそうな獏の子。短い鼻、背にまばらな白い点、ナイトキャップ、鼻先から琥珀の泡を吸い込む", "new_d_07": "紺色の寝間着のねむり顔の浮かぶ子。ナイトキャップ、周りに紺の輪が三層、枕形の石が回る", "new_d_10": "灰色の肌と短い銀髪の女鬼。片側だけ伸びた角、焦げ茶の麻衣、長い指の先に影の輪", "new_c_10": "青磁色のつるりとした頭、点のように小さい光る目、額の窪み、墨色の法衣、衣の内から雷光の糸、錫杖", "new_b_07": "黒い雨雲の頭巾をかぶった子。大きな朱色の舌、銅色の小さな目、灰色の雨合羽、手に土の玉", "new_b_10": "琥珀色の炎の頭の小さな霊。炎の先が揺れ、黒い寝間着、裾はほどけて浮き、平たい火の欠片を残す", "new_a_10": "黒鉄色の硬い毛の大鼠の僧兵。半円の耳、銅色の板状の歯、背に古い釘の毛、数珠、ぼろの法衣、細長い尾", "new_s_07": "灰白の長い毛の細身の山の怪。目は前髪の下で光り、胸の毛が渦を巻く、掌から墨の粒を広げる", "new_s_10": "岩粒の茶褐色の蜘蛛の忍び。顔に六つの小さな赤い眼、口元を覆う布、背から四本の蜘蛛の脚（先に銅の環）、背の平たい円盤", "new_d_04": "墨色の肌の大柄な鬼の頭領。銅色の短い角、赤い蓬髪、背に白木の小樽、両腕を太い縄で巻く、灰青の短い袴", "new_d_09": "背に燃える大車輪を背負う車引きの武者。赤茶の木の輪に青銅の帯、軸に沈んだ石の顔、輪の下に炎", "new_c_09": "太い角の牛の頭の大鬼。背は青錆色の甲羅、腹側に生成りの長い毛、石の脚", "new_b_04": "灰茶の土壁でできた大きな四角い子。壁の真ん中に顔、光るひびが一本、短い手足、足元に小石", "new_b_09": "麻布の細長い帯で人の形を縫い留めた霊。空洞の顔に赤い光、胸に赤銅の鈴、盾のように広い両袖", "new_a_04": "黄土色の肌と短い白角の片腕の鬼。失った左腕の代わりに浮かぶ小岩が掌を作る、深緑の短い衣", "new_a_09": "黒銅の丸い茶釜の体の狸。目のまわりの黒い模様、丸い耳、注ぎ口から湯気、しま模様のふさふさの尾", "new_s_04": "黒い木の節をつないだ鎧の武者。節の間が銅色に光り、牙のある兜、背から両脇へ並ぶ細い脚", "new_s_09": "河原石のような灰白の鱗の大きな蛇の武者。暗い朱色の目、背から八本の蛇の首が扇のように立ち上がる"}; // v8の見た目の説明（各モデルの注記と同じ）。キャラ詳細の説明文に使う
+  for (const id in V7) if (DATA.CHI[id]) { DATA.CHI[id].h = V7[id].h; DATA.CHI[id].style = STYLE[id] || 'cool'; if (LOOK8[id]) DATA.CHI[id].blurb = LOOK8[id]; }
 })();
 
 /* ===== render_train.js ===== */
@@ -8148,7 +8185,7 @@ const GFX = {};
 
 /* ===== render_lobby.js ===== */
 /* =====================================================================
-   render_lobby.js — メニュー画面の3D（ホームの4体・キャラ詳細の1体）
+   render_lobby.js — メニュー画面の3D（ホームの4体・キャラ詳細の1体・ほかの画面の背景）。背景はいつも動く夜祭り（v7 P4-3/P5）
    ・戦闘と同じレンダラー（#gl）とシーンを使う（キャラ数ぶんのWebGLを作らない）
    ・表示中は戦闘用の世界を隠し、閉じたら元に戻す。非表示のときは何も動かさない
    ===================================================================== */
@@ -8161,22 +8198,82 @@ const LOBBY3D = (() => {
     root.add(new THREE.HemisphereLight(0xdfeaff, 0x24306a, 1.25));
     const d = new THREE.DirectionalLight(0xffffff, 1.1); d.position.set(-3, 6, 6); root.add(d);
     const rim = new THREE.DirectionalLight(0x9ad8ff, 0.6); rim.position.set(4, 3, -5); root.add(rim);
-    // 背景：鮮やかな青→紺のグラデーションの空と、光の柱
-    const skyT = GFX.tex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#0b1a4a'); gr.addColorStop(0.45, '#1d56d8'); gr.addColorStop(0.7, '#36a0ff'); gr.addColorStop(1, '#123a8a'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
-    const sky = new THREE.Mesh(new THREE.SphereGeometry(40, 24, 12), new THREE.MeshBasicMaterial({ map: skyT, side: THREE.BackSide, fog: false, depthWrite: false })); sky.renderOrder = -5; root.add(sky);
-    const glowT = GFX.tex(128, 128, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2); gr.addColorStop(0, 'rgba(160,230,255,0.9)'); gr.addColorStop(0.4, 'rgba(90,180,255,0.35)'); gr.addColorStop(1, 'rgba(40,90,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
-    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowT, transparent: true, depthWrite: false, fog: false, blending: THREE.AdditiveBlending })); glow.scale.set(22, 12, 1); glow.position.set(0, 3.2, -9); root.add(glow);
-    // 床：本作の札の模様（円と菱形）を薄く
-    const floorT = GFX.tex(512, 512, (g, w, h) => {
-      const gr = g.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w / 2); gr.addColorStop(0, '#3a7af0'); gr.addColorStop(1, '#0f2a74'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
-      g.strokeStyle = 'rgba(255,255,255,0.10)'; g.lineWidth = 6; for (let r = 60; r < w; r += 70) { g.beginPath(); g.arc(w / 2, h / 2, r, 0, 7); g.stroke(); }
-      g.fillStyle = 'rgba(255,255,255,0.07)'; for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2, x = w / 2 + Math.cos(a) * 200, y = h / 2 + Math.sin(a) * 200; g.save(); g.translate(x, y); g.rotate(a + Math.PI / 4); g.fillRect(-10, -10, 20, 20); g.restore(); }
-    });
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(14, 48), new THREE.MeshLambertMaterial({ map: floorT })); floor.rotation.x = -Math.PI / 2; floor.position.y = -0.01; root.add(floor);
+    // 背景（v7 P4-3/P5）：夜祭り。夕焼けの残る夜空・提灯の列・屋台・鳥居・花火、奥にトバトーバとヨシノシン。いつも少しずつ動く
+    const fest = buildFestival(root);
     // 台座（4つ）と、詳細用の大きな台座
     const peds = X4.map((x, i) => makePed(root, x, 0, 0.55, PCOLS[i]));
     const big = makePed(root, 0, 0, 0.95, 0xf2c94c); big.g.visible = false;
-    return { root, peds, big, models: [null, null, null, null], ids: [], det: null, detId: null, yaw: 0, mode: null, hidden: [] };
+    return { root, peds, big, fest, models: [null, null, null, null], ids: [], det: null, detId: null, yaw: 0, mode: null, hidden: [] };
+  }
+
+  /* ---------- 夜祭りの背景 ---------- */
+  function buildFestival(root) {
+    const L = (c, o) => GFX.lam(c, o), BAS = (c, o) => new THREE.MeshBasicMaterial(Object.assign({ color: c, fog: false }, o || {}));
+    const F = { lan: [], fw: [], fwT: 0.5, bosses: [], flies: null };
+    const skyT = GFX.tex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#0a0620'); gr.addColorStop(0.38, '#26124a'); gr.addColorStop(0.52, '#7a2c5a'); gr.addColorStop(0.6, '#e0703a'); gr.addColorStop(0.66, '#3a1a2a'); gr.addColorStop(1, '#140a14'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+    const sky = new THREE.Mesh(new THREE.SphereGeometry(40, 24, 12), BAS(0xffffff, { map: skyT, side: THREE.BackSide, depthWrite: false })); sky.renderOrder = -5; root.add(sky);
+    { const n = 120, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI - Math.PI, e = 0.35 + Math.random() * 0.9; pos[i * 3] = Math.cos(a) * 36 * Math.cos(e); pos[i * 3 + 1] = Math.sin(e) * 36; pos[i * 3 + 2] = Math.sin(a) * 36 * Math.cos(e); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); root.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xfff4d8, size: 0.12, fog: false }))); }
+    // 地面：踏み固めた土と石畳の参道
+    const gT = GFX.tex(512, 512, (g, w, h) => { g.fillStyle = '#4a3428'; g.fillRect(0, 0, w, h); for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(${90 + Math.random() * 40},${60 + Math.random() * 30},40,0.35)`; g.fillRect(Math.random() * w, Math.random() * h, 3, 3); } g.fillStyle = '#6a5a50'; g.fillRect(w * 0.38, 0, w * 0.24, h); g.strokeStyle = 'rgba(30,20,20,.55)'; g.lineWidth = 3; for (let y = 0; y < h; y += 28) { g.beginPath(); g.moveTo(w * 0.38, y); g.lineTo(w * 0.62, y); g.stroke(); for (let x = w * 0.38 + ((y / 28) % 2) * 30; x < w * 0.62; x += 60) { g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 28); g.stroke(); } } });
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(30, 48), L(0xffffff, { map: gT })); floor.rotation.x = -Math.PI / 2; floor.rotation.z = Math.PI / 2; floor.position.y = -0.01; root.add(floor);
+    const glow = (r, col, a) => { const t = GFX.tex(64, 64, (g, w, h) => { const gr = g.createRadialGradient(32, 32, 1, 32, 32, 32); gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(1, `rgba(${col},0)`); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }); const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, fog: false, blending: THREE.AdditiveBlending })); sp.scale.set(r, r, 1); return sp; };
+    // 鳥居（奥の中央）
+    { const tg = new THREE.Group(); tg.position.set(0, 0, -15); root.add(tg); const red = L(0xc8302a, { emissive: 0x401008, emissiveIntensity: 0.5 }), bk = L(0x1a1414);
+      for (const x of [-2.6, 2.6]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 5.6, 12), red); p.position.set(x, 2.8, 0); tg.add(p); }
+      const k = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.4, 0.5), bk); k.position.y = 5.75; tg.add(k); const k2 = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.3, 0.4), red); k2.position.y = 5.3; tg.add(k2); const n = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.24, 0.35), red); n.position.y = 4.5; tg.add(n); }
+    // 屋台：左右に並ぶ。紅白の日よけ・のれん・光る看板
+    const awT = GFX.tex(64, 32, (g, w, h) => { for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#f4efe6' : '#d8302a'; g.fillRect(i * 8, 0, 8, h); } });
+    const signs = ['たこ焼', 'わたあめ', '金魚', 'やきそば', 'かき氷', 'お面'];
+    const sgT = t => GFX.tex(128, 48, (g, w, h) => { g.fillStyle = '#fff4d0'; g.fillRect(0, 0, w, h); g.fillStyle = '#b82a20'; g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, w / 2, h / 2 + 2); });
+    [[-9, -6.5, 0.6], [-12, -3, 0.95], [-3.6, -11, 0.15], [9, -6.5, -0.6], [12, -3, -0.95], [3.6, -11, -0.15]].forEach(([x, z, ry], i) => {
+      const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; root.add(g);
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.0, 1.2), L(0x7a4a2a)); body.position.y = 0.5; g.add(body);
+      for (const sx of [-1.2, 1.2]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.3, 0.1), L(0x5a3a22)); p.position.set(sx, 1.15, 0.5); g.add(p); }
+      const aw = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.08, 1.6), L(0xffffff, { map: awT })); aw.position.set(0, 2.35, 0.35); aw.rotation.x = 0.18; g.add(aw);
+      const sg = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.6), BAS(0xffffff, { map: sgT(signs[i]) })); sg.position.set(0, 1.85, 0.62); g.add(sg);
+      const lit = glow(3.2, '255,170,80', 0.55); lit.position.set(0, 1.4, 0.9); g.add(lit); F.lan.push({ sp: lit, k: i * 1.3, base: 3.2 });
+    });
+    // 提灯の列：手前から奥へ3本の綱にゆれる提灯
+    const lanM = [0xe8402a, 0xf4c040, 0xf4f0e0].map(c => L(c, { emissive: c, emissiveIntensity: 0.85 }));
+    [[-3.6, 4.0, 13], [-7, 4.4, 15], [-10.5, 4.8, 17]].forEach(([z, y, w], row) => {
+      const n = 11; for (let i = 0; i < n; i++) {
+        const k = i / (n - 1), x = (k - 0.5) * w, yy = y - Math.sin(k * Math.PI) * 0.6, piv = new THREE.Group(); piv.position.set(x, yy, z); root.add(piv);
+        const lm = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), lanM[(i + row) % 3]); lm.scale.set(1, 1.3, 1); lm.position.y = -0.3; piv.add(lm);
+        for (const dy of [-0.05, -0.55]) { const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.06, 10), L(0x1a1414)); cap.position.y = dy; piv.add(cap); }
+        const gl = glow(1.1, '255,150,90', 0.5); gl.position.y = -0.3; piv.add(gl);
+        F.lan.push({ piv, k: i * 0.7 + row * 2 });
+      }
+      const pts = []; for (let i = 0; i <= 20; i++) { const k = i / 20; pts.push(new THREE.Vector3((k - 0.5) * w, y - Math.sin(k * Math.PI) * 0.6, z)); }
+      root.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x2a1a14 })));
+    });
+    // 奥のトバトーバ（左）とヨシノシン（右）。祭りを見物している
+    try { const b = GFX.makeBoss(); b.root.scale.multiplyScalar(0.55); root.add(b.root); if (b.shadow) root.add(b.shadow); F.bosses.push({ m: b, kind: 'boss', x: -7.2, z: -12.5, yaw: 0.45 }); } catch (e) { console.warn('fest boss', e); }
+    try { const y = GFX.makeYoshinoshin(); y.root.scale.multiplyScalar(0.62); root.add(y.root); if (y.shadow) root.add(y.shadow); F.bosses.push({ m: y, kind: 'yoshi', x: 6.4, z: -12.5, yaw: -0.45 }); } catch (e) { console.warn('fest yoshi', e); }
+    // 花火：数秒ごとに夜空で開く
+    for (let i = 0; i < 3; i++) {
+      const n = 60, pos = new Float32Array(n * 3), dir = []; for (let j = 0; j < n; j++) { const a = Math.random() * Math.PI * 2, e = Math.acos(Math.random() * 2 - 1); dir.push([Math.sin(e) * Math.cos(a), Math.cos(e), Math.sin(e) * Math.sin(a)]); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      const pm = new THREE.PointsMaterial({ color: 0xffffff, size: 0.35, transparent: true, opacity: 0, depthWrite: false, fog: false, blending: THREE.AdditiveBlending }); const pt = new THREE.Points(g, pm); pt.frustumCulled = false; root.add(pt);
+      F.fw.push({ pt, pm, pos, dir, t: 99, x: 0, y: 0, z: 0 });
+    }
+    // 蛍のような光の粒
+    { const n = 40, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { pos[i * 3] = (Math.random() - 0.5) * 18; pos[i * 3 + 1] = 0.3 + Math.random() * 3; pos[i * 3 + 2] = -2 - Math.random() * 10; }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const p = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffd890, size: 0.09, transparent: true, opacity: 0.8, depthWrite: false, fog: false, blending: THREE.AdditiveBlending })); root.add(p); F.flies = { p, pos, base: pos.slice() }; }
+    return F;
+  }
+  const FW_COLS = [0xff5a4a, 0xffd04a, 0x6ad0ff, 0xc88aff, 0x7dff9a];
+  function updateFestival(F, dt, T) {
+    for (const l of F.lan) { if (l.piv) { l.piv.rotation.z = Math.sin(T * 1.3 + l.k) * 0.12; l.piv.rotation.x = Math.sin(T * 0.9 + l.k * 1.7) * 0.06; } else if (l.sp) { const s = l.base * (1 + Math.sin(T * 3 + l.k) * 0.06); l.sp.scale.set(s, s, 1); } }
+    F.fwT -= dt; if (F.fwT <= 0) { const f = F.fw.find(q => q.t > 1.6); if (f) { f.t = 0; f.x = (Math.random() - 0.5) * 22; f.y = 8 + Math.random() * 5; f.z = -18 - Math.random() * 6; f.pm.color.set(FW_COLS[(Math.random() * FW_COLS.length) | 0]); } F.fwT = 1.1 + Math.random() * 1.6; }
+    for (const f of F.fw) { if (f.t > 1.6) { f.pm.opacity = 0; continue; } f.t += dt; const r = 3.2 * (1 - Math.pow(1 - Math.min(1, f.t / 1.1), 3)), dy = -f.t * f.t * 0.9; for (let j = 0; j < f.dir.length; j++) { const d = f.dir[j]; f.pos[j * 3] = f.x + d[0] * r; f.pos[j * 3 + 1] = f.y + d[1] * r + dy; f.pos[j * 3 + 2] = f.z + d[2] * r; } f.pt.geometry.attributes.position.needsUpdate = true; f.pm.opacity = Math.max(0, 1 - f.t / 1.6); }
+    if (F.flies) { const P = F.flies.pos, B = F.flies.base; for (let i = 0; i < P.length; i += 3) { P[i] = B[i] + Math.sin(T * 0.7 + i) * 0.4; P[i + 1] = B[i + 1] + Math.sin(T * 1.1 + i * 0.3) * 0.3; } F.flies.p.geometry.attributes.position.needsUpdate = true; }
+    for (const b of F.bosses) {
+      try {
+        if (b.kind === 'boss') GFX.animBoss(b.m, { x: b.x, y: 0, z: b.z, yaw: b.yaw + Math.sin(T * 0.3) * 0.2, st: 'idle', t: 0, phase: 1 }, T, dt, { lan: {} });
+        else GFX.animYoshinoshin(b.m, { x: b.x, y: 0, z: b.z, yaw: b.yaw + Math.sin(T * 0.25) * 0.2, st: 'idle', t: 0 }, T, dt, { U: {} });
+      } catch (e) { b.m.root.position.set(b.x, 0, b.z); b.m.root.rotation.y = b.yaw; }
+    }
   }
   function makePed(root, x, z, r, col) {
     const g = new THREE.Group(); g.position.set(x, 0, z); root.add(g);
@@ -8202,6 +8299,7 @@ const LOBBY3D = (() => {
     ensure(); opt = opt || {};
     if (!W.root.visible) { hideOthers(); W.root.visible = true; }
     W.mode = mode;
+    if (mode === 'bg') { W.peds.forEach(p => p.g.visible = false); W.models.forEach(m => m && (m.root.visible = false)); W.big.g.visible = false; if (W.det) W.det.root.visible = false; W.empty = [true, true, true, true]; return; }
     if (mode === 'home') { for (let i = 0; i < 4; i++) setModel(i, ids[i]); W.peds.forEach(p => p.g.visible = true); W.big.g.visible = false; if (W.det) W.det.root.visible = false; }
     else { const m = setModel('det', ids[0]); if (W.detId !== ids[0]) { W.yaw = -0.35; W.detId = ids[0]; } if (m) m.root.visible = true; W.peds.forEach(p => p.g.visible = false); W.models.forEach(m => m && (m.root.visible = false)); W.big.g.visible = true; W.detX = opt.x == null ? 0 : opt.x; W.big.g.position.x = W.detX; }
     W.empty = ids.map(x => !x);
@@ -8215,9 +8313,13 @@ const LOBBY3D = (() => {
     if (!active()) return;
     const cam = R.camera; cam.clearViewOffset();
     const asp = cam.aspect || 2;
-    if (W.mode === 'home') {
+    updateFestival(W.fest, dt, T);
+    if (W.mode === 'bg') { // ほかのメニュー画面・ログインの後ろ：祭りだけをゆっくり見回す
+      const fov = asp < 1.3 ? 52 : 34; if (Math.abs(cam.fov - fov) > 0.1) { cam.fov = fov; cam.updateProjectionMatrix(); }
+      cam.position.set(Math.sin(T * 0.07) * 2.2, 2.4 + Math.sin(T * 0.11) * 0.25, 9.5); cam.lookAt(Math.sin(T * 0.07) * 1.2, 2.2, -6);
+    } else if (W.mode === 'home') {
       W.models.forEach((m, i) => {
-        if (!m) return; m.root.visible = true;
+        if (!m) return; m.root.visible = true; m.root.userData.slot = i;
         const a = { x: X4[i], z: 0, yaw: Math.sin(T * 0.5 + i) * 0.12, st: 'ok', act: '', actT: 0, slot: i, moving: false };
         GFX.animChar(m, a, T, dt, {}); m.root.position.y = 0.3; m.shadow.visible = false;
       });
@@ -8966,9 +9068,16 @@ const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) 
 })();
 
 /* ---------- 横向き固定（縦持ちの端末では画面全体を90度回す） ---------- */
+/** 端末そのものの向き（v7 P4-2）：キーボードで表示領域の高さが減っても「縦向き」と誤判定しないよう、画面の向き（screen.orientation など）を優先する */
+function devicePortrait() {
+  const so = screen.orientation && screen.orientation.type; if (so) return so.indexOf('portrait') === 0;
+  if (typeof window.orientation === 'number') return window.orientation % 180 === 0; // iOS Safari の古い版
+  const sw = screen.width || window.innerWidth, sh = screen.height || window.innerHeight; return sh > sw * 1.05;
+}
 function applyRotation() {
   const app = $('#app'); const vw = window.innerWidth, vh = window.innerHeight;
-  const rot = SET.land && vh > vw * 1.05 ? (SET.rotDir === 'right' ? -90 : 90) : 0;
+  // 入力中（G.kbUp）は回さない：OSのキーボードはCSSでは回らないので、入力画面を端末の向きに合わせて立てて表示する
+  const rot = SET.land && !G.kbUp && devicePortrait() && vh > vw * 0.75 ? (SET.rotDir === 'right' ? -90 : 90) : 0;
   VIEW.rot = rot; VIEW.w = rot ? vh : vw; VIEW.h = rot ? vw : vh;
   app.style.width = VIEW.w + 'px'; app.style.height = VIEW.h + 'px';
   app.style.transform = rot === 90 ? `translate(${vw}px,0) rotate(90deg)` : rot === -90 ? `translate(0,${vh}px) rotate(-90deg)` : 'translate(0,0)';
@@ -9237,7 +9346,7 @@ function openAccount(from) { if (!G.acct) { openLogin(from || 'title'); return; 
 function renderAccount() {
   const s = G.acct; $('#acTitle').textContent = `ID ${s.id}`;
   const kv = $('#acKv'); kv.textContent = '';
-  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['トバトーバ戦', (s.clear && s.clear.senju ? `クリア ${s.clear.senju}回` : 'まだ') + (s.rec.best ? `（最速 ${fmt(s.rec.best)}）` : '')], ['常磐線', s.clear && s.clear.joban ? `クリア ${s.clear.joban}回` : stageOpen('joban') ? 'まだ' : '🔒 トバトーバを倒すと解放'], ['ヨシノシン', s.clear && s.clear.ueno ? `クリア ${s.clear.ueno}回` : stageOpen('ueno') ? 'まだ' : '🔒 電車をクリアすると解放'], ['チケット', `${s.tickets}枚（トバトーバ ${s.wins.tobatoban % 3}/3・ヨシノシン ${s.wins.yoshinoshin % 2}/2）`], ['所持', `${Object.keys(s.chars).length} / ${DATA.CHARS.length}体`]]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
+  for (const [k, v] of [['最後のセーブ', fmtDate(s.saved)], ['出撃', s.rec.b + '回'], ['勝利', s.rec.w + '回'], ['倒した敵', s.rec.mobs + '体'], ['トバトーバ戦', (s.clear && s.clear.senju ? `クリア ${s.clear.senju}回` : 'まだ') + (s.rec.best ? `（最速 ${fmt(s.rec.best)}）` : '')], ['常磐線', s.clear && s.clear.joban ? `クリア ${s.clear.joban}回` : stageOpen('joban') ? 'まだ' : '🔒 トバトーバを倒すと解放'], ['ヨシノシン', s.clear && s.clear.ueno ? `クリア ${s.clear.ueno}回` : stageOpen('ueno') ? 'まだ' : '🔒 電車をクリアすると解放'], ['チケット', `${s.tickets}枚（次の1枚まで ストーリークリア ${(s.wins.story || 0) % 2}/2）`], ['所持', `${Object.keys(s.chars).length} / ${DATA.CHARS.length}体`]]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
   const ro = $('#acRoster'); ro.textContent = '';
   for (const c of DATA.CHARS) { if (!s.chars[c.id]) continue; const d = el('div'); const im = el('img'); im.src = G.thumbs[c.id] || ''; im.alt = ''; d.append(im, el('b', '', c.nm), el('span', 'lv', 'Lv.' + s.chars[c.id].lv)); ro.appendChild(d); }
   const cl = cloud(); $('#acCodeBox').hidden = cl; $('#btnAcCopy').hidden = cl; $('#acCloud').hidden = !cl;
@@ -9334,7 +9443,7 @@ function startSolo(stageId) {
   S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
   const carry = G.stageId === 'ueno_street' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
   markUsed(G.party);
-  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch), eq: eqOf(ch) })) });
+  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: (() => { const u = SAVE.uniqEq(G.party.map(eqOf)); return G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch), eq: u[i] })); })() });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {
@@ -9432,7 +9541,14 @@ function requestViewChange(delay) {
 addEventListener('resize', () => requestViewChange(80));
 addEventListener('orientationchange', () => requestViewChange(260));
 if (window.visualViewport) visualViewport.addEventListener('resize', () => requestViewChange(80));
-document.addEventListener('focusout', () => requestViewChange(200)); // キーボードを閉じたら、まとめて1回だけ合わせる
+document.addEventListener('focusout', () => { setTimeout(() => { const f = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName); if (G.kbUp && !f) { G.kbUp = false; $('#app').classList.remove('kbup'); onViewChange(); } }, 160); requestViewChange(200); }); // キーボードを閉じたら、まとめて1回だけ合わせる
+// v7 P4-2：横向き表示（CSSで90度回している）で文字を入力するときは、入力の間だけ端末の向きに立てる（キーボードと入力欄の向きをそろえる）
+document.addEventListener('focusin', e => {
+  const t = e.target; if (!t || !/^(INPUT|TEXTAREA)$/.test(t.tagName) || /^(checkbox|radio|range|button)$/.test(t.type || '')) return;
+  if (VIEW.rot) { G.kbUp = true; $('#app').classList.add('kbup'); onViewChange(); }
+  setTimeout(() => { try { t.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (er) { } }, 320); // キーボードが出たあと、入力欄と確定ボタンを見える位置へ
+});
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { const a = document.activeElement; if (a && /^(INPUT|TEXTAREA)$/.test(a.tagName)) setTimeout(() => { try { a.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (er) { } }, 60); });
 function sizeMapCanvas() { const mc = $('#mapc'), mb = $('#map'); mc.width = Math.round(mb.offsetWidth * 2); mc.height = Math.round(mb.offsetHeight * 2); }
 function gameArea() { if (!curLayout) return null; const L = curLayout.L; if (!curLayout.portrait) return { top: safe.t + 30, bottom: VIEW.h - safe.b }; return { top: safe.t + L.area[0] * curLayout.posS, bottom: VIEW.h - safe.b - (L.H - L.area[1]) * curLayout.posS }; }
 
@@ -9973,7 +10089,7 @@ function frame(ts) {
         if ((v.stage === 'won' || v.stage === 'lost') && v.stageT > (v.stage === 'won' ? 3.4 : 2.6) && G.mode === 'play') showResult(v);
       }
     } else if (G.mode === 'walk') { let end = true; try { end = WALK.step(dt, G.T); } catch (e) { console.error(e); } if (end) finishWalk(false); }
-    else if (!LOBBY3D.active()) titleCam(G.T);
+    else if (!LOBBY3D.active()) { if (G.mode !== 'play' && G.mode !== 'boot') LOBBY3D.show('bg', []); else titleCam(G.T); } // v7 P4-3/P5：メニュー・ログインの後ろはいつも動く夜祭り（青い止まった画面にしない）
     if (LOBBY3D.active() && G.mode !== 'play') { LOBBY3D.update(dt, G.T); lobbyTick(); }
   } catch (e) { console.error(e); }
   R.render(dt);
@@ -10069,7 +10185,7 @@ function renderResExp(res) {
     if (x.lv1 > x.lv0) d.appendChild(el('span', 'up', `Lv${x.lv0}→${x.lv1}`)); else d.appendChild(el('span', 'small', `Lv${x.lv1}`));
     box.appendChild(d);
   }
-  const a = ACC(), tx = el('div', 'res-tix', res.ticket > 0 ? `🎫 チケット＋${res.ticket}／所持${a.tickets}枚` : `🎫 チケット ${a.tickets}枚（トバトーバ ${a.wins.tobatoban % 3}/3・ヨシノシン ${a.wins.yoshinoshin % 2}/2）`);
+  const a = ACC(), tx = el('div', 'res-tix', res.ticket > 0 ? `🎫 チケット＋${res.ticket}／所持${a.tickets}枚` : `🎫 チケット ${a.tickets}枚（次の1枚まで ストーリークリア ${(a.wins.story || 0) % 2}/2）`);
   box.appendChild(tx);
   if (!G.acct) box.appendChild(el('div', 'small', 'ログインしていないので、この記録は画面を閉じると消えます（ログインすればアカウントに足されます）。'));
 }
@@ -10109,11 +10225,11 @@ function renderGachaInfo() {
   const a = gcAcc(), sim = a || G.guest;
   $('#gcTix').textContent = a ? String(a.tickets) : '−';
   const pg = $('#gcProg'); pg.textContent = '';
-  for (const [nm, w, per] of [['トバトーバ', sim.wins.tobatoban, 3], ['ヨシノシン', sim.wins.yoshinoshin, 2]]) {
-    const d = el('div', 'pg'); d.append(el('span', '', nm)); const pp = el('span', 'pips'); for (let i = 0; i < per; i++) pp.appendChild(el('i', i < w % per ? 'on' : '')); d.append(pp, el('span', 'small', `${w % per}/${per}勝で1枚`)); pg.appendChild(d);
+  for (const [nm, w, per] of [['ストーリークリア', sim.wins.story || 0, DATA.TICKET.per]]) {
+    const d = el('div', 'pg'); d.append(el('span', '', nm)); const pp = el('span', 'pips'); for (let i = 0; i < per; i++) pp.appendChild(el('i', i < w % per ? 'on' : '')); d.append(pp, el('span', 'small', `${w % per}/${per}回で1枚`)); pg.appendChild(d);
   }
   const pool = SAVE.gachaPool(a || G.guest).length, done = pool === 0;
-  $('#gcNote').textContent = (a ? '' : 'ログインすると、チケットを使って引けます（いまは説明と演出見本だけ）。') + `トバトーバ3勝・ヨシノシン2勝ごとにチケット1枚。チケットは貯められます。まだ持っていない仲間から1体が出ます（未入手 ${pool} / 50体）。`;
+  $('#gcNote').textContent = (a ? '' : 'ログインすると、チケットを使って引けます（いまは説明と演出見本だけ）。') + `${DATA.TICKET.text}（どのステージでも・同じステージの再クリアでも数えます）。チケットは貯められます。まだ持っていない仲間から1体が出ます（未入手 ${pool} / 50体）。`;
   const dr = $('#btnGcDraw'); dr.hidden = done; dr.textContent = !a ? 'ログインして引く' : '1回まわす（1枚）'; dr.disabled = !!a && (a.tickets < 1 || GC.busy);
   const ex = $('#gcEx'); ex.hidden = !(done && a); ex.textContent = '';
   if (done && a) { // 全50体を入手したら、1枚を選んだキャラのEXP10,000と交換
@@ -10261,7 +10377,7 @@ async function gcDraw() {
   const a = gcAcc();
   if (!a) { AUDIO.sfx('ui'); closeGacha('login'); openLogin('title', 'ログインすると、チケットを使ってガチャを引けます'); G.afterLoginTarget = 'gacha'; return; } // 一回限りの予約
   if (GC.busy) return;
-  if (a.tickets < 1) { mtoast('チケットがありません（トバトーバ3勝・ヨシノシン2勝ごとに1枚）', 2600); return; }
+  if (a.tickets < 1) { mtoast('チケットがありません（' + DATA.TICKET.text + '）', 2600); return; }
   GC.busy = true; $('#btnGcDraw').disabled = true;
   const req = 'g' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
   STORE.set('gcPending', { id: a.id, req });
@@ -10491,6 +10607,9 @@ $('#btnWalkReplay').onclick = () => { AUDIO.sfx('ok'); openAkibaWalkPrep(true); 
    表示はいつも同じ状態（G.party・装備・選択ステージ・協力プレイのロビー）から作る
    ===================================================================== */
 G.stageSel = STORE.get('stageSel', 'senju'); G.selSlot = 0;
+/** 協力中、ホストが選べるAI枠か（空いている P2〜P4） */
+const coopAiSlot = i => { const S = G.session; return !!(G.coop && S && S.kind === 'host' && i >= 1 && i <= 3 && !S.lobby.slots[i]); };
+const coopAiCh = i => { const lob = coopLobby(); return lob && lob.ai ? lob.ai[i] : null; };
 const coopLobby = () => { const S = G.session; if (!G.coop || !S) return null; return S.kind === 'host' ? S.lobbyMsg() : S.lobby; };
 const isHost = () => !G.coop || (G.session && G.session.kind === 'host');
 /** いま選ばれているステージ（協力プレイ中はロビーの値） */
@@ -10587,8 +10706,18 @@ function renderHome() {
 }
 function tagTap(i) {
   AUDIO.sfx('ui');
-  if (G.coop) { const s = G.homeSlots && G.homeSlots[i]; if (s && s.me) openRoster('home', 0); else mtoast('協力プレイでは自分のキャラだけ選べます', 2000); return; }
+  if (G.coop) { const s = G.homeSlots && G.homeSlots[i], S = G.session;
+    if (s && s.me) openRoster('home', 0);
+    else if (S && S.kind === 'host' && s && !s.human) openRoster('home', i); // ホストは空いているAI枠を選べる
+    else mtoast(s && s.human ? 'ほかの人のキャラは、その人が選びます' : 'AI枠のキャラはホストが選びます', 2000); return; }
   openRoster('home', i);
+}
+/** ホームの画面上の点 (x, y) にいるモデルの枠（なければ −1）。足元〜頭の上の縦長の範囲で判定 */
+function homeModelAt(x, y) {
+  const P = [0, 1, 2, 3].map(i => LOBBY3D.slotScreen(i)); if (P.some(p => !p)) return -1;
+  const hw = Math.abs(P[1].foot.x - P[0].foot.x) * 0.46;
+  for (let i = 0; i < 4; i++) { const p = P[i]; if (G.homeSlots && G.homeSlots[i] && G.homeSlots[i].empty) continue; if (Math.abs(x - p.mid.x) < hw && y > p.head.y - 6 && y < p.foot.y + 16) return i; }
+  return -1;
 }
 /** 毎フレーム：名札を4体の足元（重なるなら頭の上）へ。下の操作欄とは重ねない */
 function lobbyTick() {
@@ -10597,7 +10726,8 @@ function lobbyTick() {
   const P = [0, 1, 2, 3].map(i => LOBBY3D.slotScreen(i)); if (P.some(p => !p)) return;
   // 足元に置けるならそろえて足元、どれかが右下の出動欄と重なるなら全員を頭の上へ（並びをそろえる）
   const below = P.every((p, i) => { const h = G.tags[i].offsetHeight || 34; return !(p.foot.y + 4 + h > bTop && p.foot.x + 50 > bLeft) && p.foot.y + 4 + h < VIEW.h - 4; });
-  P.forEach((p, i) => { const t = G.tags[i], h = t.offsetHeight || 34; const y = below ? p.foot.y + 4 : Math.max(52, p.head.y - h - 2); t.style.left = Math.round(p.foot.x) + 'px'; t.style.top = Math.round(y) + 'px'; });
+  const rm = $('#hmRoom'), topMin = rm && !rm.hidden && rm.offsetHeight ? rm.offsetTop + rm.offsetHeight + 4 : 52; // 協力のルーム表示とも重ねない
+  P.forEach((p, i) => { const t = G.tags[i], h = t.offsetHeight || 34; const y = below ? p.foot.y + 4 : Math.max(topMin, p.head.y - h - 2); t.style.left = Math.round(p.foot.x) + 'px'; t.style.top = Math.round(y) + 'px'; });
 }
 
 /* ---------- 協力プレイ ---------- */
@@ -10606,7 +10736,7 @@ function openLobby() { G.coop = true; G.mode = 'lobby'; $('#hud').hidden = true;
 
 /* ---------- 編成（キャラ一覧） ---------- */
 function openRoster(back, slot) {
-  G.rosterBack = back || 'home'; if (slot != null) G.selSlot = slot; if (G.coop) G.selSlot = 0;
+  G.rosterBack = back || 'home'; if (slot != null) G.selSlot = slot; if (G.coop && !coopAiSlot(G.selSlot)) G.selSlot = 0;
   show('roster'); renderRoster(true);
 }
 function sortedChars() {
@@ -10627,17 +10757,18 @@ function renderRoster(keepScroll) {
   $('#rsTitle').textContent = `キャラクター ${Object.keys(a.chars).length}/${DATA.CHARS.length}`;
   $('#rsSort').value = G.prefs.sort;
   const ss = $('#rsSlots'); ss.textContent = '';
-  for (let i = 0; i < (coop ? 1 : 4); i++) {
-    const b = el('button', i === G.selSlot ? 'on' : '', coop ? 'あなた' : 'P' + (i + 1)); b.type = 'button'; b.style.background = pcol(coop ? 0 : i); b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', i === G.selSlot ? 'true' : 'false');
+  for (let i = 0; i < 4; i++) {
+    if (coop && i > 0 && !coopAiSlot(i)) continue; // 協力：自分の枠＋（ホストなら）空いているAI枠
+    const b = el('button', i === G.selSlot ? 'on' : '', coop ? (i === 0 ? 'あなた' : `P${i + 1} AI`) : 'P' + (i + 1)); b.type = 'button'; b.style.background = pcol(i); b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', i === G.selSlot ? 'true' : 'false');
     b.onclick = () => { G.selSlot = i; AUDIO.sfx('ui'); renderRoster(true); };
     ss.appendChild(b);
   }
-  const cur = coop ? G.party[0] : G.party[G.selSlot];
-  $('#rsNote').textContent = coop ? `あなたのキャラ：${DATA.CHI[cur].nm}（カードを押して「このキャラを選ぶ」）` : `P${G.selSlot + 1}（${G.selSlot === 0 ? 'あなたが操作' : 'AI：能力95%・EXP80%'}）の枠：${DATA.CHI[cur].nm}　カードを押すと詳しく見て選べます`;
+  const cur = coop ? (G.selSlot > 0 ? coopAiCh(G.selSlot) || G.party[0] : G.party[0]) : G.party[G.selSlot];
+  $('#rsNote').textContent = coop ? (G.selSlot > 0 ? `P${G.selSlot + 1}のAI枠（ホストが選ぶ・能力95%）：${DATA.CHI[cur].nm}` : `あなたのキャラ：${DATA.CHI[cur].nm}（カードを押して「このキャラを選ぶ」）`) : `P${G.selSlot + 1}（${G.selSlot === 0 ? 'あなたが操作' : 'AI：能力95%・EXP80%'}）の枠：${DATA.CHI[cur].nm}　カードを押すと詳しく見て選べます`;
   const ft = $('#rsFoot'); ft.hidden = !(G.rosterBack === 'akiba' || G.rosterBack === 'prep');
   $('#btnGo').textContent = G.rosterBack === 'akiba' ? '秋葉原へ向かう ▶' : '準備へもどる ▶';
   rosterSize(); g.textContent = '';
-  const party = coop ? [G.party[0]] : G.party;
+  const party = coop ? [G.party[0]].concat(G.session && G.session.kind === 'host' ? (coopLobby().ai || []).filter(Boolean) : []) : G.party;
   for (const c of sortedChars()) {
     const own = ownsCh(c.id), rec = a.chars[c.id], rk = DATA.RANK_INFO[c.rank];
     const b = el('button', 'rs-card' + (party.includes(c.id) ? ' inparty' : '') + (own ? '' : ' unowned')); b.type = 'button';
@@ -10728,22 +10859,29 @@ function renderChara() {
   }
   renderCharaStats();
   // 下：このキャラを選ぶ
-  const pick = $('#btnChPick'), inSlot = G.party[slot] === c.id;
-  $('#chSlot').textContent = G.coop ? 'あなたのキャラ' : `P${slot + 1}の枠（${slot === 0 ? 'あなた' : 'AI'}）`;
+  const aiS = G.coop && coopAiSlot(G.selSlot) ? G.selSlot : 0, pick = $('#btnChPick'), inSlot = aiS ? coopAiCh(aiS) === c.id : G.party[slot] === c.id;
+  $('#chSlot').textContent = G.coop ? (aiS ? `P${aiS + 1}のAI枠（ホストが選ぶ）` : 'あなたのキャラ') : `P${slot + 1}の枠（${slot === 0 ? 'あなた' : 'AI'}）`;
   pick.disabled = !own || inSlot; pick.textContent = !own ? '未所持' : inSlot ? '選択中' : 'このキャラを選ぶ';
   LOBBY3D.show('detail', [c.id]);
 }
-/** 右：能力（装備の候補があれば差分を表示）と技の要点 */
+/** 能力バーの共通の目盛り：全60体のLv99の最高値（キャラごとに伸ばさない） */
+function statScale() { if (G._stSc) return G._stSc; const o = { hp: 1, str: 1, yo: 1, def: 1 }; for (const c of DATA.CHARS) { const s = DATA.GROWTH.stats(c, 99); for (const k in o) o[k] = Math.max(o[k], s[k]); } return (G._stSc = o); }
+/** 右：能力（横バー・装備の候補があれば差分を表示）と技の要点 */
 function renderCharaStats() {
   const c = DATA.CHI[G.chId], a = ACC(), own = ownsCh(c.id), rec = a.chars[c.id], lv = rec ? rec.lv : 1;
   const s0 = DATA.GROWTH.stats(c, lv), eqNow = own ? eqOf(c.id) : [], now = DATA.GROWTH.withEquip(s0, eqNow);
   const pv = G.eqEdit ? DATA.GROWTH.withEquip(s0, G.eqEdit.eq) : null;
-  const R = $('#chRight'); R.textContent = ''; const SG = el('div', 'st-grid'); R.appendChild(SG);
+  const R = $('#chRight'); R.textContent = ''; R.appendChild(el('div', 'st-lv', `Lv.${lv}${own ? '' : '（未所持）'}の能力（バーは全60体共通の目盛り・緑＝装備）`)); const SG = el('div', 'st-grid'); R.appendChild(SG);
+  const SC = statScale();
   for (const [lab, k, ic, col] of [['HP', 'hp', '♥', '#2fa36b'], ['ちから', 'str', '✊', '#e4572e'], ['ようりょく', 'yo', '✦', '#7446b8'], ['まもり', 'def', '⛨', '#3c8cff']]) {
     const r = el('div', 'st-row'), si = el('span', 'si', ic); si.style.background = col; const v = el('b', 'ol');
     if (pv && pv[k] !== now[k]) { v.append(String(now[k]) + ' → '); v.appendChild(el('span', pv[k] > now[k] ? 'up' : 'dn', String(pv[k]))); }
     else { v.textContent = String(now[k]); if (now[k] > s0[k]) { v.classList.add('equp'); v.title = `装備で+${now[k] - s0[k]}`; } }
-    r.append(si, el('span', '', lab), v); SG.appendChild(r);
+    const pc = x => Math.min(100, x / SC[k] * 100).toFixed(1) + '%', bar = el('div', 'stb');
+    const iq = el('i', 'eq'); iq.style.width = pc(now[k]); const ib = el('i'); ib.style.width = pc(s0[k]); ib.style.background = col; bar.append(iq, ib);
+    if (pv && pv[k] !== now[k]) { const ip = el('i', 'pv'); ip.style.width = pc(pv[k]); bar.appendChild(ip); }
+    if (now[k] > s0[k]) v.append(el('small', '', `（+${now[k] - s0[k]}）`));
+    r.append(si, el('span', '', lab), v, bar); SG.appendChild(r);
   }
   for (const [k, cls, nm, sh] of charaMoves(c)) { const r = el('div', 'mv-row'), kk = el('span', 'k ' + cls, k), t = el('div'); t.append(el('b', '', nm), el('span', '', sh)); r.append(kk, t); R.appendChild(r); }
   const ib = el('button', 'hm-chip ch-info', 'ⓘ 技と特性をくわしく'); ib.type = 'button'; ib.onclick = () => { AUDIO.sfx('ui'); openInfo(); }; R.appendChild(ib);
@@ -10765,21 +10903,24 @@ function openEq(slot) {
 function renderEq() {
   const c = DATA.CHI[G.chId], a = ACC(), n = SAVE.eqSlots(a), cur = (a.chars[c.id].eq || []).slice(0, n), E = G.eqEdit, g = $('#eqGrid'); g.textContent = '';
   for (const e of DATA.EQUIP) {
-    const other = cur.some((x, j) => j !== E.slot && x === e.id), tier = e.id.split('_')[1];
-    const b = el('button', 'eq-it t-' + tier + (E.sel === e.id ? ' sel' : '')); b.type = 'button'; b.disabled = other;
-    b.append(el('span', 'ic', e.ic), el('b', 'ol', e.nm), el('span', 'ol', `${e.statLabel}+${e.pct}%`));
+    const other = cur.some((x, j) => j !== E.slot && x === e.id), tier = e.id.split('_')[1], who = SAVE.equipOwner(a, e.id, c.id);
+    const b = el('button', 'eq-it t-' + tier + (E.sel === e.id ? ' sel' : '') + (who ? ' held' : '')); b.type = 'button'; b.disabled = other;
+    b.append(el('span', 'ic', e.ic), el('b', 'ol', e.nm), el('span', 'ol', `${e.statLabel}+${e.pct}%`)); if (who) b.appendChild(el('span', 'eq-who', `${DATA.CHI[who].nm}が装備中`));
     b.onclick = () => { AUDIO.sfx('ui'); E.sel = e.id; const eq = cur.slice(); while (eq.length <= E.slot) eq.push(null); eq[E.slot] = e.id; E.eq = eq.filter(Boolean); renderEq(); renderCharaStats(); };
     g.appendChild(b);
   }
+  const who = E.sel ? SAVE.equipOwner(a, E.sel, c.id) : null; $('#btnEqOk').textContent = who ? `付け替える（${DATA.CHI[who].nm}から外す）` : '決定';
 }
 function eqCommit(id) {
   const c = DATA.CHI[G.chId], E = G.eqEdit; if (!E) return;
-  const r = SAVE.setEquip(ACC(), c.id, E.slot, id); if (!r.ok) { mtoast(r.msg, 2400); return; }
+  const r = SAVE.setEquip(ACC(), c.id, E.slot, id, { move: true }); if (!r.ok) { mtoast(r.msg, 2400); return; } // 決定ボタンが「付け替える（○○から外す）」と表示しているときだけ前のキャラから外れる
+  if (r.moved) mtoast(`${DATA.CHI[r.moved].nm}から外して付けました`, 2200);
   AUDIO.sfx('ok'); G.eqEdit = null; $('#eqPop').hidden = true; if (G.acct) persist(); sendMine(); renderChara();
 }
 function charaPick() {
   const c = DATA.CHI[G.chId]; if (!ownsCh(c.id)) return; AUDIO.sfx('ok');
-  if (G.coop) { G.party[0] = c.id; G.selSlot = 0; }
+  if (G.coop && coopAiSlot(G.selSlot)) { const r = G.session.setAi(G.selSlot, c.id, lvOf(c.id)); if (!r.ok) { mtoast(r.msg, 2000); return; } mtoast(`${c.nm}をP${G.selSlot + 1}のAI枠にしました`, 1800); show('roster'); renderRoster(true); return; }
+  if (G.coop) { if (coopLobby() && (coopLobby().ai || []).includes(c.id) && G.session.kind === 'host') { const j = coopLobby().ai.indexOf(c.id); G.session.lobby.aiPick[j] = G.party[0]; G.session.dirtyLobby = true; } G.party[0] = c.id; G.selSlot = 0; } // 自分がAI枠のキャラを選んだら、そのAI枠は前の自分のキャラと入れ替え
   else { const j = G.party.indexOf(c.id), s = G.selSlot; if (j >= 0 && j !== s) { G.party[j] = G.party[s]; const sw = G.swap[j]; G.swap[j] = G.swap[s]; G.swap[s] = sw; } G.party[s] = c.id; }
   STORE.set('party', G.party); STORE.set('swap', G.swap); sendMine(); if (G.acct) persist();
   mtoast(`${c.nm}を${G.coop ? 'あなたのキャラ' : 'P' + (G.selSlot + 1) + 'の枠'}にしました`, 1800);
@@ -10823,6 +10964,7 @@ function homeGo() {
     if (!stageOpen(st)) { mtoast('このステージはまだ解放されていません', 2000); return; }
     AUDIO.sfx('ok'); S.lobby.diff = G.diff; S.lobby.stage = st;
     const fill = S.aiFill(), party = S.lobby.slots.map((s, i) => i === 0 ? { eq: eqOf(G.party[0]) } : s ? { eq: (s.eq || []).filter(e => DATA.EQUIP_I[e]).slice(0, 2) } : { eq: eqOf(fill[i]) });
+    { const mine = party.map((p, i) => i === 0 || !S.lobby.slots[i]), u = SAVE.uniqEq(party.map((p, i) => mine[i] ? p.eq : [])); party.forEach((p, i) => { if (mine[i]) p.eq = u[i]; }); } // ホストのアカウントの枠（自分＋AI）どうしで重ねない
     markUsed(G.party.slice(0, 1).concat(fill.filter(Boolean)));
     S.startGame({ bid: newBid(), party }); enterGame(); return;
   }
@@ -10866,6 +11008,15 @@ function bindLobby() {
   $('#btnSetHow').onclick = () => { G.backPrev = G.back; openSub('how', 'settings'); };
   bindFriend();
   makeHScroll($('#cards')); makeHScroll($('#stages'));
+  // v7 P4-8：ホームの3Dモデル本体をタップ → その枠の編成へ（名札と同じ動き）。ドラッグ・長押し・ボタン上は数えない
+  { let td = null;
+    document.addEventListener('pointerdown', e => { td = $('#title').hidden ? null : { id: e.pointerId, p: toApp(e), t: performance.now() }; }, true);
+    document.addEventListener('pointerup', e => {
+      const d = td; td = null; if (!d || d.id !== e.pointerId || $('#title').hidden || !LOBBY3D.active() || LOBBY3D.mode !== 'home') return;
+      if (e.target.closest && e.target.closest('button,input,textarea,select,a,.hm-tag,.hm-left,.hm-bottom,.hm-top,.hm-room,.bl-pop,.pop,#frInv,#acctPop,.toast')) return;
+      const p = toApp(e); if (Math.hypot(p[0] - d.p[0], p[1] - d.p[1]) > 14 || performance.now() - d.t > 700) return;
+      const i = homeModelAt(p[0], p[1]); if (i >= 0) tagTap(i);
+    }, true); }
   // キャラ詳細：中央を左右にドラッグして回す（一覧の横スワイプとは別の場所）
   const rot = $('#chRot'); let rd = null;
   rot.addEventListener('pointerdown', e => { rd = { id: e.pointerId, x: toApp(e)[0] }; try { rot.setPointerCapture(e.pointerId); } catch (er) { } });
@@ -11148,7 +11299,7 @@ function bindFriend() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && ACCT.FR) { frPublish(true); frRefresh(false, $('#friend').hidden); } });
 }
 
-window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX, THREE, GC, WALK, LOBBY3D, FRND };
+window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX, THREE, GC, WALK, LOBBY3D, FRND, VIEW, show, openLogin, tagTap };
 
 </script>
 </body>

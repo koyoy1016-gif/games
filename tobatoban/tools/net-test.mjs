@@ -84,6 +84,22 @@ function connectScenario() {
   ok(c3.lost === 'host_left', `ホストが部屋を閉じたらすぐ知らせる（${c3.lost}）`);
   ok(NETLIB.LOG.some(e => e.tag === 'state') && NETLIB.LOG.some(e => /ロビー情報を受信/.test(e.msg)), '接続の経過がログに残る');
 }
+function aiPickScenario() { // v7 P4-1：協力の空きAI枠はホストが選ぶ（参加者のキャラは変えない・参加/退出で指定を保つ）
+  const hub = new NETLIB.LoopHub({ lat: 0.05 }); NETLIB.setClock(() => hub.t * 1000);
+  const host = new NETLIB.HostSession({ transport: hub.add('H'), code: '5555', nick: 'ホスト', ch: 'kogemaru', aiParty: ['taiko', 'momiji', 'burikidon'] });
+  const dt = 1 / 60; let clis = []; const run = s => { for (let i = 0; i < s * 60; i++) { hub.advance(dt); host.update(dt); clis.forEach(c => c.update(dt)); } };
+  ok(host.aiFill().join() === ',taiko,momiji,burikidon', `1人：AI3体はホストの指定（${host.aiFill().slice(1).join('・')}）`);
+  ok(host.setAi(2, 'new_c_02').ok && host.aiFill()[2] === 'new_c_02', 'ホストがP3のAIを狒々に変える');
+  ok(host.setAi(3, 'new_c_02').ok && host.aiFill()[3] === 'new_c_02' && host.aiFill()[2] === 'burikidon', '別のAI枠と同じキャラを選ぶと入れ替える');
+  ok(!host.setAi(0, 'taiko').ok && !host.setAi(3, 'kogemaru').ok, 'ホスト自身の枠・人間が使っているキャラはAI枠に指定できない');
+  const c1 = new NETLIB.ClientSession({ transport: hub.add('C') }); clis.push(c1); c1.hello({ nick: 'さんか', ch: 'taiko', items: ['onigiri', 'ramune'] }); run(1.5);
+  const f2 = host.aiFill(); ok(host.lobby.slots[1] && f2[1] === null && !f2.includes('taiko') && f2.filter(Boolean).length === 2 && f2[3] === 'new_c_02', `2人：AI2体（${f2.filter(Boolean).join('・')}）。参加者と同じ鬼神はAIから外れ、残りの指定は保つ`);
+  ok(!host.setAi(1, 'momiji').ok, '参加者の枠（P2）はホストでも変えられない');
+  const lb = c1.lobby; ok(lb && lb.ai && lb.ai[3] === 'new_c_02' && lb.ai[1] === null, `参加者にもAI枠の指定が届く（${lb && lb.ai && lb.ai.filter(Boolean).join('・')}）`);
+  host.onLeave('C'); run(0.3); const f3 = host.aiFill(); ok(f3[1] === 'taiko' && f3[3] === 'new_c_02', `退出するとP2はホストの指定（鬼神）に戻る（${f3.slice(1).join('・')}）`);
+  host.startGame(); ok(host.sim.allies.map(a => a.ch).join() === 'kogemaru,taiko,burikidon,new_c_02', `出動も同じ編成（${host.sim.allies.map(a => DATA.CHI[a.ch].nm).join('・')}）`);
+}
+aiPickScenario();
 connectScenario();
 scenario(0.05, 0.3, 0.03);
 scenario(0.10, 0.5, 0.05);
