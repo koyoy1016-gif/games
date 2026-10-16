@@ -421,7 +421,7 @@ function startSolo(stageId) {
   S.lobby.diff = G.diff; S.lobby.stage = G.stageId;
   const carry = G.stageId === 'ueno_street' && G.carry ? G.carry : null; G.carry = null; // 電車から続けて上野へ行くときだけ、アイテムの所持数を引き継ぐ
   markUsed(G.party);
-  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: (() => { const u = SAVE.uniqEq(G.party.map(eqOf)); return G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch), eq: u[i] })); })() });
+  S.startGame({ stageId: G.stageId, bid: newBid(), carry, party: (() => { const u = SAVE.uniqEq(G.party.map(eqOf), ACC()); return G.party.map((ch, i) => ({ ch, swap: !!G.swap[i], items: i === 0 ? G.items.slice(0, 2) : ['onigiri', 'ramune'], nick: i === 0 ? 'あなた' : 'AI', lv: lvOf(ch), eq: u[i] })); })() });
   G.session = S; G.coop = false; enterGame();
 }
 function enterGame() {

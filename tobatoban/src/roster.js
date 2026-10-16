@@ -50,13 +50,19 @@ const GROWTH = (() => {
   return { LV_MAX, stats, grow, aiStats, cum, levelOf, toNext, progress, addExp, statAt, withEquip };
 })();
 /** 装備12種（4系統×青・紫・金）。購入・抽選なし。電車クリア前は1枠、クリア後は2枠。同じIDは2つ付けられない */
-const EQUIP = [
-  ['bracer', '剛力の腕輪', 'str', 'ちから', [30, 40, 50], '💪'],
-  ['bell', '霊光の鈴', 'yo', 'ようりょく', [30, 40, 50], '🔔'],
-  ['charm', '守護のお守り', 'def', 'まもり', [30, 40, 50], '🛡'],
-  ['magatama', '命結びの勾玉', 'hp', '最大HP', [40, 50, 100], '🟢'],
-].flatMap(([k, nm, stat, sl, pcts, ic]) => ['blue', 'purple', 'gold'].map((tier, i) => ({ id: `${k}_${tier}`, line: k, nm: `${nm}（${['青', '紫', '金'][i]}）`, short: nm, stat, statLabel: sl, pct: pcts[i], tier, ic, col: ['#3a7bd5', '#8e44ad', '#d4a017'][i] })));
+/* v8：装備はステージ勝利で手に入る16種類（ちから・ようりょく・HP・まもり × 30/40/50/60%）。各種類30個まで持てる（個数で管理）。
+   旧版の12種類は移行表で読み替える（旧HP100%は「旧装備」として残し、新しく手に入る候補には入れない） */
+const EQ_LINES = [['bracer', '剛力の腕輪', 'str', 'ちから', '💪'], ['bell', '霊光の鈴', 'yo', 'ようりょく', '🔔'], ['magatama', '命結びの勾玉', 'hp', 'HP', '🟢'], ['charm', '守護のお守り', 'def', 'まもり', '🛡']];
+const EQ_TIERS = [[30, 'blue', '青'], [40, 'purple', '紫'], [50, 'gold', '金'], [60, 'rainbow', '虹']];
+const EQUIP = EQ_LINES.flatMap(([k, nm, stat, sl, ic]) => EQ_TIERS.map(([pct, tier, tn]) => ({ id: `${k}_${pct}`, line: k, nm: `${nm}（${tn}）`, short: nm, stat, statLabel: sl, pct, tier, ic, col: { blue: '#3a7bd5', purple: '#8e44ad', gold: '#d4a017', rainbow: '#e0508a' }[tier] })))
+  .concat([{ id: 'magatama_100', line: 'magatama', nm: '命結びの勾玉（旧・金）', short: '命結びの勾玉', stat: 'hp', statLabel: 'HP', pct: 100, tier: 'gold', ic: '🟢', col: '#d4a017', legacy: true }]);
 const EQUIP_I = Object.fromEntries(EQUIP.map(e => [e.id, e]));
+const EQ_DROP_IDS = EQUIP.filter(e => !e.legacy).map(e => e.id);
+/** 旧版（v7まで）の装備ID → v8のID。引き継ぎコード（版5まで）の装備番号の並びも旧版のまま読む */
+const EQ_OLD = { bracer_blue: 'bracer_30', bracer_purple: 'bracer_40', bracer_gold: 'bracer_50', bell_blue: 'bell_30', bell_purple: 'bell_40', bell_gold: 'bell_50', charm_blue: 'charm_30', charm_purple: 'charm_40', charm_gold: 'charm_50', magatama_blue: 'magatama_40', magatama_purple: 'magatama_50', magatama_gold: 'magatama_100' };
+const EQ_OLD_ORDER = ['bracer', 'bell', 'charm', 'magatama'].flatMap(k => ['blue', 'purple', 'gold'].map(t => EQ_OLD[k + '_' + t]));
+/** ステージ勝利の装備（開発用の値。ゲーム画面には出さない）：1クリアにつき rate で1個、上限に達していない種類から等確率 */
+const EQ_DROP = { rate: 0.4, max: 30, stages: ['senju', 'joban', 'ueno_street', 'ueno', 'akiba_platform', 'akiba_plaza'] };
 
 /* ---------------- 報酬（各キャラに配る。4等分ではない） ---------------- */
 const REWARD = {
@@ -276,4 +282,4 @@ function lvAdjust(kind, P) {
   if (P < R.rec) return { out: Math.max(0.10, Math.pow(0.95, R.rec - P)), in: Math.min(4.0, Math.pow(1.04, R.rec - P)) };
   return { out: Math.min(R.hiO, 1 + R.upO * (P - R.rec)), in: Math.max(R.loI, 1 - R.upI * (P - R.rec)) };
 }
-Object.assign(DATA, { lvAdjust, LV_BASE, EQUIP, EQUIP_I, GAME, RANKS, RANK_INFO, ROLES, ROLE_IDS, GROWTH, REWARD, TICKET, GACHA, CHAR_IDS, NEW_D_IDS, GACHA_IDS, EXP_CUM });
+Object.assign(DATA, { lvAdjust, LV_BASE, EQUIP, EQUIP_I, EQ_DROP_IDS, EQ_OLD, EQ_OLD_ORDER, EQ_DROP, GAME, RANKS, RANK_INFO, ROLES, ROLE_IDS, GROWTH, REWARD, TICKET, GACHA, CHAR_IDS, NEW_D_IDS, GACHA_IDS, EXP_CUM });

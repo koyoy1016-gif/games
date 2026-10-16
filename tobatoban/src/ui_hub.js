@@ -82,6 +82,7 @@ function renderResExp(res) {
   }
   const a = ACC(), tx = el('div', 'res-tix', res.ticket > 0 ? `🎫 チケット＋${res.ticket}／所持${a.tickets}枚` : `🎫 チケット ${a.tickets}枚（次の1枚まで ストーリークリア ${(a.wins.story || 0) % 2}/2）`);
   box.appendChild(tx);
+  if (res.equip && DATA.EQUIP_I[res.equip]) { const E = DATA.EQUIP_I[res.equip], d = el('div', 'res-eq t-' + E.tier); d.append(el('b', '', '装備を獲得！'), el('span', 'ic', E.ic), el('span', '', `${E.nm}　${E.statLabel}+${E.pct}%`), el('span', 'small', `（所持${(ACC().eqInv || {})[E.id] || 1}個）`)); box.appendChild(d); } // 実際に手に入ったときだけ（確率は出さない）
   if (!G.acct) box.appendChild(el('div', 'small', 'ログインしていないので、この記録は画面を閉じると消えます（ログインすればアカウントに足されます）。'));
 }
 function bindHub() {

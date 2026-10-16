@@ -401,6 +401,10 @@ a{color:var(--shu)}
 .rs-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
 .rs-bar h3{margin:0;flex:1 1 auto}
 .rs-bar select{color:var(--ink);font:900 13px var(--f-body);border:2px solid var(--ink);border-radius:10px;padding:6px 8px;background:#fff;min-height:40px}
+/* v8：並べ替えはゲーム内のボタン＋選択パネル（#app の中に置くので、回転した横画面でも同じ向きで開く） */
+.rs-sort{position:relative}.rs-sortbtn{color:#1a1030!important;-webkit-text-fill-color:#1a1030;text-shadow:none!important;font:900 13px var(--f-body);border:2px solid var(--ink);border-radius:10px;padding:6px 10px;background:#fff;min-height:40px;white-space:nowrap}
+.rs-sortpanel{position:absolute;right:0;top:calc(100% + 4px);z-index:30;display:flex;flex-direction:column;gap:3px;background:#fff;border:3px solid #1a1030;border-radius:12px;padding:5px;box-shadow:0 4px 0 var(--bk);min-width:150px;max-height:calc(var(--ah,1vh)*70);overflow:auto}
+.rs-sortpanel button{font:900 14px var(--f-body);color:#1a1030!important;-webkit-text-fill-color:#1a1030;text-shadow:none!important;background:#f2f0ea;border:2px solid transparent;border-radius:8px;padding:8px 10px;text-align:left}.rs-sortpanel button.on{background:#ffe066;border-color:var(--ink)}.rs-sortpanel button:focus-visible{outline:3px solid #3c8cff}
 .rs-filters{display:flex;flex-direction:column;gap:6px;background:#fff7e8;border:2px dashed #d9cfba;border-radius:12px;padding:8px;margin-bottom:6px}
 .rs-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .rs-row .small{min-width:3em}
@@ -679,6 +683,8 @@ a{color:var(--shu)}
 .eq-it{display:flex;flex-direction:column;align-items:center;gap:1px;border:3px solid var(--bk);border-radius:12px;padding:4px 2px;box-shadow:0 3px 0 var(--bk);min-height:72px}
 .eq-it .ic{font-size:22px}.eq-it b{font-size:11.5px;line-height:1.2;text-align:center}.eq-it span{font-size:11px;font-weight:900}
 .eq-it.t-blue{background:linear-gradient(#5aa8ff,#2b67e6)}.eq-it.t-purple{background:linear-gradient(#c08aff,#7446b8)}.eq-it.t-gold{background:linear-gradient(#ffe46a,#f2a81c)}
+.res-eq{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:6px 0;padding:6px 10px;border:3px solid var(--bk);border-radius:12px;font-weight:900;background:linear-gradient(#3a7bd5,#2b4a96)}.res-eq.t-purple{background:linear-gradient(#c08aff,#7446b8)}.res-eq.t-gold{background:linear-gradient(#ffe46a,#f2a81c);color:#3a2000}.res-eq.t-rainbow{background:linear-gradient(120deg,#ff7aa8,#ffb84a,#7ad8ff,#b88aff)}.res-eq b{font-family:var(--f-disp);font-size:18px}.res-eq .ic{font-size:24px}
+.eq-it.t-rainbow{background:linear-gradient(120deg,#ff7aa8,#ffb84a,#7ad8ff,#b88aff)}.eq-it.none{filter:grayscale(1);opacity:.45}.eq-it{position:relative}.eq-it .eq-big{font-size:14px!important}.eq-it .eq-n{position:absolute;right:4px;top:2px;background:#1a1030;color:#ffe066;border-radius:8px;padding:0 5px;font-size:12px!important}.eq-disc{display:flex;align-items:center;gap:6px;justify-content:center;margin:6px 0;font-weight:900}.eq-disc .bl-btn{min-width:36px;padding:2px 8px}.bl-btn.red{background:linear-gradient(#ff8a7a,#d8402a);color:#fff}.eq-empty{text-align:center;grid-column:1/-1}
 .eq-it.held{opacity:.78}.eq-it .eq-who{font-size:10px;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;padding:0 4px;margin-top:1px}
 .eq-it.sel{outline:4px solid #fff;outline-offset:-2px}
 .eq-it[disabled]{opacity:.4}
@@ -797,7 +803,7 @@ a{color:var(--shu)}
     <button class="bl-back" id="btnRosterBack" type="button" aria-label="もどる"></button>
     <b id="rsTitle">キャラクター</b>
     <div class="rs-slots" id="rsSlots" role="tablist" aria-label="どの枠に選ぶか"></div>
-    <select id="rsSort" aria-label="並べ替え"><option value="level">レベル順</option><option value="rank">ランク順</option><option value="str">ちから順</option><option value="recent">最近使った順</option></select>
+    <div class="rs-sort"><button class="rs-sortbtn" id="rsSort" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="並べ替え">レベル順 ▾</button><div class="rs-sortpanel" id="rsSortPanel" role="listbox" aria-label="並べ替え" hidden></div></div>
     <button class="hm-chip" id="rsItemsBtn" type="button">持ち物</button>
     <button class="bl-home" id="btnRosterHome" type="button" aria-label="ホーム"></button>
   </div>
@@ -816,7 +822,7 @@ a{color:var(--shu)}
   <div class="ch-eq" id="chEq"></div>
   <div class="ch-right" id="chRight"></div>
   <div class="ch-foot"><span class="ch-slot" id="chSlot"></span><button class="bl-btn yellow big" id="btnChPick" type="button">このキャラを選ぶ</button></div>
-  <div class="bl-pop" id="eqPop" hidden><div class="bl-pop-in wide"><div class="bl-pop-h"><b id="eqPopT">装備スロット1</b><button class="bl-x" id="btnEqX" type="button" aria-label="とじる"></button></div><div class="eq-grid" id="eqGrid"></div><div class="eq-act"><button class="bl-btn" id="btnEqNone" type="button">外す</button><button class="bl-btn yellow" id="btnEqOk" type="button">決定</button></div></div></div>
+  <div class="bl-pop" id="eqPop" hidden><div class="bl-pop-in wide"><div class="bl-pop-h"><b id="eqPopT">装備スロット1</b><button class="bl-x" id="btnEqX" type="button" aria-label="とじる"></button></div><div class="eq-grid" id="eqGrid"></div><div class="eq-disc" id="eqDiscard" hidden><span>余りを捨てる</span><button class="bl-btn" id="btnEqDm" type="button" aria-label="減らす">−</button><b id="eqDn">1個</b><button class="bl-btn" id="btnEqDp" type="button" aria-label="増やす">＋</button><small id="eqDfree"></small><button class="bl-btn red" id="btnEqDiscard" type="button">捨てる</button></div><div class="eq-act"><button class="bl-btn" id="btnEqNone" type="button">外す</button><button class="bl-btn yellow" id="btnEqOk" type="button">決定</button></div></div></div>
   <div class="bl-pop" id="infoPop" hidden><div class="bl-pop-in wide"><div class="bl-pop-h"><b id="infoT">くわしく</b><button class="bl-x" id="btnInfoX" type="button" aria-label="とじる"></button></div><div class="info-body" id="infoBody"></div></div></div>
   <button class="gear" data-gear type="button" aria-label="設定"></button>
 </section>

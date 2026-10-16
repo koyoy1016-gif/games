@@ -152,10 +152,20 @@ function rosterSize() {
   const g = $('#cards'); const h = g.clientHeight || (VIEW.h - 90); const rows = h >= 430 ? 3 : 2;
   const ch = (h - 10 - (rows - 1) * 10) / rows; g.style.setProperty('--rows', rows); g.style.setProperty('--cw', Math.round(Math.min(220, Math.max(120, ch * 0.86))) + 'px');
 }
+/** v8：並べ替え（レベル順・ランク順・ちから順・最近使った順）。ネイティブの select は回転した画面に追従しないので、ゲーム内のパネルにした */
+const RS_SORTS = [['level', 'レベル順'], ['rank', 'ランク順'], ['str', 'ちから順'], ['recent', '最近使った順']];
+function rsSortLabel() { const k = RS_SORTS.find(x => x[0] === G.prefs.sort) || RS_SORTS[0]; $('#rsSort').textContent = k[1] + ' ▾'; }
+function rsSortOpen(on) {
+  const p = $('#rsSortPanel'), b = $('#rsSort'); p.hidden = !on; b.setAttribute('aria-expanded', on ? 'true' : 'false'); if (!on) return;
+  p.textContent = ''; for (const [k, nm] of RS_SORTS) { const o = el('button', k === G.prefs.sort ? 'on' : '', (k === G.prefs.sort ? '✓ ' : '') + nm); o.type = 'button'; o.setAttribute('role', 'option'); o.setAttribute('aria-selected', k === G.prefs.sort ? 'true' : 'false'); o.onclick = e => { e.stopPropagation(); G.prefs.sort = k; persistPrefs(); AUDIO.sfx('ui'); rsSortOpen(false); renderRoster(); $('#cards').scrollLeft = 0; }; p.appendChild(o); }
+  // 画面の外へはみ出さない（回転前の画面の座標で測る）
+  p.style.right = '0'; p.style.left = 'auto'; const r = p.offsetLeft + p.offsetParent.offsetLeft; if (r < 4) { p.style.right = 'auto'; p.style.left = '0'; }
+  const cur = p.querySelector('.on') || p.firstChild; if (cur) cur.focus();
+}
 function renderRoster(keepScroll) {
   const a = ACC(), coop = G.coop, g = $('#cards'), sx = g.scrollLeft;
   $('#rsTitle').textContent = `キャラクター ${Object.keys(a.chars).length}/${DATA.CHARS.length}`;
-  $('#rsSort').value = G.prefs.sort;
+  rsSortLabel();
   const ss = $('#rsSlots'); ss.textContent = '';
   for (let i = 0; i < 4; i++) {
     if (coop && i > 0 && !coopAiSlot(i)) continue; // 協力：自分の枠＋（ホストなら）空いているAI枠
@@ -251,10 +261,10 @@ function renderChara() {
   // 右上：装備スロット1・2
   const n = SAVE.eqSlots(a), cur = own ? (rec.eq || []).slice(0, n) : [], EQ = $('#chEq'); EQ.textContent = '';
   for (let i = 0; i < 2; i++) {
-    const w = el('div', 'eqs'), id = cur[i], E = id && DATA.EQUIP_I[id], tier = E ? id.split('_')[1] : '';
+    const w = el('div', 'eqs'), id = cur[i], E = id && DATA.EQUIP_I[id], tier = E ? E.tier : '';
     const b = el('button', (i >= n || !own ? 'locked ' : '') + (tier ? 't-' + tier : ''), i >= n ? '🔒' : E ? E.ic : '＋'); b.type = 'button'; b.setAttribute('aria-label', `装備スロット${i + 1}`);
     b.onclick = () => { AUDIO.sfx('ui'); if (!own) { mtoast('持っていないキャラは装備できません', 2000); return; } if (i >= n) { mtoast('装備スロット2は常磐線をクリアすると使えます', 2400); return; } openEq(i); };
-    w.append(b, el('small', '', i >= n ? `スロット${i + 1}：常磐線クリアで解放` : E ? `${E.short}（${['青', '紫', '金'][['blue', 'purple', 'gold'].indexOf(tier)]}）${E.statLabel}+${E.pct}%` : `装備スロット${i + 1}`));
+    w.append(b, el('small', '', i >= n ? `スロット${i + 1}：常磐線クリアで解放` : E ? `${E.statLabel}+${E.pct}%（${E.short}）` : `装備スロット${i + 1}`));
     EQ.appendChild(w);
   }
   renderCharaStats();
@@ -302,14 +312,25 @@ function openEq(slot) {
 }
 function renderEq() {
   const c = DATA.CHI[G.chId], a = ACC(), n = SAVE.eqSlots(a), cur = (a.chars[c.id].eq || []).slice(0, n), E = G.eqEdit, g = $('#eqGrid'); g.textContent = '';
+  let any = 0;
   for (const e of DATA.EQUIP) {
-    const other = cur.some((x, j) => j !== E.slot && x === e.id), tier = e.id.split('_')[1], who = SAVE.equipOwner(a, e.id, c.id);
-    const b = el('button', 'eq-it t-' + tier + (E.sel === e.id ? ' sel' : '') + (who ? ' held' : '')); b.type = 'button'; b.disabled = other;
-    b.append(el('span', 'ic', e.ic), el('b', 'ol', e.nm), el('span', 'ol', `${e.statLabel}+${e.pct}%`)); if (who) b.appendChild(el('span', 'eq-who', `${DATA.CHI[who].nm}が装備中`));
+    const C = SAVE.eqCount(a, e.id, c.id), mine = cur[E.slot] === e.id; if (e.legacy && !C.own) continue; // 旧装備は持っているときだけ
+    const other = cur.some((x, j) => j !== E.slot && x === e.id), who = !C.free && !mine ? SAVE.equipOwner(a, e.id, c.id) : null; if (C.own) any++;
+    const b = el('button', 'eq-it t-' + e.tier + (E.sel === e.id ? ' sel' : '') + (who ? ' held' : '') + (!C.own ? ' none' : '')); b.type = 'button'; b.disabled = other || !C.own; // 持っていない装備は選べない
+    b.append(el('span', 'ic', e.ic), el('b', 'ol eq-big', `${e.statLabel}+${e.pct}%`), el('span', 'ol', e.short + (e.legacy ? '（旧）' : '')));
+    if (C.own) b.appendChild(el('span', 'eq-n', '×' + C.own));
+    b.appendChild(el('span', 'eq-who', !C.own ? '未所持' : `装備中${C.used + (mine ? 1 : 0)}・使える${C.free}`)); if (who) b.appendChild(el('span', 'eq-who', `${DATA.CHI[who].nm}が装備中`));
     b.onclick = () => { AUDIO.sfx('ui'); E.sel = e.id; const eq = cur.slice(); while (eq.length <= E.slot) eq.push(null); eq[E.slot] = e.id; E.eq = eq.filter(Boolean); renderEq(); renderCharaStats(); };
     g.appendChild(b);
   }
-  const who = E.sel ? SAVE.equipOwner(a, E.sel, c.id) : null; $('#btnEqOk').textContent = who ? `付け替える（${DATA.CHI[who].nm}から外す）` : '決定';
+  if (!any) g.appendChild(el('p', 'small eq-empty', 'まだ装備を持っていません。ステージに勝つと、ときどき装備が手に入ります。'));
+  const C0 = E.sel ? SAVE.eqCount(a, E.sel, c.id) : null, who = E.sel && C0 && !C0.free && cur[E.slot] !== E.sel ? SAVE.equipOwner(a, E.sel, c.id) : null; $('#btnEqOk').textContent = who ? `付け替える（${DATA.CHI[who].nm}から外す）` : '決定';
+  // 余りを捨てる（個数を選ぶ）：装備中の分は捨てない
+  const dz = $('#eqDiscard'); if (dz) { const Cs = E.sel ? SAVE.eqCount(a, E.sel) : null; dz.hidden = !(Cs && Cs.free > 0); if (Cs) { E.dn = Math.max(1, Math.min(E.dn || 1, Cs.free)); $('#eqDn').textContent = E.dn + '個'; $('#eqDfree').textContent = `（余り${Cs.free}個）`; } }
+}
+function eqDiscard() {
+  const E = G.eqEdit, a = ACC(); if (!E || !E.sel) return; const r = SAVE.discardEquip(a, E.sel, E.dn || 1); if (!r.ok) { mtoast(r.msg, 2200); return; }
+  AUDIO.sfx('back'); mtoast(`${DATA.EQUIP_I[E.sel].nm}を${E.dn || 1}個捨てました（残り${r.left}個）`, 2200); if (!r.left) E.sel = null; E.dn = 1; if (G.acct) persist(); renderEq(); renderChara();
 }
 function eqCommit(id) {
   const c = DATA.CHI[G.chId], E = G.eqEdit; if (!E) return;
@@ -364,7 +385,7 @@ function homeGo() {
     if (!stageOpen(st)) { mtoast('このステージはまだ解放されていません', 2000); return; }
     AUDIO.sfx('ok'); S.lobby.diff = G.diff; S.lobby.stage = st;
     const fill = S.aiFill(), party = S.lobby.slots.map((s, i) => i === 0 ? { eq: eqOf(G.party[0]) } : s ? { eq: (s.eq || []).filter(e => DATA.EQUIP_I[e]).slice(0, 2) } : { eq: eqOf(fill[i]) });
-    { const mine = party.map((p, i) => i === 0 || !S.lobby.slots[i]), u = SAVE.uniqEq(party.map((p, i) => mine[i] ? p.eq : [])); party.forEach((p, i) => { if (mine[i]) p.eq = u[i]; }); } // ホストのアカウントの枠（自分＋AI）どうしで重ねない
+    { const mine = party.map((p, i) => i === 0 || !S.lobby.slots[i]), u = SAVE.uniqEq(party.map((p, i) => mine[i] ? p.eq : []), ACC()); party.forEach((p, i) => { if (mine[i]) p.eq = u[i]; }); } // ホストのアカウントの枠（自分＋AI）どうしで重ねない
     markUsed(G.party.slice(0, 1).concat(fill.filter(Boolean)));
     S.startGame({ bid: newBid(), party }); enterGame(); return;
   }
@@ -388,7 +409,10 @@ function bindLobby() {
   $('#btnRosterBack').onclick = () => rosterBack();
   $('#btnRosterHome').onclick = () => { AUDIO.sfx('back'); persistPrefs(); show('title'); };
   $('#btnGo').onclick = () => rosterGo();
-  $('#rsSort').onchange = () => { G.prefs.sort = $('#rsSort').value; persistPrefs(); AUDIO.sfx('ui'); renderRoster(); $('#cards').scrollLeft = 0; };
+  $('#rsSort').onclick = e => { e.stopPropagation(); AUDIO.sfx('ui'); rsSortOpen($('#rsSortPanel').hidden); };
+  $('#rsSort').onkeydown = e => { if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rsSortOpen(true); } };
+  $('#rsSortPanel').onkeydown = e => { const bs = [...$('#rsSortPanel').children], i = bs.indexOf(document.activeElement); if (e.key === 'Escape') { rsSortOpen(false); $('#rsSort').focus(); } else if (e.key === 'ArrowDown') { e.preventDefault(); bs[(i + 1) % bs.length].focus(); } else if (e.key === 'ArrowUp') { e.preventDefault(); bs[(i - 1 + bs.length) % bs.length].focus(); } };
+  document.addEventListener('pointerdown', e => { const p = $('#rsSortPanel'); if (!p.hidden && !e.target.closest('.rs-sort')) rsSortOpen(false); }, true);
   $('#rsItemsBtn').onclick = () => { AUDIO.sfx('ui'); renderItemsPop(); $('#itemsPop').hidden = false; };
   $('#btnItemsX').onclick = () => { AUDIO.sfx('back'); $('#itemsPop').hidden = true; };
   $('#btnCharaBack').onclick = () => { AUDIO.sfx('back'); G.eqEdit = null; show('roster'); renderRoster(true); };
@@ -397,6 +421,9 @@ function bindLobby() {
   $('#btnEqX').onclick = () => { AUDIO.sfx('back'); G.eqEdit = null; $('#eqPop').hidden = true; renderCharaStats(); };
   $('#btnEqOk').onclick = () => { const E = G.eqEdit; if (E) eqCommit(E.sel); };
   $('#btnEqNone').onclick = () => eqCommit(null);
+  $('#btnEqDm').onclick = () => { const E = G.eqEdit; if (E) { E.dn = Math.max(1, (E.dn || 1) - 1); renderEq(); } };
+  $('#btnEqDp').onclick = () => { const E = G.eqEdit; if (E) { E.dn = (E.dn || 1) + 1; renderEq(); } };
+  $('#btnEqDiscard').onclick = () => eqDiscard();
   $('#btnInfoX').onclick = () => { AUDIO.sfx('back'); $('#infoPop').hidden = true; };
   $('#btnStageBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
   $('#btnStageHub').onclick = () => { AUDIO.sfx('back'); show('title'); };

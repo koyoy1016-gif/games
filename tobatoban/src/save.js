@@ -6,7 +6,7 @@
    IDは1〜10000。アカウントを作った順に自動で決まる（いまはこの端末の中での順番）。
    ===================================================================== */
 const SAVE = (() => {
-  const ID_MIN = 1, ID_MAX = 10000, VER = 5, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 6, PW_MAX = 32; // Firebase のパスワードは6文字以上
+  const ID_MIN = 1, ID_MAX = 10000, VER = 6, KEY = 'tb.acct.', NEXT = 'tb.acctNext', STORE_VER = 'tb.saveVer', PW_MIN = 6, PW_MAX = 32; // Firebase のパスワードは6文字以上
   // 以前の形式（ID 1001〜）のセーブはいったん消す（1回だけ）
   (function migrate() {
     try {
@@ -40,7 +40,7 @@ const SAVE = (() => {
   function fresh(id, pw) {
     const now = Date.now();
     return { v: VER, id, pw, created: now, saved: 0, chars: freshChars(now), rec: { b: 0, w: 0, mobs: 0, best: 0 }, clear: freshClear(),
-      wins: { tobatoban: 0, yoshinoshin: 0, story: 0 }, tickets: 0, uenoOpen: false, akibaOpen: false, walkSeen: false, rewarded: [], gacha: { log: [] }, prefs: freshPrefs(), party: null, swap: null, items: null, nick: '', fcode: '', mig: { d: 1, exp3: 1, v5: 1, tk2: 1 } };
+      wins: { tobatoban: 0, yoshinoshin: 0, story: 0 }, tickets: 0, eqInv: {}, uenoOpen: false, akibaOpen: false, walkSeen: false, rewarded: [], gacha: { log: [] }, prefs: freshPrefs(), party: null, swap: null, items: null, nick: '', fcode: '', mig: { d: 1, exp3: 1, v5: 1, tk2: 1, eq8: 1 } };
   }
   const int = (v, lo) => Math.max(lo || 0, Math.floor(+v || 0));
   /** 古い形式（Lvだけの記録・ステージ1つの頃）からの移行。何度通しても増えも減りもしない */
@@ -68,10 +68,18 @@ const SAVE = (() => {
       for (const k of ['b', 'w', 'k', 'got', 'used']) x[k] = int(x[k]); x.seen = x.seen ? 1 : 0;
       x.exp = Math.max(int(x.exp), DATA.GROWTH.cum(c.rank, int(x.lv, 1))); // Lvだけの旧セーブは、そのLvの累積EXPにする（下げない）
       x.exp = Math.min(x.exp, DATA.GROWTH.cum(c.rank, 99)); x.lv = DATA.GROWTH.levelOf(c.rank, x.exp);
-      x.eq = (Array.isArray(x.eq) ? x.eq : []).filter((e, i, a) => DATA.EQUIP_I[e] && a.indexOf(e) === i); // 存在しない・重複の装備は外す
+      x.eq = (Array.isArray(x.eq) ? x.eq : []).map(e => DATA.EQ_OLD[e] || e).filter((e, i, a) => DATA.EQUIP_I[e] && a.indexOf(e) === i); // 旧IDは読み替え。存在しない・同じキャラでの重複は外す
     }
-    { // v7 P4：アカウント全体で同じ装備は1体だけ。キャラ一覧の順（初期10体→追加50体）・各キャラの枠の順で最初の1つを残す（何度読んでも同じ結果）
-      const used = new Set(); for (const c of DATA.CHARS) { const x = ch[c.id]; if (!x) continue; x.eq = x.eq.filter(e => !used.has(e) && (used.add(e), true)); } mig.eqU = 1; }
+    { // v8：装備は個数で持つ（各種類30個まで）。キャラに付けられるのは持っている個数まで
+      const inv = {}, si = (s.eqInv && typeof s.eqInv === 'object') ? s.eqInv : {}, MAX = DATA.EQ_DROP.max;
+      for (const k in si) { const id = DATA.EQ_OLD[k] || k; if (DATA.EQUIP_I[id]) inv[id] = Math.min(MAX, (inv[id] || 0) + int(si[k])); }
+      if (!mig.eq8) { // 旧セーブ（v7まで）：明示的に付けていた装備は失わないよう、その数だけ持っている扱いにする（付けていなかった旧装備は配らない）。元の付け方は bakEq8 に残す
+        const bak = {}, need = {}; for (const c of DATA.CHARS) { const x = ch[c.id]; if (!x || !x.eq.length) continue; bak[c.id] = (src[c.id] && src[c.id].eq || []).slice(); for (const e of x.eq) need[e] = (need[e] || 0) + 1; }
+        for (const id in need) inv[id] = Math.min(MAX, Math.max(inv[id] || 0, need[id])); if (Object.keys(bak).length) o.bakEq8 = bak; mig.eq8 = 1;
+      }
+      const left = Object.assign({}, inv); for (const c of DATA.CHARS) { const x = ch[c.id]; if (!x) continue; x.eq = x.eq.filter(e => (left[e] || 0) > 0 && (left[e]--, true)); } // 持っている数を超えた分は外す（一覧の順・何度読んでも同じ）
+      o.eqInv = inv;
+    }
     o.chars = ch; mig.exp3 = 1; o.mig = mig; o.v = VER;
     const n = eqSlots(o); for (const id in ch) if (ch[id].eq.length > n) ch[id].eq = ch[id].eq.slice(0, n);
     return o;
@@ -80,7 +88,18 @@ const SAVE = (() => {
   /** 装備枠：電車を一度クリア（または上野ボス解放・勝利の記録あり）で2枠、それまでは1枠 */
   const eqSlots = s => s && ((s.clear && (s.clear.joban > 0 || s.clear.ueno > 0)) || s.uenoOpen) ? 2 : 1;
   /** 装備を付ける／外す（同じIDの二重は不可・枠の数まで） */
-  /** v7 P4：12個の装備はアカウントで1つずつ（キャラごとの複製ではない）。その装備を付けているキャラ（なければ null） */
+  /** v8：装備の数（所持・装備中・使える数）。except のキャラの分は装備中に数えない */
+  function eqCount(s, id, except) { const own = (s && s.eqInv && s.eqInv[id]) | 0; let used = 0; if (s) for (const k in s.chars) if (k !== except && (s.chars[k].eq || []).includes(id)) used++; return { own, used, free: Math.max(0, own - used) }; }
+  /** 余っている装備を捨てる（装備中の分は捨てない） */
+  function discardEquip(s, id, n) { const c = eqCount(s, id); n = Math.floor(n); if (!(n >= 1) || n > c.free) return { ok: false, msg: `捨てられるのは使っていない${c.free}個までです` }; s.eqInv[id] = c.own - n; if (!s.eqInv[id]) delete s.eqInv[id]; return { ok: true, left: s.eqInv[id] | 0 }; }
+  /** v8：ステージ勝利の装備（同じ戦闘ID・同じアカウントなら何度呼んでも同じ結果。apply の二重受け取り防止と合わせて1回だけ） */
+  function eqDraw(s, bid) {
+    const D = DATA.EQ_DROP, r = k => (cyrb53(String(bid) + ':' + s.id + ':' + k, 9) % 1000003) / 1000003;
+    if (r('hit') >= D.rate) return null;
+    const cand = DATA.EQ_DROP_IDS.filter(id => ((s.eqInv && s.eqInv[id]) | 0) < D.max); if (!cand.length) return null; // 全種類が上限なら受け取りなし（ほかの報酬は通常どおり）
+    return cand[Math.floor(r('pick') * cand.length) % cand.length];
+  }
+  /** その装備を付けているキャラ（なければ null） */
   function equipOwner(s, id, except) { if (!s || !id) return null; for (const k in s.chars) if (k !== except && (s.chars[k].eq || []).includes(id)) return k; return null; }
   /** 付ける・外す。ほかのキャラが付けている装備は、move:true（明示的な付け替え）のときだけ前のキャラから外して付ける */
   function setEquip(s, ch, slot, id, opt) {
@@ -89,13 +108,18 @@ const SAVE = (() => {
     const eq = (c.eq || []).slice(0, n); while (eq.length < n) eq.push(null);
     if (id && !DATA.EQUIP_I[id]) return { ok: false, msg: 'その装備はありません' };
     if (id && eq.some((e, i) => i !== slot && e === id)) return { ok: false, msg: '同じ装備は2つ付けられません（別の段階なら同じ系統も付けられます）' };
-    const own = id ? equipOwner(s, id, ch) : null;
-    if (own && !(opt && opt.move)) return { ok: false, owner: own, msg: `${DATA.CHI[own] ? DATA.CHI[own].nm : own}が装備中です` };
+    let own = null;
+    if (id && eq[slot] !== id) { const C = eqCount(s, id, ch); if (C.free < 1) { // v8：持っている数がすべて使用中
+      own = equipOwner(s, id, ch); if (!C.own) return { ok: false, msg: 'この装備を持っていません' };
+      if (!(opt && opt.move) || !own) return { ok: false, owner: own, msg: `${own && DATA.CHI[own] ? DATA.CHI[own].nm : 'ほかのキャラ'}が装備中です（所持${C.own}個・すべて使用中）` }; } }
     if (own) s.chars[own].eq = (s.chars[own].eq || []).filter(e => e !== id);
     eq[slot] = id || null; c.eq = eq.filter(Boolean); return { ok: true, moved: own || null };
   }
-  /** 出動時の検査：同じアカウントの枠どうしで同じ装備が重ならないようにする（前の枠を優先） */
-  function uniqEq(list) { const used = new Set(); return list.map(eq => (eq || []).filter(e => DATA.EQUIP_I[e] && !used.has(e) && (used.add(e), true))); }
+  /** 出動時の検査：同じアカウントの枠どうしで、持っている数を超えて同じ装備を使わない（前の枠を優先）。s なしは同じIDを1つまで */
+  function uniqEq(list, s) {
+    if (s && s.eqInv) { const left = Object.assign({}, s.eqInv); return list.map(eq => (eq || []).filter((e, i, a) => DATA.EQUIP_I[e] && a.indexOf(e) === i && (left[e] || 0) > 0 && (left[e]--, true))); }
+    const used = new Set(); return list.map(eq => (eq || []).filter(e => DATA.EQUIP_I[e] && !used.has(e) && (used.add(e), true)));
+  }
   const lvOf = (s, id) => (s && s.chars[id] ? s.chars[id].lv : 1);
   function load(id) { try { const j = localStorage.getItem(KEY + id); return j ? normalize(JSON.parse(j)) : null; } catch (e) { return null; } }
   function write(s) { try { s.saved = Date.now(); localStorage.setItem(KEY + s.id, JSON.stringify(s)); return true; } catch (e) { return false; } }
@@ -149,6 +173,7 @@ const SAVE = (() => {
     const T = DATA.TICKET;
     if (f.win && T.stages.includes(st)) { const C = s.wins[T.key] | 0; s.wins[T.key] = C + 1; const add = Math.floor((C + 1) / T.per) - Math.floor(C / T.per); s.tickets += add; res.ticket = add; }
     if (f.win && st === 'senju') s.wins.tobatoban = (s.wins.tobatoban | 0) + 1; if (f.win && st === 'ueno') s.wins.yoshinoshin = (s.wins.yoshinoshin | 0) + 1; // 記録用（チケットには使わない）
+    if (f.win && DATA.EQ_DROP.stages.includes(st)) { const e = eqDraw(s, f.bid || ('t' + s.rec.b)); if (e) { s.eqInv = s.eqInv || {}; s.eqInv[e] = (s.eqInv[e] | 0) + 1; res.equip = e; } } // v8：勝利で装備（アカウントごとに1回）
     if (f.win && st === 'joban' && s.clear.joban === 1) res.unlocked = 'ueno_street'; // 電車の初クリア：居酒屋通りと装備2枠
     if (f.win && st === 'ueno_street' && !s.uenoOpen) { s.uenoOpen = true; res.unlocked = 'ueno'; }
     if (f.win && st === 'ueno' && !s.akibaOpen) { s.akibaOpen = true; res.unlocked = 'akiba_platform'; }
@@ -200,6 +225,7 @@ const SAVE = (() => {
     const own = DATA.CHARS.map(c => !!s.chars[c.id]);
     for (let i = 0; i < n; i += 8) { let m = 0; for (let j = 0; j < 8 && i + j < n; j++) if (own[i + j]) m |= 1 << j; b.push(m); }
     DATA.CHARS.forEach((c, i) => { if (!own[i]) return; const x = s.chars[c.id]; vi(x.exp); vi(x.b); vi(x.w); vi(x.k); vi(Math.floor((x.got || 0) / 1000)); const eq = (x.eq || []).filter(e => DATA.EQUIP_I[e]); vi(eq.length); for (const e of eq) vi(DATA.EQUIP.indexOf(DATA.EQUIP_I[e])); });
+    { const ks = Object.keys(s.eqInv || {}).filter(k => DATA.EQUIP_I[k] && s.eqInv[k] > 0); vi(ks.length); for (const k of ks) { vi(DATA.EQUIP.indexOf(DATA.EQUIP_I[k])); vi(s.eqInv[k]); } } // v6：装備の所持数
     const sum = cyrb53(String.fromCharCode.apply(null, b), 77) & 0xffff; b.push(sum >>> 8, sum & 255);
     let bits = '', out = ''; for (const v of b) bits += v.toString(2).padStart(8, '0');
     while (bits.length % 5) bits += '0';
@@ -222,10 +248,11 @@ const SAVE = (() => {
         const id = vi(); const pw = ((u8() << 24 >>> 0) + (u8() << 16) + (u8() << 8) + u8()).toString(16).padStart(8, '0');
         const s = fresh(id, pw); s.rec.b = vi(); s.rec.w = vi(); s.rec.mobs = vi(); s.rec.best = vi();
         if (ver >= 2) { const ST = ver >= 4 ? STAGES : ['senju', 'joban', 'ueno'], m = vi(); for (let i = 0; i < m; i++) { const c = vi(); if (ST[i]) s.clear[ST[i]] = c; } } else delete s.clear; // 古いコードは勝ち数から
-        if (ver >= 3) { s.wins = { tobatoban: vi(), yoshinoshin: vi() }; s.tickets = vi(); const fl = vi(); s.uenoOpen = !!(fl & 1); s.akibaOpen = !!(fl & 2); s.walkSeen = !!(fl & 4); if (ver >= 5) { s.wins.story = vi(); s.mig = { d: 1, exp3: 1, v5: 1, tk2: 1 }; } else delete s.mig.tk2; } else { delete s.wins; s.mig = {}; } // 古いコードは移行（追加Dを一度配る）
+        if (ver >= 3) { s.wins = { tobatoban: vi(), yoshinoshin: vi() }; s.tickets = vi(); const fl = vi(); s.uenoOpen = !!(fl & 1); s.akibaOpen = !!(fl & 2); s.walkSeen = !!(fl & 4); if (ver >= 5) { s.wins.story = vi(); s.mig = { d: 1, exp3: 1, v5: 1, tk2: 1 }; if (ver >= 6) s.mig.eq8 = 1; } else { delete s.mig.tk2; delete s.mig.eq8; } } else { delete s.wins; s.mig = {}; } // 古いコードは移行（追加Dを一度配る）
         const n = vi(), mask = []; for (let i = 0; i < n; i += 8) { const m = u8(); for (let j = 0; j < 8 && i + j < n; j++) mask.push(!!(m & (1 << j))); }
-        if (ver >= 3) { s.chars = {}; for (let i = 0; i < n; i++) { if (!mask[i]) continue; const x = { exp: vi(), b: vi(), w: vi(), k: vi(), got: vi() * 1000, seen: 1, lv: 1, eq: [] }; if (ver >= 4) { const ne = vi(); for (let q = 0; q < ne; q++) { const e = DATA.EQUIP[vi()]; if (e) x.eq.push(e.id); } } const c = DATA.CHARS[i]; if (c) s.chars[c.id] = x; } }
+        if (ver >= 3) { s.chars = {}; for (let i = 0; i < n; i++) { if (!mask[i]) continue; const x = { exp: vi(), b: vi(), w: vi(), k: vi(), got: vi() * 1000, seen: 1, lv: 1, eq: [] }; if (ver >= 4) { const ne = vi(); for (let q = 0; q < ne; q++) { const k = vi(), e = ver >= 6 ? DATA.EQUIP[k] && DATA.EQUIP[k].id : DATA.EQ_OLD_ORDER[k]; if (e) x.eq.push(e); } } /* 版5までの装備番号は旧版の並び */ const c = DATA.CHARS[i]; if (c) s.chars[c.id] = x; } }
         else for (let i = 0; i < n; i++) { if (!mask[i]) continue; const x = { lv: vi(), exp: vi(), b: vi(), w: vi(), k: vi(), seen: 1 }; const c = DATA.CHARS[i]; if (c) s.chars[c.id] = x; }
+        if (ver >= 6) { const m = vi(); s.eqInv = {}; for (let q = 0; q < m; q++) { const e = DATA.EQUIP[vi()], c = vi(); if (e) s.eqInv[e.id] = c; } }
         if (p !== body.length) continue;
         return { ok: true, save: normalize(s) };
       } catch (e) { continue; }
@@ -246,5 +273,5 @@ const SAVE = (() => {
     try { if (id >= nextId()) localStorage.setItem(NEXT, String(id + 1)); } catch (e) { }
     return { ok: true, save: s, msg: `ID ${id} の続きを引き継ぎました` };
   }
-  return { VER, ID_MIN, ID_MAX, PW_MIN, PW_MAX, STAGES, eqSlots, setEquip, equipOwner, uniqEq, pwHash, validId, parseId, checkPw, storageOk, fresh, normalize, load, write, nextId, register, login, apply, owns, lvOf, gachaPool, gachaRates, gachaDraw, gachaExchange, encode, decode, restore };
+  return { VER, ID_MIN, ID_MAX, PW_MIN, PW_MAX, STAGES, eqSlots, setEquip, equipOwner, uniqEq, eqCount, discardEquip, eqDraw, pwHash, validId, parseId, checkPw, storageOk, fresh, normalize, load, write, nextId, register, login, apply, owns, lvOf, gachaPool, gachaRates, gachaDraw, gachaExchange, encode, decode, restore };
 })();
