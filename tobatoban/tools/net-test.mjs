@@ -4,7 +4,7 @@ const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src')
 const src = ['data.js', 'roster_data.js', 'roster_v7.js', 'roster.js', 'sim.js', 'joban.js', 'street.js', 'ueno.js', 'akiba.js', 'proto.js', 'net.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console, Math, Set, Map, JSON, Object, Array, Number, String, Date, performance });
 vm.runInContext(src + ';globalThis.__={DATA,SIMLIB,PROTO,NETLIB,Sim}', ctx);
-const { DATA, SIMLIB, NETLIB, Sim } = ctx.__;
+const { DATA, SIMLIB, NETLIB, Sim } = ctx.__; DATA.SIM.aRand = 0;
 let fails = 0; const ok = (c, m) => { console.log((c ? '✅ ' : '❌ ') + m); if (!c) fails++; };
 
 function scenario(lat, dup, drop) {

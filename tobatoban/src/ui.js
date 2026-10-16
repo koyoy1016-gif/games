@@ -697,7 +697,7 @@ function onNotice(o) {
 function onEvent(e, v) {
   const me = G.my;
   switch (e.type) {
-    case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.blk ? 'blk' : e.kind === 'sp' ? 'sp' : e.crit ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e, e.src === me || e.boss ? 2 : 1); break;
+    case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.blk ? 'blk' : e.kind === 'sp' ? 'sp' : (e.crit || e.lucky) ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e, e.src === me || e.boss ? 2 : 1); break;
     case 'hurt': dmgNum(e.x, 1.2, e.z, e.v, 'hurt', null, e.slot === me ? 2 : 0); if (e.slot === me) vib(25); break;
     case 'wave': if (e.n >= 2) notice(`1号車から${e.cnt}体が来る！（第${e.n}波）`, 'warn', 2200); break;
     case 'board': notice(`${DATA.JOBAN.stations[e.st]}：ホームから部下が${e.n}体乗ってくる！`, 'warn', 2200); break;
@@ -1007,10 +1007,10 @@ function showResult(v) {
   v.allies.forEach((a, i) => { const c = el('div', 'res-c'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const im = el('img'); im.src = G.thumbs[a.ch] || ''; im.alt = ''; c.append(pn, im, el('b', '', DATA.CHI[a.ch].nm), el('span', 'lv', 'Lv.' + (a.lv || 1))); if (stats) { c.appendChild(el('span', '', `与えたダメージ ${stats[i].dmg}`)); c.appendChild(el('span', '', `救助 ${stats[i].revives}・必殺 ${stats[i].specials}`)); } c.appendChild(el('span', 'small', a.st === 'ok' ? '元気' : a.st === 'down' ? '気絶' : '昇天')); grid.appendChild(c); });
   renderResExp(res);
   let msg = '';
-  if (st === 'senju') msg = win ? (firstClear ? '🔓 上野編「常磐線」が解放された！（推奨Lv20）' : '') : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
+  if (st === 'senju') msg = win ? (firstClear ? '🔓 上野編「常磐線」が解放された！（推奨Lv' + DATA.LV_BASE.joban + '）' : '') : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
   else if (jb) msg = win ? (res && res.unlocked === 'ueno_street' ? '🔓 上野の居酒屋通りと、装備の2枠目が解放された！　電車の報酬は確定しました。' : '電車の報酬は確定しました。') : 'もう一度挑戦できます。前後から来るので、救助の円とキャンディーを使おう。';
-  else if (sr) msg = win ? (res && res.unlocked === 'ueno' ? '🔓 上野駅前のヨシノシン戦が解放された！（推奨Lv40）　通りの報酬は確定しました。' : '通りの報酬は確定しました。') : 'もう一度挑戦できます。';
-  else if (ue) msg = win ? (res && res.unlocked === 'akiba_platform' ? '🔓 秋葉原編が解放された！（推奨Lv60）' : 'ヨシノシンを鎮めた！') : 'ボスから再挑戦できます（電車と通りをやり直す必要はありません）。';
+  else if (sr) msg = win ? (res && res.unlocked === 'ueno' ? '🔓 上野駅前のヨシノシン戦が解放された！（推奨Lv' + DATA.LV_BASE.ueno + '）　通りの報酬は確定しました。' : '通りの報酬は確定しました。') : 'もう一度挑戦できます。';
+  else if (ue) msg = win ? (res && res.unlocked === 'akiba_platform' ? '🔓 秋葉原編が解放された！（推奨Lv' + DATA.LV_BASE.akiba_platform + '）' : 'ヨシノシンを鎮めた！') : 'ボスから再挑戦できます（電車と通りをやり直す必要はありません）。';
   else if (st === 'akiba_platform') msg = win ? '🔓 秋葉原駅前広場が解放された！　ホームの報酬は確定しました。' : 'もう一度挑戦できます。前方の攻撃をよけて背後へ回ろう。';
   else msg = win ? '星と中を鎮めた！　秋葉原編クリア！' : 'ボスから再挑戦できます（ホームをやり直す必要はありません）。星と中は、片方を倒してから15秒以内にもう片方も。';
   $('#resReward').textContent = msg;

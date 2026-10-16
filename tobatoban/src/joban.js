@@ -25,7 +25,7 @@
     const J = DATA.JOBAN;
     this.kills = 0; this.total = J.events.reduce((s, e) => s + e.n, 0);
     this.fired = {}; this.grpKills = {}; this.grpN = {}; this.phase = 0; this.queue = []; this.spawnT = { front: 0, rear: 0 }; this.sideT = { front: -99, rear: -99 };
-    this.ycfg = { types: J.types, rights: J.rights };
+    this.ycfg = { types: J.types, rights: J.rights, startGap: J.startGap };
     this.tr = { at: 0, ph: 'stop', d: 0, v: 0, t: 0, doors: 0 }; // 北千住で停車中（演出の間）
     const pos = [[-0.6, -4.2], [0.6, -4.2], [-0.6, -5.8], [0.6, -5.8]]; // 3号車の前寄り・前向き
     for (const a of this.allies) { const q = pos[a.slot]; a.x = a.px = q[0]; a.z = a.pz = q[1]; a.yaw = 0; a.ai.tx = a.x; a.ai.tz = a.z; }
@@ -146,6 +146,7 @@
     if (beam && this.U && this.U.tengai) return false; // 天蓋乱射の間は射撃を遅らせて逃げ道を残す
     for (const o of this.mobs) if (o !== m && o.kind === 'yoshi' && o.st === 'ok' && (o.act || o.rightT > 0)) { all++; if ((o.typ === 'beam') === beam) n++; } // 攻撃権は予兆開始から最短周期（剣3.2/拳3.5/ビーム5秒）のあいだ持ち続け、その後に交代
     if (R.all != null && all >= R.all) return false;
+    if (this.ycfg.startGap && this.t < (this.yGateT || 0)) return false; // v8：集団全体の攻撃開始の間隔
     return n < (beam ? R.beam : R.melee);
   };
 
@@ -208,6 +209,7 @@
 
   /** 攻撃：予兆を出してから当たる。ダメージは共通式（威力×ちから or ようりょく÷(120＋まもり)） */
   P.yoshiAttack = function (m, tg) {
+    if (this.ycfg.startGap) this.yGateT = this.t + this.ycfg.startGap;
     const J = DATA.JOBAN, W = J.wpn[m.wpn], T = m.T;
     m.yaw = yawTo(tg.x - m.x, tg.z - m.z);
     const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), warn = T.warn;

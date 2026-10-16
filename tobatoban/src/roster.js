@@ -267,12 +267,11 @@ for (const m of ROSTER_EXIST) {
 const CHAR_IDS = DATA.CHARS.map(c => c.id);
 const NEW_D_IDS = ROSTER_NEW.filter(n => n.rank === 'D').map(n => n.id);
 const GACHA_IDS = ROSTER_NEW.map(n => n.id); // v7：追加50体すべて
-/** 上野ボス（推奨Lv40）・秋葉原（推奨Lv60）だけのLv補正。P＝出動開始時の4体の平均Lv（切り捨て）。途中の操作交代では変えない */
-/** ステージごとのLv補正の基準（v6：秋葉原ホーム50・駅前広場60・ヨシノシン40）。推奨Lvの表示も同じ値を使う */
-const LV_BASE = { ueno: 40, akiba_platform: 50, akiba_plaza: 60, akiba: 60 };
+/** v8：推奨Lv＝Lv補正の基準（全6ステージ）。P＝出動開始時の4体の平均Lv（切り捨て）。推奨Lvちょうどで与1.00・被1.00、超えて育てた分は効く。表示も同じ値 */
+const LV_BASE = { senju: 1, joban: 10, ueno_street: 20, ueno: 30, akiba_platform: 50, akiba_plaza: 60, akiba: 60 };
 /** kind：ステージID（ueno / akiba_platform / akiba_plaza）。係数・上下限は上野用と秋葉原用の2種類 */
 function lvAdjust(kind, P) {
-  const ak = String(kind).startsWith('akiba'), rec = LV_BASE[kind] || (ak ? 60 : 40);
+  const ak = String(kind).startsWith('akiba'), rec = LV_BASE[kind] || (ak ? 60 : 1);
   const R = ak ? { rec, upO: 0.015, hiO: 1.30, upI: 0.01, loI: 0.75 } : { rec, upO: 0.02, hiO: 1.25, upI: 0.015, loI: 0.80 };
   if (P < R.rec) return { out: Math.max(0.10, Math.pow(0.95, R.rec - P)), in: Math.min(4.0, Math.pow(1.04, R.rec - P)) };
   return { out: Math.min(R.hiO, 1 + R.upO * (P - R.rec)), in: Math.max(R.loI, 1 - R.upI * (P - R.rec)) };

@@ -59,6 +59,7 @@ const SIM = {
   ascendTime: p('救助', '気絶から昇天まで', 30, 'seconds', 'proto', 2, '気絶と昇天の区別は資料。秒数は仮値'),
   reviveHp: p('救助', '救助後のHP割合', 1 / 3, 'ratio', 'proto', null, '最大HPの3分の1'),
   reviveHpMomiji: p('救助', '木霊〈花守〉が救助したときのHP割合', 0.5, 'ratio', 'proto', 24),
+  aRand: p('ダメージ', 'v8：AとX（攻撃）の追加乱数の幅（1.00〜1.25を一度だけ）', 0.25, 'ratio', 'spec', null, '1.20以上は会心風の表示。会心5%・1.5倍とは別。Y・必殺・回復・固定ダメージは対象外'),
   critRate: p('ダメージ', '通常の会心率', 0.05, 'ratio', 'proto'),
   critMul: p('ダメージ', '通常の会心倍率', 1.5, 'ratio', 'proto'),
   elemGood: p('ダメージ', '属性有利倍率（ボスの弱点：土）', 1.25, 'ratio', 'proto', null, '弱点の属性は資料準拠、倍率は原作未測定'),
@@ -92,7 +93,7 @@ const SIM = {
 /* ---------------- 難易度・ボス ---------------- */
 // むずかしさは1つだけ。旧「超」の強さを「通常」とし、体力は旧「超」(32000)の約70%
 const DIFF = {
-  normal: { nm: '通常', str: p('ボス', 'ちから', 250, 'points', 'spec'), yo: p('ボス', 'ようりょく', 250, 'points', 'spec'), def: p('ボス', 'まもり', 120, 'points', 'spec'), hp: p('ボス', '体力', 20000, 'points', 'spec', null, 'v6の基本能力。数値は画面に出さない', true), dmgMul: p('ボス', 'トバトーバが与えるダメージの倍率', 0.7, 'ratio', 'proto', null, '出現時にちから・ようりょくへ一度だけ掛ける（実効175／175）。ダメージ関数では掛けない'), mobHp: 480 },
+  normal: { nm: '通常', str: p('ボス', 'ちから', 250, 'points', 'spec'), yo: p('ボス', 'ようりょく', 250, 'points', 'spec'), def: p('ボス', 'まもり', 120, 'points', 'spec'), hp: p('ボス', '体力', 23000, 'points', 'spec', null, 'v8：20,000→23,000。数値は画面に出さない', true), dmgMul: p('ボス', 'トバトーバが与えるダメージの倍率', 0.805, 'ratio', 'spec', null, 'v8：v7の0.7×1.15＝0.805。出現時にちから・ようりょくへ一度だけ掛ける（実効約201／201）。ダメージ関数では掛けない'), mobHp: 480 },
 };
 const BOSS = {
   nm: 'トバトーバ',
@@ -270,11 +271,12 @@ const JOBAN = {
   mix: p('ヨシノシンの部下', '各イベント内の内訳（剣・パンチ・ビーム）', { sword: 1 / 3, punch: 1 / 3, beam: 1 / 3 }, 'ratio', 'spec', null, 'おおむね均等。整数は最大剰余法で指定人数に合わせる'),
   // 部下の歩く速さはv6で旧値の50%（剣・パンチ1.3／ビーム1.2m/秒）。予兆・周期・弾速・投げられて飛ぶ速さは変えない
   types: {
-    sword: { nm: '剣', wpn: 'sword', hp: 200, str: 192, yo: 209, def: 45, spd: 1.3, pw: 60, stat: 'str', warn: 0.70, period: 3.2 },
-    punch: { nm: 'パンチ', wpn: 'fist', hp: 200, str: 192, yo: 209, def: 45, spd: 1.3, pw: 71, stat: 'str', warn: 0.65, period: 3.5 },
-    beam: { nm: 'ビーム', wpn: 'beam', hp: 200, str: 192, yo: 209, def: 45, spd: 1.2, pw: 80, stat: 'yo', warn: 1.20, period: 5.0 },
+    sword: { nm: '剣', wpn: 'sword', hp: 480, str: 192, yo: 209, def: 45, spd: 1.8, dmgMul: 2.0, pw: 60, stat: 'str', warn: 0.70, period: 3.2 },
+    punch: { nm: 'パンチ', wpn: 'fist', hp: 480, str: 192, yo: 209, def: 45, spd: 1.8, dmgMul: 2.0, pw: 71, stat: 'str', warn: 0.65, period: 3.5 },
+    beam: { nm: 'ビーム', wpn: 'beam', hp: 480, str: 192, yo: 209, def: 45, spd: 1.65, dmgMul: 2.0, pw: 80, stat: 'yo', warn: 1.20, period: 5.0 },
   },
   rights: p('ヨシノシンの部下', '同時に攻撃を始められる数（剣・パンチ／ビーム）', { melee: 4, beam: 2 }, '体', 'spec', null, '全員が動き、攻撃する権利だけを交代する'),
+  startGap: p('ヨシノシンの部下', 'v8：集団全体の新しい攻撃の開始間隔（最短）', 0.55, 's', 'spec', null, '約1.8回／秒まで。同じフレームに大勢が予告を始めない（電車・通り）'),
   r: 0.38,
   maxActive: p('ヨシノシンの部下', '同時に車内にいる最大数', 40, '体', 'spec', null, '多いときは前後の車両で待ち、空いた分だけその側から出てくる'), backZ: -20.3,
   wpn: {
@@ -292,8 +294,9 @@ const STREET = {
   nm: '上野の居酒屋通り', halfX: 4.6, zMax: 64, start: [[-1.0, 3.2], [1.0, 3.2], [-0.4, 2.0], [0.4, 2.0]],
   groups: p('居酒屋通り', '部下を置く3地点（奥行きz）', [16, 33, 50], 'm', 'proto'), gates: [24, 41, 58],
   mul: p('居酒屋通り', '電車の部下に対する倍率（HP・ちから・ようりょくだけ）', 1.25, '倍', 'spec', null, '技の威力・周期・まもり・移動はそのまま'),
-  hpUp: p('居酒屋通り', 'v7：さらにHP（上の倍率のあとで）', 1.5, '倍', 'spec', null, '通りの部下 HP250→375'),
-  dmgUp: p('居酒屋通り', 'v7：1発の最終ダメージ', 1.25, '倍', 'spec', null, '与ダメージ計算で一度だけ。ちから・ようりょくには重ねない'),
+  hpUp: p('居酒屋通り', 'v7：さらにHP（上の倍率のあとで）', 1.5, '倍', 'spec', null, 'v8：電車の部下HP480×1.25×1.5＝900（v7は375）'),
+  dmgUp: p('居酒屋通り', '1発の最終ダメージ', 2.25, '倍', 'spec', null, 'v8：v7の1.25×1.8＝2.25。与ダメージ計算で一度だけ。ちから・ようりょくには重ねない'),
+  spd: { sword: 1.3, punch: 1.3, beam: 1.2 }, // v8：通りの移動はv7のまま（電車だけ速くした）
   n: 30, per: 10,
   introT: p('居酒屋通り', '始まりの演出（ホーム→改札→通りへ）', 5, 's', 'proto'),
 };
@@ -305,16 +308,16 @@ const UENO = {
   halfX: p('上野', '戦闘領域の横幅', 34, 'm', 'spec', null, 'x=±17') / 2, zMax: p('上野', '戦闘領域の奥行き', 28, 'm', 'spec', null, '入口 z=0'),
   start: [[-1.5, 4.2], [1.5, 4.2], [-0.5, 3.0], [0.5, 3.0]], bossSpawn: [0, 23], center: [0, 14],
   bossScale: p('ヨシノシン', 'モデルの拡大率（基準3.2m）', 1.85, '倍', 'spec', null, '本体だけ。部下・技の判定半径は拡大しない'), bossR: p('ヨシノシン', '足元の被弾判定の半径', 1.5, 'm', 'proto', null, '足元に届けば当たる'), bossH: p('ヨシノシン', '身長', 5.92, 'm', 'spec', null, '3.2m×1.85・約5頭身'),
-  hp: p('ヨシノシン', '体力', 22000, 'points', 'spec'), str: p('ヨシノシン', 'ちから', 500, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 500, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 150, 'points', 'spec'),
+  hp: p('ヨシノシン', '体力', 66000, 'points', 'spec', null, 'v8：22,000→66,000'), dmgMul: p('ヨシノシン', 'v8：本体の与ダメージ（最終に一度だけ）', 1.3, 'ratio', 'spec'), str: p('ヨシノシン', 'ちから', 500, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 500, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 150, 'points', 'spec'),
   introT: p('上野', '登場の演出（指を鳴らす→部下が走り出す）', 3.2, 's', 'spec', null, '最初の予告より前に攻撃しない'),
   minGap: p('ヨシノシン', '直接攻撃どうしの開始間隔（最低）', 3.0, 's', 'spec'),
-  rec: 40,
+  rec: 30,
   // v7（P3）：上野駅前の小さな部下だけ弱く。HP×0.4（170→68）、1発の最終ダメージ×0.4（与ダメージ計算で一度だけ。ちから・威力は変えない）、移動×0.6（1.3→0.78・1.2→0.72）。まもり・攻撃周期はそのまま
   minionNerf: p('上野', '小さな部下の弱体化（HP・1発のダメージ・移動）', { hp: 0.4, dmg: 0.4, spd: 0.6 }, '倍', 'spec', null, 'ヨシノシン本体の技（部下丸投げの着地など）には掛けない'),
   minions: { // 電車の部下の型別データから HP・ちから・ようりょくだけ×0.85（四捨五入）→ v7で HP×0.4・移動×0.6・与ダメージ×0.4
-    sword: { nm: '剣', wpn: 'sword', hp: 68, str: 163, yo: 178, def: 45, pw: 60, stat: 'str', warn: 0.70, period: 3.2, spd: 0.78, dmgMul: 0.4, scale: 0.85 / U_H, r: 0.32 },
-    punch: { nm: 'パンチ', wpn: 'fist', hp: 68, str: 163, yo: 178, def: 45, pw: 71, stat: 'str', warn: 0.65, period: 3.5, spd: 0.78, dmgMul: 0.4, scale: 0.9 / U_H, r: 0.33 },
-    beam: { nm: 'ビーム', wpn: 'beam', hp: 68, str: 163, yo: 178, def: 45, pw: 80, stat: 'yo', warn: 1.20, period: 5.0, spd: 0.72, dmgMul: 0.4, scale: 0.85 / U_H, r: 0.32, len: 13 },
+    sword: { nm: '剣', wpn: 'sword', hp: 85, str: 163, yo: 178, def: 45, pw: 60, stat: 'str', warn: 0.70, period: 3.2, spd: 0.78, dmgMul: 0.5, scale: 0.85 / U_H, r: 0.32 },
+    punch: { nm: 'パンチ', wpn: 'fist', hp: 85, str: 163, yo: 178, def: 45, pw: 71, stat: 'str', warn: 0.65, period: 3.5, spd: 0.78, dmgMul: 0.5, scale: 0.9 / U_H, r: 0.33 },
+    beam: { nm: 'ビーム', wpn: 'beam', hp: 85, str: 163, yo: 178, def: 45, pw: 80, stat: 'yo', warn: 1.20, period: 5.0, spd: 0.72, dmgMul: 0.5, scale: 0.85 / U_H, r: 0.32, len: 13 },
   },
   init: p('上野', '最初の部下（ビーム・剣・パンチ）', { beam: 22, sword: 7, punch: 7 }, '体', 'spec', null, '36体が同時に前進する'),
   cap: p('上野', '部下の生存上限（予約を含む）', 100, '体', 'spec'),
@@ -328,8 +331,8 @@ const UENO = {
     tengai: { nm: '天蓋乱射・三十六光', pw: 45, stat: 'yo', r: 1.15, per: 12, track: 4, waves: [1.4, 3.4, 5.4], act: 0.35, rec: 1.0, cd: 14 },
     warp: { nm: '後方指揮ワープ', warn: 0.7, act: 0.25, rec: 0.5, cd: 10 },
     barrier: { nm: '完全指揮バリア', warn: 0.8, hits: 2, max: 8, cd: 35, stagger: 1.2 },
-    throw50: { nm: '部下丸投げ五十連', n: 50, mix: { beam: 30, sword: 10, punch: 10 }, iv: 0.12, land: 1.1, warn: 1.5, rec: 1.5, r: 0.65, pw: 12, stat: 'yo', maxHits: 2, at: [0.75, 0.25], calm: 1.0, alive: 50 },
-    sleep: { nm: '30分睡眠チャージ', stages: [{ at: 16500, need: 2500, pre: 17600 }, { at: 11000, need: 3500, pre: 12100 }, { at: 5500, need: 4000, pre: 6600 }], dur: 10, mul: 2.25, down: 4 },
+    throw50: { nm: '部下丸投げ五十連', n: 50, mix: { beam: 30, sword: 10, punch: 10 }, iv: 0.12, ivBig: 0.07, land: 1.1, warn: 1.5, rec: 1.5, r: 0.65, pw: 12, stat: 'yo', maxHits: 2, calm: 1.0, alive: 50 }, // v8：睡眠の前に必ず投げる（数は sleep.drop）。投下数と戦闘に加わる数は分ける（上限を超えた分は着地の演出で消える）
+    sleep: { nm: '30分睡眠チャージ', stages: [{ at: 49500, need: 2000, pre: 52800, drop: 50 }, { at: 33000, need: 2500, pre: 36300, drop: 100 }, { at: 16500, need: 3000, pre: 19800, drop: 50 }], dur: 10, mul: 2.25, down: 4 }, // v8：HP66,000の75/50/25%。段階到達→投下予告→投下（50/100/50体）→着地→睡眠
   },
   pick: p('ヨシノシン', '直接攻撃の選び方（ビーム系・霊光・スタンプ）', { beams: 0.7, reiko: 0.2, stamp: 0.1 }, 'ratio', 'spec', null, '近距離の連掌は別の反応'),
 };
@@ -356,7 +359,7 @@ p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 
 
 /* ---------------- 秋葉原編：駅ホーム（オガ・カエ）と駅前広場（星・中＋オガ・カエ） ---------------- */
 const AKIBA = {
-  dmgMul: p('秋葉原', 'v7：ナカ・ホシ・カエ・オガの与えるダメージ（調整前の80%）', 0.8, 'ratio', 'spec', null, 'ダメージ計算の最後に一度だけ（能力値には掛けない）。連携技（二点結び・三角・四角）も含む'),
+  dmgMul: p('秋葉原', 'ナカ・ホシ・カエ・オガの与えるダメージ（v7の0.8×v8の1.7＝1.36）', 1.36, 'ratio', 'spec', null, 'ダメージ計算の最後に一度だけ（能力値には掛けない）。連携技（二点結び・三角・四角）も含む'),
   rangeMul: p('秋葉原', 'v7：4人の攻撃範囲（調整前の約115%）', 1.15, 'ratio', 'spec', null, '半径・扇の長さ・線の長さと幅に一度だけ。表示と当たり判定は同じ値'),
   introT: { akiba_platform: p('秋葉原', 'ホームの始まりの演出', 2.5, 's', 'proto'), akiba_plaza: p('秋葉原', '広場の始まり（星と中が2人を起こす）', 3, 's', 'spec') },
   rec: 60,
@@ -365,10 +368,10 @@ const AKIBA = {
   // v6：ちから・ようりょく600。HPは依頼により星・中10,000／オガ・カエ5,000（指示書の8,000/4,000より依頼を優先）。
   // scale：見た目の拡大率（星・中2.0倍／オガ・カエ1.5倍）。当たり判定の半径は変えない
   foes: {
-    hoshi: { nm: '星', hp: 10000, str: 600, yo: 600, def: 170, h: 1.60, r: 0.42, scale: 2.0, spd: 2.3, col: 0xf2c94c },
-    naka: { nm: '中', hp: 10000, str: 600, yo: 600, def: 170, h: 1.58, r: 0.42, scale: 2.0, spd: 2.3, col: 0x9ad0ff },
-    oga: { nm: 'オガ', hp: 5000, str: 600, yo: 600, def: 150, h: 1.48, r: 0.42, scale: 1.5, spd: 2.5, col: 0xff7a5a },
-    kae: { nm: 'カエ', hp: 5000, str: 600, yo: 600, def: 150, h: 1.50, r: 0.42, scale: 1.5, spd: 2.5, col: 0x6ad8a8 },
+    hoshi: { nm: '星', hp: 15000, str: 600, yo: 600, def: 170, h: 1.60, r: 0.42, scale: 2.0, spd: 2.3, col: 0xf2c94c },
+    naka: { nm: '中', hp: 15000, str: 600, yo: 600, def: 170, h: 1.58, r: 0.42, scale: 2.0, spd: 2.3, col: 0x9ad0ff },
+    oga: { nm: 'オガ', hp: 7500, str: 600, yo: 600, def: 150, h: 1.48, r: 0.42, scale: 1.5, spd: 2.5, col: 0xff7a5a },
+    kae: { nm: 'カエ', hp: 7500, str: 600, yo: 600, def: 150, h: 1.50, r: 0.42, scale: 1.5, spd: 2.5, col: 0x6ad8a8 },
   },
   // オガ・カエの dmg：まもり100（Lv50〜60の多くの味方）の相手への1発の目安（v6の依頼で150〜200）。技ごとに幅の中でランダム。威力 pw ＝ 平均×(120＋100)÷600
   moves: { // 威力・秒数は本作の初期調整値（原作の実測ではない）
@@ -386,7 +389,8 @@ const AKIBA = {
     kagami: { who: 'kae', nm: '水鏡の足どめ', r: 1.1, n: 2, life: 4, mul: 0.9, warn: 1.2, cd: 14, rng: 9, rec: 0.6 },
   },
   rights: p('秋葉原', '同時に通常攻撃する相手（全体）', 2, '人', 'spec'),
-  twin: { window: p('秋葉原', '星・中：片方が倒れてからの制限時間', 15, 's', 'spec'), revive: p('秋葉原', '失敗したとき倒れていた方が戻るHP', 4000, 'points', 'spec', null, '最大HPの50%。生き残っていた方のHPは変えない') },
+  startGap: p('秋葉原', 'v8：4人全体の個別攻撃の開始間隔（最短）', 1.15, 's', 'spec', null, '約0.87回／秒まで'),
+  twin: { window: p('秋葉原', '星・中：片方が倒れてからの制限時間', 15, 's', 'spec'), revive: p('秋葉原', '失敗したとき倒れていた方が戻るHP', 7500, 'points', 'spec', null, '最大HPの50%。生き残っていた方のHPは変えない') },
   guard: { dmg: 1200, low: 300, win: 5, mul: 1.10, dur: 6, cd: 15 },
   geo: { first: 12, every: 18, w: { 2: 0.40, 3: 0.35, 4: 0.25 }, minSep: 3, minArea: 8, maxCover: 0.45, edge: 2.5, reachT: 1.8, rec: 2,
     line: { nm: '二点結び', pw: 65, w: 1.2, warn: 1.5, act: 0.3 }, tri: { nm: '三角結界', pw: 75, warn: 2.0, act: 0.3 }, quad: { nm: '四角結界', pw: 22, warn: 2.5, dur: 3, iv: 0.75, max: 4 } },

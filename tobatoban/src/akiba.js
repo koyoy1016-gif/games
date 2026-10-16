@@ -128,12 +128,12 @@
     if (vl > 0.25 && L > 1e-3) { const sp = m.T.spd * this.debuffMul(m, 'spd') * dt; const c = this.clampAkiba(m.x, m.z, m.x + vx / L * sp, m.z + vz / L * sp, m.r); m.x = c[0]; m.z = c[1]; m.moving = 1; }
     if (this.rng.next() < dt * 0.15) m.strafe *= -1;
     // 攻撃：全体で2人まで。図形の必殺の間は通常攻撃も床攻撃も重ねない
-    if (m.gap > 0 || AK.geo || !this.akibaRightsFree()) return;
+    if (m.gap > 0 || AK.geo || !this.akibaRightsFree() || this.t < (AK.nextStart || 0)) return; // v8：4人全体の開始間隔
     const ready = MOVES_OF[m.who].filter(([k]) => m.cd[k] <= 0 && d <= D.moves[k].rng);
     if (!ready.length) return;
     let r = this.rng.next() * ready.reduce((s, q) => s + q[1], 0), pick = ready[0][0];
     for (const [k, w] of ready) { r -= w; if (r <= 0) { pick = k; break; } }
-    this.akibaStart(m, pick, tg);
+    this.akibaStart(m, pick, tg); AK.nextStart = this.t + A().startGap;
   };
   /** 技の始まり：予兆は開始時に置く（対象の位置は予兆の開始で固定） */
   P.akibaStart = function (m, k, tg) {

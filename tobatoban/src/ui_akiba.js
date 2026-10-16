@@ -54,10 +54,10 @@ function akibaHud(v) {
 function akibaEvent(e, v) {
   const N = w => AK_NM[w] || w;
   switch (e.type) {
-    case 'twinDown': banner(`${N(e.who)}が倒れた！`, `15秒以内に${N(e.other)}も倒せ（間に合わないと${N(e.who)}がHP4,000で復活）`, 2200); break;
-    case 'twinRevive': notice(`${N(e.who)}が復活した（HP4,000）。もう一度、2人を15秒以内に`, 'warn', 2600); break;
+    case 'twinDown': banner(`${N(e.who)}が倒れた！`, `15秒以内に${N(e.other)}も倒せ（間に合わないと${N(e.who)}がHP7,500で復活）`, 2200); break;
+    case 'twinRevive': notice(`${N(e.who)}が復活した（HP7,500）。もう一度、2人を15秒以内に`, 'warn', 2600); break;
     case 'akDown': if (e.who === 'oga' || e.who === 'kae') notice(`${N(e.who)}を倒した！${v.stageId === 'akiba_plaza' ? '（もう起きない）' : ''}`, 'sp', 1600); break;
-    case 'akRevive': notice(`星と中が光の糸で${N(e.who)}を起こした（HP5,000）`, 'boss', 2200); break;
+    case 'akRevive': notice(`星と中が光の糸で${N(e.who)}を起こした（HP7,500）`, 'boss', 2200); break;
     case 'akGuard': notice(`${N(e.who)}が相方を守る！ ようりょく↑（6秒）`, 'boss', 1800); break;
     case 'geo': {
       const whos = (e.whos || []).map(N).join('・'), nm = e.n === 2 ? '二点結び' : e.n === 3 ? '三角結界' : '四角結界';

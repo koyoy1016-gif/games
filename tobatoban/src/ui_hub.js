@@ -31,12 +31,12 @@ const stageOpen = id => {
   return false;
 };
 const STAGES = [
-  { id: 'senju', ch: 0, cls: 's1', ic: '🏮', no: '北千住編', nm: '商店街と祭り広場', en: 'トバトーバ（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。', rec: 1, lock: '' },
-  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.events.reduce((s, e) => s + e.n, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車側と3号車側の両方から部下が来る。全員倒すと上野に着く。', rec: 20, lock: 'トバトーバを1回倒すと解放' },
-  { id: 'ueno_street', ch: 1, cls: 's2', ic: '🏮', no: '上野編', nm: '上野の居酒屋通り', en: 'ヨシノシンの部下 30体（3地点×10体）', d: '改札を抜け、暖簾と提灯の並ぶ飲み屋街を進む。各地点の10体を倒すと先へ進める。', rec: 20, lock: '電車を1回クリアすると解放' },
-  { id: 'ueno', ch: 1, cls: 's3', ic: '🎌', no: '上野編', nm: '上野駅前 ヨシノシン', en: 'ヨシノシン（HP22,000の指揮官）＋部下36体〜', d: '駅前の広場で、部下を人形のように操る巨大な指揮官と戦う。HP75%・50%・25%の「30分睡眠チャージ」を10秒で止めよう。', rec: DATA.LV_BASE.ueno, lock: '居酒屋通りを1回クリアすると解放' },
-  { id: 'akiba_platform', ch: 2, cls: 's2', ic: '🚉', no: '秋葉原編', nm: '秋葉原駅ホーム', en: 'オガ・カエ（各HP5,000）', d: '閉鎖されたホームで2人と戦う前哨戦。前方の攻撃をよけて背後へ回ろう。', rec: DATA.LV_BASE.akiba_platform, lock: 'ヨシノシンを1回倒すと解放' },
-  { id: 'akiba_plaza', ch: 2, cls: 's3', ic: '⭐', no: '秋葉原編', nm: '秋葉原駅前広場', en: '星・中（各HP10,000）＋オガ・カエ（各5,000）', d: '星と中は、片方を倒してから15秒以内にもう片方も倒さないと復活する。2〜4人で結ぶ図形の攻撃に注意。', rec: DATA.LV_BASE.akiba_plaza, lock: '秋葉原駅ホームを1回クリアすると解放' },
+  { id: 'senju', ch: 0, cls: 's1', ic: '🏮', no: '北千住編', nm: '商店街と祭り広場', en: 'トバトーバ（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。', rec: DATA.LV_BASE.senju, lock: '' },
+  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.events.reduce((s, e) => s + e.n, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車側と3号車側の両方から部下が来る。全員倒すと上野に着く。', rec: DATA.LV_BASE.joban, lock: 'トバトーバを1回倒すと解放' },
+  { id: 'ueno_street', ch: 1, cls: 's2', ic: '🏮', no: '上野編', nm: '上野の居酒屋通り', en: 'ヨシノシンの部下 30体（3地点×10体）', d: '改札を抜け、暖簾と提灯の並ぶ飲み屋街を進む。各地点の10体を倒すと先へ進める。', rec: DATA.LV_BASE.ueno_street, lock: '電車を1回クリアすると解放' },
+  { id: 'ueno', ch: 1, cls: 's3', ic: '🎌', no: '上野編', nm: '上野駅前 ヨシノシン', en: 'ヨシノシン（HP66,000の指揮官）＋部下36体〜', d: '駅前の広場で、部下を人形のように操る巨大な指揮官と戦う。HP75%・50%・25%の「30分睡眠チャージ」を10秒で止めよう。', rec: DATA.LV_BASE.ueno, lock: '居酒屋通りを1回クリアすると解放' },
+  { id: 'akiba_platform', ch: 2, cls: 's2', ic: '🚉', no: '秋葉原編', nm: '秋葉原駅ホーム', en: 'オガ・カエ（各HP7,500）', d: '閉鎖されたホームで2人と戦う前哨戦。前方の攻撃をよけて背後へ回ろう。', rec: DATA.LV_BASE.akiba_platform, lock: 'ヨシノシンを1回倒すと解放' },
+  { id: 'akiba_plaza', ch: 2, cls: 's3', ic: '⭐', no: '秋葉原編', nm: '秋葉原駅前広場', en: 'ホシ・ナカ（各HP15,000）＋オガ・カエ（各7,500）', d: '星と中は、片方を倒してから15秒以内にもう片方も倒さないと復活する。2〜4人で結ぶ図形の攻撃に注意。', rec: DATA.LV_BASE.akiba_plaza, lock: '秋葉原駅ホームを1回クリアすると解放' },
 ];
 const avgLv = ids => Math.floor(ids.reduce((s, id) => s + lvOf(id), 0) / Math.max(1, ids.length));
 const roleIc = id => DATA.ROLES[id] ? DATA.ROLES[id].ic + DATA.ROLES[id].short : '';

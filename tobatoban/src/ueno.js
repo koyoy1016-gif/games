@@ -27,7 +27,7 @@
       if (o.carry && o.carry[a.slot]) a.items.forEach((it, i) => { if (o.carry[a.slot][i] != null) it.n = o.carry[a.slot][i]; });
     }
     const [bx, bz] = D.bossSpawn;
-    this.boss = { id: 'boss', kind: 'yoshinoshin', x: bx, z: bz, y: 0, yaw: Math.PI, hp: D.hp, maxHp: D.hp, str: D.str, yo: D.yo, def: D.def, st: o.test ? 'idle' : 'intro', mv: null, t: 0, gap: 1.2, phase: 1, cds: {}, target: 0, defDown: 0, paraImm: 0, dots: [], dl: [], fl: null, downT: 0, stunT: 0, lastAtk: -99, wantWarp: false, hz: null, home: [bx, bz] };
+    this.boss = { id: 'boss', kind: 'yoshinoshin', x: bx, z: bz, y: 0, yaw: Math.PI, hp: D.hp, maxHp: D.hp, str: D.str * (D.dmgMul || 1), yo: D.yo * (D.dmgMul || 1), def: D.def, st: o.test ? 'idle' : 'intro', mv: null, t: 0, gap: 1.2, phase: 1, cds: {}, target: 0, defDown: 0, paraImm: 0, dots: [], dl: [], fl: null, downT: 0, stunT: 0, lastAtk: -99, wantWarp: false, hz: null, home: [bx, bz] };
     if (o.test) this.boss.testIdle = !!o.idle;
     // 最初の36体（ビーム22・剣7・パンチ7）：6列に並び、開始と同時に全員が前進する。ビームは後ろの列
     const melee = []; for (let i = 0; i < D.init.sword; i++) melee.push('sword'); for (let i = 0; i < D.init.punch; i++) melee.push('punch');
@@ -85,9 +85,8 @@
     const k = this.sleepNext();
     if (k >= 0 && !Us.sleep) {
       if (b.hp <= S[k].pre && !Us.pre[Us.cyc + ':' + k]) { Us.pre[Us.cyc + ':' + k] = 1; this.ev('sleepWarn', { i: k, need: S[k].need }); }
-      if (b.hp <= S[k].at && Us.pend < 0) { Us.pend = k; this.ev('sleepPend', { i: k }); }
+      if (b.hp <= S[k].at && Us.pend < 0) { Us.pend = k; Us.thrN = S[k].drop || M.throw50.n; Us.thrQ = 1; this.ev('sleepPend', { i: k, drop: Us.thrN }); } // v8：段階到達→投下（50/100/50体）→着地→睡眠。やり直しの回も投げる（一度だけ予約）
     }
-    for (const f of M.throw50.at) if (!Us.thrFlag[f] && b.hp < b.maxHp * f) { Us.thrFlag[f] = 1; Us.thrQ++; } // 全回復しても使用済みは戻さない
   };
 
   /** 部下の攻撃（剣・パンチ・ビーム）の範囲がヨシノシン本体に重なったら本体に当たる（v6）。
@@ -191,8 +190,9 @@
     if (b.st === 'stun') { b.stunT -= dt; if (b.stunT <= 0) { b.st = 'idle'; b.t = 0; b.gap = 0.6; } return; }
     if (Us.thr) this.updateThrow(dt); // 五十連の投げ（本体の状態とは別に進む）
     this.uenoThresholds();
-    // 睡眠の開始待ち：五十連の途中なら全員の着地を待ってから（着弾判定を消して開始）
-    if (Us.pend >= 0 && !Us.thr && !this.mobs.some(m => m.st === 'fly')) { this.startSleep(Us.pend); return; }
+    // 睡眠の開始待ち：まず投下（本体が手すきになったら必ず始める）→全員の着地を待ってから睡眠
+    if (Us.pend >= 0 && Us.thrQ > 0 && !Us.thr && (b.st === 'idle' || b.st === 'walk')) { this.startMove('throw50'); return; }
+    if (Us.pend >= 0 && Us.thrQ <= 0 && !Us.thr && !this.mobs.some(m => m.st === 'fly') && (b.st === 'idle' || b.st === 'walk' || b.st === 'rec')) { this.startSleep(Us.pend); return; }
     if (Us.pend >= 0 && (b.st === 'idle' || b.st === 'walk')) return; // 待っている間は新しい大技を始めない
     switch (b.st) {
       case 'idle': case 'walk': {
@@ -213,7 +213,7 @@
     const tg = this.uenoTarget(); if (!tg) { b.gap = 0.5; return; }
     const cd = k => !(b.cds[k] > 0), dT = dist2(b.x, b.z, tg.x, tg.z);
     // 予約済みの五十連：生存50体以下・予約込みで100体に収まるときに必ず50体
-    if (Us.thrQ > 0 && !Us.thr && alive <= M.throw50.alive && alive + M.throw50.n <= D.cap) return this.startMove('throw50');
+    if (Us.thrQ > 0 && !Us.thr) return this.startMove('throw50'); // v8：生存上限で待ち続けない（上限を超えた分は着地の演出だけ）
     if (b.wantWarp && cd('warp')) return this.startMove('warp');
     if (!Us.barrier && cd('barrier') && this.stageT > 18 && this.mobs.some(m => m.st === 'ok' && m.typ === 'beam') && this.rng.next() < 0.3) return this.startMove('barrier');
     const ready = this.t - b.lastAtk >= D.minGap;
@@ -256,7 +256,7 @@
     else if (mv === 'warp') {
       const to = this.warpSpot(); b.ms.to = to;
       this.hz({ kind: 'circle', x: to[0], z: to[1], r: 1.6, warn: M.warn + M.act, act: 0, src: 'boss', fx: 'warp' });
-    } else if (mv === 'throw50') { Us.thrQ--; Us.thrUsed++; Us.reserve = M.n; } // 50体分の枠を先に確保
+    } else if (mv === 'throw50') { Us.thrQ = Math.max(0, Us.thrQ - 1); Us.thrUsed++; const n = Us.thrN || M.n; Us.reserve = Math.max(0, Math.min(n, D.cap - this.uenoAlive())); } // 戦闘に加われる分だけ枠を先に確保
     this.ev('bossmove', { mv });
   };
   /** 号令四連照射：前方へ横並び4本／周囲4本（追跡3発は updateUenoMove で） */
@@ -355,9 +355,9 @@
       case 'throw50':
         if (b.st === 'wind' && t >= M.warn) {
           b.st = 'act'; b.t = 0;
-          const kinds = []; for (const k in M.mix) for (let i = 0; i < M.mix[k]; i++) kinds.push(k);
+          const N = Us.thrN || M.n, kinds = []; for (const k in M.mix) for (let i = 0; i < Math.round(M.mix[k] * N / M.n); i++) kinds.push(k); while (kinds.length < N) kinds.push('beam'); kinds.length = N;
           for (let i = kinds.length - 1; i > 0; i--) { const j = (this.rng.next() * (i + 1)) | 0; [kinds[i], kinds[j]] = [kinds[j], kinds[i]]; }
-          Us.thr = { i: 0, t: 0, grp: { hits: {}, max: M.maxHits }, pts: [], kinds };
+          Us.thr = { i: 0, t: 0, grp: { hits: {}, max: M.maxHits }, pts: [], kinds, n: N, iv: N > M.n ? M.ivBig : M.iv };
         } else if (b.st === 'act' && !Us.thr && t > 0.2) { b.st = 'rec'; b.t = 0; }
         return;
     }
@@ -368,15 +368,15 @@
   P.updateThrow = function (dt) {
     const b = this.boss, Us = this.U, M = U().moves.throw50, T = Us.thr;
     T.t += dt;
-    while (T.i < M.n && T.t >= T.i * M.iv) {
+    while (T.i < T.n && T.t >= T.i * T.iv) {
       const pt = this.throwSpot(T.pts); T.pts.push(pt); if (T.pts.length > 12) T.pts.shift();
       this.hz({ kind: 'circle', x: pt[0], z: pt[1], r: M.r, warn: M.land, act: 0.1, pw: M.pw, stat: M.stat, src: 'boss', fx: 'throw', grp: T.grp, keepOnCancel: true });
-      const m = this.spawnYoshi(b.x, b.z, 'throw', 'drop', T.kinds[T.i]);
+      const full = this.uenoAlive() >= U().cap, m = this.spawnYoshi(b.x, b.z, 'throw', 'drop', T.kinds[T.i]); if (full) m.vis = 1; // 生存上限を超えた分は見た目だけ（着地で消える。通信と負荷を抑える）
       m.st = 'fly'; m.fly = { t: 0, x0: b.x + Math.sin(b.yaw + 1.2) * 1.5, z0: b.z + Math.cos(b.yaw + 1.2) * 1.5, x1: pt[0], z1: pt[1] }; m.x = m.fly.x0; m.z = m.fly.z0; m.air = 3.8;
       T.i++; Us.reserve = Math.max(0, Us.reserve - 1);
       if (T.i % 3 === 0) this.ev('sfx', { s: 'gDrop', x: b.x, z: b.z });
     }
-    if (T.i >= M.n) { Us.thr = null; Us.reserve = 0; }
+    if (T.i >= T.n) { Us.thr = null; Us.reserve = 0; }
   };
   P.throwSpot = function (prev) {
     const D = U(), alive = this.allies.filter(o => o.st === 'ok');
@@ -394,6 +394,7 @@
   P.updateFly = function (m, dt) {
     const F = m.fly, L = U().moves.throw50.land; F.t += dt; const k = Math.min(1, F.t / L);
     m.x = F.x0 + (F.x1 - F.x0) * k; m.z = F.z0 + (F.z1 - F.z0) * k; m.air = 3.8 * (1 - k) + 3.6 * 4 * k * (1 - k) * 0.6;
+    if (k >= 1 && m.vis) { m.st = 'dying'; m.dieT = 0.5; m.air = 0; m.fly = null; this.ev('yLand', { x: m.x, z: m.z }); return; }
     if (k >= 1) { m.st = 'ok'; m.air = 0; m.fly = null; m.enterT = 0; m.cd = Math.max(m.cd, U().moves.throw50.calm + 0.2 + this.rng.next() * 0.8); this.ev('yLand', { x: m.x, z: m.z }); }
   };
 

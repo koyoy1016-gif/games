@@ -1120,6 +1120,7 @@ const SIM = {
   ascendTime: p('救助', '気絶から昇天まで', 30, 'seconds', 'proto', 2, '気絶と昇天の区別は資料。秒数は仮値'),
   reviveHp: p('救助', '救助後のHP割合', 1 / 3, 'ratio', 'proto', null, '最大HPの3分の1'),
   reviveHpMomiji: p('救助', '木霊〈花守〉が救助したときのHP割合', 0.5, 'ratio', 'proto', 24),
+  aRand: p('ダメージ', 'v8：AとX（攻撃）の追加乱数の幅（1.00〜1.25を一度だけ）', 0.25, 'ratio', 'spec', null, '1.20以上は会心風の表示。会心5%・1.5倍とは別。Y・必殺・回復・固定ダメージは対象外'),
   critRate: p('ダメージ', '通常の会心率', 0.05, 'ratio', 'proto'),
   critMul: p('ダメージ', '通常の会心倍率', 1.5, 'ratio', 'proto'),
   elemGood: p('ダメージ', '属性有利倍率（ボスの弱点：土）', 1.25, 'ratio', 'proto', null, '弱点の属性は資料準拠、倍率は原作未測定'),
@@ -1153,7 +1154,7 @@ const SIM = {
 /* ---------------- 難易度・ボス ---------------- */
 // むずかしさは1つだけ。旧「超」の強さを「通常」とし、体力は旧「超」(32000)の約70%
 const DIFF = {
-  normal: { nm: '通常', str: p('ボス', 'ちから', 250, 'points', 'spec'), yo: p('ボス', 'ようりょく', 250, 'points', 'spec'), def: p('ボス', 'まもり', 120, 'points', 'spec'), hp: p('ボス', '体力', 20000, 'points', 'spec', null, 'v6の基本能力。数値は画面に出さない', true), dmgMul: p('ボス', 'トバトーバが与えるダメージの倍率', 0.7, 'ratio', 'proto', null, '出現時にちから・ようりょくへ一度だけ掛ける（実効175／175）。ダメージ関数では掛けない'), mobHp: 480 },
+  normal: { nm: '通常', str: p('ボス', 'ちから', 250, 'points', 'spec'), yo: p('ボス', 'ようりょく', 250, 'points', 'spec'), def: p('ボス', 'まもり', 120, 'points', 'spec'), hp: p('ボス', '体力', 23000, 'points', 'spec', null, 'v8：20,000→23,000。数値は画面に出さない', true), dmgMul: p('ボス', 'トバトーバが与えるダメージの倍率', 0.805, 'ratio', 'spec', null, 'v8：v7の0.7×1.15＝0.805。出現時にちから・ようりょくへ一度だけ掛ける（実効約201／201）。ダメージ関数では掛けない'), mobHp: 480 },
 };
 const BOSS = {
   nm: 'トバトーバ',
@@ -1331,11 +1332,12 @@ const JOBAN = {
   mix: p('ヨシノシンの部下', '各イベント内の内訳（剣・パンチ・ビーム）', { sword: 1 / 3, punch: 1 / 3, beam: 1 / 3 }, 'ratio', 'spec', null, 'おおむね均等。整数は最大剰余法で指定人数に合わせる'),
   // 部下の歩く速さはv6で旧値の50%（剣・パンチ1.3／ビーム1.2m/秒）。予兆・周期・弾速・投げられて飛ぶ速さは変えない
   types: {
-    sword: { nm: '剣', wpn: 'sword', hp: 200, str: 192, yo: 209, def: 45, spd: 1.3, pw: 60, stat: 'str', warn: 0.70, period: 3.2 },
-    punch: { nm: 'パンチ', wpn: 'fist', hp: 200, str: 192, yo: 209, def: 45, spd: 1.3, pw: 71, stat: 'str', warn: 0.65, period: 3.5 },
-    beam: { nm: 'ビーム', wpn: 'beam', hp: 200, str: 192, yo: 209, def: 45, spd: 1.2, pw: 80, stat: 'yo', warn: 1.20, period: 5.0 },
+    sword: { nm: '剣', wpn: 'sword', hp: 480, str: 192, yo: 209, def: 45, spd: 1.8, dmgMul: 2.0, pw: 60, stat: 'str', warn: 0.70, period: 3.2 },
+    punch: { nm: 'パンチ', wpn: 'fist', hp: 480, str: 192, yo: 209, def: 45, spd: 1.8, dmgMul: 2.0, pw: 71, stat: 'str', warn: 0.65, period: 3.5 },
+    beam: { nm: 'ビーム', wpn: 'beam', hp: 480, str: 192, yo: 209, def: 45, spd: 1.65, dmgMul: 2.0, pw: 80, stat: 'yo', warn: 1.20, period: 5.0 },
   },
   rights: p('ヨシノシンの部下', '同時に攻撃を始められる数（剣・パンチ／ビーム）', { melee: 4, beam: 2 }, '体', 'spec', null, '全員が動き、攻撃する権利だけを交代する'),
+  startGap: p('ヨシノシンの部下', 'v8：集団全体の新しい攻撃の開始間隔（最短）', 0.55, 's', 'spec', null, '約1.8回／秒まで。同じフレームに大勢が予告を始めない（電車・通り）'),
   r: 0.38,
   maxActive: p('ヨシノシンの部下', '同時に車内にいる最大数', 40, '体', 'spec', null, '多いときは前後の車両で待ち、空いた分だけその側から出てくる'), backZ: -20.3,
   wpn: {
@@ -1353,8 +1355,9 @@ const STREET = {
   nm: '上野の居酒屋通り', halfX: 4.6, zMax: 64, start: [[-1.0, 3.2], [1.0, 3.2], [-0.4, 2.0], [0.4, 2.0]],
   groups: p('居酒屋通り', '部下を置く3地点（奥行きz）', [16, 33, 50], 'm', 'proto'), gates: [24, 41, 58],
   mul: p('居酒屋通り', '電車の部下に対する倍率（HP・ちから・ようりょくだけ）', 1.25, '倍', 'spec', null, '技の威力・周期・まもり・移動はそのまま'),
-  hpUp: p('居酒屋通り', 'v7：さらにHP（上の倍率のあとで）', 1.5, '倍', 'spec', null, '通りの部下 HP250→375'),
-  dmgUp: p('居酒屋通り', 'v7：1発の最終ダメージ', 1.25, '倍', 'spec', null, '与ダメージ計算で一度だけ。ちから・ようりょくには重ねない'),
+  hpUp: p('居酒屋通り', 'v7：さらにHP（上の倍率のあとで）', 1.5, '倍', 'spec', null, 'v8：電車の部下HP480×1.25×1.5＝900（v7は375）'),
+  dmgUp: p('居酒屋通り', '1発の最終ダメージ', 2.25, '倍', 'spec', null, 'v8：v7の1.25×1.8＝2.25。与ダメージ計算で一度だけ。ちから・ようりょくには重ねない'),
+  spd: { sword: 1.3, punch: 1.3, beam: 1.2 }, // v8：通りの移動はv7のまま（電車だけ速くした）
   n: 30, per: 10,
   introT: p('居酒屋通り', '始まりの演出（ホーム→改札→通りへ）', 5, 's', 'proto'),
 };
@@ -1366,16 +1369,16 @@ const UENO = {
   halfX: p('上野', '戦闘領域の横幅', 34, 'm', 'spec', null, 'x=±17') / 2, zMax: p('上野', '戦闘領域の奥行き', 28, 'm', 'spec', null, '入口 z=0'),
   start: [[-1.5, 4.2], [1.5, 4.2], [-0.5, 3.0], [0.5, 3.0]], bossSpawn: [0, 23], center: [0, 14],
   bossScale: p('ヨシノシン', 'モデルの拡大率（基準3.2m）', 1.85, '倍', 'spec', null, '本体だけ。部下・技の判定半径は拡大しない'), bossR: p('ヨシノシン', '足元の被弾判定の半径', 1.5, 'm', 'proto', null, '足元に届けば当たる'), bossH: p('ヨシノシン', '身長', 5.92, 'm', 'spec', null, '3.2m×1.85・約5頭身'),
-  hp: p('ヨシノシン', '体力', 22000, 'points', 'spec'), str: p('ヨシノシン', 'ちから', 500, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 500, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 150, 'points', 'spec'),
+  hp: p('ヨシノシン', '体力', 66000, 'points', 'spec', null, 'v8：22,000→66,000'), dmgMul: p('ヨシノシン', 'v8：本体の与ダメージ（最終に一度だけ）', 1.3, 'ratio', 'spec'), str: p('ヨシノシン', 'ちから', 500, 'points', 'spec'), yo: p('ヨシノシン', 'ようりょく', 500, 'points', 'spec'), def: p('ヨシノシン', 'まもり', 150, 'points', 'spec'),
   introT: p('上野', '登場の演出（指を鳴らす→部下が走り出す）', 3.2, 's', 'spec', null, '最初の予告より前に攻撃しない'),
   minGap: p('ヨシノシン', '直接攻撃どうしの開始間隔（最低）', 3.0, 's', 'spec'),
-  rec: 40,
+  rec: 30,
   // v7（P3）：上野駅前の小さな部下だけ弱く。HP×0.4（170→68）、1発の最終ダメージ×0.4（与ダメージ計算で一度だけ。ちから・威力は変えない）、移動×0.6（1.3→0.78・1.2→0.72）。まもり・攻撃周期はそのまま
   minionNerf: p('上野', '小さな部下の弱体化（HP・1発のダメージ・移動）', { hp: 0.4, dmg: 0.4, spd: 0.6 }, '倍', 'spec', null, 'ヨシノシン本体の技（部下丸投げの着地など）には掛けない'),
   minions: { // 電車の部下の型別データから HP・ちから・ようりょくだけ×0.85（四捨五入）→ v7で HP×0.4・移動×0.6・与ダメージ×0.4
-    sword: { nm: '剣', wpn: 'sword', hp: 68, str: 163, yo: 178, def: 45, pw: 60, stat: 'str', warn: 0.70, period: 3.2, spd: 0.78, dmgMul: 0.4, scale: 0.85 / U_H, r: 0.32 },
-    punch: { nm: 'パンチ', wpn: 'fist', hp: 68, str: 163, yo: 178, def: 45, pw: 71, stat: 'str', warn: 0.65, period: 3.5, spd: 0.78, dmgMul: 0.4, scale: 0.9 / U_H, r: 0.33 },
-    beam: { nm: 'ビーム', wpn: 'beam', hp: 68, str: 163, yo: 178, def: 45, pw: 80, stat: 'yo', warn: 1.20, period: 5.0, spd: 0.72, dmgMul: 0.4, scale: 0.85 / U_H, r: 0.32, len: 13 },
+    sword: { nm: '剣', wpn: 'sword', hp: 85, str: 163, yo: 178, def: 45, pw: 60, stat: 'str', warn: 0.70, period: 3.2, spd: 0.78, dmgMul: 0.5, scale: 0.85 / U_H, r: 0.32 },
+    punch: { nm: 'パンチ', wpn: 'fist', hp: 85, str: 163, yo: 178, def: 45, pw: 71, stat: 'str', warn: 0.65, period: 3.5, spd: 0.78, dmgMul: 0.5, scale: 0.9 / U_H, r: 0.33 },
+    beam: { nm: 'ビーム', wpn: 'beam', hp: 85, str: 163, yo: 178, def: 45, pw: 80, stat: 'yo', warn: 1.20, period: 5.0, spd: 0.72, dmgMul: 0.5, scale: 0.85 / U_H, r: 0.32, len: 13 },
   },
   init: p('上野', '最初の部下（ビーム・剣・パンチ）', { beam: 22, sword: 7, punch: 7 }, '体', 'spec', null, '36体が同時に前進する'),
   cap: p('上野', '部下の生存上限（予約を含む）', 100, '体', 'spec'),
@@ -1389,8 +1392,8 @@ const UENO = {
     tengai: { nm: '天蓋乱射・三十六光', pw: 45, stat: 'yo', r: 1.15, per: 12, track: 4, waves: [1.4, 3.4, 5.4], act: 0.35, rec: 1.0, cd: 14 },
     warp: { nm: '後方指揮ワープ', warn: 0.7, act: 0.25, rec: 0.5, cd: 10 },
     barrier: { nm: '完全指揮バリア', warn: 0.8, hits: 2, max: 8, cd: 35, stagger: 1.2 },
-    throw50: { nm: '部下丸投げ五十連', n: 50, mix: { beam: 30, sword: 10, punch: 10 }, iv: 0.12, land: 1.1, warn: 1.5, rec: 1.5, r: 0.65, pw: 12, stat: 'yo', maxHits: 2, at: [0.75, 0.25], calm: 1.0, alive: 50 },
-    sleep: { nm: '30分睡眠チャージ', stages: [{ at: 16500, need: 2500, pre: 17600 }, { at: 11000, need: 3500, pre: 12100 }, { at: 5500, need: 4000, pre: 6600 }], dur: 10, mul: 2.25, down: 4 },
+    throw50: { nm: '部下丸投げ五十連', n: 50, mix: { beam: 30, sword: 10, punch: 10 }, iv: 0.12, ivBig: 0.07, land: 1.1, warn: 1.5, rec: 1.5, r: 0.65, pw: 12, stat: 'yo', maxHits: 2, calm: 1.0, alive: 50 }, // v8：睡眠の前に必ず投げる（数は sleep.drop）。投下数と戦闘に加わる数は分ける（上限を超えた分は着地の演出で消える）
+    sleep: { nm: '30分睡眠チャージ', stages: [{ at: 49500, need: 2000, pre: 52800, drop: 50 }, { at: 33000, need: 2500, pre: 36300, drop: 100 }, { at: 16500, need: 3000, pre: 19800, drop: 50 }], dur: 10, mul: 2.25, down: 4 }, // v8：HP66,000の75/50/25%。段階到達→投下予告→投下（50/100/50体）→着地→睡眠
   },
   pick: p('ヨシノシン', '直接攻撃の選び方（ビーム系・霊光・スタンプ）', { beams: 0.7, reiko: 0.2, stamp: 0.1 }, 'ratio', 'spec', null, '近距離の連掌は別の反応'),
 };
@@ -1417,7 +1420,7 @@ p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 
 
 /* ---------------- 秋葉原編：駅ホーム（オガ・カエ）と駅前広場（星・中＋オガ・カエ） ---------------- */
 const AKIBA = {
-  dmgMul: p('秋葉原', 'v7：ナカ・ホシ・カエ・オガの与えるダメージ（調整前の80%）', 0.8, 'ratio', 'spec', null, 'ダメージ計算の最後に一度だけ（能力値には掛けない）。連携技（二点結び・三角・四角）も含む'),
+  dmgMul: p('秋葉原', 'ナカ・ホシ・カエ・オガの与えるダメージ（v7の0.8×v8の1.7＝1.36）', 1.36, 'ratio', 'spec', null, 'ダメージ計算の最後に一度だけ（能力値には掛けない）。連携技（二点結び・三角・四角）も含む'),
   rangeMul: p('秋葉原', 'v7：4人の攻撃範囲（調整前の約115%）', 1.15, 'ratio', 'spec', null, '半径・扇の長さ・線の長さと幅に一度だけ。表示と当たり判定は同じ値'),
   introT: { akiba_platform: p('秋葉原', 'ホームの始まりの演出', 2.5, 's', 'proto'), akiba_plaza: p('秋葉原', '広場の始まり（星と中が2人を起こす）', 3, 's', 'spec') },
   rec: 60,
@@ -1426,10 +1429,10 @@ const AKIBA = {
   // v6：ちから・ようりょく600。HPは依頼により星・中10,000／オガ・カエ5,000（指示書の8,000/4,000より依頼を優先）。
   // scale：見た目の拡大率（星・中2.0倍／オガ・カエ1.5倍）。当たり判定の半径は変えない
   foes: {
-    hoshi: { nm: '星', hp: 10000, str: 600, yo: 600, def: 170, h: 1.60, r: 0.42, scale: 2.0, spd: 2.3, col: 0xf2c94c },
-    naka: { nm: '中', hp: 10000, str: 600, yo: 600, def: 170, h: 1.58, r: 0.42, scale: 2.0, spd: 2.3, col: 0x9ad0ff },
-    oga: { nm: 'オガ', hp: 5000, str: 600, yo: 600, def: 150, h: 1.48, r: 0.42, scale: 1.5, spd: 2.5, col: 0xff7a5a },
-    kae: { nm: 'カエ', hp: 5000, str: 600, yo: 600, def: 150, h: 1.50, r: 0.42, scale: 1.5, spd: 2.5, col: 0x6ad8a8 },
+    hoshi: { nm: '星', hp: 15000, str: 600, yo: 600, def: 170, h: 1.60, r: 0.42, scale: 2.0, spd: 2.3, col: 0xf2c94c },
+    naka: { nm: '中', hp: 15000, str: 600, yo: 600, def: 170, h: 1.58, r: 0.42, scale: 2.0, spd: 2.3, col: 0x9ad0ff },
+    oga: { nm: 'オガ', hp: 7500, str: 600, yo: 600, def: 150, h: 1.48, r: 0.42, scale: 1.5, spd: 2.5, col: 0xff7a5a },
+    kae: { nm: 'カエ', hp: 7500, str: 600, yo: 600, def: 150, h: 1.50, r: 0.42, scale: 1.5, spd: 2.5, col: 0x6ad8a8 },
   },
   // オガ・カエの dmg：まもり100（Lv50〜60の多くの味方）の相手への1発の目安（v6の依頼で150〜200）。技ごとに幅の中でランダム。威力 pw ＝ 平均×(120＋100)÷600
   moves: { // 威力・秒数は本作の初期調整値（原作の実測ではない）
@@ -1447,7 +1450,8 @@ const AKIBA = {
     kagami: { who: 'kae', nm: '水鏡の足どめ', r: 1.1, n: 2, life: 4, mul: 0.9, warn: 1.2, cd: 14, rng: 9, rec: 0.6 },
   },
   rights: p('秋葉原', '同時に通常攻撃する相手（全体）', 2, '人', 'spec'),
-  twin: { window: p('秋葉原', '星・中：片方が倒れてからの制限時間', 15, 's', 'spec'), revive: p('秋葉原', '失敗したとき倒れていた方が戻るHP', 4000, 'points', 'spec', null, '最大HPの50%。生き残っていた方のHPは変えない') },
+  startGap: p('秋葉原', 'v8：4人全体の個別攻撃の開始間隔（最短）', 1.15, 's', 'spec', null, '約0.87回／秒まで'),
+  twin: { window: p('秋葉原', '星・中：片方が倒れてからの制限時間', 15, 's', 'spec'), revive: p('秋葉原', '失敗したとき倒れていた方が戻るHP', 7500, 'points', 'spec', null, '最大HPの50%。生き残っていた方のHPは変えない') },
   guard: { dmg: 1200, low: 300, win: 5, mul: 1.10, dur: 6, cd: 15 },
   geo: { first: 12, every: 18, w: { 2: 0.40, 3: 0.35, 4: 0.25 }, minSep: 3, minArea: 8, maxCover: 0.45, edge: 2.5, reachT: 1.8, rec: 2,
     line: { nm: '二点結び', pw: 65, w: 1.2, warn: 1.5, act: 0.3 }, tri: { nm: '三角結界', pw: 75, warn: 2.0, act: 0.3 }, quad: { nm: '四角結界', pw: 22, warn: 2.5, dur: 3, iv: 0.75, max: 4 } },
@@ -1849,12 +1853,11 @@ for (const m of ROSTER_EXIST) {
 const CHAR_IDS = DATA.CHARS.map(c => c.id);
 const NEW_D_IDS = ROSTER_NEW.filter(n => n.rank === 'D').map(n => n.id);
 const GACHA_IDS = ROSTER_NEW.map(n => n.id); // v7：追加50体すべて
-/** 上野ボス（推奨Lv40）・秋葉原（推奨Lv60）だけのLv補正。P＝出動開始時の4体の平均Lv（切り捨て）。途中の操作交代では変えない */
-/** ステージごとのLv補正の基準（v6：秋葉原ホーム50・駅前広場60・ヨシノシン40）。推奨Lvの表示も同じ値を使う */
-const LV_BASE = { ueno: 40, akiba_platform: 50, akiba_plaza: 60, akiba: 60 };
+/** v8：推奨Lv＝Lv補正の基準（全6ステージ）。P＝出動開始時の4体の平均Lv（切り捨て）。推奨Lvちょうどで与1.00・被1.00、超えて育てた分は効く。表示も同じ値 */
+const LV_BASE = { senju: 1, joban: 10, ueno_street: 20, ueno: 30, akiba_platform: 50, akiba_plaza: 60, akiba: 60 };
 /** kind：ステージID（ueno / akiba_platform / akiba_plaza）。係数・上下限は上野用と秋葉原用の2種類 */
 function lvAdjust(kind, P) {
-  const ak = String(kind).startsWith('akiba'), rec = LV_BASE[kind] || (ak ? 60 : 40);
+  const ak = String(kind).startsWith('akiba'), rec = LV_BASE[kind] || (ak ? 60 : 1);
   const R = ak ? { rec, upO: 0.015, hiO: 1.30, upI: 0.01, loI: 0.75 } : { rec, upO: 0.02, hiO: 1.25, upI: 0.015, loI: 0.80 };
   if (P < R.rec) return { out: Math.max(0.10, Math.pow(0.95, R.rec - P)), in: Math.min(4.0, Math.pow(1.04, R.rec - P)) };
   return { out: Math.min(R.hiO, 1 + R.upO * (P - R.rec)), in: Math.max(R.loI, 1 - R.upI * (P - R.rec)) };
@@ -2389,6 +2392,8 @@ function bossParts(b) {
   return p;
 }
 function contactPt(q, ox, oz) { const d = dist2(ox, oz, q.x, q.z); if (d < 1e-4) return { x: q.x, z: q.z }; return { x: q.x + (ox - q.x) / d * q.r, z: q.z + (oz - q.z) / d * q.r }; }
+/** v8：行動から発動元を決める。A＝通常攻撃（三連・近接・射撃）、X／Y＝ボタンの技（入れ替え設定後の実際のボタン）、SP＝必殺 */
+const ORIGIN = A => !A ? null : (A.k === 'combo' || A.k === 'melee' || A.k === 'shot') ? 'A' : A.k === 'sp' ? 'SP' : (A.slot === 'X' || A.slot === 'Y') ? A.slot : null;
 class Sim {
   constructor(o) {
     const D = DATA;
@@ -2406,6 +2411,7 @@ class Sim {
     this.lanternT = 0; this.lanternCool = 0; this.lanternOrder = 0; this.candyT = D.SIM.candyPeriod;
     this.wave = 0; this.waveSpawned = false; this.barrier = 'street'; this.introWait = false; this.result = null;
     this.test = !!o.test; this.orbs = []; this.orbEff = 0; this.orbN = 0;
+    { const Pl = Math.floor(this.allies.reduce((s, a) => s + a.lv, 0) / this.allies.length), k = D.lvAdjust(this.stageId, Pl); this.stageLv = Pl; this.lvOut = k.out; this.lvIn = k.in; } // v8：全ステージで推奨Lvを基準にしたLv補正
     if (this.stageId === 'joban') this.initJoban(o);
     else if (this.stageId === 'ueno') this.initUeno(o);
     else if (this.stageId === 'ueno_street') this.initStreet(o);
@@ -2738,6 +2744,9 @@ class Sim {
     a.act = { k: 'item', t: 0, it: it.id, slotI: i, done: 0, end: I.use };
   }
   runAct(a, inp, dt) {
+    this._origin = ORIGIN(a.act); try { this.runAct0(a, inp, dt); } finally { this._origin = null; } // v8：ダメージの発動元（A／X／Y／必殺）を弾・設置物・継続ダメージまで引き継ぐ
+  }
+  runAct0(a, inp, dt) {
     const A = a.act; A.t = (this.tick - A.s) * dt + 1e-9; const t = A.t, M = DATA.MOVES;
     switch (A.k) {
       case 'combo': {
@@ -2964,13 +2973,15 @@ class Sim {
     if (a.c.passive === 'stealthCrit' && this.undetected(a)) crit = true;
     const cm = crit ? (a.c.passive === 'critPower' ? P.critPower : S.critMul) : 1;
     const extra = (this.lvOut || 1) * (this.enemyDmgMul ? this.enemyDmgMul(e) : 1); // 上野だけ：平均Lvの補正・睡眠中の隙
-    let dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm * extra * (opt && opt.heavy ? 1 : 1)));
+    const org = (opt && opt.origin !== undefined) ? opt.origin : this._origin; // v8：A と X の攻撃だけ 1.00〜1.25 の乱数を一度だけ（Y・必殺・継続のY・固定ダメージは対象外）
+    const rv = (org === 'A' || org === 'X') && S.aRand > 0 ? 1 + this.rng.next() * S.aRand : 1;
+    let dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm * extra * rv));
     let capped = false; if (this.capEnemyDmg) { const d0 = dmg; dmg = this.capEnemyDmg(e, dmg); capped = dmg < d0; } // 上野：HP段階ロック（未判定の睡眠しきい値より下へは進めない。0もあり）
     e.hp -= dmg; a.threat += dmg; a.stats.dmg += dmg;
     if (kind === 'A' && a.c.passive === 'lifesteal' && a.hp < a.maxHp) { const v = Math.floor(dmg * 0.1); if (v > 0) this.healAlly(a, v, null, true); } // 固有：通常攻撃でHP吸収
     if (this.afterEnemyHit) this.afterEnemyHit(e, dmg, a, kind);
     if (log) { log.hits.push(+this.t.toFixed(3)); log.dmg.push(dmg); log.def = Math.round(def); log.buff = (state !== 1 ? '×' + state.toFixed(2) : '') + (crit ? ' 会心' : '') + (elem !== 1 ? ' 属性×' + elem : ''); }
-    this.ev('dmg', { v: capped && dmg === 0 ? '段階ロック' : dmg, blk: capped && dmg === 0 ? 1 : 0, crit: crit ? 1 : 0, x: hit ? hit.x : e.x, z: hit ? hit.z : e.z, y: e === this.boss ? (e.kind === 'yoshinoshin' ? 2.6 : e.st === 'down' ? 1.6 : 1.0) : 0.6, src: a.slot, kind, el: elem > 1 ? 1 : elem < 1 ? -1 : 0, boss: e === this.boss ? 1 : 0 }); // 巨大な本体は数値を胸の高さに。睡眠段階で止まったときは理由を出す
+    this.ev('dmg', { v: capped && dmg === 0 ? '段階ロック' : dmg, blk: capped && dmg === 0 ? 1 : 0, crit: crit ? 1 : 0, lucky: rv >= 1.2 ? 1 : 0, org, x: hit ? hit.x : e.x, z: hit ? hit.z : e.z, y: e === this.boss ? (e.kind === 'yoshinoshin' ? 2.6 : e.st === 'down' ? 1.6 : 1.0) : 0.6, src: a.slot, kind, el: elem > 1 ? 1 : elem < 1 ? -1 : 0, boss: e === this.boss ? 1 : 0 }); // 巨大な本体は数値を胸の高さに。睡眠段階で止まったときは理由を出す
     if (e.hp <= 0) { e.hp = 0; if (e === this.boss) this.bossDie(); else this.mobDie(e, a); }
     return dmg;
   }
@@ -3131,7 +3142,7 @@ class Sim {
   /* ---------- 弾・ワナ・拾い物 ---------- */
   fireProj(a, kind, pw, stat, speed, life, r, hk, log, extra) {
     const fx = Math.sin(a.yaw), fz = Math.cos(a.yaw);
-    const p = { id: this.id(), kind, team: 'ally', owner: a.slot, x: a.x + fx * 0.6, y: 0.6, z: a.z + fz * 0.6, vx: fx * speed, vz: fz * speed, life, r, pw, stat, hk, log, hit: new Set(), ex: extra || null, yaw: a.yaw };
+    const p = { id: this.id(), origin: this._origin, kind, team: 'ally', owner: a.slot, x: a.x + fx * 0.6, y: 0.6, z: a.z + fz * 0.6, vx: fx * speed, vz: fz * speed, life, r, pw, stat, hk, log, hit: new Set(), ex: extra || null, yaw: a.yaw };
     // タップ（注目）した敵が追尾距離の内にいれば、弾はその敵を追いかけて必ず当たる（人が操作するキャラだけ）
     const tg = !a.ctrlAI && a.lockId ? this.findTarget(a.lockId) : null;
     if (tg) {
@@ -3157,9 +3168,9 @@ class Sim {
           if (h) {
             p.hit.add(e.id);
             if (p.fixed) { this.dealFixed(a, e, p.fixed, h); p.life = 0; break; } // 閃光銃：最初に当たった1体だけ
-            if (p.kind === 'mark') { const D0 = e.dots || (e.dots = []), old = D0.find(d => d.src === p.owner); if (old) { old.left = p.ex.dur; old.pw = p.ex.pw; } else D0.push({ src: p.owner, left: p.ex.dur, next: p.ex.tick, pw: p.ex.pw, stat: p.ex.stat }); this.ev('mark', { x: e.x, z: e.z }); this.spForHit(a, 'skill', p.log); p.life = 0; break; } // 同じ術者は重ねずに更新
-            if (p.ex && p.ex.blast) { this.blast(a, p.x, p.z, p.ex.blast, p.pw, p.stat, p.hk, p.log); p.life = 0; break; }
-            this.dealToEnemy(a, e, p.pw, p.stat, p.hk, p.log, h); this.spForHit(a, p.hk, p.log);
+            if (p.kind === 'mark') { const D0 = e.dots || (e.dots = []), old = D0.find(d => d.src === p.owner); if (old) { old.left = p.ex.dur; old.pw = p.ex.pw; } else D0.push({ src: p.owner, left: p.ex.dur, next: p.ex.tick, pw: p.ex.pw, stat: p.ex.stat, origin: p.origin }); this.ev('mark', { x: e.x, z: e.z }); this.spForHit(a, 'skill', p.log); p.life = 0; break; } // 同じ術者は重ねずに更新
+            if (p.ex && p.ex.blast) { this._origin = p.origin; this.blast(a, p.x, p.z, p.ex.blast, p.pw, p.stat, p.hk, p.log); this._origin = null; p.life = 0; break; }
+            this.dealToEnemy(a, e, p.pw, p.stat, p.hk, p.log, h, { origin: p.origin }); this.spForHit(a, p.hk, p.log);
             this.ev('phit', { x: h.x, z: h.z, k: p.kind });
             if (e.id === p.tgt) p.tgt = null; // 貫通弾は当たったあとまっすぐ進む
             if (p.kind !== 'focus') { p.life = 0; break; }
@@ -3180,7 +3191,7 @@ class Sim {
     for (const e of this.enemiesAlive()) {
       if (e.defDown > 0) e.defDown -= dt;
       if (!e.dots || !e.dots.length) continue;
-      for (const d of e.dots) { d.left -= dt; d.next -= dt; if (d.next <= 0 && d.left > -0.01) { d.next += 1; const a = this.allies[d.src]; this.dealToEnemy(a, e, d.pw, d.stat, 'dot', null); } }
+      for (const d of e.dots) { d.left -= dt; d.next -= dt; if (d.next <= 0 && d.left > -0.01) { d.next += 1; const a = this.allies[d.src]; this.dealToEnemy(a, e, d.pw, d.stat, 'dot', null, null, { origin: d.origin }); } }
       e.dots = e.dots.filter(d => d.left > 0);
     }
   }
@@ -3194,7 +3205,7 @@ class Sim {
     const fx = Math.sin(a.yaw), fz = Math.cos(a.yaw);
     if (kind === 'mine' || kind === 'bomb') this.traps = this.traps.filter(tr => !((tr.kind === 'mine' || tr.kind === 'bomb') && tr.owner === a.slot)); // ボム・地雷は合わせて1人1個
     const off = kind === 'bomb' ? 0.2 : 0.6, p = this.clampPos(a.x, a.z, a.x + fx * off, a.z + fz * off, 0.2);
-    this.traps.push({ id: this.id(), kind, owner: a.slot, x: p[0], z: p[1], t: 0, arm: kind === 'bomb' ? sk.fuse : sk.arm, life: kind === 'bomb' ? sk.fuse + 0.1 : sk.life, sk });
+    this.traps.push({ id: this.id(), origin: this._origin, kind, owner: a.slot, x: p[0], z: p[1], t: 0, arm: kind === 'bomb' ? sk.fuse : sk.arm, life: kind === 'bomb' ? sk.fuse + 0.1 : sk.life, sk });
     this.ev('sfx', { s: kind === 'mine' ? 'minePlace' : 'trapPlace', x: a.x, z: a.z });
   }
   updateTraps(dt) {
@@ -3224,7 +3235,7 @@ class Sim {
   /** ボム・地雷の爆発：敵には通常、味方（自分を含む）には25%・会心なし。1対象1回、連鎖しない */
   explode(tr, a) {
     const sk = tr.sk, st = sk.stat || 'mix'; tr.dead = 1; const hitSet = new Set();
-    for (const e of this.enemiesAlive()) { const h = !hitSet.has(e.id) && this.hitCircle(e, tr.x, tr.z, sk.r); if (h) { hitSet.add(e.id); this.dealToEnemy(a, e, sk.pw, st, 'skill', null, h); } }
+    for (const e of this.enemiesAlive()) { const h = !hitSet.has(e.id) && this.hitCircle(e, tr.x, tr.z, sk.r); if (h) { hitSet.add(e.id); this.dealToEnemy(a, e, sk.pw, st, 'skill', null, h, { origin: tr.origin }); } }
     const src = { str: st === 'mix' ? (this.stat(a, 'str') + this.stat(a, 'yo')) / 2 : this.stat(a, 'str'), yo: this.stat(a, 'yo') };
     for (const o of this.allies) if (o.st === 'ok' && dist2(tr.x, tr.z, o.x, o.z) <= sk.r) { const dx = o.x - tr.x, dz = o.z - tr.z; this.dealToAlly(o, sk.pw * (sk.allyMul || 0.25), st === 'yo' ? 'yo' : 'str', src, { knock: 4, kx: dx, kz: dz, src: 'none' }); }
     this.ev('boom', { x: tr.x, z: tr.z, r: sk.r, k: tr.kind });
@@ -3853,7 +3864,7 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
     const J = DATA.JOBAN;
     this.kills = 0; this.total = J.events.reduce((s, e) => s + e.n, 0);
     this.fired = {}; this.grpKills = {}; this.grpN = {}; this.phase = 0; this.queue = []; this.spawnT = { front: 0, rear: 0 }; this.sideT = { front: -99, rear: -99 };
-    this.ycfg = { types: J.types, rights: J.rights };
+    this.ycfg = { types: J.types, rights: J.rights, startGap: J.startGap };
     this.tr = { at: 0, ph: 'stop', d: 0, v: 0, t: 0, doors: 0 }; // 北千住で停車中（演出の間）
     const pos = [[-0.6, -4.2], [0.6, -4.2], [-0.6, -5.8], [0.6, -5.8]]; // 3号車の前寄り・前向き
     for (const a of this.allies) { const q = pos[a.slot]; a.x = a.px = q[0]; a.z = a.pz = q[1]; a.yaw = 0; a.ai.tx = a.x; a.ai.tz = a.z; }
@@ -3974,6 +3985,7 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
     if (beam && this.U && this.U.tengai) return false; // 天蓋乱射の間は射撃を遅らせて逃げ道を残す
     for (const o of this.mobs) if (o !== m && o.kind === 'yoshi' && o.st === 'ok' && (o.act || o.rightT > 0)) { all++; if ((o.typ === 'beam') === beam) n++; } // 攻撃権は予兆開始から最短周期（剣3.2/拳3.5/ビーム5秒）のあいだ持ち続け、その後に交代
     if (R.all != null && all >= R.all) return false;
+    if (this.ycfg.startGap && this.t < (this.yGateT || 0)) return false; // v8：集団全体の攻撃開始の間隔
     return n < (beam ? R.beam : R.melee);
   };
 
@@ -4036,6 +4048,7 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
 
   /** 攻撃：予兆を出してから当たる。ダメージは共通式（威力×ちから or ようりょく÷(120＋まもり)） */
   P.yoshiAttack = function (m, tg) {
+    if (this.ycfg.startGap) this.yGateT = this.t + this.ycfg.startGap;
     const J = DATA.JOBAN, W = J.wpn[m.wpn], T = m.T;
     m.yaw = yawTo(tg.x - m.x, tg.z - m.z);
     const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), warn = T.warn;
@@ -4073,8 +4086,8 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
     const D = S(), J = DATA.JOBAN;
     this.stage = o.test ? 'street' : 'intro'; this.barrier = 'none'; this.lanterns = [];
     this.kills = 0; this.total = D.n; this.queue = null; this.grpKills = {}; this.grpN = {};
-    this.ycfg = { types: {}, rights: J.rights };
-    for (const k in J.types) { const T = J.types[k]; this.ycfg.types[k] = Object.assign({}, T, { hp: Math.round(Math.round(T.hp * D.mul) * D.hpUp), str: Math.round(T.str * D.mul), yo: Math.round(T.yo * D.mul), dmgMul: D.dmgUp }); } // v7：HPは通りの値×1.5、1発の最終ダメージ×1.25（まもり・移動・技の威力はそのまま）
+    this.ycfg = { types: {}, rights: J.rights, startGap: J.startGap };
+    for (const k in J.types) { const T = J.types[k]; this.ycfg.types[k] = Object.assign({}, T, { hp: Math.round(Math.round(T.hp * D.mul) * D.hpUp), str: Math.round(T.str * D.mul), yo: Math.round(T.yo * D.mul), dmgMul: D.dmgUp, spd: D.spd && D.spd[k] || T.spd }); } // v7：HPは通りの値×1.5、1発の最終ダメージ×1.25（まもり・移動・技の威力はそのまま）
     this.gate = 0; // 開いている結界の数（0：最初の地点だけ戦える）
     for (const a of this.allies) { const q = D.start[a.slot]; a.x = a.px = q[0]; a.z = a.pz = q[1]; a.yaw = 0; a.ai.tx = a.x; a.ai.tz = a.z + 1; }
     // 剣10・パンチ10・ビーム10を、10体ずつ3地点へ（各地点の内訳も最大剰余法でおおむね均等）
@@ -4146,7 +4159,7 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
       if (o.carry && o.carry[a.slot]) a.items.forEach((it, i) => { if (o.carry[a.slot][i] != null) it.n = o.carry[a.slot][i]; });
     }
     const [bx, bz] = D.bossSpawn;
-    this.boss = { id: 'boss', kind: 'yoshinoshin', x: bx, z: bz, y: 0, yaw: Math.PI, hp: D.hp, maxHp: D.hp, str: D.str, yo: D.yo, def: D.def, st: o.test ? 'idle' : 'intro', mv: null, t: 0, gap: 1.2, phase: 1, cds: {}, target: 0, defDown: 0, paraImm: 0, dots: [], dl: [], fl: null, downT: 0, stunT: 0, lastAtk: -99, wantWarp: false, hz: null, home: [bx, bz] };
+    this.boss = { id: 'boss', kind: 'yoshinoshin', x: bx, z: bz, y: 0, yaw: Math.PI, hp: D.hp, maxHp: D.hp, str: D.str * (D.dmgMul || 1), yo: D.yo * (D.dmgMul || 1), def: D.def, st: o.test ? 'idle' : 'intro', mv: null, t: 0, gap: 1.2, phase: 1, cds: {}, target: 0, defDown: 0, paraImm: 0, dots: [], dl: [], fl: null, downT: 0, stunT: 0, lastAtk: -99, wantWarp: false, hz: null, home: [bx, bz] };
     if (o.test) this.boss.testIdle = !!o.idle;
     // 最初の36体（ビーム22・剣7・パンチ7）：6列に並び、開始と同時に全員が前進する。ビームは後ろの列
     const melee = []; for (let i = 0; i < D.init.sword; i++) melee.push('sword'); for (let i = 0; i < D.init.punch; i++) melee.push('punch');
@@ -4204,9 +4217,8 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
     const k = this.sleepNext();
     if (k >= 0 && !Us.sleep) {
       if (b.hp <= S[k].pre && !Us.pre[Us.cyc + ':' + k]) { Us.pre[Us.cyc + ':' + k] = 1; this.ev('sleepWarn', { i: k, need: S[k].need }); }
-      if (b.hp <= S[k].at && Us.pend < 0) { Us.pend = k; this.ev('sleepPend', { i: k }); }
+      if (b.hp <= S[k].at && Us.pend < 0) { Us.pend = k; Us.thrN = S[k].drop || M.throw50.n; Us.thrQ = 1; this.ev('sleepPend', { i: k, drop: Us.thrN }); } // v8：段階到達→投下（50/100/50体）→着地→睡眠。やり直しの回も投げる（一度だけ予約）
     }
-    for (const f of M.throw50.at) if (!Us.thrFlag[f] && b.hp < b.maxHp * f) { Us.thrFlag[f] = 1; Us.thrQ++; } // 全回復しても使用済みは戻さない
   };
 
   /** 部下の攻撃（剣・パンチ・ビーム）の範囲がヨシノシン本体に重なったら本体に当たる（v6）。
@@ -4310,8 +4322,9 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
     if (b.st === 'stun') { b.stunT -= dt; if (b.stunT <= 0) { b.st = 'idle'; b.t = 0; b.gap = 0.6; } return; }
     if (Us.thr) this.updateThrow(dt); // 五十連の投げ（本体の状態とは別に進む）
     this.uenoThresholds();
-    // 睡眠の開始待ち：五十連の途中なら全員の着地を待ってから（着弾判定を消して開始）
-    if (Us.pend >= 0 && !Us.thr && !this.mobs.some(m => m.st === 'fly')) { this.startSleep(Us.pend); return; }
+    // 睡眠の開始待ち：まず投下（本体が手すきになったら必ず始める）→全員の着地を待ってから睡眠
+    if (Us.pend >= 0 && Us.thrQ > 0 && !Us.thr && (b.st === 'idle' || b.st === 'walk')) { this.startMove('throw50'); return; }
+    if (Us.pend >= 0 && Us.thrQ <= 0 && !Us.thr && !this.mobs.some(m => m.st === 'fly') && (b.st === 'idle' || b.st === 'walk' || b.st === 'rec')) { this.startSleep(Us.pend); return; }
     if (Us.pend >= 0 && (b.st === 'idle' || b.st === 'walk')) return; // 待っている間は新しい大技を始めない
     switch (b.st) {
       case 'idle': case 'walk': {
@@ -4332,7 +4345,7 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
     const tg = this.uenoTarget(); if (!tg) { b.gap = 0.5; return; }
     const cd = k => !(b.cds[k] > 0), dT = dist2(b.x, b.z, tg.x, tg.z);
     // 予約済みの五十連：生存50体以下・予約込みで100体に収まるときに必ず50体
-    if (Us.thrQ > 0 && !Us.thr && alive <= M.throw50.alive && alive + M.throw50.n <= D.cap) return this.startMove('throw50');
+    if (Us.thrQ > 0 && !Us.thr) return this.startMove('throw50'); // v8：生存上限で待ち続けない（上限を超えた分は着地の演出だけ）
     if (b.wantWarp && cd('warp')) return this.startMove('warp');
     if (!Us.barrier && cd('barrier') && this.stageT > 18 && this.mobs.some(m => m.st === 'ok' && m.typ === 'beam') && this.rng.next() < 0.3) return this.startMove('barrier');
     const ready = this.t - b.lastAtk >= D.minGap;
@@ -4375,7 +4388,7 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
     else if (mv === 'warp') {
       const to = this.warpSpot(); b.ms.to = to;
       this.hz({ kind: 'circle', x: to[0], z: to[1], r: 1.6, warn: M.warn + M.act, act: 0, src: 'boss', fx: 'warp' });
-    } else if (mv === 'throw50') { Us.thrQ--; Us.thrUsed++; Us.reserve = M.n; } // 50体分の枠を先に確保
+    } else if (mv === 'throw50') { Us.thrQ = Math.max(0, Us.thrQ - 1); Us.thrUsed++; const n = Us.thrN || M.n; Us.reserve = Math.max(0, Math.min(n, D.cap - this.uenoAlive())); } // 戦闘に加われる分だけ枠を先に確保
     this.ev('bossmove', { mv });
   };
   /** 号令四連照射：前方へ横並び4本／周囲4本（追跡3発は updateUenoMove で） */
@@ -4474,9 +4487,9 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
       case 'throw50':
         if (b.st === 'wind' && t >= M.warn) {
           b.st = 'act'; b.t = 0;
-          const kinds = []; for (const k in M.mix) for (let i = 0; i < M.mix[k]; i++) kinds.push(k);
+          const N = Us.thrN || M.n, kinds = []; for (const k in M.mix) for (let i = 0; i < Math.round(M.mix[k] * N / M.n); i++) kinds.push(k); while (kinds.length < N) kinds.push('beam'); kinds.length = N;
           for (let i = kinds.length - 1; i > 0; i--) { const j = (this.rng.next() * (i + 1)) | 0; [kinds[i], kinds[j]] = [kinds[j], kinds[i]]; }
-          Us.thr = { i: 0, t: 0, grp: { hits: {}, max: M.maxHits }, pts: [], kinds };
+          Us.thr = { i: 0, t: 0, grp: { hits: {}, max: M.maxHits }, pts: [], kinds, n: N, iv: N > M.n ? M.ivBig : M.iv };
         } else if (b.st === 'act' && !Us.thr && t > 0.2) { b.st = 'rec'; b.t = 0; }
         return;
     }
@@ -4487,15 +4500,15 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
   P.updateThrow = function (dt) {
     const b = this.boss, Us = this.U, M = U().moves.throw50, T = Us.thr;
     T.t += dt;
-    while (T.i < M.n && T.t >= T.i * M.iv) {
+    while (T.i < T.n && T.t >= T.i * T.iv) {
       const pt = this.throwSpot(T.pts); T.pts.push(pt); if (T.pts.length > 12) T.pts.shift();
       this.hz({ kind: 'circle', x: pt[0], z: pt[1], r: M.r, warn: M.land, act: 0.1, pw: M.pw, stat: M.stat, src: 'boss', fx: 'throw', grp: T.grp, keepOnCancel: true });
-      const m = this.spawnYoshi(b.x, b.z, 'throw', 'drop', T.kinds[T.i]);
+      const full = this.uenoAlive() >= U().cap, m = this.spawnYoshi(b.x, b.z, 'throw', 'drop', T.kinds[T.i]); if (full) m.vis = 1; // 生存上限を超えた分は見た目だけ（着地で消える。通信と負荷を抑える）
       m.st = 'fly'; m.fly = { t: 0, x0: b.x + Math.sin(b.yaw + 1.2) * 1.5, z0: b.z + Math.cos(b.yaw + 1.2) * 1.5, x1: pt[0], z1: pt[1] }; m.x = m.fly.x0; m.z = m.fly.z0; m.air = 3.8;
       T.i++; Us.reserve = Math.max(0, Us.reserve - 1);
       if (T.i % 3 === 0) this.ev('sfx', { s: 'gDrop', x: b.x, z: b.z });
     }
-    if (T.i >= M.n) { Us.thr = null; Us.reserve = 0; }
+    if (T.i >= T.n) { Us.thr = null; Us.reserve = 0; }
   };
   P.throwSpot = function (prev) {
     const D = U(), alive = this.allies.filter(o => o.st === 'ok');
@@ -4513,6 +4526,7 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
   P.updateFly = function (m, dt) {
     const F = m.fly, L = U().moves.throw50.land; F.t += dt; const k = Math.min(1, F.t / L);
     m.x = F.x0 + (F.x1 - F.x0) * k; m.z = F.z0 + (F.z1 - F.z0) * k; m.air = 3.8 * (1 - k) + 3.6 * 4 * k * (1 - k) * 0.6;
+    if (k >= 1 && m.vis) { m.st = 'dying'; m.dieT = 0.5; m.air = 0; m.fly = null; this.ev('yLand', { x: m.x, z: m.z }); return; }
     if (k >= 1) { m.st = 'ok'; m.air = 0; m.fly = null; m.enterT = 0; m.cd = Math.max(m.cd, U().moves.throw50.calm + 0.2 + this.rng.next() * 0.8); this.ev('yLand', { x: m.x, z: m.z }); }
   };
 
@@ -4715,12 +4729,12 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
     if (vl > 0.25 && L > 1e-3) { const sp = m.T.spd * this.debuffMul(m, 'spd') * dt; const c = this.clampAkiba(m.x, m.z, m.x + vx / L * sp, m.z + vz / L * sp, m.r); m.x = c[0]; m.z = c[1]; m.moving = 1; }
     if (this.rng.next() < dt * 0.15) m.strafe *= -1;
     // 攻撃：全体で2人まで。図形の必殺の間は通常攻撃も床攻撃も重ねない
-    if (m.gap > 0 || AK.geo || !this.akibaRightsFree()) return;
+    if (m.gap > 0 || AK.geo || !this.akibaRightsFree() || this.t < (AK.nextStart || 0)) return; // v8：4人全体の開始間隔
     const ready = MOVES_OF[m.who].filter(([k]) => m.cd[k] <= 0 && d <= D.moves[k].rng);
     if (!ready.length) return;
     let r = this.rng.next() * ready.reduce((s, q) => s + q[1], 0), pick = ready[0][0];
     for (const [k, w] of ready) { r -= w; if (r <= 0) { pick = k; break; } }
-    this.akibaStart(m, pick, tg);
+    this.akibaStart(m, pick, tg); AK.nextStart = this.t + A().startGap;
   };
   /** 技の始まり：予兆は開始時に置く（対象の位置は予兆の開始で固定） */
   P.akibaStart = function (m, k, tg) {
@@ -9768,7 +9782,7 @@ function onNotice(o) {
 function onEvent(e, v) {
   const me = G.my;
   switch (e.type) {
-    case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.blk ? 'blk' : e.kind === 'sp' ? 'sp' : e.crit ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e, e.src === me || e.boss ? 2 : 1); break;
+    case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.blk ? 'blk' : e.kind === 'sp' ? 'sp' : (e.crit || e.lucky) ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e, e.src === me || e.boss ? 2 : 1); break;
     case 'hurt': dmgNum(e.x, 1.2, e.z, e.v, 'hurt', null, e.slot === me ? 2 : 0); if (e.slot === me) vib(25); break;
     case 'wave': if (e.n >= 2) notice(`1号車から${e.cnt}体が来る！（第${e.n}波）`, 'warn', 2200); break;
     case 'board': notice(`${DATA.JOBAN.stations[e.st]}：ホームから部下が${e.n}体乗ってくる！`, 'warn', 2200); break;
@@ -10078,10 +10092,10 @@ function showResult(v) {
   v.allies.forEach((a, i) => { const c = el('div', 'res-c'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const im = el('img'); im.src = G.thumbs[a.ch] || ''; im.alt = ''; c.append(pn, im, el('b', '', DATA.CHI[a.ch].nm), el('span', 'lv', 'Lv.' + (a.lv || 1))); if (stats) { c.appendChild(el('span', '', `与えたダメージ ${stats[i].dmg}`)); c.appendChild(el('span', '', `救助 ${stats[i].revives}・必殺 ${stats[i].specials}`)); } c.appendChild(el('span', 'small', a.st === 'ok' ? '元気' : a.st === 'down' ? '気絶' : '昇天')); grid.appendChild(c); });
   renderResExp(res);
   let msg = '';
-  if (st === 'senju') msg = win ? (firstClear ? '🔓 上野編「常磐線」が解放された！（推奨Lv20）' : '') : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
+  if (st === 'senju') msg = win ? (firstClear ? '🔓 上野編「常磐線」が解放された！（推奨Lv' + DATA.LV_BASE.joban + '）' : '') : 'もう一度挑戦できます。灯籠で動きを止めて、必殺技を重ねるのがコツ。';
   else if (jb) msg = win ? (res && res.unlocked === 'ueno_street' ? '🔓 上野の居酒屋通りと、装備の2枠目が解放された！　電車の報酬は確定しました。' : '電車の報酬は確定しました。') : 'もう一度挑戦できます。前後から来るので、救助の円とキャンディーを使おう。';
-  else if (sr) msg = win ? (res && res.unlocked === 'ueno' ? '🔓 上野駅前のヨシノシン戦が解放された！（推奨Lv40）　通りの報酬は確定しました。' : '通りの報酬は確定しました。') : 'もう一度挑戦できます。';
-  else if (ue) msg = win ? (res && res.unlocked === 'akiba_platform' ? '🔓 秋葉原編が解放された！（推奨Lv60）' : 'ヨシノシンを鎮めた！') : 'ボスから再挑戦できます（電車と通りをやり直す必要はありません）。';
+  else if (sr) msg = win ? (res && res.unlocked === 'ueno' ? '🔓 上野駅前のヨシノシン戦が解放された！（推奨Lv' + DATA.LV_BASE.ueno + '）　通りの報酬は確定しました。' : '通りの報酬は確定しました。') : 'もう一度挑戦できます。';
+  else if (ue) msg = win ? (res && res.unlocked === 'akiba_platform' ? '🔓 秋葉原編が解放された！（推奨Lv' + DATA.LV_BASE.akiba_platform + '）' : 'ヨシノシンを鎮めた！') : 'ボスから再挑戦できます（電車と通りをやり直す必要はありません）。';
   else if (st === 'akiba_platform') msg = win ? '🔓 秋葉原駅前広場が解放された！　ホームの報酬は確定しました。' : 'もう一度挑戦できます。前方の攻撃をよけて背後へ回ろう。';
   else msg = win ? '星と中を鎮めた！　秋葉原編クリア！' : 'ボスから再挑戦できます（ホームをやり直す必要はありません）。星と中は、片方を倒してから15秒以内にもう片方も。';
   $('#resReward').textContent = msg;
@@ -10212,12 +10226,12 @@ const stageOpen = id => {
   return false;
 };
 const STAGES = [
-  { id: 'senju', ch: 0, cls: 's1', ic: '🏮', no: '北千住編', nm: '商店街と祭り広場', en: 'トバトーバ（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。', rec: 1, lock: '' },
-  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.events.reduce((s, e) => s + e.n, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車側と3号車側の両方から部下が来る。全員倒すと上野に着く。', rec: 20, lock: 'トバトーバを1回倒すと解放' },
-  { id: 'ueno_street', ch: 1, cls: 's2', ic: '🏮', no: '上野編', nm: '上野の居酒屋通り', en: 'ヨシノシンの部下 30体（3地点×10体）', d: '改札を抜け、暖簾と提灯の並ぶ飲み屋街を進む。各地点の10体を倒すと先へ進める。', rec: 20, lock: '電車を1回クリアすると解放' },
-  { id: 'ueno', ch: 1, cls: 's3', ic: '🎌', no: '上野編', nm: '上野駅前 ヨシノシン', en: 'ヨシノシン（HP22,000の指揮官）＋部下36体〜', d: '駅前の広場で、部下を人形のように操る巨大な指揮官と戦う。HP75%・50%・25%の「30分睡眠チャージ」を10秒で止めよう。', rec: DATA.LV_BASE.ueno, lock: '居酒屋通りを1回クリアすると解放' },
-  { id: 'akiba_platform', ch: 2, cls: 's2', ic: '🚉', no: '秋葉原編', nm: '秋葉原駅ホーム', en: 'オガ・カエ（各HP5,000）', d: '閉鎖されたホームで2人と戦う前哨戦。前方の攻撃をよけて背後へ回ろう。', rec: DATA.LV_BASE.akiba_platform, lock: 'ヨシノシンを1回倒すと解放' },
-  { id: 'akiba_plaza', ch: 2, cls: 's3', ic: '⭐', no: '秋葉原編', nm: '秋葉原駅前広場', en: '星・中（各HP10,000）＋オガ・カエ（各5,000）', d: '星と中は、片方を倒してから15秒以内にもう片方も倒さないと復活する。2〜4人で結ぶ図形の攻撃に注意。', rec: DATA.LV_BASE.akiba_plaza, lock: '秋葉原駅ホームを1回クリアすると解放' },
+  { id: 'senju', ch: 0, cls: 's1', ic: '🏮', no: '北千住編', nm: '商店街と祭り広場', en: 'トバトーバ（古い大看板の付喪神）', d: '宵町のアーケード通りを抜けて、祭り広場で大看板の付喪神を鎮める。', rec: DATA.LV_BASE.senju, lock: '' },
+  { id: 'joban', ch: 1, cls: 's2', ic: '🚃', no: '上野編', nm: '常磐線 北千住→上野', en: `ヨシノシンの部下 ${DATA.JOBAN.events.reduce((s, e) => s + e.n, 0)}体`, d: '青い常磐線の2号車・3号車で戦う。1号車側と3号車側の両方から部下が来る。全員倒すと上野に着く。', rec: DATA.LV_BASE.joban, lock: 'トバトーバを1回倒すと解放' },
+  { id: 'ueno_street', ch: 1, cls: 's2', ic: '🏮', no: '上野編', nm: '上野の居酒屋通り', en: 'ヨシノシンの部下 30体（3地点×10体）', d: '改札を抜け、暖簾と提灯の並ぶ飲み屋街を進む。各地点の10体を倒すと先へ進める。', rec: DATA.LV_BASE.ueno_street, lock: '電車を1回クリアすると解放' },
+  { id: 'ueno', ch: 1, cls: 's3', ic: '🎌', no: '上野編', nm: '上野駅前 ヨシノシン', en: 'ヨシノシン（HP66,000の指揮官）＋部下36体〜', d: '駅前の広場で、部下を人形のように操る巨大な指揮官と戦う。HP75%・50%・25%の「30分睡眠チャージ」を10秒で止めよう。', rec: DATA.LV_BASE.ueno, lock: '居酒屋通りを1回クリアすると解放' },
+  { id: 'akiba_platform', ch: 2, cls: 's2', ic: '🚉', no: '秋葉原編', nm: '秋葉原駅ホーム', en: 'オガ・カエ（各HP7,500）', d: '閉鎖されたホームで2人と戦う前哨戦。前方の攻撃をよけて背後へ回ろう。', rec: DATA.LV_BASE.akiba_platform, lock: 'ヨシノシンを1回倒すと解放' },
+  { id: 'akiba_plaza', ch: 2, cls: 's3', ic: '⭐', no: '秋葉原編', nm: '秋葉原駅前広場', en: 'ホシ・ナカ（各HP15,000）＋オガ・カエ（各7,500）', d: '星と中は、片方を倒してから15秒以内にもう片方も倒さないと復活する。2〜4人で結ぶ図形の攻撃に注意。', rec: DATA.LV_BASE.akiba_plaza, lock: '秋葉原駅ホームを1回クリアすると解放' },
 ];
 const avgLv = ids => Math.floor(ids.reduce((s, id) => s + lvOf(id), 0) / Math.max(1, ids.length));
 const roleIc = id => DATA.ROLES[id] ? DATA.ROLES[id].ic + DATA.ROLES[id].short : '';
@@ -10538,10 +10552,10 @@ function akibaHud(v) {
 function akibaEvent(e, v) {
   const N = w => AK_NM[w] || w;
   switch (e.type) {
-    case 'twinDown': banner(`${N(e.who)}が倒れた！`, `15秒以内に${N(e.other)}も倒せ（間に合わないと${N(e.who)}がHP4,000で復活）`, 2200); break;
-    case 'twinRevive': notice(`${N(e.who)}が復活した（HP4,000）。もう一度、2人を15秒以内に`, 'warn', 2600); break;
+    case 'twinDown': banner(`${N(e.who)}が倒れた！`, `15秒以内に${N(e.other)}も倒せ（間に合わないと${N(e.who)}がHP7,500で復活）`, 2200); break;
+    case 'twinRevive': notice(`${N(e.who)}が復活した（HP7,500）。もう一度、2人を15秒以内に`, 'warn', 2600); break;
     case 'akDown': if (e.who === 'oga' || e.who === 'kae') notice(`${N(e.who)}を倒した！${v.stageId === 'akiba_plaza' ? '（もう起きない）' : ''}`, 'sp', 1600); break;
-    case 'akRevive': notice(`星と中が光の糸で${N(e.who)}を起こした（HP5,000）`, 'boss', 2200); break;
+    case 'akRevive': notice(`星と中が光の糸で${N(e.who)}を起こした（HP7,500）`, 'boss', 2200); break;
     case 'akGuard': notice(`${N(e.who)}が相方を守る！ ようりょく↑（6秒）`, 'boss', 1800); break;
     case 'geo': {
       const whos = (e.whos || []).map(N).join('・'), nm = e.n === 2 ? '二点結び' : e.n === 3 ? '三角結界' : '四角結界';
