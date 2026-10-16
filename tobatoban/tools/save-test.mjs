@@ -38,7 +38,7 @@ ok(SAVE.eqSlots(s) === 1 && SAVE.setEquip(s, 'kogemaru', 0, 'bracer_gold').ok &&
 const op5 = solo(true, 'joban', 'b5'); SAVE.apply(s, op5); ok(s.tickets === 2 && s.wins.story === 4 && op5.res.ticket === 1 && !s.uenoOpen && s.clear.joban === 1 && op5.res.unlocked === 'ueno_street', '別のステージ（電車）でも数える：4回目で2枚目。居酒屋通りが解放される（ボスはまだ）');
 ok(SAVE.eqSlots(s) === 2 && SAVE.setEquip(s, 'kogemaru', 1, 'bracer_purple').ok && !SAVE.setEquip(s, 'kogemaru', 1, 'bracer_gold').ok, '電車クリア後は2枠（同じ系統の別段階はOK・同じIDの二重は不可）');
 { const st = DATA.GROWTH.withEquip(DATA.GROWTH.stats(DATA.CHI.kagetsubame, 60), ['bracer_gold', 'charm_gold']), hp2 = DATA.GROWTH.withEquip(DATA.GROWTH.stats(DATA.CHI.kagetsubame, 60), ['magatama_gold']);
-  ok(st.hp === 605 && st.str === 475 && st.yo === 193 && st.def === 331 && hp2.hp === 1210, `Lv60大蛇＋ちから50%＋まもり50%＝HP${st.hp}・ちから${st.str}・ようりょく${st.yo}・まもり${st.def}、HP+100%＝${hp2.hp}`);
+  ok(st.hp === 1165 && st.str === 475 && st.yo === 193 && st.def === 331 && hp2.hp === 2330, `Lv60大蛇＋ちから50%＋まもり50%＝HP${st.hp}・ちから${st.str}・ようりょく${st.yo}・まもり${st.def}、HP+100%＝${hp2.hp}`);
   const s2 = DATA.GROWTH.withEquip({ hp: 100, str: 100, yo: 100, def: 100 }, ['bracer_purple', 'bracer_gold']); ok(s2.str === 190, `同じ能力は足し算（+40%と+50%で×1.90＝${s2.str}）`); }
 { // v7 P4：装備はアカウントで1つずつ（キャラをまたいで重ならない）
   const r1 = SAVE.setEquip(s, 'hoshisuzume', 0, 'bracer_gold');

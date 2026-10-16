@@ -77,6 +77,21 @@ with sync_playwright() as p:
     rk = pg.evaluate("({ rot: __tb.VIEW.rot, kb: !!__tb.G.kbUp })"); ok(rk['rot'] == 0, f'横向きの端末：キーボード（高さ200）でも回さない（{rk}）')
     pg.screenshot(path=os.path.join(OUT, 'p4_05_land_kb.png'))
     pg.evaluate("document.activeElement.blur()"); pg.set_viewport_size({'width': 844, 'height': 390}); time.sleep(0.6)
+    # v7 P6：仲間の必殺は右上へ流れ、敵の必殺は中央に名前
+    pg.evaluate("(() => { const p = document.getElementById('login'); if (p && !p.hidden) document.getElementById('btnGuest').click(); __tb.show('title'); })()"); time.sleep(0.5)
+    pg.evaluate("document.getElementById('btnSolo').click()"); ok(until(pg, "__tb.G.mode === 'play' && __tb.G.v && __tb.G.v.allies", 40), '出動して戦闘画面')
+    time.sleep(1.0); pg.evaluate("__tb.spFeed(1, '九影・十連'); __tb.spFeed(2, '提灯花火'); __tb.enemySp('トバトーバ', '提灯おとし')"); time.sleep(1.0)
+    fd = pg.evaluate("[...document.querySelectorAll('#spFeed .it')].map(x => x.textContent)"); es = pg.evaluate("document.getElementById('eSp').textContent")
+    ok(len(fd) == 2 and fd[0].startswith('P2') and '九影・十連' in fd[0], f'仲間の必殺が右上に流れる（{fd}）'); ok('提灯おとし' in es, f'敵の必殺は中央に名前（{es}）')
+    pg.screenshot(path=os.path.join(OUT, 'p6_01_sp_names.png'))
+    time.sleep(2.8); ok(pg.evaluate("document.querySelectorAll('#spFeed .it').length") == 0, '約2.7秒で消える')
+    # v7：回復キャラは味方を回復対象に指定でき、枠と足もとの印で示す
+    pg.evaluate("(() => { const G = __tb.G; if (G.session.swapTo(3)) G.my = 3; })()"); time.sleep(0.5)
+    hl = pg.evaluate("[__tb.singleHealer('momiji'), __tb.singleHealer('kogemaru'), __tb.G.v.allies[__tb.G.my].ch]")
+    pg.evaluate("__tb.setHealTarget(1)"); time.sleep(0.5)
+    mk = pg.evaluate("(() => { const m = document.querySelector('#labels .healmk'); const c = document.querySelectorAll('#party .card, #party > *')[1]; return { mk: !!m, card: !!c && c.classList.contains('tgt'), t: __tb.G.session.local.healT }; })()")
+    ok(hl[0] and not hl[1] and mk['mk'] and mk['t'] == 1, f'回復対象の指定：単体回復のキャラだけ（{hl}）・足もとの印と枠（{mk}）')
+    pg.screenshot(path=os.path.join(OUT, 'p4_08_heal_target.png'))
     ok(len(errs) == 0, f'ページのエラーなし（{errs[:3]}）')
     ctx.close()
     # ---------- 縦持ちの端末（画面を90度回して横向きに見せる） ----------

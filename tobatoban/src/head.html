@@ -351,6 +351,18 @@ a{color:var(--shu)}
 #cutin b{font-family:var(--f-disp);font-weight:400;font-size:22px}
 #banner{position:absolute;left:0;right:0;top:24%;text-align:center;pointer-events:none;font-family:var(--f-disp);font-size:clamp(24px,calc(var(--aw)*6),44px);padding:0 12px;color:#fff;text-shadow:0 0 16px rgba(255,120,60,.8),0 3px 0 #2a0f0a;opacity:0;transition:opacity .25s,transform .25s;transform:scale(.9)}
 #banner.show{opacity:1;transform:none}
+/* v7 P6：仲間の必殺は右上（ミニマップの下）に流れる。敵の必殺は画面の中央に名前 */
+.healmk{position:absolute;transform:translate(-50%,-50%);width:54px;height:30px;border:3px solid #5dff9a;border-radius:50%;box-shadow:0 0 10px #5dff9a;color:#bfffd6;font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center;pointer-events:none;text-shadow:0 0 4px #0a3a1a;animation:hmk 1s ease-in-out infinite alternate}
+@keyframes hmk{from{opacity:.65}to{opacity:1}}
+#spFeed{position:absolute;right:calc(var(--sar,0px) + 10px);top:34%;width:min(34%,300px);display:flex;flex-direction:column;align-items:flex-end;gap:4px;pointer-events:none;z-index:6}
+#spFeed .it{background:linear-gradient(90deg,rgba(20,14,60,.15),rgba(20,14,60,.88) 30%);border-right:4px solid #ffd04a;color:#fff;font-weight:900;font-size:14px;padding:4px 10px 4px 22px;border-radius:8px 0 0 8px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000;animation:spIn 2.6s ease forwards}
+#spFeed .it b{font-family:var(--f-disp);margin-right:6px;padding:0 5px;border-radius:5px;color:#fff}
+@keyframes spIn{0%{transform:translateX(110%);opacity:0}10%{transform:none;opacity:1}82%{transform:none;opacity:1}100%{transform:translateX(-12%);opacity:0}}
+#eSp{position:absolute;left:0;right:0;top:44%;text-align:center;pointer-events:none;z-index:6;opacity:0}
+#eSp.show{animation:eSpIn 2.5s ease forwards}
+#eSp span{display:inline-block;font-family:var(--f-disp);font-size:clamp(22px,calc(var(--aw)*5),40px);color:#ffe6e0;background:linear-gradient(90deg,transparent,rgba(120,10,20,.82) 18%,rgba(120,10,20,.82) 82%,transparent);padding:4px 48px;text-shadow:0 2px 0 #3a0008,0 0 10px #ff4a4a}
+#eSp small{display:block;font-family:var(--f-body);font-weight:900;font-size:13px;color:#ffd0c8;margin-bottom:2px;text-shadow:0 1px 2px #000}
+@keyframes eSpIn{0%{opacity:0;transform:scale(1.25)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
 #banner small{display:block;font-family:var(--f-body);font-weight:900;font-size:15px;text-shadow:0 1px 3px #000;margin-top:4px}
 #bossCard{position:absolute;left:0;right:0;bottom:18%;text-align:center;pointer-events:none;opacity:0;transition:opacity .3s}
 #bossCard.show{opacity:1}
@@ -1035,6 +1047,7 @@ a{color:var(--shu)}
 </div>
 <div id="cutin"><img id="cutImg" alt=""><div><small id="cutWho" style="display:block;font-size:11px;font-weight:900"></small><b id="cutNm"></b></div></div>
 <div id="banner"></div>
+<div id="spFeed" aria-live="polite"></div><div id="eSp" aria-live="polite"></div>
 <div id="sleepBox" hidden><div class="sl-t">💤 30分睡眠チャージ<span id="slStage"></span></div><div class="sl-m" id="slMsg">10秒以内に4体合計ダメージを与えろ！</div><div class="sl-row"><span>残り <b id="slTime">10.0</b>秒</span><div class="sl-bar"><i id="slTimeFill"></i></div></div><div class="sl-row"><span><b id="slDmg">0</b> / <span id="slNeed">0</span></span><div class="sl-bar dmg"><i id="slDmgFill"></i></div></div><div class="sl-x">隙だらけ・与ダメージ×2.25</div></div>
 <div id="fade"></div>
 <div id="bossCard"><div class="s">付喪神</div><div class="n">トバトーバ</div><div class="d">古い大看板と祭りの台座が、宵の広場で目を覚ました</div></div>

@@ -588,14 +588,20 @@ function toggleLock() {
 /** 画面の敵をタップ：その敵に注目する。追尾距離（12m）の内なら、遠距離攻撃の弾はその敵へ追尾して当たる */
 const LOCKABLE = ['idle', 'walk', 'wind', 'act', 'rec', 'down', 'stun'];
 const hasRanged = ch => { const c = DATA.CHI[ch]; if (!c) return false; if (c.A === 'shot') return true; return ['X', 'Y'].some(k => { const s = DATA.SKILLS[c[k]]; return s && (s.kind === 'dot' || s.form === 'shot' || s.form === 'blast'); }); };
+/** 単体回復の技（X・Yのどちらか）を持つキャラか。範囲回復だけのキャラは対象外 */
+const singleHealer = ch => { const c = DATA.CHI[ch]; return !!c && ['X', 'Y'].some(k => { const s = DATA.SKILLS[c[k]]; return s && s.kind === 'heal'; }); };
+/** v7：回復対象の指定（もう一度で解除）。回復技を使うと、射程内ならこの味方だけを回復する */
+function setHealTarget(i) { const S = G.session, v = G.v; if (!S || !v) return; if (S.local.healT === i) { S.local.healT = null; notice('回復対象を解除（いちばん減っている味方を回復）', 'info', 1400); } else { S.local.healT = i; notice(`P${i + 1} ${DATA.CHI[v.allies[i].ch].nm}を回復対象にした`, 'info', 1500); } AUDIO.sfx('ui'); }
 function tapTarget(ax, ay) {
   const v = G.v; if (!v || G.mode !== 'play') return;
   const me = v.allies[G.my]; if (!me || me.st !== 'ok' || v.stage === 'intro') return;
   let best = null, bd = 52 * (curLayout ? Math.max(0.8, curLayout.posS) : 1);
   const tryPt = (id, x, y, z, r, extra) => { const p = R.project(x, y, z); if (!p.front) return; const d = Math.hypot(p.x - ax, p.y - ay) - (extra || 0); if (d < bd) { bd = d; best = { id, x, z, r }; } };
   if (v.boss && v.stage === 'boss' && LOCKABLE.includes(v.boss.st)) for (const y of [0.8, 2.2, 3.6]) tryPt('boss', v.boss.x, v.boss.y + y, v.boss.z, 1.4, 30);
+  if (singleHealer(me.ch)) v.allies.forEach((o, i) => { if (o.st === 'ok') for (const y of [0.4, 0.9]) tryPt('ally:' + i, o.x, y, o.z, 0.4, 6); }); // v7：味方をタップ＝回復対象
   for (const m of v.mobs) if (!m.dying) { tryPt(m.id, m.x, m.yoshi ? 0.8 : 0.45, m.z, 0.4); if (m.yoshi) tryPt(m.id, m.x, 1.35, m.z, 0.4); }
   if (!best) return;
+  if (String(best.id).indexOf('ally:') === 0) { setHealTarget(+best.id.slice(5)); return; }
   if (G.lock === best.id) { G.lock = null; AUDIO.sfx('back'); return; } // もう一度タップで解除
   const dist = Math.max(0, Math.hypot(best.x - me.x, best.z - me.z) - best.r), R0 = DATA.SIM.homeRange;
   if (dist > R0) { AUDIO.sfx('back'); notice(`遠すぎて狙えません（${R0}mまで近づいてからタップ）`, 'warn', 1500); return; }
@@ -630,6 +636,7 @@ function partyTap(i) {
   const v = G.v, S = G.session; if (!v || !S) return;
   const me = v.allies[G.my];
   if (me && me.act === 'charge' && DATA.SKILLS[me.sk[me.actSlot]] && DATA.SKILLS[me.sk[me.actSlot]].kind === 'heal') { S.local.healT = i; AUDIO.sfx('ui'); return; }
+  if (me && singleHealer(me.ch) && (S.kind !== 'solo' || i === G.my)) { setHealTarget(i); return; } // 協力中（交代できない）・自分のカードは回復対象の指定。ソロで仲間のカードは今までどおり交代（画面の味方をタップすると指定）
   if (S.kind === 'solo' && i !== G.my) { if (S.swapTo(i)) { G.my = i; AUDIO.sfx('ok'); notice(`${DATA.CHI[v.allies[i].ch].nm}に交代した`, 'info', 1500); R.cam.reset = true; } else notice('その仲間には交代できません', 'info', 1200); }
 }
 
@@ -639,13 +646,24 @@ function notice(txt, kind, ms) {
   setTimeout(() => d.remove(), ms || 1600);
 }
 function banner(t, small, ms) { const b = $('#banner'); b.textContent = t; if (small) { const s = el('small', '', small); b.appendChild(s); } b.classList.add('show'); clearTimeout(G.bannerT); G.bannerT = setTimeout(() => b.classList.remove('show'), ms || 1800); }
+/** v7 P6：敵の大技（必殺）。画面の中央に2.5秒だけ名前を出す。小技は今までどおり小さく */
+const ENEMY_SP = { otoshi: 1, kousen: 1, junkou: 1, stamp: 1, shosha: 1, tengai: 1, throw50: 1, sleep: 1, barrier: 1, benibana: 1, meguri: 1, hoshirai: 1, hyoutei: 1 };
+function enemySp(who, nm) { const d = $('#eSp'); d.textContent = ''; d.append(el('small', '', who + 'の必殺'), el('span', '', nm)); d.classList.remove('show'); void d.offsetWidth; d.classList.add('show'); }
+/** v7 P6：仲間（自分以外）が必殺を撃った：「P2 キャラ名 必殺名」を右上に流す（3件まで） */
+function spFeed(slot, nm) {
+  const f = $('#spFeed'), a = G.v && G.v.allies[slot], c = a && DATA.CHI[a.ch]; while (f.children.length >= 3) f.firstChild.remove();
+  { // 置き場所：右上のミニマップ・視点ボタンのすぐ下（回転前の画面の座標で測る）
+    let bot = 0; for (const e of document.querySelectorAll('#hud #map, #hud button')) { if (!e.offsetParent || e.offsetWidth === 0) continue; const x = e.offsetLeft + e.offsetWidth / 2, y = e.offsetTop + e.offsetHeight / 2; if (x > VIEW.w * 0.62 && y < VIEW.h * 0.4) bot = Math.max(bot, e.offsetTop + e.offsetHeight); }
+    f.style.top = Math.round((bot || VIEW.h * 0.3) + 6) + 'px'; }
+  const it = el('div', 'it'), b = el('b', '', 'P' + (slot + 1)); b.style.background = pcol(slot); it.append(b, (c ? c.nm + '　' : '') + nm); f.appendChild(it); setTimeout(() => it.remove(), 2700);
+}
 function onNotice(o) {
   const v = G.v;
   if (o.k === 'sp') {
     if (o.me) { const c = $('#cutin'); $('#cutImg').src = G.thumbs[v.allies[o.slot].ch] || ''; $('#cutWho').textContent = 'P' + (o.slot + 1) + '　必殺技'; $('#cutNm').textContent = o.nm; c.classList.remove('show'); void c.offsetWidth; c.classList.add('show'); }
-    else notice(`P${o.slot + 1}：${o.nm}！`, 'sp', 1300);
+    else spFeed(o.slot, o.nm); // v7 P6：仲間の必殺は右上に2〜3秒流す
   } else if (o.k === 'orb') { notice(o.slot === G.my ? 'G玉！ 10秒だけ ちから・ようりょく×2' : `P${o.slot + 1}がG玉（10秒 ちから・ようりょく×2）`, 'sp', 2200);
-  } else if (o.k === 'boss') { const M = (G.v && G.v.stageId === 'ueno' ? DATA.UENO.moves : DATA.BMOVES)[o.mv]; if (M && o.mv !== 'cmd') notice(M.nm, 'boss', 1100); }
+  } else if (o.k === 'boss') { const ue = G.v && G.v.stageId === 'ueno', M = (ue ? DATA.UENO.moves : DATA.BMOVES)[o.mv]; if (M && o.mv !== 'cmd') { if (ENEMY_SP[o.mv]) enemySp(ue ? 'ヨシノシン' : 'トバトーバ', M.nm); else notice(M.nm, 'boss', 1100); } }
   else if (o.k === 'phase2') { banner('トバトーバが覚醒した！', '赤いオーラ：空の巡行が6回に増える。落下提灯に注意', 2400); AUDIO.bgm('boss2'); }
   else if (o.k === 'unlock') { if (G.lock === 'boss') { G.lock = null; G.relockWanted = SET.relock; } notice('ボスが飛んだ！ 注目が外れた', 'warn', 1500); }
   else if (o.k === 'sig') { const t = { help: '助けて！', heal: '回復する！', lantern: '灯籠へ！', sp: '必殺準備OK！', left: '通信が切れたためAIが引き継ぎます' }[o.code] || ''; notice(`P${o.slot + 1}：${t}`, o.code === 'left' ? 'warn' : '', 2000); }
@@ -812,8 +830,8 @@ function updateHud(v, dt) {
     C.ic.textContent = (a.strBuff ? '⚔' : '') + (a.defBuff ? '🛡' : '') + (a.stealth ? '👁' : '') + (a.taunt ? '❗' : '') + (a.sp >= 100 ? '★' : '');
     C.gt.hidden = !(a.gT > 0); if (a.gT > 0) C.gt.textContent = 'G ' + Math.ceil(a.gT); C.c.classList.toggle('gbuff', a.gT > 0); // G玉の残り秒
     C.st.hidden = a.st === 'ok'; C.st.textContent = a.st === 'down' ? `気絶 ${Math.max(0, Math.ceil(DATA.SIM.ascendTime - a.downT))}` : '昇天';
-    const healing = me.act === 'charge' && DATA.SKILLS[me.sk[me.actSlot]] && DATA.SKILLS[me.sk[me.actSlot]].kind === 'heal';
-    C.ht.hidden = !(healing && G.session.local.healT === i); C.c.classList.toggle('tgt', healing && G.session.local.healT === i);
+    const tgt = G.session.local.healT === i && singleHealer(me.ch); // v7：指定中はいつも枠で示す
+    C.ht.hidden = !tgt; C.c.classList.toggle('tgt', tgt);
   });
   // 頭上の表示・注目・画面外の矢印
   overlays(v, me);
@@ -832,6 +850,7 @@ function overlays(v, me) {
     const k = Math.min((W / 2 - m) / Math.max(0.001, Math.abs(Math.cos(ang))), (H / 2 - m) / Math.max(0.001, Math.abs(Math.sin(ang))));
     o.e.style.left = cx + Math.cos(ang) * k + 'px'; o.e.style.top = cy + Math.sin(ang) * k + 'px'; o.tri.style.background = col; o.tri.style.transform = `rotate(${ang}rad)`; o.t.textContent = txt; o.e.style.display = '';
   };
+  { const ht = G.session && G.session.local.healT, o = ht != null && v.allies[ht]; if (o && o.st === 'ok' && singleHealer(me.ch)) put('healMk', o.x, 0.05, o.z, () => ({ e: el('div', 'healmk', '✚') }), () => 0); } // v7：回復対象の足もとに緑の印
   v.allies.forEach((a, i) => {
     const h = DATA.CHI[a.ch].h;
     put('a' + i, a.x, a.st === 'ok' ? h * 1.25 + 0.2 : 0.8, a.z, () => { const e = el('div', 'label3d'); const pn = el('span', 'pn', 'P' + (i + 1)); pn.style.background = pcol(i); const hp = el('div', 'mini hp'); const hi = el('i'); hp.appendChild(hi); const dt = el('span', 'downt'); const pg = el('div', 'prog'); const pgi = el('i'); pg.appendChild(pgi); e.append(dt, pg, pn, hp); return { e, hi, hp, dt, pg, pgi }; },

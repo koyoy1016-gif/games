@@ -387,7 +387,8 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
     ok(list.length === 5 && rng.every(([lo, hi]) => lo >= 147 && hi <= 203), `オガ・カエの技5つ：まもり100の相手へ ${rng.map(r => r.join('〜')).join('／')}`);
     const muls = []; for (let i = 0; i < 40; i++) { og.act = null; og.cd = {}; const n0 = pf.hazards.length; pf.akibaStart(og, 'ougi', kg); const h = pf.hazards[pf.hazards.length - 1]; if (pf.hazards.length > n0) muls.push(h.mul); }
     const M = AM.ougi, avg = (M.dmg[0] + M.dmg[1]) / 2, mn = Math.min(...muls), mx = Math.max(...muls);
-    ok(mn >= M.dmg[0] / avg - 1e-9 && mx <= M.dmg[1] / avg + 1e-9 && mx - mn > 0.05, `1発ごとの幅：×${mn.toFixed(3)}〜×${mx.toFixed(3)}`);
+    const D8 = DATA.AKIBA.dmgMul; ok(D8 === 0.8 && mn >= D8 * M.dmg[0] / avg - 1e-9 && mx <= D8 * M.dmg[1] / avg + 1e-9 && mx - mn > 0.04, `1発ごとの幅（v7：×0.8込み）：×${mn.toFixed(3)}〜×${mx.toFixed(3)}`);
+    { og.act = null; og.cd = {}; pf.akibaStart(og, 'ougi', kg); const h = pf.hazards[pf.hazards.length - 1]; ok(Math.abs(h.r1 - AM.ougi.r * 1.15) < 1e-9, `v7：攻撃範囲は約115%（紅扇たたき ${AM.ougi.r}→${h.r1.toFixed(2)}m）・作るときに一度だけ`); }
     pf.hazards = []; og.act = null;
     const d = hit(M.pw, 'str'), ex = Math.round(M.pw * 600 / (120 + pf.stat(kg, 'def')) * pf.lvIn);
     ok(d === ex && Math.abs(pf.lvIn - 0.9) < 1e-9, `Lv60大蛇（まもり${pf.stat(kg, 'def')}）へ紅扇たたきの基準 ${d}（式どおり。ホームの基準Lv50なので被ダメージ×${pf.lvIn.toFixed(2)}）`);
@@ -463,7 +464,8 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   const s = testSim('kogemaru'); s.mobs = []; const m = s.spawnMob(0, 0, true); m.fireT = 99; m.para = 99; const a = s.allies[0]; a.x = 0; a.z = -1.8;
   run(s, 0, [[0, 'A']], 0.6); const n1 = s.mlog[0].hits.length;
   a.z = -1.1; run(s, 0, [[0.7, 'A']], 1.3); const n2 = s.mlog[1] ? s.mlog[1].hits.length : 0;
-  ok(n1 === 0 && n2 === 1, `札小僧：離れていると空振り（${n1}）、触れる距離で当たる（${n2}）`);
+  ok(n1 === 1 && n2 === 1, `v7：A攻撃の届く距離1.25倍（${(DATA.MOVES.combo3.range * DATA.SIM.aRange).toFixed(2)}）で、離れた1.8でも札小僧に届く（${n1}）・触れる距離でも当たる（${n2}）`);
+  a.z = -2.4; run(s, 0, [[1.4, 'A']], 2.0); const n3 = s.mlog[2] ? s.mlog[2].hits.length : 0; ok(n3 === 0, `2.4離れると空振り（${n3}）`);
 }
 {
   const s = testSim('hoshisuzume'); const a = s.allies[0]; a.z = 10 - 8;
@@ -539,9 +541,9 @@ if (PROTO) {
   // 自動ダッシュ：0.99秒は歩き、1秒を超えたらダッシュ、止まったら解除
   const d = new Sim({ party, seed: 5, stageId: 'ueno_street', test: true }); d.mobs = []; const p0 = d.allies[0]; p0.ctrlAI = false; p0.inv = 1e9; p0.x = 0; p0.z = 2;
   const go = (sec, mx, mz) => { let dash = false; for (let i = 0; i < Math.round(sec * 60); i++) { const inp = SIMLIB.Sim.emptyInput(); inp.mx = mx; inp.mz = mz; d.setInput(0, inp); d.step(); dash = p0.dashing; } return dash; };
-  const w99 = go(0.99, 0, 1), w105 = go(0.06, 0, 1);
-  const stop = go(1 / 60, 0, 0), again = go(0.5, 0, 1);
-  ok(!w99 && w105 && !stop && !again, `自動ダッシュ：0.99秒は歩き（${w99}）→1秒を超えるとダッシュ（${w105}）→止めると解除（${stop}）→また歩きから（${again}）`);
+  const w99 = go(0.74, 0, 1), w105 = go(0.06, 0, 1);
+  const stop = go(1 / 60, 0, 0), again = go(0.5, 0, 1), half = (go(1 / 60, 0, 0), go(1.2, 0, 0.5));
+  ok(!w99 && w105 && !stop && !again && !half && DATA.SIM.autoRunT === 0.75, `v7：自動で走る：倒して0.74秒は歩き（${w99}）→0.75秒を超えると走る（${w105}）→止めると解除（${stop}）→また歩きから（${again}）・半分だけ倒すと走らない（${half}）`);
   p0.tired = true; p0.stam = 0; go(1.2, 0, 1); ok(!p0.dashing, '息切れ中は自動でもダッシュしない');
 }
 // v7：設定表の技（神速アタック・よろい砕き／刀狩り・陣・無敵）と固有スキル

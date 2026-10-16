@@ -26,9 +26,10 @@ const GROWTH = (() => {
   const statAt = (cap, L, isHp) => { const s = startOf(cap, isHp); return s + Math.floor((cap - s) * (L - 1) / 98); };
   /** v7：設定表の値（base）をLv1の能力とし、旧式と同じ伸び率（HP：Lv99でLv1の1.667倍・ほか1.538倍）で上げる。
       HP＝B＋floor(B×(L−1)÷147)、ほか＝B＋floor(B×(L−1)÷182)（旧式「Lvの値÷Lv1の値」を連続式にしたもの。Lv1は設定表と同じ・単調に増える） */
+  const HP_PLUS = 400; // v7：全60体のLv1のHPを仕様の値＋400に（伸び率・成長方式はそのまま。+400した値を基準に同じ式で伸びる）
   const grow = (B, L, isHp) => B + Math.floor(B * (L - 1) / (isHp ? 147 : 182));
   /** レベルL の HP・ちから・ようりょく・まもり（base＝Lv1 [hp,str,yo,def]。base が無いときは旧式の cap＝Lv99） */
-  function stats(c, L) { L = Math.max(1, Math.min(LV_MAX, L | 0)); const b = c.base; if (b) return { hp: grow(b[0], L, true), str: grow(b[1], L), yo: grow(b[2], L), def: grow(b[3], L) }; const k = c.cap; return { hp: statAt(k[0], L, true), str: statAt(k[1], L), yo: statAt(k[2], L), def: statAt(k[3], L) }; }
+  function stats(c, L) { L = Math.max(1, Math.min(LV_MAX, L | 0)); const b = c.base; if (b) return { hp: grow(b[0] + HP_PLUS, L, true), str: grow(b[1], L), yo: grow(b[2], L), def: grow(b[3], L) }; const k = c.cap; return { hp: statAt(k[0], L, true), str: statAt(k[1], L), yo: statAt(k[2], L), def: statAt(k[3], L) }; }
   /** AIが動かすときの能力：各値×95÷100の切り捨て（v7） */
   const aiStats = s => ({ hp: Math.floor(s.hp * 95 / 100), str: Math.floor(s.str * 95 / 100), yo: Math.floor(s.yo * 95 / 100), def: Math.floor(s.def * 95 / 100) }); // v7：AIは95%（移動速度は SIM.aiMul）
   const cum = (rank, L) => EXP_CUM[rank][Math.max(1, Math.min(LV_MAX, L))];

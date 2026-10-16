@@ -22,14 +22,14 @@ let lv1bad = 0, mono = 0, devPt = 0, devAt = '';
 const old = (cap, L, isHp) => { const st = Math.floor((cap * (isHp ? 60 : 65) + 50) / 100); return st + Math.floor((cap - st) * (L - 1) / 98); };
 for (const c of D.CHARS) {
   const B = V7[c.id].base, s1 = D.GROWTH.stats(c, 1);
-  if (s1.hp !== B[0] || s1.str !== B[1] || s1.yo !== B[2] || s1.def !== B[3]) { lv1bad++; console.log('  Lv1ずれ', c.id, s1, B); }
+  if (s1.hp !== B[0] + 400 || s1.str !== B[1] || s1.yo !== B[2] || s1.def !== B[3]) { lv1bad++; console.log('  Lv1ずれ', c.id, s1, B); }
   let prev = s1;
   for (let L = 2; L <= 99; L++) {
     const s = D.GROWTH.stats(c, L); for (const k of ['hp', 'str', 'yo', 'def']) if (s[k] < prev[k]) mono++; prev = s;
-    ['hp', 'str', 'yo', 'def'].forEach((k, i) => { const exp = B[i] * old(c.cap[i], L, i === 0) / old(c.cap[i], 1, i === 0), d = Math.abs(s[k] - exp) / exp; if (d > devPt) { devPt = d; devAt = `${c.id} Lv${L} ${k} ${s[k]}／旧式の比率なら${exp.toFixed(1)}`; } });
+    ['hp', 'str', 'yo', 'def'].forEach((k, i) => { const exp = (B[i] + (i === 0 ? 400 : 0)) * old(c.cap[i], L, i === 0) / old(c.cap[i], 1, i === 0), d = Math.abs(s[k] - exp) / exp; if (d > devPt) { devPt = d; devAt = `${c.id} Lv${L} ${k} ${s[k]}／旧式の比率なら${exp.toFixed(1)}`; } });
   }
 }
-ok(lv1bad === 0, `60体のLv1の4能力（240項目）が確定仕様と一致（ずれ ${lv1bad}）`);
+ok(lv1bad === 0, `60体のLv1の4能力（240項目）が確定仕様と一致（HPは仕様＋400・v7追加依頼。ずれ ${lv1bad}）`);
 { let bad = []; for (const c of D.CHARS) { const v = V7[c.id]; if (c.nm !== v.nm || c.Anm !== v.A[0] || D.SKILLS[c.X].nm !== v.X[0] || D.SKILLS[c.Y].nm !== v.Y[0] || c.roleId !== v.role || (v.get === '初期') === !!c.isNew) bad.push(c.id); }
   ok(!bad.length && Object.keys(V7).length === 60, `60体の名前・役職・A/X/Y の技名（180枠）・初期/ガチャの区分が確定仕様どおり（ずれ ${bad.join(',') || 'なし'}）`);
   const init = D.CHARS.filter(c => !c.isNew).map(c => c.id), gacha = D.GACHA_IDS; ok(init.length === 10 && gacha.length === 50 && !init.some(i => gacha.includes(i)) && new Set(init.concat(gacha)).size === 60, `初期10件・ガチャ50件・重複なし・合わせて60件`); }
@@ -38,8 +38,8 @@ ok(devPt < 0.025, `旧式の伸び率（整数丸めあり）との差は最大 
 ok(badExp === 0, `累積EXP・次までの必要量・EXPからのレベルが一致（ずれ ${badExp}）`);
 for (const [r, T] of Object.entries(J.growth.rank_total_exp)) { let s = 0; for (let L = 1; L < 99; L++) s += D.GROWTH.toNext(r, L); ok(s === T && D.GROWTH.toNext(r, 99) === null, `ランク${r}：98区間の合計 ${s} = ${T}、Lv99の次は上限`); }
 const k = D.CHI.kogemaru, k1 = D.GROWTH.stats(k, 1), k50 = D.GROWTH.stats(k, 50), k99 = D.GROWTH.stats(k, 99);
-ok(k1.hp === 372 && k1.str === 223 && k1.yo === 61 && k1.def === 124 && k50.hp === 496 && k50.str === 283 && k99.hp === 620 && k99.str === 343, `地縛霊 Lv1 ${JSON.stringify(k1)} / Lv50 ${k50.hp}・${k50.str} / Lv99 ${k99.hp}・${k99.str}`);
-const ai = D.GROWTH.aiStats(k1); ok(ai.hp === 353 && ai.str === 211 && ai.def === 117 && D.SIM.aiMul === 0.95, `AIは各能力×0.95の切り捨て・移動も95%（${JSON.stringify(ai)}）`);
+ok(k1.hp === 772 && k1.str === 223 && k1.yo === 61 && k1.def === 124 && k50.hp === 1029 && k50.str === 283 && k99.hp === 1286 && k99.str === 343, `地縛霊 Lv1 ${JSON.stringify(k1)} / Lv50 ${k50.hp}・${k50.str} / Lv99 ${k99.hp}・${k99.str}`);
+const ai = D.GROWTH.aiStats(k1); ok(ai.hp === 733 && ai.str === 211 && ai.def === 117 && D.SIM.aiMul === 0.95, `AIは各能力×0.95の切り捨て・移動も95%（${JSON.stringify(ai)}）`);
 const R = D.REWARD;
 ok(R.exp('senju', true, 1, 1) === 10000 && R.exp('senju', true, 1, 0.8) === 8000, 'ソロでトバトーバ勝利：操作10,000・AI 8,000');
 ok(R.exp('senju', true, 4, 1) === 10000 && R.exp('ueno', true, 4, 1) === 50000, '4人で勝利しても人間は100%（トバトーバ10,000・ヨシノシン50,000。人数の上乗せなし）');

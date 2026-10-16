@@ -139,8 +139,9 @@
   P.akibaStart = function (m, k, tg) {
     const M = A().moves[k], src = { str: m.str, yo: m.yo * m.yoMul }, base = { pw: M.pw || 0, stat: M.stat || 'yo', srcStats: src, src: 'akiba', srcEnt: m, srcId: m.id, dodge: true, max: 1, iv: 99 };
     if (M.dmg) base.mul = this.rng.range(M.dmg[0], M.dmg[1]) / ((M.dmg[0] + M.dmg[1]) / 2); // オガ・カエ：1発ごとに幅の中でランダム（v6）
+    base.mul = (base.mul || 1) * A().dmgMul; // v7：4人の与ダメージ×0.8（一度だけ）
     m.cd[k] = M.cd; m.yaw = yawTo(tg.x - m.x, tg.z - m.z);
-    const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), H = o => this.hz(Object.assign({}, base, o));
+    const RM = A().rangeMul, fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), H = o => { const q = Object.assign({}, base, o); for (const g of ['r', 'r1', 'len', 'w']) if (q[g]) q[g] *= RM; return this.hz(q); }; // v7：範囲×1.15（作るときに一度だけ）
     let end = M.warn + (M.act || 0) + (M.rec || 0.6);
     const fxOf = { hoshi: 'hoshi', naka: 'naka', oga: 'oga', kae: 'kae' }[m.who];
     switch (k) {
@@ -162,12 +163,12 @@
     const A0 = m.act, M = A().moves[A0.k]; A0.t += dt;
     if (A0.k === 'shizuku' && !A0.fired && A0.t >= M.warn) { // 水弾：幅0.8m・距離12m・秒速8m
       A0.fired = true; const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw);
-      this.projs.push({ id: this.id(), kind: 'mizu', team: 'enemy', x: m.x + fx * 0.5, y: 0.8, z: m.z + fz * 0.5, vx: fx * M.speed, vz: fz * M.speed, life: M.len / M.speed, r: M.w / 2, pw: M.pw, stat: 'yo', src: { str: m.str, yo: m.yo * m.yoMul }, srcEnt: m, hit: new Set(), yaw: m.yaw });
+      this.projs.push({ id: this.id(), kind: 'mizu', team: 'enemy', x: m.x + fx * 0.5, y: 0.8, z: m.z + fz * 0.5, vx: fx * M.speed, vz: fz * M.speed, life: M.len * A().rangeMul / M.speed, r: M.w * A().rangeMul / 2, pw: M.pw * A().dmgMul, stat: 'yo', src: { str: m.str, yo: m.yo * m.yoMul }, srcEnt: m, hit: new Set(), yaw: m.yaw });
     }
     if (A0.k === 'benibana' && m.jumpTo) { const k = Math.min(1, A0.t / M.warn); m.x = m.jumpFrom[0] + (m.jumpTo[0] - m.jumpFrom[0]) * k; m.z = m.jumpFrom[1] + (m.jumpTo[1] - m.jumpFrom[1]) * k; m.jump = Math.sin(k * Math.PI) * 2.2; if (k >= 1) { m.jump = 0; m.jumpTo = null; } }
     if (A0.k === 'meguri' && m.spin && A0.t >= M.warn) { // 水の光を2.5秒で120度回す（1人1回まで）
       const S = m.spin, k = Math.min(1, (A0.t - M.warn) / M.dur), yaw = S.y0 + S.dir * M.sweep * k;
-      if (!S.hz) S.hz = this.hz({ kind: 'line', x: m.x, z: m.z, yaw, len: M.len, w: M.w, warn: 0, act: M.dur, pw: M.pw, stat: 'yo', srcStats: { str: m.str, yo: m.yo * m.yoMul }, src: 'akiba', srcEnt: m, srcId: m.id, max: 1, iv: 99, fx: 'kae', mul: S.mul || 1 });
+      if (!S.hz) S.hz = this.hz({ kind: 'line', x: m.x, z: m.z, yaw, len: M.len * A().rangeMul, w: M.w * A().rangeMul, warn: 0, act: M.dur, pw: M.pw, stat: 'yo', srcStats: { str: m.str, yo: m.yo * m.yoMul }, src: 'akiba', srcEnt: m, srcId: m.id, max: 1, iv: 99, fx: 'kae', mul: S.mul || 1 });
       S.hz.yaw = yaw; m.yaw = yaw;
       if (k >= 1) m.spin = null;
     }
@@ -243,9 +244,9 @@
   P.startGeo = function (foes, sh) {
     const G = A().geo, AK = this.AK, src = { str: A().foes.hoshi.str, yo: A().foes.hoshi.yo }; // 共有の能力（v6：600）。相方の強化は重ねない
     for (const m of foes) { m.geo = true; m.act = null; m.moving = 0; }
-    const base = { src: 'akiba', srcStats: src, stat: 'yo', dodge: true, iv: 99, max: 1, geo: 1 };
+    const base = { src: 'akiba', srcStats: src, stat: 'yo', dodge: true, iv: 99, max: 1, geo: 1, mul: A().dmgMul }; // v7：連携技も×0.8（形は配置そのままで、線の幅だけ×1.15）
     let h;
-    if (sh.n === 2) h = this.hz(Object.assign(base, { kind: 'line', x: sh.pts[0][0], z: sh.pts[0][1], yaw: sh.yaw, len: sh.len, w: G.line.w, warn: G.line.warn, act: G.line.act, pw: G.line.pw, fx: 'link2' }));
+    if (sh.n === 2) h = this.hz(Object.assign(base, { kind: 'line', x: sh.pts[0][0], z: sh.pts[0][1], yaw: sh.yaw, len: sh.len, w: G.line.w * A().rangeMul, warn: G.line.warn, act: G.line.act, pw: G.line.pw, fx: 'link2' }));
     else if (sh.n === 3) h = this.hz(Object.assign(base, { kind: 'poly', x: 0, z: 0, pts: sh.pts, warn: G.tri.warn, act: G.tri.act, pw: G.tri.pw, fx: 'tri3' }));
     else h = this.hz(Object.assign(base, { kind: 'poly', x: 0, z: 0, pts: sh.pts, warn: G.quad.warn, act: G.quad.dur, pw: G.quad.pw, max: G.quad.max, iv: G.quad.iv, fx: 'quad4' }));
     AK.geo = { n: sh.n, ids: foes.map(m => m.id), whos: foes.map(m => m.who), hz: h, fired: false, cast: ++AK.geoN };

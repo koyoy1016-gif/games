@@ -224,7 +224,7 @@ class Sim {
     a.moving = false; a.dashing = false;
     // 自動ダッシュ（v6・人が操作するキャラだけ）：ほぼ同じ向きへ1秒以上歩き続けたらBなしでダッシュ。止まった瞬間に解除し、また歩きから数える
     const ar = a.autoRun || (a.autoRun = { t: 0, dx: 0, dz: 0 });
-    const human = !a.ctrlAI, autoOk = human && mv > 0 && ml > 0.35 && !a.act && !a.rev && !a.lan;
+    const human = !a.ctrlAI, autoOk = human && mv > 0 && ml > 0.7 && !a.act && !a.rev && !a.lan;
     if (!autoOk) ar.t = 0;
     if (mv > 0 && ml > 0.1) {
       let spd = S.walk;
@@ -414,19 +414,19 @@ class Sim {
         const H = M.combo3.hits;
         for (let i = 0; i < 3; i++) {
           const ok = i === 0 || (i === 1 && A.q2) || (i === 2 && A.q3);
-          if (ok && !A.h[i] && t >= H[i]) { A.h[i] = 1; this.faceForAttack(a, inp); this.meleeHit(a, a.c.Apw[i], 'str', M.combo3.range, M.combo3.arc, 'A', A.log, i === 2 ? 'hit3' : 'hit'); }
+          if (ok && !A.h[i] && t >= H[i]) { A.h[i] = 1; this.faceForAttack(a, inp); this.meleeHit(a, a.c.Apw[i], 'str', M.combo3.range * DATA.SIM.aRange, M.combo3.arc, 'A', A.log, i === 2 ? 'hit3' : 'hit'); }
         }
         if ((!A.q2 && t >= H[1]) || (A.q2 && !A.q3 && t >= H[2]) || t >= M.combo3.end) this.endAct(a);
         break;
       }
       case 'melee': {
         const W = A.M || M.melee1;
-        if (!A.done && t >= W.start) { A.done = 1; this.meleeHit(a, a.c.Apw[0], 'str', W.range, W.arc, 'A', A.log, 'hit'); }
+        if (!A.done && t >= W.start) { A.done = 1; this.meleeHit(a, a.c.Apw[0], 'str', W.range * DATA.SIM.aRange, W.arc, 'A', A.log, 'hit'); }
         if (t >= W.end) this.endAct(a); break;
       }
       case 'shot': {
         const W = A.M || M.shot;
-        if (!A.done && t >= W.fire) { A.done = 1; this.fireProj(a, a.c.proj === 'stone' ? 'can' : a.c.isNew ? 'bean' : 'star', a.c.Apw[0], 'str', W.speed, W.life, W.r, 'A', A.log); }
+        if (!A.done && t >= W.fire) { A.done = 1; this.fireProj(a, a.c.proj === 'stone' ? 'can' : a.c.isNew ? 'bean' : 'star', a.c.Apw[0], 'str', W.speed, W.life * DATA.SIM.aRange, W.r, 'A', A.log); }
         if (t >= W.end) this.endAct(a); break;
       }
       case 'charge': {

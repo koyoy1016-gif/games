@@ -62,8 +62,9 @@ function akibaEvent(e, v) {
     case 'geo': {
       const whos = (e.whos || []).map(N).join('・'), nm = e.n === 2 ? '二点結び' : e.n === 3 ? '三角結界' : '四角結界';
       const how = e.n === 2 ? '光の線から横へ離れろ！' : e.n === 3 ? '三角の外へ出ろ！' : '四角の火床から出ろ！（3秒続く）';
-      banner(`${whos}：${nm}！`, how, 1800); break;
+      enemySp(whos, nm); notice(how, 'warn', 2400); break; // v7 P6：連携の大技は中央に名前、逃げ方は小さく
     }
+    case 'akMove': { const M = DATA.AKIBA.moves[e.mv]; if (M && ENEMY_SP[e.mv]) enemySp(N(e.who), M.nm); break; } // v7 P6：大技は中央に名前
     case 'geoCancel': notice('図形の必殺が途切れた（結ぶ相手が倒れた）', 'sp', 1500); break;
     case 'akMark': if (e.slot === G.my) notice('足もとに印！ その場から離れよう', 'warn', 1200); break;
   }
