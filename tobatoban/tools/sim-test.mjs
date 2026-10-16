@@ -438,6 +438,20 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   const lv = [40, 50, 60, 70].map(P => { const k = DATA.lvAdjust('akiba', P); return k.out.toFixed(3) + '/' + k.in.toFixed(3); });
   ok(lv.join(' ') === '0.358/2.191 0.599/1.480 1.000/1.000 1.150/0.900', `秋葉原のLv補正（Lv40・50・60・70）：${lv.join('　')}`);
 }
+// 7.99) v7 P3：ダメージ数値（本体は胸の高さ・バリアと段階ロックは理由を出す・参加者にも同じ数値が届く）
+{
+  const s = new Sim({ party: ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(ch => ({ ch, lv: 40 })), seed: 5, stageId: 'ueno', test: true, idle: true });
+  s.mobs.forEach(m => { m.st = 'gone'; }); s.mobs = []; s.stage = 'boss';
+  const b = s.boss, a = s.allies[0], last = () => s.events.filter(e => e.type === 'dmg').pop();
+  b.hp = b.maxHp; const h0 = b.hp; s.dealToEnemy(a, b, 60, 'str', 'A', null); const e1 = last();
+  ok(e1 && e1.v === h0 - b.hp && e1.v > 0 && e1.boss === 1 && e1.y === 2.6, `本体への命中：HPの減り${h0 - b.hp}と同じ数値${e1 && e1.v}を高さ2.6（身長5.92の胸）に出す`);
+  b.hp = DATA.UENO.moves.sleep.stages[0].at; s.dealToEnemy(a, b, 60, 'str', 'A', null); const e2 = last();
+  ok(e2.v === '段階ロック' && e2.blk === 1 && b.hp === DATA.UENO.moves.sleep.stages[0].at, '睡眠しきい値で止まっている間は0ではなく「段階ロック」と出す（HPは進めない）');
+  s.U.barrier = 1; b.hp = b.maxHp; s.dealToEnemy(a, b, 60, 'str', 'A', null); const e3 = last(); s.U.barrier = 0;
+  ok(e3.v === 'バリア' && e3.blk === 1 && b.hp === b.maxHp, 'バリア中は「バリア」と出す（命中が無視されたように見せない）');
+  const v = PROTO.decodeSnap(JSON.parse(JSON.stringify(PROTO.encodeSnap(s, {})))); const got = v.ev.filter(e => e.type === 'dmg');
+  ok(got.length === 3 && got[0].v === e1.v && got[0].boss === 1 && got[0].y === 2.6 && got[1].v === '段階ロック' && got[2].v === 'バリア' && got[2].blk === 1, `参加者のスナップショットにも3件（${got.map(e => e.v).join('・')}）`);
+}
 // 8) 接触してから当たる（離れた所からの空振りは当たらない）
 {
   const s = testSim('kogemaru'); const a = s.allies[0]; a.z = 10 - 3.0;
