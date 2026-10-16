@@ -6,7 +6,8 @@
    自分の移動だけ予測して表示する。
    ===================================================================== */
 const NETLIB = (() => {
-  const VERSION = 'tb7'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
+  const APP_ID = 'kitasenju-tobatoban-v1', RELAYS = 10;
+  const VERSION = 'tb8'; // v8：入室の確認応答（wel）を追加 // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
   const hashStr = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
   let clock = null; // 検査用に時計を差しかえられる
   const now = () => clock ? clock() : (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -29,10 +30,11 @@ const NETLIB = (() => {
       const mod = await import(base || './trystero-nostr.js');
       log('lib', `読み込み完了 ${Math.round(now() - t0)}ms`);
       let turn = ICE.turn.slice();
-      if (ICE.url) { try { const r = await fetch(ICE.url); const j = await r.json(); if (Array.isArray(j.iceServers)) turn = turn.concat(j.iceServers); log('ice', `TURN設定を取得 ${turn.length}件`); } catch (e) { log('ice', 'TURN設定を取得できない: ' + (e && e.message)); } }
+      if (ICE.url) { try { const r = await fetch(ICE.url); const j = await r.json(); const L2 = Array.isArray(j) ? j : j && Array.isArray(j.iceServers) ? j.iceServers : []; turn = turn.concat(L2); /* Metered などの「配列をそのまま返す」形式にも対応 */ log('ice', `TURN設定を取得 ${turn.length}件`); } catch (e) { log('ice', 'TURN設定を取得できない: ' + (e && e.message)); } }
       const holder = { tr: null, err: [] };
-      const cfg = { appId: 'kitasenju-tobatoban-v1', password: code };
+      const cfg = { appId: APP_ID, password: code, relayConfig: { redundancy: RELAYS } }; // v8：相手探しに使うNostr中継を5→10か所へ（落ちている中継が混じっても見つけられるように）
       if (turn.length) cfg.turnConfig = turn;
+      log('cfg', `appId ${APP_ID}・ルーム tb-${hashStr(code)}・版 ${VERSION}・中継${RELAYS}か所・TURN ${turn.length}件`);
       const room = mod.joinRoom(cfg, 'tb-' + hashStr(code), {
         onJoinError: e => { const m = (e && e.error) || 'join error'; log('join-error', m); holder.err.push(m); if (holder.tr && holder.tr.h.err) holder.tr.h.err(m, e && e.peerId); },
       });
@@ -141,8 +143,12 @@ const NETLIB = (() => {
         c.lastSeen = now();
         const ch = DATA.CHI[m.ch] ? m.ch : 'kogemaru';
         const items = Array.isArray(m.items) ? m.items.filter(i => DATA.ITEMS[i]).slice(0, 2) : ['onigiri', 'ramune']; while (items.length < 2) items.push('onigiri');
+        const isNew = !this.lobby.slots[c.slot] || this.lobby.slots[c.slot].peer !== from;
         this.lobby.slots[c.slot] = { who: 'peer', peer: from, nick: String(m.nick || '').slice(0, 10) || ('P' + (c.slot + 1)), ch, swap: !!m.swap, items, ready: !!m.ready, lv: Math.min(99, Math.max(1, m.lv | 0 || 1)), eq: Array.isArray(m.eq) ? m.eq.filter((e, i, a) => DATA.EQUIP_I[e] && a.indexOf(e) === i).slice(0, 2) : [] };
         this.dirtyLobby = true;
+        // v8：入室の確認応答。同じ相手（peer ID）からの再送は同じ枠のまま（二重登録しない）。ロビー一覧もすぐ送る
+        try { this.tr.send({ t: 'wel', v: VERSION, slot: c.slot, code: this.code }, from); this.sendLobby(); } catch (e) { }
+        if (isNew) log('host', `入室を確定 P${c.slot + 1} → 確認を送信 ${String(from).slice(0, 6)}`);
       } else if (m.t === 'in') {
         const c = this.clients.get(from); if (!c) return;
         c.lastSeen = now();
@@ -275,13 +281,15 @@ const NETLIB = (() => {
     }
     setSt(s) { if (this.st !== s) { log('state', `${this.st} → ${s}`); this.st = s; } }
     get state() { return this.st; }
+    /** 入室が確定したか（ホストの確認応答か、ロビー一覧に自分の枠がある） */
+    get joined() { return !!(this.welcomed && this.lobby && this.mySlot >= 0); }
     onMsg(m, from) {
       if (!m || typeof m !== 'object') return;
       if (m.t === 'lb') {
         if (m.v !== VERSION) { this.rejected = 'version'; log('client', `版が違う ${m.v}`); return; }
         if (!this.lobby) log('client', `ロビー情報を受信（${((now() - this.t0) / 1000).toFixed(1)}秒）`);
         this.lastRecv = now(); this.hostPeer = from; this.lobby = m; this.peerSeen = true;
-        const i = (m.slots || []).findIndex(s => s && s.peer === this.tr.self); this.mySlot = i;
+        const i = (m.slots || []).findIndex(s => s && s.peer === this.tr.self); this.mySlot = i; if (i >= 0 && !this.welcomed) { this.welcomed = true; log('client', `一覧に自分の枠 P${i + 1}`); }
         if (m.phase === 'game' && m.gid !== this.gid) { this.gid = m.gid; this.buf = []; this.q = 0; this.local = new LocalInput(); this.pred = null; this.hist = []; this.offset = null; this.started = true; this.gotSnap = false; log('client', '戦闘開始'); }
         if (m.phase === 'lobby') { this.started = false; }
       } else if (m.t === 'sn') {
@@ -294,6 +302,10 @@ const NETLIB = (() => {
         const v = PROTO.decodeSnap(m); this.buf.push(v); if (this.buf.length > 30) this.buf.shift();
         if (m.pe && this.mySlot >= 0 && m.pe[this.mySlot]) this.rtt = this.rtt ? this.rtt * 0.8 + (now() - m.pe[this.mySlot]) * 0.2 : now() - m.pe[this.mySlot];
         this.reconcile(v);
+      } else if (m.t === 'wel') { // v8：ホストが自分の枠を確定した
+        if (m.v !== VERSION) { this.rejected = 'version'; return; }
+        this.hostPeer = from; this.lastRecv = now(); this.peerSeen = true;
+        if (!this.welcomed) { this.welcomed = true; this.welSlot = m.slot; log('client', `入室が確定 P${m.slot + 1}（${((now() - this.t0) / 1000).toFixed(1)}秒）`); }
       } else if (m.t === 'no') { this.rejected = m.why; log('client', `入室を断られた ${m.why}`); }
       else if (m.t === 'end') { this.lost = 'host_left'; log('client', 'ホストが部屋を閉じた'); }
     }
@@ -310,10 +322,11 @@ const NETLIB = (() => {
         const gap = T - this.lastRecv;
         if (gap > DATA.NET.dropT * 1000) { if (!this.lost) { this.lost = 'timeout'; log('client', `無応答 ${Math.round(gap / 1000)}秒で切断`); } this.setSt('lost'); }
         else if (gap > DATA.NET.timeout * 1000) this.setSt('reconnecting');
-        else this.setSt(this.started ? 'game' : 'lobby');
+        else this.setSt(this.started ? 'game' : this.joined ? 'lobby' : 'handshake'); // 枠が確定するまでは「入室確認中」
+        if (!this.joined && !this.started && T - this.t0 > DATA.NET.connectTimeout * 1000 && !this.lost) { this.lost = 'no_ack'; log('client', 'ホストは見つかったが入室が確定しない'); this.setSt('lost'); }
       }
       this.hiAcc += dt;
-      if (this.helloMsg && this.hiAcc > 1 && (!this.started || this.st === 'reconnecting')) { this.hiAcc = 0; this.tr.send(this.helloMsg, this.st === 'reconnecting' ? undefined : (this.hostPeer || undefined)); }
+      if (this.helloMsg && this.hiAcc > (this.joined ? 1 : 0.6) && (!this.started || this.st === 'reconnecting')) { this.hiAcc = 0; this.tr.send(this.helloMsg, this.st === 'reconnecting' || !this.joined ? undefined : (this.hostPeer || undefined)); } // 確定までは0.6秒ごとに全員へ（ホストだけが答える）
       if (!this.started || this.mySlot < 0) return;
       // 自分の移動を予測
       const v = this.latest();

@@ -213,6 +213,7 @@ async function frAdd() {
 }
 /** フレンドのルームへ（協力プレイの「パスワードで参加」と同じ。合言葉の入力はいらない） */
 async function frJoin(f, room) {
+  if (G.coop && G.session && G.session.kind === 'host' && !G.session.clients.size && G.session.lobby.phase === 'lobby') { NETLIB.log('ui', '誰もいない自分の部屋を閉じて参加する'); goTitle(); } // v8：招待のために作った空の部屋が残っていても参加できるように
   if (G.coop) { mtoast('いまのルームから退出してから参加してください', 2400); return; }
   if ($('#btnJoin').disabled) { mtoast('このブラウザでは協力プレイを使えません', 2600); return; }
   $('#frInv').hidden = true; if (f && f.inv) FRND.dismissed.add(f.pid + f.inv.t);

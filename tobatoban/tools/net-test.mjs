@@ -96,10 +96,36 @@ function aiPickScenario() { // v7 P4-1：協力の空きAI枠はホストが選�
   const f2 = host.aiFill(); ok(host.lobby.slots[1] && f2[1] === null && !f2.includes('taiko') && f2.filter(Boolean).length === 2 && f2[3] === 'new_c_02', `2人：AI2体（${f2.filter(Boolean).join('・')}）。参加者と同じ鬼神はAIから外れ、残りの指定は保つ`);
   ok(!host.setAi(1, 'momiji').ok, '参加者の枠（P2）はホストでも変えられない');
   const lb = c1.lobby; ok(lb && lb.ai && lb.ai[3] === 'new_c_02' && lb.ai[1] === null, `参加者にもAI枠の指定が届く（${lb && lb.ai && lb.ai.filter(Boolean).join('・')}）`);
-  host.onLeave('C'); run(0.3); const f3 = host.aiFill(); ok(f3[1] === 'taiko' && f3[3] === 'new_c_02', `退出するとP2はホストの指定（鬼神）に戻る（${f3.slice(1).join('・')}）`);
+  c1.closed = true; clis = []; hub.remove('C'); host.onLeave('C'); run(0.3); // 参加者が本当に去る（通信も切れる）
+  const f3 = host.aiFill(); ok(f3[1] === 'taiko' && f3[3] === 'new_c_02', `退出するとP2はホストの指定（鬼神）に戻る（${f3.slice(1).join('・')}）`);
   host.startGame(); ok(host.sim.allies.map(a => a.ch).join() === 'kogemaru,taiko,burikidon,new_c_02', `出動も同じ編成（${host.sim.allies.map(a => DATA.CHI[a.ch].nm).join('・')}）`);
 }
 aiPickScenario();
+function joinAckScenario() { // v8：入室の確認応答（wel）・2人→3人→4人・再送で二重登録しない・確定しない／見つからないの区別
+  const hub = new NETLIB.LoopHub({ lat: 0.12, dup: 0.3, drop: 0.1 }); NETLIB.setClock(() => hub.t * 1000);
+  const host = new NETLIB.HostSession({ transport: hub.add('H'), code: '7777', nick: 'ホスト', ch: 'kogemaru' });
+  const cs = []; const dt = 1 / 60; const run = s => { for (let i = 0; i < s * 60; i++) { hub.advance(dt); host.update(dt); cs.forEach(c => c.update(dt)); } };
+  for (const [id, ch] of [['C1', 'hoshisuzume'], ['C2', 'akaneten'], ['C3', 'taiko']]) {
+    const c = new NETLIB.ClientSession({ transport: hub.add(id), code: '7777' }); cs.push(c); c.hello({ nick: id, ch, items: ['onigiri', 'ramune'] });
+    ok(!c.joined, `${id}：つないだ直後はまだ「入室中」（空のロビーを参加完了にしない）`);
+    run(3); const n = cs.length + 1;
+    ok(c.joined && c.mySlot >= 1, `${id}：ホストの確認で参加完了（P${c.mySlot + 1}・遅延120ms・重複30%・欠落10%）`);
+    ok(cs.every(x => (x.lobby.slots || []).filter(Boolean).length === n) && host.lobby.slots.filter(Boolean).length === n, `${n}人：ホストと参加者の一覧が同じ${n}人`);
+  }
+  const sl = cs.map(c => c.mySlot); ok(new Set(sl).size === 3 && host.clients.size === 3, `枠が重ならない（${sl.map(x => 'P' + (x + 1)).join('・')}）`);
+  for (let i = 0; i < 5; i++) { cs[0].hiAcc = 99; run(0.2); } ok(host.clients.size === 3 && host.lobby.slots.filter(Boolean).length === 4, 'あいさつを何度再送しても同じ人は1枠');
+  const c5 = new NETLIB.ClientSession({ transport: hub.add('C5'), code: '7777' }); c5.hello({ nick: 'C5', ch: 'momiji' }); cs.push(c5); run(2);
+  ok(c5.rejected === 'full' && !c5.joined, `5人目は「満員」（${c5.rejected}）`);
+  const hub2 = new NETLIB.LoopHub({ lat: 0.05 }); NETLIB.setClock(() => hub2.t * 1000); DATA.NET.connectTimeout = 3;
+  const lone = new NETLIB.ClientSession({ transport: hub2.add('L'), code: '0000' }); lone.hello({ nick: 'L', ch: 'momiji' });
+  for (let i = 0; i < 4 * 60; i++) { hub2.advance(dt); lone.update(dt); } ok(lone.lost === 'no_peer', `ホストがいない：${lone.lost}`);
+  const hub3 = new NETLIB.LoopHub({ lat: 0.05 }); NETLIB.setClock(() => hub3.t * 1000);
+  const h3 = new NETLIB.HostSession({ transport: hub3.add('H'), code: '8888', nick: 'ホスト', ch: 'kogemaru' }); h3.onMsg = function (m, from) { if (m && m.t === 'hi') return; }; // 受け付けが返らないホスト
+  const c3 = new NETLIB.ClientSession({ transport: hub3.add('C'), code: '8888' }); c3.hello({ nick: 'C', ch: 'momiji' });
+  for (let i = 0; i < 4 * 60; i++) { hub3.advance(dt); h3.update(dt); c3.update(dt); } ok(c3.lost === 'no_ack' && !c3.joined, `ロビーは届くが枠が確定しない：${c3.lost}（空のロビーのまま待たせない）`);
+  DATA.NET.connectTimeout = 30;
+}
+joinAckScenario();
 connectScenario();
 scenario(0.05, 0.3, 0.03);
 scenario(0.10, 0.5, 0.05);

@@ -77,6 +77,10 @@ function openSub(id, from) { G.back = from; show(id); }
 
 /* ---------- 起動 ---------- */
 async function boot() {
+  try { // v8：TURN（中継）の設定。?turn=URL（iceServers を返すURL）か、保存した設定（tb.turnUrl / tb.ice）。公開ファイルに長期の秘密は書かない
+    const q = new URLSearchParams(location.search), tu = q.get('turn') || localStorage.getItem('tb.turnUrl') || ''; if (q.get('turn')) localStorage.setItem('tb.turnUrl', q.get('turn'));
+    if (tu) NETLIB.ICE.url = tu; const ice = JSON.parse(localStorage.getItem('tb.ice') || '[]'); if (Array.isArray(ice)) NETLIB.ICE.turn = ice;
+  } catch (e) { }
   const fontsReady = Promise.race([Promise.all([document.fonts.load('40px "Yuji Syuku"', '千住'), document.fonts.load('40px "Dela Gothic One"', 'トバ'), document.fonts.load('900 16px "Zen Maru Gothic"', 'もののけ')]), new Promise(r => setTimeout(r, 2500))]).catch(() => { });
   await fontsReady;
   applyRotation();
@@ -390,12 +394,24 @@ async function startJoin(codeArg) {
   try {
     NETLIB.log('ui', `部屋に入る #${code}`);
     const tr = await openTransport(code);
-    G.session = new NETLIB.ClientSession({ transport: tr, code }); G.coop = true; sendMine(); G.joinT = performance.now(); openLobby(); ok = true;
+    G.session = new NETLIB.ClientSession({ transport: tr, code }); G.coop = true; sendMine(); G.joinT = performance.now(); joinWait(true); ok = true; // v8：ホストが枠を確定するまでは空のロビーを見せず「入室中」を出す
   } catch (e) { console.error(e); NETLIB.log('ui', 'つなげない: ' + (e && e.message)); toast('つなげませんでした。もう一度ためしてください。'); mtoast('通信の部品を読み込めませんでした。電波のよい所でもう一度', 2800); }
   G.netBusy = false; b.disabled = false; b.textContent = '部屋に入る';
   return ok;
 }
 function toast(s) { const n = $('#netMsg'); n.textContent = s; }
+/** v8：入室待ちの表示（相手探し→接続→入室確認）。やめるボタンで部屋を片付ける */
+function joinWait(on) {
+  G.joinWaiting = !!on; const p = $('#joinWait'); if (!p) return; p.hidden = !on;
+  if (on) { G.mode = 'joining'; $('#jwCode').textContent = G.session ? G.session.code : ''; joinWaitTick(G.session); }
+}
+function joinWaitTick(S) {
+  if (!S) return; const st = S.state, t = Math.floor((performance.now() - (G.joinT || 0)) / 1000);
+  const steps = [['部屋に入る準備', true], ['ホストを探す', S.peerSeen], ['ホストとつなぐ', !!S.lobby], ['参加の受け付け', S.joined]];
+  const ul = $('#jwSteps'); ul.textContent = ''; let cur = false;
+  for (const [nm, done] of steps) { const li = el('li', done ? 'done' : !cur ? 'now' : ''); if (!done) cur = true; li.textContent = (done ? '✔ ' : '・ ') + nm; ul.appendChild(li); }
+  $('#jwMsg').textContent = `${t}秒（${DATA.NET.connectTimeout}秒たってもつながらないときは理由を表示します）` + (S.joinErr ? '　直接の通信に失敗しています…' : '');
+}
 
 /* ---------- ゲーム開始 ---------- */
 function startSolo(stageId) {
@@ -1013,6 +1029,8 @@ function showResult(v) {
 /** 協力プレイの接続失敗・切断の表示（理由を開発用ログにも残す） */
 function netFail(title, msg, code) {
   NETLIB.log('ui', `表示：${title}（${code}）`);
+  if (G.session && G.session.kind !== 'solo') { try { G.session.leave(); } catch (e) { } G.session = null; G.coop = false; } // v8：失敗した部屋を片付けて、同じ合言葉でもう一度入り直せるように
+  joinWait(false);
   $('#lostTitle').textContent = title; $('#lostMsg').textContent = msg; G.mode = 'lost'; show('netlost');
   if (typeof frNetFail === 'function') frNetFail(code);
 }
@@ -1033,11 +1051,15 @@ document.addEventListener('visibilitychange', () => {
 });
 /* ---------- メインループ ---------- */
 let last = performance.now();
+/* v8：画面が裏に回って描画ループが止まっても、協力のロビーの送受信（あいさつ・一覧・生存確認）は続ける。ブラウザが許す間隔（裏では約1秒）で動く。戦闘中は止めない（描画側で進める） */
+let lastFrameAt = 0;
+setInterval(() => { const S = G.session; if (!S || S.kind === 'solo' || G.mode === 'play' || G.mode === 'pause') return; if (performance.now() - lastFrameAt < 400) return; try { S.update(0.25); } catch (e) { console.error(e); } }, 500);
 function frame(ts) {
+  lastFrameAt = performance.now();
   const dtRaw = Math.min(0.25, Math.max(0, (ts - last) / 1000)), dt = Math.min(0.1, dtRaw); last = ts; G.T += dt;
   const S = G.session;
   try {
-    if (S && (G.mode === 'play' || G.mode === 'pause' || G.mode === 'result' || G.mode === 'lobby')) {
+    if (S && (S.kind !== 'solo' || G.mode === 'play' || G.mode === 'pause' || G.mode === 'result' || G.mode === 'lobby')) { // v8：協力のセッションはどの画面でも更新し続ける（メニュー・フレンド画面・入室待ちの間もロビーを送受信）
       if (G.mode === 'play') applyInput();
       S.update(dtRaw);
       if (S.notices && S.notices.length) for (const n of S.notices.splice(0)) { if (G.mode === 'play') notice(n.s, 'info', 3000); else mtoast(n.s, 2400); } // 参加・通信の途切れ・復帰
@@ -1045,13 +1067,15 @@ function frame(ts) {
         if (S.rejected) { const why = { version: '版が違います。両方の端末でページを再読み込みしてください。', started: 'すでに戦闘が始まっています。終わってロビーに戻ってから、もう一度招待してもらってください。', full: '部屋が満員です（4人まで）。' }[S.rejected] || '入れませんでした。'; netFail('部屋に入れませんでした', why, S.rejected); S.rejected = null; }
         else if (S.lost) {
           const L = S.lost, started = !!S.started;
-          const msg = { no_peer: [`ホストが見つかりませんでした（${DATA.NET.connectTimeout}秒）`, 'ホストが部屋を閉じたか、合言葉がちがう可能性があります。招待をもう一度送ってもらうか、合言葉を確認してください。'],
+          const msg = { no_peer: [`ホストが見つかりませんでした（${DATA.NET.connectTimeout}秒）`, 'ホストが部屋を閉じたか、合言葉がちがう可能性があります。招待をもう一度送ってもらうか、合言葉を確認してください。片方の端末が古い版のままだと見つかりません。両方の端末でページを再読み込みしてから、もう一度ためしてください（通信の版 ' + NETLIB.VERSION + '）。'],
+            no_ack: ['入室が確定しませんでした', 'ホストとはつながりましたが、参加の受け付けが返ってきませんでした。ホストの画面を開いたまま、もう一度「参加」を押してください。'],
             no_lobby: ['ホストとつながりませんでした', 'ホストは見つかりましたが、通信がつながりませんでした。両方の電波を確認して、もう一度ためしてください。'],
             p2p_failed: ['ホストと直接つながりませんでした', '回線の組み合わせ（モバイル回線・学校や会社のWi-Fiなど）によっては直接の通信ができません。同じWi-Fiでためすか、別の回線でもう一度。'],
             timeout: ['ホストとの接続が切れました', `通信が${DATA.NET.dropT}秒以上とだえたため${started ? '戦闘を' : ''}中断しました。電波のよい所でもう一度入ってください。`],
             host_left: ['ホストが部屋を閉じました', started ? '戦闘は中断されました。' : 'もう一度招待してもらってください。'] }[L] || ['ホストとの接続が切れました', ''];
           S.lost = null; netFail(msg[0], msg[1], L);
         }
+        else if (G.joinWaiting) { joinWaitTick(S); if (S.joined) { joinWait(false); openLobby(); mtoast(`P${S.mySlot + 1}で参加しました（${(S.lobby.slots || []).filter(Boolean).length}人）`, 2400); if (S.started) enterGame(); } }
         else if (G.mode === 'lobby' && S.started && S.mySlot >= 0) enterGame();
         else if ((G.mode === 'result' || G.mode === 'play') && S.lobby && S.lobby.phase === 'lobby' && G.resultShown) { openLobby(); }
       }

@@ -383,6 +383,7 @@ function bindLobby() {
   $('#btnGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { mtoast('協力プレイのルームにいる間はガチャを開けません', 2200); return; } openGacha(); };
   $('#btnStageSel').onclick = () => { AUDIO.sfx('ui'); openStageSel(); };
   $('#btnRoomLeave').onclick = () => { AUDIO.sfx('back'); goTitle(); mtoast('ルームから退出しました'); };
+  $('#btnJwCancel').onclick = () => { AUDIO.sfx('back'); joinWait(false); goTitle(); mtoast('参加をやめました'); }; // v8：入室待ちをやめる（部屋を片付けて、もう一度入り直せる）
   $('#btnCoopBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
   $('#btnRosterBack').onclick = () => rosterBack();
   $('#btnRosterHome').onclick = () => { AUDIO.sfx('back'); persistPrefs(); show('title'); };

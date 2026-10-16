@@ -352,6 +352,7 @@ a{color:var(--shu)}
 #banner{position:absolute;left:0;right:0;top:24%;text-align:center;pointer-events:none;font-family:var(--f-disp);font-size:clamp(24px,calc(var(--aw)*6),44px);padding:0 12px;color:#fff;text-shadow:0 0 16px rgba(255,120,60,.8),0 3px 0 #2a0f0a;opacity:0;transition:opacity .25s,transform .25s;transform:scale(.9)}
 #banner.show{opacity:1;transform:none}
 /* v7 P6：仲間の必殺は右上（ミニマップの下）に流れる。敵の必殺は画面の中央に名前 */
+.jw-steps{list-style:none;margin:6px 0;padding:0;font-weight:900;font-size:15px;line-height:1.7}.jw-steps .done{color:#7dffb0}.jw-steps .now{color:#ffe066}
 .healmk{position:absolute;transform:translate(-50%,-50%);width:54px;height:30px;border:3px solid #5dff9a;border-radius:50%;box-shadow:0 0 10px #5dff9a;color:#bfffd6;font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center;pointer-events:none;text-shadow:0 0 4px #0a3a1a;animation:hmk 1s ease-in-out infinite alternate}
 @keyframes hmk{from{opacity:.65}to{opacity:1}}
 #spFeed{position:absolute;right:calc(var(--sar,0px) + 10px);top:34%;width:min(34%,300px);display:flex;flex-direction:column;align-items:flex-end;gap:4px;pointer-events:none;z-index:6}
@@ -1009,6 +1010,7 @@ a{color:var(--shu)}
 </section>
 
 <!-- 通信の中断 -->
+<div class="bl-pop" id="joinWait" hidden><div class="bl-pop-in"><div class="bl-pop-h"><b>部屋に入っています（合言葉 <span id="jwCode"></span>）</b></div><ul id="jwSteps" class="jw-steps"></ul><p class="small" id="jwMsg"></p><div class="eq-act"><button class="bl-btn" id="btnJwCancel" type="button">やめる</button></div></div></div>
 <section class="screen" id="netlost" hidden>
   <div class="panel">
     <div class="eyebrow">通信</div><h2 id="lostTitle">ホストとの接続が切れました</h2>
@@ -5003,7 +5005,8 @@ const PROTO = (() => {
    自分の移動だけ予測して表示する。
    ===================================================================== */
 const NETLIB = (() => {
-  const VERSION = 'tb7'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
+  const APP_ID = 'kitasenju-tobatoban-v1', RELAYS = 10;
+  const VERSION = 'tb8'; // v8：入室の確認応答（wel）を追加 // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
   const hashStr = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
   let clock = null; // 検査用に時計を差しかえられる
   const now = () => clock ? clock() : (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -5026,10 +5029,11 @@ const NETLIB = (() => {
       const mod = await import(base || './trystero-nostr.js');
       log('lib', `読み込み完了 ${Math.round(now() - t0)}ms`);
       let turn = ICE.turn.slice();
-      if (ICE.url) { try { const r = await fetch(ICE.url); const j = await r.json(); if (Array.isArray(j.iceServers)) turn = turn.concat(j.iceServers); log('ice', `TURN設定を取得 ${turn.length}件`); } catch (e) { log('ice', 'TURN設定を取得できない: ' + (e && e.message)); } }
+      if (ICE.url) { try { const r = await fetch(ICE.url); const j = await r.json(); const L2 = Array.isArray(j) ? j : j && Array.isArray(j.iceServers) ? j.iceServers : []; turn = turn.concat(L2); /* Metered などの「配列をそのまま返す」形式にも対応 */ log('ice', `TURN設定を取得 ${turn.length}件`); } catch (e) { log('ice', 'TURN設定を取得できない: ' + (e && e.message)); } }
       const holder = { tr: null, err: [] };
-      const cfg = { appId: 'kitasenju-tobatoban-v1', password: code };
+      const cfg = { appId: APP_ID, password: code, relayConfig: { redundancy: RELAYS } }; // v8：相手探しに使うNostr中継を5→10か所へ（落ちている中継が混じっても見つけられるように）
       if (turn.length) cfg.turnConfig = turn;
+      log('cfg', `appId ${APP_ID}・ルーム tb-${hashStr(code)}・版 ${VERSION}・中継${RELAYS}か所・TURN ${turn.length}件`);
       const room = mod.joinRoom(cfg, 'tb-' + hashStr(code), {
         onJoinError: e => { const m = (e && e.error) || 'join error'; log('join-error', m); holder.err.push(m); if (holder.tr && holder.tr.h.err) holder.tr.h.err(m, e && e.peerId); },
       });
@@ -5138,8 +5142,12 @@ const NETLIB = (() => {
         c.lastSeen = now();
         const ch = DATA.CHI[m.ch] ? m.ch : 'kogemaru';
         const items = Array.isArray(m.items) ? m.items.filter(i => DATA.ITEMS[i]).slice(0, 2) : ['onigiri', 'ramune']; while (items.length < 2) items.push('onigiri');
+        const isNew = !this.lobby.slots[c.slot] || this.lobby.slots[c.slot].peer !== from;
         this.lobby.slots[c.slot] = { who: 'peer', peer: from, nick: String(m.nick || '').slice(0, 10) || ('P' + (c.slot + 1)), ch, swap: !!m.swap, items, ready: !!m.ready, lv: Math.min(99, Math.max(1, m.lv | 0 || 1)), eq: Array.isArray(m.eq) ? m.eq.filter((e, i, a) => DATA.EQUIP_I[e] && a.indexOf(e) === i).slice(0, 2) : [] };
         this.dirtyLobby = true;
+        // v8：入室の確認応答。同じ相手（peer ID）からの再送は同じ枠のまま（二重登録しない）。ロビー一覧もすぐ送る
+        try { this.tr.send({ t: 'wel', v: VERSION, slot: c.slot, code: this.code }, from); this.sendLobby(); } catch (e) { }
+        if (isNew) log('host', `入室を確定 P${c.slot + 1} → 確認を送信 ${String(from).slice(0, 6)}`);
       } else if (m.t === 'in') {
         const c = this.clients.get(from); if (!c) return;
         c.lastSeen = now();
@@ -5272,13 +5280,15 @@ const NETLIB = (() => {
     }
     setSt(s) { if (this.st !== s) { log('state', `${this.st} → ${s}`); this.st = s; } }
     get state() { return this.st; }
+    /** 入室が確定したか（ホストの確認応答か、ロビー一覧に自分の枠がある） */
+    get joined() { return !!(this.welcomed && this.lobby && this.mySlot >= 0); }
     onMsg(m, from) {
       if (!m || typeof m !== 'object') return;
       if (m.t === 'lb') {
         if (m.v !== VERSION) { this.rejected = 'version'; log('client', `版が違う ${m.v}`); return; }
         if (!this.lobby) log('client', `ロビー情報を受信（${((now() - this.t0) / 1000).toFixed(1)}秒）`);
         this.lastRecv = now(); this.hostPeer = from; this.lobby = m; this.peerSeen = true;
-        const i = (m.slots || []).findIndex(s => s && s.peer === this.tr.self); this.mySlot = i;
+        const i = (m.slots || []).findIndex(s => s && s.peer === this.tr.self); this.mySlot = i; if (i >= 0 && !this.welcomed) { this.welcomed = true; log('client', `一覧に自分の枠 P${i + 1}`); }
         if (m.phase === 'game' && m.gid !== this.gid) { this.gid = m.gid; this.buf = []; this.q = 0; this.local = new LocalInput(); this.pred = null; this.hist = []; this.offset = null; this.started = true; this.gotSnap = false; log('client', '戦闘開始'); }
         if (m.phase === 'lobby') { this.started = false; }
       } else if (m.t === 'sn') {
@@ -5291,6 +5301,10 @@ const NETLIB = (() => {
         const v = PROTO.decodeSnap(m); this.buf.push(v); if (this.buf.length > 30) this.buf.shift();
         if (m.pe && this.mySlot >= 0 && m.pe[this.mySlot]) this.rtt = this.rtt ? this.rtt * 0.8 + (now() - m.pe[this.mySlot]) * 0.2 : now() - m.pe[this.mySlot];
         this.reconcile(v);
+      } else if (m.t === 'wel') { // v8：ホストが自分の枠を確定した
+        if (m.v !== VERSION) { this.rejected = 'version'; return; }
+        this.hostPeer = from; this.lastRecv = now(); this.peerSeen = true;
+        if (!this.welcomed) { this.welcomed = true; this.welSlot = m.slot; log('client', `入室が確定 P${m.slot + 1}（${((now() - this.t0) / 1000).toFixed(1)}秒）`); }
       } else if (m.t === 'no') { this.rejected = m.why; log('client', `入室を断られた ${m.why}`); }
       else if (m.t === 'end') { this.lost = 'host_left'; log('client', 'ホストが部屋を閉じた'); }
     }
@@ -5307,10 +5321,11 @@ const NETLIB = (() => {
         const gap = T - this.lastRecv;
         if (gap > DATA.NET.dropT * 1000) { if (!this.lost) { this.lost = 'timeout'; log('client', `無応答 ${Math.round(gap / 1000)}秒で切断`); } this.setSt('lost'); }
         else if (gap > DATA.NET.timeout * 1000) this.setSt('reconnecting');
-        else this.setSt(this.started ? 'game' : 'lobby');
+        else this.setSt(this.started ? 'game' : this.joined ? 'lobby' : 'handshake'); // 枠が確定するまでは「入室確認中」
+        if (!this.joined && !this.started && T - this.t0 > DATA.NET.connectTimeout * 1000 && !this.lost) { this.lost = 'no_ack'; log('client', 'ホストは見つかったが入室が確定しない'); this.setSt('lost'); }
       }
       this.hiAcc += dt;
-      if (this.helloMsg && this.hiAcc > 1 && (!this.started || this.st === 'reconnecting')) { this.hiAcc = 0; this.tr.send(this.helloMsg, this.st === 'reconnecting' ? undefined : (this.hostPeer || undefined)); }
+      if (this.helloMsg && this.hiAcc > (this.joined ? 1 : 0.6) && (!this.started || this.st === 'reconnecting')) { this.hiAcc = 0; this.tr.send(this.helloMsg, this.st === 'reconnecting' || !this.joined ? undefined : (this.hostPeer || undefined)); } // 確定までは0.6秒ごとに全員へ（ホストだけが答える）
       if (!this.started || this.mySlot < 0) return;
       // 自分の移動を予測
       const v = this.latest();
@@ -9133,6 +9148,10 @@ function openSub(id, from) { G.back = from; show(id); }
 
 /* ---------- 起動 ---------- */
 async function boot() {
+  try { // v8：TURN（中継）の設定。?turn=URL（iceServers を返すURL）か、保存した設定（tb.turnUrl / tb.ice）。公開ファイルに長期の秘密は書かない
+    const q = new URLSearchParams(location.search), tu = q.get('turn') || localStorage.getItem('tb.turnUrl') || ''; if (q.get('turn')) localStorage.setItem('tb.turnUrl', q.get('turn'));
+    if (tu) NETLIB.ICE.url = tu; const ice = JSON.parse(localStorage.getItem('tb.ice') || '[]'); if (Array.isArray(ice)) NETLIB.ICE.turn = ice;
+  } catch (e) { }
   const fontsReady = Promise.race([Promise.all([document.fonts.load('40px "Yuji Syuku"', '千住'), document.fonts.load('40px "Dela Gothic One"', 'トバ'), document.fonts.load('900 16px "Zen Maru Gothic"', 'もののけ')]), new Promise(r => setTimeout(r, 2500))]).catch(() => { });
   await fontsReady;
   applyRotation();
@@ -9446,12 +9465,24 @@ async function startJoin(codeArg) {
   try {
     NETLIB.log('ui', `部屋に入る #${code}`);
     const tr = await openTransport(code);
-    G.session = new NETLIB.ClientSession({ transport: tr, code }); G.coop = true; sendMine(); G.joinT = performance.now(); openLobby(); ok = true;
+    G.session = new NETLIB.ClientSession({ transport: tr, code }); G.coop = true; sendMine(); G.joinT = performance.now(); joinWait(true); ok = true; // v8：ホストが枠を確定するまでは空のロビーを見せず「入室中」を出す
   } catch (e) { console.error(e); NETLIB.log('ui', 'つなげない: ' + (e && e.message)); toast('つなげませんでした。もう一度ためしてください。'); mtoast('通信の部品を読み込めませんでした。電波のよい所でもう一度', 2800); }
   G.netBusy = false; b.disabled = false; b.textContent = '部屋に入る';
   return ok;
 }
 function toast(s) { const n = $('#netMsg'); n.textContent = s; }
+/** v8：入室待ちの表示（相手探し→接続→入室確認）。やめるボタンで部屋を片付ける */
+function joinWait(on) {
+  G.joinWaiting = !!on; const p = $('#joinWait'); if (!p) return; p.hidden = !on;
+  if (on) { G.mode = 'joining'; $('#jwCode').textContent = G.session ? G.session.code : ''; joinWaitTick(G.session); }
+}
+function joinWaitTick(S) {
+  if (!S) return; const st = S.state, t = Math.floor((performance.now() - (G.joinT || 0)) / 1000);
+  const steps = [['部屋に入る準備', true], ['ホストを探す', S.peerSeen], ['ホストとつなぐ', !!S.lobby], ['参加の受け付け', S.joined]];
+  const ul = $('#jwSteps'); ul.textContent = ''; let cur = false;
+  for (const [nm, done] of steps) { const li = el('li', done ? 'done' : !cur ? 'now' : ''); if (!done) cur = true; li.textContent = (done ? '✔ ' : '・ ') + nm; ul.appendChild(li); }
+  $('#jwMsg').textContent = `${t}秒（${DATA.NET.connectTimeout}秒たってもつながらないときは理由を表示します）` + (S.joinErr ? '　直接の通信に失敗しています…' : '');
+}
 
 /* ---------- ゲーム開始 ---------- */
 function startSolo(stageId) {
@@ -10069,6 +10100,8 @@ function showResult(v) {
 /** 協力プレイの接続失敗・切断の表示（理由を開発用ログにも残す） */
 function netFail(title, msg, code) {
   NETLIB.log('ui', `表示：${title}（${code}）`);
+  if (G.session && G.session.kind !== 'solo') { try { G.session.leave(); } catch (e) { } G.session = null; G.coop = false; } // v8：失敗した部屋を片付けて、同じ合言葉でもう一度入り直せるように
+  joinWait(false);
   $('#lostTitle').textContent = title; $('#lostMsg').textContent = msg; G.mode = 'lost'; show('netlost');
   if (typeof frNetFail === 'function') frNetFail(code);
 }
@@ -10089,11 +10122,15 @@ document.addEventListener('visibilitychange', () => {
 });
 /* ---------- メインループ ---------- */
 let last = performance.now();
+/* v8：画面が裏に回って描画ループが止まっても、協力のロビーの送受信（あいさつ・一覧・生存確認）は続ける。ブラウザが許す間隔（裏では約1秒）で動く。戦闘中は止めない（描画側で進める） */
+let lastFrameAt = 0;
+setInterval(() => { const S = G.session; if (!S || S.kind === 'solo' || G.mode === 'play' || G.mode === 'pause') return; if (performance.now() - lastFrameAt < 400) return; try { S.update(0.25); } catch (e) { console.error(e); } }, 500);
 function frame(ts) {
+  lastFrameAt = performance.now();
   const dtRaw = Math.min(0.25, Math.max(0, (ts - last) / 1000)), dt = Math.min(0.1, dtRaw); last = ts; G.T += dt;
   const S = G.session;
   try {
-    if (S && (G.mode === 'play' || G.mode === 'pause' || G.mode === 'result' || G.mode === 'lobby')) {
+    if (S && (S.kind !== 'solo' || G.mode === 'play' || G.mode === 'pause' || G.mode === 'result' || G.mode === 'lobby')) { // v8：協力のセッションはどの画面でも更新し続ける（メニュー・フレンド画面・入室待ちの間もロビーを送受信）
       if (G.mode === 'play') applyInput();
       S.update(dtRaw);
       if (S.notices && S.notices.length) for (const n of S.notices.splice(0)) { if (G.mode === 'play') notice(n.s, 'info', 3000); else mtoast(n.s, 2400); } // 参加・通信の途切れ・復帰
@@ -10101,13 +10138,15 @@ function frame(ts) {
         if (S.rejected) { const why = { version: '版が違います。両方の端末でページを再読み込みしてください。', started: 'すでに戦闘が始まっています。終わってロビーに戻ってから、もう一度招待してもらってください。', full: '部屋が満員です（4人まで）。' }[S.rejected] || '入れませんでした。'; netFail('部屋に入れませんでした', why, S.rejected); S.rejected = null; }
         else if (S.lost) {
           const L = S.lost, started = !!S.started;
-          const msg = { no_peer: [`ホストが見つかりませんでした（${DATA.NET.connectTimeout}秒）`, 'ホストが部屋を閉じたか、合言葉がちがう可能性があります。招待をもう一度送ってもらうか、合言葉を確認してください。'],
+          const msg = { no_peer: [`ホストが見つかりませんでした（${DATA.NET.connectTimeout}秒）`, 'ホストが部屋を閉じたか、合言葉がちがう可能性があります。招待をもう一度送ってもらうか、合言葉を確認してください。片方の端末が古い版のままだと見つかりません。両方の端末でページを再読み込みしてから、もう一度ためしてください（通信の版 ' + NETLIB.VERSION + '）。'],
+            no_ack: ['入室が確定しませんでした', 'ホストとはつながりましたが、参加の受け付けが返ってきませんでした。ホストの画面を開いたまま、もう一度「参加」を押してください。'],
             no_lobby: ['ホストとつながりませんでした', 'ホストは見つかりましたが、通信がつながりませんでした。両方の電波を確認して、もう一度ためしてください。'],
             p2p_failed: ['ホストと直接つながりませんでした', '回線の組み合わせ（モバイル回線・学校や会社のWi-Fiなど）によっては直接の通信ができません。同じWi-Fiでためすか、別の回線でもう一度。'],
             timeout: ['ホストとの接続が切れました', `通信が${DATA.NET.dropT}秒以上とだえたため${started ? '戦闘を' : ''}中断しました。電波のよい所でもう一度入ってください。`],
             host_left: ['ホストが部屋を閉じました', started ? '戦闘は中断されました。' : 'もう一度招待してもらってください。'] }[L] || ['ホストとの接続が切れました', ''];
           S.lost = null; netFail(msg[0], msg[1], L);
         }
+        else if (G.joinWaiting) { joinWaitTick(S); if (S.joined) { joinWait(false); openLobby(); mtoast(`P${S.mySlot + 1}で参加しました（${(S.lobby.slots || []).filter(Boolean).length}人）`, 2400); if (S.started) enterGame(); } }
         else if (G.mode === 'lobby' && S.started && S.mySlot >= 0) enterGame();
         else if ((G.mode === 'result' || G.mode === 'play') && S.lobby && S.lobby.phase === 'lobby' && G.resultShown) { openLobby(); }
       }
@@ -11021,6 +11060,7 @@ function bindLobby() {
   $('#btnGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { mtoast('協力プレイのルームにいる間はガチャを開けません', 2200); return; } openGacha(); };
   $('#btnStageSel').onclick = () => { AUDIO.sfx('ui'); openStageSel(); };
   $('#btnRoomLeave').onclick = () => { AUDIO.sfx('back'); goTitle(); mtoast('ルームから退出しました'); };
+  $('#btnJwCancel').onclick = () => { AUDIO.sfx('back'); joinWait(false); goTitle(); mtoast('参加をやめました'); }; // v8：入室待ちをやめる（部屋を片付けて、もう一度入り直せる）
   $('#btnCoopBack').onclick = () => { AUDIO.sfx('back'); show('title'); };
   $('#btnRosterBack').onclick = () => rosterBack();
   $('#btnRosterHome').onclick = () => { AUDIO.sfx('back'); persistPrefs(); show('title'); };
@@ -11278,6 +11318,7 @@ async function frAdd() {
 }
 /** フレンドのルームへ（協力プレイの「パスワードで参加」と同じ。合言葉の入力はいらない） */
 async function frJoin(f, room) {
+  if (G.coop && G.session && G.session.kind === 'host' && !G.session.clients.size && G.session.lobby.phase === 'lobby') { NETLIB.log('ui', '誰もいない自分の部屋を閉じて参加する'); goTitle(); } // v8：招待のために作った空の部屋が残っていても参加できるように
   if (G.coop) { mtoast('いまのルームから退出してから参加してください', 2400); return; }
   if ($('#btnJoin').disabled) { mtoast('このブラウザでは協力プレイを使えません', 2600); return; }
   $('#frInv').hidden = true; if (f && f.inv) FRND.dismissed.add(f.pid + f.inv.t);
@@ -11337,7 +11378,7 @@ function bindFriend() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && ACCT.FR) { frPublish(true); frRefresh(false, $('#friend').hidden); } });
 }
 
-window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX, THREE, GC, WALK, LOBBY3D, FRND, VIEW, show, openLogin, tagTap, spFeed, enemySp, setHealTarget, singleHealer };
+window.__tb = { G, R, DATA, SAVE, CLOUD, ACCT, SIMLIB, PROTO, NETLIB, AUDIO, GFX, THREE, GC, WALK, LOBBY3D, FRND, VIEW, show, openLogin, tagTap, spFeed, enemySp, setHealTarget, singleHealer, startHost, startJoin };
 
 </script>
 </body>
