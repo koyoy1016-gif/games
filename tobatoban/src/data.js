@@ -387,13 +387,37 @@ const AKIBA = {
     nagi: { who: 'kae', nm: '水杖なぎ', pw: 61, dmg: [155, 180], stat: 'str', r: 3.0, half: Math.PI * 55 / 180, warn: 0.85, act: 0.12, cd: 3.8, rng: 2.8, rec: 0.6 },
     meguri: { who: 'kae', nm: '水環めぐり', pw: 63, dmg: [160, 185], stat: 'yo', w: 0.8, len: 8, sweep: Math.PI * 2 / 3, dur: 2.5, warn: 1.5, cd: 12, rng: 6, rec: 0.8 },
     kagami: { who: 'kae', nm: '水鏡の足どめ', r: 1.1, n: 2, life: 4, mul: 0.9, warn: 1.2, cd: 14, rng: 9, rec: 0.6 },
+    // v8（第3優先）：1人5種類の個別攻撃。距離は最終の判定（1.15倍を重ねない）。威力pwはLv60・まもり約220・装備なしで通常約150、重い技約240になる値（×1.36は与ダメの最後に一度だけ）
+    // 参考：ナカ＝鬼食い、ホシ＝トキヲ／スベテ・ウバウネ、カエ＝プリズンブレイカー、オガ＝マイティードッグの「動き・範囲・避け方」。距離・秒数・威力は本作の初期調整値（原作の実測ではない）
+    n_swing: { v8: 1, who: 'naka', nm: 'マイクの大振り', pw: 63, stat: 'str', r: 3.0, half: Math.PI / 3, warn: 0.9, act: 0.12, cd: 4, rng: 3.2, rec: 0.8 },
+    n_bite: { v8: 1, who: 'naka', nm: '歌喰い', pw: 70, stat: 'yo', r: 3.5, half: 0.36, warn: 1.3, act: 0.12, hold: 1.0, cd: 20, rng: 3.6, rec: 1.0 },
+    n_notes: { v8: 1, who: 'naka', nm: '音符隕石', pw: 63, stat: 'yo', r: 1.3, n: 3, sep: 2.9, warn: 1.2, act: 0.15, cd: 8, rng: 12, rec: 0.7 },
+    n_stand: { v8: 1, who: 'naka', nm: 'マイクスタンド隆起', pw: 70, stat: 'str', r: 0.9, n: 3, sep: 2.6, warn: 1.4, act: 0.2, stay: 6, cd: 12, rng: 11, rec: 0.7 },
+    n_wheel: { v8: 1, who: 'naka', nm: '大車輪ライブ', pw: 80, stat: 'str', r: 1.1, warn: 1.2, dur: 3.5, spd: 3.2, turn: 1.6, stun: 2, cd: 16, rng: 12, rec: 1.4 },
+    h_staff: { v8: 1, who: 'hoshi', nm: '星杖なぎ', pw: 63, stat: 'str', r: 3.0, half: Math.PI / 3, warn: 0.9, act: 0.12, cd: 4, rng: 3.2, rec: 0.8 },
+    h_tri: { v8: 1, who: 'hoshi', nm: '三点の星雷', pw: 63, stat: 'yo', r: 1.1, n: 3, sep: 2.8, delay: 0.35, warn: 1.0, act: 0.15, cd: 8, rng: 11, rec: 0.7 },
+    h_chase: { v8: 1, who: 'hoshi', nm: '追いかけ星雷', pw: 55, stat: 'yo', r: 1.1, n: 4, iv: 0.55, warn: 1.0, act: 0.15, cd: 11, rng: 12, rec: 0.8 },
+    h_steal: { v8: 1, who: 'hoshi', nm: '星うばい', pw: 30, stat: 'yo', r: 0.45, speed: 2.6, turn: 1.2, life: 4.5, seal: 2, imm: 6, warn: 0.8, cd: 14, rng: 12, rec: 0.6 },
+    h_warp: { v8: 1, who: 'hoshi', nm: 'ワープ・スターサークル', pw: 100, stat: 'yo', r0: 2.0, r1: 5.0, move: 1.0, warn: 1.6, act: 0.2, cd: 18, rng: 14, rec: 1.2 },
+    k_boots: { v8: 1, who: 'kae', nm: 'ブーツ二連', pw: 55, stat: 'str', r: 2.6, half: Math.PI / 4, warn: 0.8, gap: 0.5, act: 0.1, chain: 0.5, cd: 4, rng: 2.8, rec: 0.7 },
+    k_spin: { v8: 1, who: 'kae', nm: '古着ぐるり回転', pw: 70, stat: 'str', r: 2.4, warn: 1.0, act: 0.15, cd: 9, rng: 2.6, rec: 0.8 },
+    k_cups: { v8: 1, who: 'kae', nm: '三方向ティーカップ', pw: 60, stat: 'yo', spread: 0.45, len: 9, w: 0.8, speed: 7, r: 0.4, warn: 0.8, cd: 7, rng: 9, rec: 0.6 },
+    k_cafe: { v8: 1, who: 'kae', nm: '置きカフェ', pw: 63, stat: 'yo', r: 1.3, n: 3, sep: 2.8, warn: 2.0, step: 0.5, act: 0.15, cd: 10, rng: 10, rec: 0.6 },
+    k_rush: { v8: 1, who: 'kae', nm: 'サブカル大暴走', warn: 0.8, dur: 6, spd: 1.3, tired: 2, cd: 30, rng: 14, rec: 0.6 },
+    o_bud: { v8: 1, who: 'oga', nm: 'こぼれ花爆弾', pw: 90, stat: 'str', r: 2.0, warn: 3.0, act: 0.15, cd: 9, rng: 3.0, rec: 0.6 },
+    o_bouquet: { v8: 1, who: 'oga', nm: 'ブーケスロー', pw: 70, stat: 'yo', r: 1.7, warn: 1.6, act: 0.15, cd: 6, rng: 10, rec: 0.6 },
+    o_parade: { v8: 1, who: 'oga', nm: '花降りパレード', pw: 55, stat: 'yo', r: 1.2, n: 7, sep: 2.4, iv: 0.35, warn: 1.2, act: 0.15, cd: 14, rng: 12, rec: 0.8 },
+    o_land: { v8: 1, who: 'oga', nm: 'プリンセス着地', pw: 90, stat: 'str', r: 2.8, warn: 1.4, act: 0.15, cd: 11, rng: 9, rec: 0.9 },
+    o_mark: { v8: 1, who: 'oga', nm: '花冠のしるし', pw: 0, r: 0.45, speed: 3.2, turn: 1.0, life: 4, dur: 5, n: 4, iv: 1.2, fr: 1.1, fpw: 45, fwarn: 1.1, warn: 0.7, cd: 16, rng: 11, rec: 0.6 },
   },
   rights: p('秋葉原', '同時に通常攻撃する相手（全体）', 2, '人', 'spec'),
   startGap: p('秋葉原', 'v8：4人全体の個別攻撃の開始間隔（最短）', 1.15, 's', 'spec', null, '約0.87回／秒まで'),
   twin: { window: p('秋葉原', '星・中：片方が倒れてからの制限時間', 15, 's', 'spec'), revive: p('秋葉原', '失敗したとき倒れていた方が戻るHP', 7500, 'points', 'spec', null, '最大HPの50%。生き残っていた方のHPは変えない') },
   guard: { dmg: 1200, low: 300, win: 5, mul: 1.10, dur: 6, cd: 15 },
-  geo: { first: 12, every: 18, w: { 2: 0.40, 3: 0.35, 4: 0.25 }, minSep: 3, minArea: 8, maxCover: 0.45, edge: 2.5, reachT: 1.8, rec: 2,
-    line: { nm: '二点結び', pw: 65, w: 1.2, warn: 1.5, act: 0.3 }, tri: { nm: '三角結界', pw: 75, warn: 2.0, act: 0.3 }, quad: { nm: '四角結界', pw: 22, warn: 2.5, dur: 3, iv: 0.75, max: 4 } },
+  geo: { first: 12, every: 20, jit: 5, every2: 15, // v8：全体で約15〜25秒に1回（基準20秒）
+    w: { 2: 0.40, 3: 0.35, 4: 0.25 }, minSep: 3, minArea: 8, maxCover: 0.45, edge: 2.5, reachT: 1.8, rec: 2,
+    line: { nm: '二点結び', pw: 63, w: 1.2, warn: 1.5, act: 0.3 }, wave: { nm: 'ツイン・ウェーブ', pw: 63, w: 0.9, gap: 0.6, lag: 0.8, warn: 1.4, act: 0.2 },
+    tri: { nm: '三角結界', pw: 92, warn: 2.2, act: 0.3, safeR: 1.4, safeN: 2 }, quad: { nm: '四重奏フィナーレ', pw: 151, warn: 2.8, dur: 0.3, iv: 99, max: 1, safeR: 1.5, safeN: 5 }, net: { nm: '四重の結界網', pw: 90, w: 0.9, gap: 2.0, warn: 2.2, act: 0.3 } }, // v8：3人技 約180〜260・4人技 約300〜420（Lv60・まもり約220・装備なし）。4人技は1発動で1人1回
 };
 MOVES.A_TIME = A_TIME;
 const DATA = { AKIBA, REFS, STATUS_LABEL, REG, PROFILE, SIM, DIFF, BOSS, BMOVES, MOB, JOBAN, STREET, UENO, MOVES, CHARGE, DODGE, RETREAT, SKILLS, SPECIALS, CHARS, CHI, PASSIVE, DEFAULT_PARTY, ELEM_COL, PCOL, ITEMS, ITEM_IDS, STAGE, CAM, NET };

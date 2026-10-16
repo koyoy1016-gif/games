@@ -10,8 +10,10 @@
 (() => {
   const P = Sim.prototype, A = () => DATA.AKIBA;
   const TWINS = ['hoshi', 'naka'];
-  const MOVES_OF = { hoshi: [['hoshizuna', 5], ['hoshirai', 2], ['hoshimado', 1]], naka: [['shizuku', 5], ['hyoutei', 2], ['mayoi', 1]], oga: [['ougi', 5], ['iki', 2], ['benibana', 2]], kae: [['nagi', 5], ['meguri', 2], ['kagami', 1]] };
+  // v8（第3優先）：1人5種類（重み）。旧技は使わない（役割が重なるので新しい技へ整理）
+  const MOVES_OF = { hoshi: [['h_staff', 5], ['h_tri', 3], ['h_chase', 2], ['h_steal', 1], ['h_warp', 1]], naka: [['n_swing', 5], ['n_notes', 3], ['n_stand', 2], ['n_bite', 1], ['n_wheel', 1]], oga: [['o_bouquet', 4], ['o_bud', 3], ['o_parade', 2], ['o_land', 2], ['o_mark', 1]], kae: [['k_boots', 5], ['k_cups', 3], ['k_cafe', 2], ['k_spin', 2], ['k_rush', 1]] };
   const KEEP = { hoshi: 6, naka: 7, oga: 1.8, kae: 2.2 };
+  const SPREAD = 4.5; // v8：4人が一か所に固まりすぎない（この距離より近いと離れる）
 
   P.initAkiba = function (o) {
     const D = A(), plaza = this.stageId === 'akiba_plaza', C = plaza ? D.plaza : D.platform;
@@ -25,7 +27,7 @@
   };
   P.spawnFoe = function (who, x, z) {
     const T = A().foes[who], cd = {};
-    for (const [k] of MOVES_OF[who]) cd[k] = 1.5 + this.rng.next() * 2.5;
+    for (const [k] of MOVES_OF[who]) { const c0 = (A().moves[k] || {}).cd || 0; cd[k] = c0 >= 14 ? c0 * (0.4 + this.rng.next() * 0.3) : 1.5 + this.rng.next() * 2.5; } /* v8：大技は始まってすぐには出さない */
     const m = { id: 'k' + this.id(), kind: 'akiba', who, T, x, z, yaw: Math.PI, hp: T.hp, maxHp: T.hp, str: T.str, yo: T.yo, def: T.def, r: T.r, st: 'ok', t: 0, para: 0, defDown: 0, dots: [], dl: [], act: null, cd, gap: 1 + this.rng.next(), wind: 0, moving: 0, tgt: -1, retT: 0, strafe: this.rng.next() < 0.5 ? 1 : -1, yoMul: 1, buffT: 0, geo: false, geoRec: 0, jump: 0 };
     this.mobs.push(m); return m;
   };
@@ -71,6 +73,7 @@
       }
     }
     for (const m of this.mobs) if (m.kind === 'akiba' && m.buffT > 0) { m.buffT -= dt; if (m.buffT <= 0) m.yoMul = 1; }
+    this.akibaTick8(dt);
     if (AK.plaza) this.updateGeo(dt);
   };
 
@@ -80,6 +83,7 @@
     m.st = 'down'; m.hp = 0; m.act = null; m.jump = 0; this.kills++;
     if (by && by.stats) by.stats.kills++;
     for (const h of this.hazards) if (h.srcEnt === m && h.t < h.warn) h.dead = 1; // 予兆中に倒れたら攻撃は出ない
+    for (const o of this.allies) { if (o.held && o.held.by === m.id) o.held.t = 0; if (o.fmark && o.fmark.by === m.id) o.fmark = null; } m.wheel = null; m.rushT = 0; m.spdMul = 1; // v8：倒れたら捕獲・印・未発動の技を解除
     if (AK.geo && AK.geo.ids.includes(m.id) && AK.geo.hz && AK.geo.hz.t < AK.geo.hz.warn) this.cancelGeo('down'); // 予兆中の参加者が倒れたら取り消し
     this.ev('akDown', { who: m.who, x: m.x, z: m.z });
     if (!AK.plaza) { if (['oga', 'kae'].every(w => { const f = this.foe(w); return !f || f.st !== 'ok'; })) this.finish(true, 'platform'); return; }
@@ -112,6 +116,8 @@
     const D = A(), AK = this.AK; m.wind = m.act && m.act.t < m.act.w ? 1 : 0; m.moving = 0;
     if (this.stage !== 'boss') return;
     for (const k in m.cd) m.cd[k] -= dt; m.gap -= dt;
+    if (m.stunT > 0) { m.stunT -= dt; m.para = Math.max(0, m.stunT); m.act = null; return; } else m.para = 0; // v8：スタンドに激突・暴走の疲れ
+    if (m.rushT > 0) { m.rushT -= dt; if (m.rushT <= 0) { m.rushT = 0; m.spdMul = 1; m.buffT = 0; m.stunT = A().moves.k_rush.tired; m.act = null; this.ev('akTired', { who: m.who, x: m.x, z: m.z }); return; } }
     if (m.geo) return; // 図形の必殺中は足を止める（同じ足元の座標）
     if (m.geoRec > 0) { m.geoRec -= dt; return; }
     if (m.act) { this.akibaAct(m, dt); return; }
@@ -123,9 +129,9 @@
     // それぞれ別々に歩き、追い込む方向を変える（相手ごとに少し横へずれる）
     const keep = KEEP[m.who], ang = ty + Math.PI + m.strafe * 0.45, gx = tg.x + Math.sin(ang) * keep, gz = tg.z + Math.cos(ang) * keep;
     let vx = gx - m.x, vz = gz - m.z; const vl = Math.hypot(vx, vz);
-    for (const o of this.mobs) { if (o === m || o.kind !== 'akiba' || o.st !== 'ok') continue; const ox = m.x - o.x, oz = m.z - o.z, od = Math.hypot(ox, oz); if (od < 1.6 && od > 1e-4) { vx += ox / od * 1.5; vz += oz / od * 1.5; } }
+    for (const o of this.mobs) { if (o === m || o.kind !== 'akiba' || o.st !== 'ok') continue; const ox = m.x - o.x, oz = m.z - o.z, od = Math.hypot(ox, oz); const sp0 = this.AK && this.AK.plaza ? SPREAD : 1.6; if (od < sp0 && od > 1e-4) { const k = (sp0 - od) / sp0 * 2.2 + 0.4; vx += ox / od * k; vz += oz / od * k; } }
     const L = Math.hypot(vx, vz);
-    if (vl > 0.25 && L > 1e-3) { const sp = m.T.spd * this.debuffMul(m, 'spd') * dt; const c = this.clampAkiba(m.x, m.z, m.x + vx / L * sp, m.z + vz / L * sp, m.r); m.x = c[0]; m.z = c[1]; m.moving = 1; }
+    if (vl > 0.25 && L > 1e-3) { const sp = m.T.spd * (m.spdMul || 1) * this.debuffMul(m, 'spd') * dt; const c = this.clampAkiba(m.x, m.z, m.x + vx / L * sp, m.z + vz / L * sp, m.r); m.x = c[0]; m.z = c[1]; m.moving = 1; }
     if (this.rng.next() < dt * 0.15) m.strafe *= -1;
     // 攻撃：全体で2人まで。図形の必殺の間は通常攻撃も床攻撃も重ねない
     if (m.gap > 0 || AK.geo || !this.akibaRightsFree() || this.t < (AK.nextStart || 0)) return; // v8：4人全体の開始間隔
@@ -133,7 +139,7 @@
     if (!ready.length) return;
     let r = this.rng.next() * ready.reduce((s, q) => s + q[1], 0), pick = ready[0][0];
     for (const [k, w] of ready) { r -= w; if (r <= 0) { pick = k; break; } }
-    this.akibaStart(m, pick, tg); AK.nextStart = this.t + A().startGap;
+    this.akibaStart(m, pick, tg); AK.nextStart = this.t + A().startGap * (m.rushT > 0 ? 0.7 : 1);
   };
   /** 技の始まり：予兆は開始時に置く（対象の位置は予兆の開始で固定） */
   P.akibaStart = function (m, k, tg) {
@@ -154,9 +160,10 @@
       case 'iki': H({ kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: M.r, half: M.half, warn: M.warn, act: M.act, fx: fxOf }); break;
       case 'benibana': { const c = this.clampAkiba(tg.x, tg.z, tg.x, tg.z, 0.5); H({ kind: 'circle', x: c[0], z: c[1], r: M.r, warn: M.warn, act: M.act, fx: fxOf, knock: 4 }); m.jumpTo = [c[0], c[1]]; m.jumpFrom = [m.x, m.z]; break; }
       case 'meguri': { const dir = this.rng.next() < 0.5 ? 1 : -1, y0 = m.yaw - dir * M.sweep / 2; H({ kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0.3, r1: M.len, half: M.sweep / 2, warn: M.warn, act: 0, fx: fxOf, dir }); m.spin = { dir, y0, hz: null, mul: base.mul || 1 }; end = M.warn + M.dur + M.rec; break; }
+      default: if (M.v8) end = this.akStart8(m, k, M, tg, base, fxOf); break;
       case 'kagami': { for (let i = 0; i < M.n; i++) { const a = this.rng.next() * TAU, rr = i === 0 ? 0.6 : 2.4; const c = this.clampAkiba(tg.x + Math.sin(a) * rr, tg.z + Math.cos(a) * rr, tg.x + Math.sin(a) * rr, tg.z + Math.cos(a) * rr, 1.1); H({ kind: 'circle', x: c[0], z: c[1], r: M.r, warn: M.warn, act: 0, keep: M.life, fx: 'water' }); } break; }
     }
-    m.act = { k, t: 0, w: M.warn, end, tg: tg.slot, fired: false };
+    m.act = { k, t: 0, w: M.warn, end, tg: tg.slot, fired: false, sched: m._sched ? m._sched.sort((a, b) => a.t - b.t) : null }; m._sched = null;
     this.ev('akMove', { who: m.who, mv: k });
   };
   P.akibaAct = function (m, dt) {
@@ -172,7 +179,74 @@
       S.hz.yaw = yaw; m.yaw = yaw;
       if (k >= 1) m.spin = null;
     }
-    if (A0.t >= A0.end) { m.act = null; m.gap = 0.4 + this.rng.next() * 0.8; }
+    if (A0.sched) while (A0.sched.length && A0.sched[0].t <= A0.t) { const f = A0.sched.shift(); f.f(); if (!m.act) return; } // v8：時間差の攻撃（予告時点で位置を決めてある）
+    if (A0.k === 'o_land' && m.jumpTo) { const k = Math.min(1, A0.t / M.warn); m.x = m.jumpFrom[0] + (m.jumpTo[0] - m.jumpFrom[0]) * k; m.z = m.jumpFrom[1] + (m.jumpTo[1] - m.jumpFrom[1]) * k; m.jump = Math.sin(k * Math.PI) * 2.6; if (k >= 1) { m.jump = 0; m.jumpTo = null; } }
+    if (A0.k === 'n_wheel' && m.wheel) this.akWheel(m, M, dt);
+    if (A0.t >= A0.end) { m.act = null; m.gap = 0.4 + this.rng.next() * 0.8 * (m.rushT > 0 ? 0.5 : 1); if (m.wheel) { if (m.wheel.hz) m.wheel.hz.dead = 1; m.wheel = null; } }
+  };
+  /* ---------- v8：4人の新しい個別攻撃（準備→予告→攻撃→後隙。位置は予告の時点でホストが決める） ---------- */
+  /** 間をあけた着弾点：最初はねらう相手の足もと、ほかは sep 以上離す（通れる隙間を残す） */
+  P.akSpots = function (tg, n, sep, first) {
+    const out = [first || [tg.x, tg.z]];
+    for (let k = 0; k < 60 && out.length < n; k++) { const a = this.rng.next() * TAU, d = sep + this.rng.next() * 1.2, c = this.clampAkiba(tg.x, tg.z, tg.x + Math.sin(a) * d, tg.z + Math.cos(a) * d, 1.0); if (out.every(q => dist2(q[0], q[1], c[0], c[1]) >= sep)) out.push(c); }
+    return out;
+  };
+  P.akStart8 = function (m, k, M0, tg, base, fxOf) {
+    let M = M0;
+    const RM = A().rangeMul, H = o => { const q = Object.assign({}, base, { fx: fxOf, max: 1, iv: 99 }, o); for (const g of ['r', 'r1', 'len', 'w']) if (q[g]) q[g] *= RM; return this.hz(q); }, yaw = m.yaw, S = m._sched = []; /* 範囲×1.15（作るときに一度だけ。ドーナツの内側の安全な半径は広げない） */
+    if (M.sep) M = Object.assign({}, M, { sep: Math.max(M.sep, 2 * M.r * RM + 1.2) }); /* 円どうしの間に必ず通り道（約1.2m）を残す */
+    const at = (t, f) => S.push({ t, f }), circle = (x, z, o) => H(Object.assign({ kind: 'circle', x, z, r: M.r, warn: M.warn, act: M.act || 0.15 }, o));
+    const grp = (mx) => ({ hits: {}, max: mx });
+    switch (k) {
+      case 'n_swing': case 'h_staff': H({ kind: 'fan', x: m.x, z: m.z, yaw, r0: 0, r1: M.r, half: M.half, warn: M.warn, act: M.act }); return M.warn + M.act + M.rec;
+      case 'n_bite': H({ kind: 'fan', x: m.x, z: m.z, yaw, r0: 0, r1: M.r, half: M.half, warn: M.warn, act: M.act, onHit: 'akCapture', capLeft: 1, hold: M.hold }); return M.warn + M.act + M.hold + M.rec;
+      case 'n_notes': { const g = grp(1); for (const q of this.akSpots(tg, M.n, M.sep)) circle(q[0], q[1], { grp: g }); return M.warn + M.act + M.rec; }
+      case 'n_stand': { const g = grp(1), pts = this.akSpots(tg, M.n, M.sep); pts.forEach(q => circle(q[0], q[1], { grp: g })); at(M.warn + M.act, () => { const q = pts[0]; this.AK.stands = (this.AK.stands || []).filter(s => s.t > 0).slice(-1); this.AK.stands.push({ x: q[0], z: q[1], t: M.stay }); this.ev('akStand', { x: q[0], z: q[1] }); }); return M.warn + M.act + M.rec; } // 1本だけ短く残す（完全な壁にしない）
+      case 'n_wheel': { H({ kind: 'circle', x: m.x, z: m.z, r: M.r + 0.6, warn: M.warn, act: 0, pw: 0 }); at(M.warn, () => { m.wheel = { t: M.dur, tg: tg.slot, hz: H({ kind: 'circle', x: m.x, z: m.z, r: M.r, warn: 0, act: M.dur }) }; }); return M.warn + M.dur + M.rec; }
+      case 'h_tri': { const g = grp(2); this.akSpots(tg, M.n, M.sep).forEach((q, i) => circle(q[0], q[1], { warn: M.warn + i * M.delay, grp: g })); return M.warn + (M.n - 1) * M.delay + M.act + M.rec; }
+      case 'h_chase': { const g = grp(2); for (let i = 0; i < M.n; i++) at(i * M.iv, () => { const o = this.allies[tg.slot]; if (o && o.st === 'ok') { const c = this.clampAkiba(o.x, o.z, o.x, o.z, 0.5); circle(c[0], c[1], { grp: g }); } }); return (M.n - 1) * M.iv + M.warn + M.act + M.rec; } // その時点の位置で固定（そのあと追わない）
+      case 'h_steal': case 'o_mark': { H({ kind: 'line', x: m.x, z: m.z, yaw, len: 3, w: 0.5, warn: M.warn, act: 0, pw: 0 }); at(M.warn, () => { const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw); this.projs.push({ id: this.id(), kind: k === 'h_steal' ? 'hoshi' : 'mizu', team: 'enemy', x: m.x + fx * 0.6, y: 0.9, z: m.z + fz * 0.6, vx: fx * M.speed, vz: fz * M.speed, life: M.life, r: M.r, pw: M.pw, stat: 'yo', src: { str: m.str, yo: m.yo * m.yoMul }, srcEnt: m, hit: new Set(), yaw: m.yaw, seek: tg.slot, turn: M.turn, onHit: k === 'h_steal' ? 'akSeal' : 'akFlower', mul: base.mul }); }); return M.warn + M.rec; }
+      case 'h_warp': { const a = this.rng.next() * TAU, c = this.clampAkiba(tg.x, tg.z, tg.x + Math.sin(a) * 1.5, tg.z + Math.cos(a) * 1.5, 1.2); H({ kind: 'circle', x: c[0], z: c[1], r: 0.9, warn: M.move, act: 0, pw: 0 }); // 行き先を光で示す
+        at(M.move, () => { m.x = c[0]; m.z = c[1]; this.ev('akWarp', { who: m.who, x: c[0], z: c[1] }); H({ kind: 'fan', x: c[0], z: c[1], yaw: 0, r0: M.r0, r1: M.r1, half: Math.PI, warn: M.warn, act: M.act }); }); // 出た直後は攻撃しない。ドーナツ：中央と外側が安全
+        return M.move + M.warn + M.act + M.rec; }
+      case 'k_boots': { const kick = (w) => H({ kind: 'fan', x: m.x, z: m.z, yaw, r0: 0, r1: M.r, half: M.half, warn: w, act: M.act }); kick(M.warn); kick(M.warn + M.gap); let end = M.warn + M.gap + M.act + M.rec;
+        if (this.rng.next() < M.chain && !(m.cd.k_spin > 0)) { const S2 = A().moves.k_spin; at(M.warn + M.gap + M.act, () => { m.cd.k_spin = S2.cd; H({ kind: 'circle', x: m.x, z: m.z, r: S2.r, warn: S2.warn, act: S2.act, pw: S2.pw, stat: S2.stat }); this.ev('akMove', { who: m.who, mv: 'k_spin' }); }); end = M.warn + M.gap + M.act + S2.warn + S2.act + S2.rec; } // 二連のあとに追加の予告をしてから回転（「二連の後は離れる」）
+        return end; }
+      case 'k_spin': H({ kind: 'circle', x: m.x, z: m.z, r: M.r, warn: M.warn, act: M.act }); return M.warn + M.act + M.rec;
+      case 'k_cups': { const ys = [-M.spread, 0, M.spread].map(d => yaw + d); for (const y of ys) H({ kind: 'line', x: m.x, z: m.z, yaw: y, len: M.len, w: M.w, warn: M.warn, act: 0, pw: 0 }); // 投げる方向を先に示す（ビームではなく飛び道具）
+        at(M.warn, () => { for (const y of ys) this.projs.push({ id: this.id(), kind: 'mizu', team: 'enemy', x: m.x + Math.sin(y) * 0.5, y: 0.9, z: m.z + Math.cos(y) * 0.5, vx: Math.sin(y) * M.speed, vz: Math.cos(y) * M.speed, life: M.len * RM / M.speed, r: M.r, pw: M.pw, stat: 'yo', src: { str: m.str, yo: m.yo * m.yoMul }, srcEnt: m, hit: new Set(), yaw: y, mul: base.mul }); }); return M.warn + M.rec; }
+      case 'k_cafe': { const g = grp(2); this.akSpots(tg, M.n, M.sep).forEach((q, i) => circle(q[0], q[1], { warn: M.warn + i * M.step, grp: g })); return 1.0; } // 置いて離れる（順番に破裂）
+      case 'k_rush': { at(M.warn, () => { m.rushT = M.dur; m.spdMul = M.spd; m.buffT = M.dur; this.ev('akRush', { who: m.who, x: m.x, z: m.z }); }); return M.warn + M.rec; } // 予告時間は短くしない（開始の間隔だけ少し詰める）
+      case 'o_bud': circle(m.x, m.z); return 1.2; // 足もとのつぼみ（3秒後に開く）。オガは動き続ける
+      case 'o_bouquet': { const c = this.clampAkiba(tg.x, tg.z, tg.x, tg.z, 0.5); circle(c[0], c[1]); return M.warn + M.act + M.rec; }
+      case 'o_parade': { const g = grp(2), pts = this.akSpots(tg, M.n, M.sep); pts.forEach((q, i) => at(i * M.iv, () => circle(q[0], q[1], { grp: g }))); return (pts.length - 1) * M.iv + M.warn + M.act + M.rec; } // 同時に危険なのは約4か所まで
+      case 'o_land': { const c = this.clampAkiba(tg.x, tg.z, tg.x, tg.z, 0.5); circle(c[0], c[1], { knock: 3 }); m.jumpTo = [c[0], c[1]]; m.jumpFrom = [m.x, m.z]; return M.warn + M.act + M.rec; }
+    }
+    return M.warn + (M.act || 0) + (M.rec || 0.6);
+  };
+  /** 大車輪ライブ：曲がり方に上限のある追いかけ（数秒）。残ったマイクスタンドに当たると約2秒ダウン */
+  P.akWheel = function (m, M, dt) {
+    const W = m.wheel; W.t -= dt; const o = this.allies[W.tg];
+    if (o && o.st === 'ok') { const want = yawTo(o.x - m.x, o.z - m.z); m.yaw += clamp(angDiff(m.yaw, want), -M.turn * dt, M.turn * dt); }
+    const c = this.clampAkiba(m.x, m.z, m.x + Math.sin(m.yaw) * M.spd * dt, m.z + Math.cos(m.yaw) * M.spd * dt, m.r); m.x = c[0]; m.z = c[1]; m.moving = 1;
+    if (W.hz) { W.hz.x = m.x; W.hz.z = m.z; }
+    const st = (this.AK.stands || []).find(s => s.t > 0 && dist2(s.x, s.z, m.x, m.z) < 1.1);
+    if (st) { st.t = 0; if (W.hz) W.hz.dead = 1; m.wheel = null; m.act = null; m.stunT = M.stun; m.gap = 0.5; this.ev('akCrash', { who: m.who, x: m.x, z: m.z }); return; }
+    if (W.t <= 0) { if (W.hz) W.hz.dead = 1; m.wheel = null; }
+  };
+  /** 歌喰い：範囲内の味方を最大1人だけ約1秒「歌の中」へ（ダメージは1回。出た直後に短い無敵） */
+  P.akCapture = function (h, o) { if (!(h.capLeft > 0) || o.st !== 'ok' || o.held || o.inv > 0) return; const m = h.srcEnt; if (!m || m.st !== 'ok') return; h.capLeft--; o.held = { t: h.hold || 1, by: m.id }; o.act = null; this.ev('akHeld', { slot: o.slot, who: m.who, x: o.x, z: o.z }); };
+  /** 星うばい：攻撃のXだけ約2秒封じる（6秒の耐性で連続して更新しない） */
+  P.akSeal = function (p, o) { const M = A().moves.h_steal; if (o.sealImm > 0 || o.inv > 0) return; o.sealX = M.seal; o.sealImm = M.imm; this.ev('akSeal', { slot: o.slot, x: o.x, z: o.z }); };
+  /** 花冠のしるし：5秒の間に4回まで、印の付いた味方の少し前へ時間差で花を置く（移動すれば避けられる・増え続けない） */
+  P.akFlower = function (p, o) { const M = A().moves.o_mark; if (o.fmark || o.inv > 0) return; o.fmark = { t: M.dur, n: M.n, next: 0.6, by: p.srcEnt ? p.srcEnt.id : null }; this.ev('akFmark', { slot: o.slot, n: M.n, x: o.x, z: o.z }); };
+  P.akibaTick8 = function (dt) {
+    const AK = this.AK; if (AK.stands) { for (const s of AK.stands) s.t -= dt; AK.stands = AK.stands.filter(s => s.t > 0); }
+    const M = A().moves.o_mark;
+    for (const o of this.allies) { const F = o.fmark; if (!F) continue; if (o.st !== 'ok') { o.fmark = null; continue; } F.t -= dt; F.next -= dt;
+      if (F.next <= 0 && F.n > 0) { F.n--; F.next = M.iv; const c = this.clampAkiba(o.x, o.z, o.x + Math.sin(o.yaw) * 1.4, o.z + Math.cos(o.yaw) * 1.4, 0.5), src = this.mobs.find(e => e.id === F.by) || this.foe('oga');
+        this.hz({ kind: 'circle', x: c[0], z: c[1], r: M.fr, warn: M.fwarn, act: 0.15, pw: M.fpw, stat: 'yo', srcStats: src ? { str: src.str, yo: src.yo } : { str: 600, yo: 600 }, src: 'akiba', srcEnt: src, dodge: true, max: 1, iv: 99, fx: 'oga', mul: A().dmgMul }); this.ev('akFmark', { slot: o.slot, n: F.n, x: c[0], z: c[1] }); }
+      if (F.t <= 0 || F.n <= 0 && F.next <= 0) o.fmark = null; }
   };
   /** 状態マーク（ダメージなし）：星まどい＝ちから・ようりょく×0.9、迷いの銀札＝移動×0.9（4秒・同じ技は重ねず更新・おはらいで解除） */
   P.hazardEffect = function (h, o) {
@@ -197,20 +271,40 @@
     return lo.slice(0, -1).concat(up.slice(0, -1));
   }
   P.geoShape = function (foes) {
-    const G = A().geo, pts = foes.map(f => [f.x, f.z]), half = A().plaza.half;
+    const G = A().geo, pts = foes.map(f => [f.x, f.z]), half = A().plaza.half, R = this.rng;
     if (pts.some(q => Math.abs(q[0]) > half - G.edge || Math.abs(q[1]) > half - G.edge)) return null; // 外側の通路2.5m
     for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) if (dist2(pts[i][0], pts[i][1], pts[j][0], pts[j][1]) < G.minSep) return null;
     const floor = (half * 2) * (half * 2);
-    if (pts.length === 2) { const len = dist2(pts[0][0], pts[0][1], pts[1][0], pts[1][1]); if (len * G.line.w > floor * G.maxCover) return null; return { n: 2, pts, yaw: yawTo(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]), len }; }
-    if (pts.length === 3) { const ar = area(pts); if (ar < G.minArea || ar > floor * G.maxCover) return null; return { n: 3, pts }; }
+    if (pts.length === 2) { const len = dist2(pts[0][0], pts[0][1], pts[1][0], pts[1][1]); if (len * G.line.w > floor * G.maxCover) return null; return { n: 2, pts, yaw: yawTo(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]), len, v: R.next() < 0.5 ? 'wave' : 'line' }; }
+    if (pts.length === 3) { const ar = area(pts); if (ar < G.minArea || ar > floor * G.maxCover) return null; return { n: 3, pts, v: 'tri' }; }
     const h = hull(pts); if (h.length !== 4) return null; // 1点が内側・3点一直線・交差は使わない
     const ar = area(h); if (ar > floor * G.maxCover) return null;
-    return { n: 4, pts: h };
+    return { n: 4, pts: h, v: R.next() < 0.5 ? 'net' : 'quad' };
   };
-  /** 全員が1.8秒以内に（回避なしで）図形の外へ出られるか */
+  /** v8：図形ごとの当たり（予告→攻撃→後隙）。安全地帯（青緑の円）は当たりから除く */
+  P.geoPlan = function (sh) {
+    const G = A().geo, out = [], rm = A().rangeMul, cen = sh.pts.reduce((c, q) => [c[0] + q[0] / sh.pts.length, c[1] + q[1] / sh.pts.length], [0, 0]);
+    const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+    if (sh.v === 'line') out.push({ kind: 'line', x: sh.pts[0][0], z: sh.pts[0][1], yaw: sh.yaw, len: sh.len, w: G.line.w * rm, warn: G.line.warn, act: G.line.act, pw: G.line.pw, fx: 'link2' });
+    else if (sh.v === 'wave') { const W = G.wave; // 2人の足もとから広がる、すき間のある輪（2重・時間差）。輪の内側と外側、すき間は安全
+      sh.pts.forEach((q, i) => [2.0, 3.6].forEach((r0, k) => { const gy = this.rng.next() * TAU; out.push({ kind: 'fan', x: q[0], z: q[1], yaw: gy + Math.PI, r0, r1: r0 + W.w * rm, half: Math.PI - W.gap, warn: W.warn + (i + k) * W.lag * 0.5, act: W.act, pw: W.pw, fx: 'wave2' }); })); }
+    else if (sh.v === 'tri') { const T = G.tri, safe = [];
+      const edges = [0, 1, 2].sort(() => this.rng.next() - 0.5).slice(0, T.safeN); for (const e of edges) { const mid = lerp(sh.pts[e], sh.pts[(e + 1) % 3], 0.5); safe.push(lerp(cen, mid, 0.45).concat([T.safeR])); }
+      out.push({ kind: 'poly', x: 0, z: 0, pts: sh.pts, warn: T.warn, act: T.act, pw: T.pw, fx: 'tri3', safe }); }
+    else if (sh.v === 'quad') { const Q = G.quad, safe = [cen.concat([Q.safeR])]; for (const q of sh.pts) safe.push(lerp(cen, q, 0.55).concat([Q.safeR * 0.8])); // 中央＋4つ（5か所）
+      out.push({ kind: 'poly', x: 0, z: 0, pts: sh.pts, warn: Q.warn, act: Q.dur, pw: Q.pw, max: 1, iv: 99, fx: 'quad4', safe: safe.slice(0, Q.safeN) }); }
+    else { const N = G.net; // 外周の4辺。各辺のまん中にすき間（中と外を行き来できる）
+      for (let i = 0; i < 4; i++) { const a = sh.pts[i], b = sh.pts[(i + 1) % 4], L = dist2(a[0], a[1], b[0], b[1]), y = yawTo(b[0] - a[0], b[1] - a[1]), seg = Math.max(0.3, (L - N.gap) / 2);
+        out.push({ kind: 'line', x: a[0], z: a[1], yaw: y, len: seg, w: N.w * rm, warn: N.warn, act: N.act, pw: N.pw, fx: 'net4' }, { kind: 'line', x: b[0], z: b[1], yaw: y + Math.PI, len: seg, w: N.w * rm, warn: N.warn, act: N.act, pw: N.pw, fx: 'net4' }); } }
+    return out;
+  };
+  const inSpec = (x, z, h, R) => { let i = false;
+    if (h.kind === 'fan') i = inFan(x, z, h.x, h.z, h.yaw, h.r0, h.r1, h.half, R); else if (h.kind === 'line') i = inLine(x, z, h.x, h.z, h.yaw, h.len, h.w / 2, R); else if (h.kind === 'poly') i = inPoly(x, z, h.pts, R);
+    if (i && h.safe && h.safe.some(c => dist2(x, z, c[0], c[1]) <= c[2] - R * 0.5)) i = false; return i; };
+  /** 全員が1.8秒以内に（回避なしで）当たりの外・安全地帯へ出られるか */
   P.geoSafe = function (sh) {
-    const G = A().geo, half = A().plaza.half, R = DATA.MOB.allyR;
-    const inside = (x, z) => sh.n === 2 ? inLine(x, z, sh.pts[0][0], sh.pts[0][1], sh.yaw, sh.len, G.line.w / 2, R) : inPoly(x, z, sh.pts, R);
+    const G = A().geo, half = A().plaza.half, R = DATA.MOB.allyR, plan = sh.plan || (sh.plan = this.geoPlan(sh));
+    const inside = (x, z) => plan.some(h => inSpec(x, z, h, R));
     return this.allies.every(o => {
       if (o.st !== 'ok') return true;
       const sp = DATA.SIM.walk * this.aiK(o) * (o.dl && o.dl.length ? this.debuffMul(o, 'spd') : 1) * this.allyMoveMul(o), reach = sp * G.reachT;
@@ -219,12 +313,13 @@
       return false;
     });
   };
+  P.geoNext = function () { const G = A().geo; return G.every + (this.rng.next() * 2 - 1) * (G.jit || 0); }; // v8：約15〜25秒
   P.updateGeo = function (dt) {
     const D = A(), G = D.geo, AK = this.AK;
     if (AK.geo) {
-      const g = AK.geo, h = g.hz;
-      if (!g.fired && h && h.t >= h.warn) g.fired = true;
-      if (!h || h.dead || h.t > h.warn + h.act + 0.05) { for (const m of this.mobs) if (g.ids.includes(m.id)) { m.geo = false; if (m.st === 'ok') m.geoRec = G.rec; } AK.geo = null; AK.geoT = G.every; }
+      const g = AK.geo, h = g.hz, h0 = g.hzs ? g.hzs[0] : h;
+      if (!g.fired && h0 && h0.t >= h0.warn) g.fired = true;
+      if (!h || h.dead || h.t > h.warn + h.act + 0.05) { for (const m of this.mobs) if (g.ids.includes(m.id)) { m.geo = false; if (m.st === 'ok') m.geoRec = G.rec; } AK.geo = null; AK.geoT = this.geoNext(); }
       return;
     }
     if (AK.twinT >= 0) { AK.geoWait = false; return; } // 片方が倒れた後の15秒間は新しく予約しない
@@ -236,7 +331,9 @@
       let n; const r = this.rng.next(); n = r < G.w[2] ? 2 : r < G.w[2] + G.w[3] ? 3 : 4;
       if (n > alive.length) continue; // 有効な人数で引き直す
       const pick = alive.slice().sort(() => this.rng.next() - 0.5).slice(0, n);
-      const sh = this.geoShape(pick); if (!sh || !this.geoSafe(sh)) continue;
+      const sh = this.geoShape(pick); if (!sh) continue;
+      if (sh.v === AK.geoLast && tries < 12) continue; // 同じ種類を続けない（合う配置がないときだけ許す）
+      if (!this.geoSafe(sh)) continue;
       AK.geoWait = false; this.startGeo(pick, sh); return;
     }
     AK.geoWait = false; AK.geoT = 2; // 合う配置がない：取り消して少し後でもう一度
@@ -244,17 +341,15 @@
   P.startGeo = function (foes, sh) {
     const G = A().geo, AK = this.AK, src = { str: A().foes.hoshi.str, yo: A().foes.hoshi.yo }; // 共有の能力（v6：600）。相方の強化は重ねない
     for (const m of foes) { m.geo = true; m.act = null; m.moving = 0; }
-    const base = { src: 'akiba', srcStats: src, stat: 'yo', dodge: true, iv: 99, max: 1, geo: 1, mul: A().dmgMul }; // v7：連携技も×0.8（形は配置そのままで、線の幅だけ×1.15）
-    let h;
-    if (sh.n === 2) h = this.hz(Object.assign(base, { kind: 'line', x: sh.pts[0][0], z: sh.pts[0][1], yaw: sh.yaw, len: sh.len, w: G.line.w * A().rangeMul, warn: G.line.warn, act: G.line.act, pw: G.line.pw, fx: 'link2' }));
-    else if (sh.n === 3) h = this.hz(Object.assign(base, { kind: 'poly', x: 0, z: 0, pts: sh.pts, warn: G.tri.warn, act: G.tri.act, pw: G.tri.pw, fx: 'tri3' }));
-    else h = this.hz(Object.assign(base, { kind: 'poly', x: 0, z: 0, pts: sh.pts, warn: G.quad.warn, act: G.quad.dur, pw: G.quad.pw, max: G.quad.max, iv: G.quad.iv, fx: 'quad4' }));
-    AK.geo = { n: sh.n, ids: foes.map(m => m.id), whos: foes.map(m => m.who), hz: h, fired: false, cast: ++AK.geoN };
-    this.ev('geo', { n: sh.n, whos: AK.geo.whos });
+    const grp = { hits: {}, max: 1 }; // 1発動で1人1回
+    const hzs = (sh.plan || this.geoPlan(sh)).map(o => this.hz(Object.assign({ src: 'akiba', srcStats: src, stat: 'yo', dodge: true, iv: 99, max: 1, geo: 1, mul: A().dmgMul, grp }, o)));
+    const last = hzs.reduce((a, b) => (b.warn + b.act > a.warn + a.act ? b : a));
+    AK.geo = { n: sh.n, v: sh.v, ids: foes.map(m => m.id), whos: foes.map(m => m.who), hz: last, hzs, fired: false, cast: ++AK.geoN }; AK.geoLast = sh.v;
+    this.ev('geo', { n: sh.n, v: sh.v, nm: G[sh.v].nm, whos: AK.geo.whos });
   };
   P.cancelGeo = function (why) {
     const AK = this.AK, g = AK.geo; if (!g) return;
-    if (g.hz) g.hz.dead = 1;
+    for (const h of g.hzs || [g.hz]) if (h) h.dead = 1;
     for (const m of this.mobs) if (g.ids.includes(m.id)) { m.geo = false; m.geoRec = 0.5; }
     AK.geo = null; AK.geoT = 4; this.ev('geoCancel', { why });
   };
@@ -291,7 +386,7 @@
   /* ---------- スナップショット ---------- */
   P.akibaSnap = function () {
     const AK = this.AK, g = AK.geo;
-    return [AK.plaza ? 1 : 0, Math.round(Math.max(0, AK.twinT) * 100) / 100, AK.twinDown ? TWINS.indexOf(AK.twinDown) + 1 : 0, g ? g.n : 0, g ? g.whos.map(w => ['hoshi', 'naka', 'oga', 'kae'].indexOf(w)).join('') : '', Math.round(this.lvOut * 1000), Math.round(this.lvIn * 1000), this.akLv, AK.twinFails];
+    return [AK.plaza ? 1 : 0, Math.round(Math.max(0, AK.twinT) * 100) / 100, AK.twinDown ? TWINS.indexOf(AK.twinDown) + 1 : 0, g ? g.n : 0, g ? g.whos.map(w => ['hoshi', 'naka', 'oga', 'kae'].indexOf(w)).join('') : '', Math.round(this.lvOut * 1000), Math.round(this.lvIn * 1000), this.akLv, AK.twinFails, (AK.stands || []).map(t => [Math.round(t.x * 100) / 100, Math.round(t.z * 100) / 100, Math.round(t.t * 10) / 10]), g ? ['line', 'wave', 'tri', 'quad', 'net'].indexOf(g.v) : -1];
   };
-  SIMLIB.akibaDecode = a => ({ kind: 'akiba', plaza: !!a[0], twinT: a[1], twinDown: a[2] ? TWINS[a[2] - 1] : null, geoN: a[3], geoWho: a[4] ? String(a[4]).split('').map(i => ['hoshi', 'naka', 'oga', 'kae'][+i]) : [], lvOut: a[5] / 1000, lvIn: a[6] / 1000, lv: a[7], fails: a[8] });
+  SIMLIB.akibaDecode = a => ({ kind: 'akiba', plaza: !!a[0], twinT: a[1], twinDown: a[2] ? TWINS[a[2] - 1] : null, geoN: a[3], geoWho: a[4] ? String(a[4]).split('').map(i => ['hoshi', 'naka', 'oga', 'kae'][+i]) : [], lvOut: a[5] / 1000, lvIn: a[6] / 1000, lv: a[7], fails: a[8], stands: a[9] || [], geoV: a[10] >= 0 ? ['line', 'wave', 'tri', 'quad', 'net'][a[10]] : null });
 })();

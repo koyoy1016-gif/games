@@ -13,7 +13,7 @@ const PROTO = (() => {
   const BARR = ['street', 'none', 'plaza'], BARR_I = { street: 0, none: 1, plaza: 2 };
   const PK = ['food', 'bag', 'candy'], PK_I = { food: 0, bag: 1, candy: 2 };
   const CTX = ['dash', 'revive', 'lantern'], CTX_I = { dash: 0, revive: 1, lantern: 2, '': 0 };
-  const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land', 'ysword', 'yfist', 'ybeam', 'reikoW', 'shosho', 'stamp', 'ubeam', 'warp', 'throw', 'hoshi', 'naka', 'oga', 'kae', 'link2', 'tri3', 'quad4', 'water', 'debuffMark'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
+  const FX = ['', 'fubuki', 'shime', 'otoshi', 'kousen', 'harite', 'junkou', 'bomb', 'land', 'ysword', 'yfist', 'ybeam', 'reikoW', 'shosho', 'stamp', 'ubeam', 'warp', 'throw', 'hoshi', 'naka', 'oga', 'kae', 'link2', 'tri3', 'quad4', 'water', 'debuffMark', 'net4', 'wave2', 'look'], FX_I = Object.fromEntries(FX.map((k, i) => [k, i]));
   const FLPH = ['rise', 'cross', 'gap', 'land'], FLPH_I = { rise: 0, cross: 1, gap: 2, land: 3 };
   const r2 = v => Math.round(v * 100) / 100, r1 = v => Math.round(v * 10) / 10;
   const EV_SKIP = new Set(['swing']); // 量が多い演出は数を絞る
@@ -25,6 +25,7 @@ const PROTO = (() => {
     if (a.gLock.X) f |= 512; if (a.gLock.Y) f |= 1024; if (a.buffs.ramune > 0) f |= 2048; if (a.moving) f |= 4096; if (a.lan) f |= 8192; if (a.ctrlAI) f |= 16384;
     if (a.act && a.act.k === 'guard' && DATA.SKILLS[a.slots[a.act.slot]].reflect) f |= 32768;
     if (a.gT > 0) f |= 65536;
+    if (a.held) f |= 131072; if (a.sealX > 0) f |= 262144; if (a.fmark) f |= 524288; // v8：歌の中・X封じ・花冠のしるし
     return f;
   }
   function encodeSnap(sim, o) {
@@ -44,7 +45,7 @@ const PROTO = (() => {
     let P = sim.projs.map(p => [p.id, PJ_I[p.kind], r2(p.x), r2(p.z), r2(p.yaw || 0), p.team === 'ally' ? 0 : 1, p.owner == null ? -1 : p.owner, r2(p.r)]);
     const H = sim.hazards.map(h => [h.id, HZ_I[h.kind], r2(h.x), r2(h.z), r2(h.yaw || 0),
       r2(h.kind === 'fan' ? h.r0 : h.kind === 'circle' ? h.r : h.len), r2(h.kind === 'fan' ? h.r1 : h.w || 0), r2(h.kind === 'fan' ? h.half : 0),
-      r2(h.t), r2(h.warn), r2(h.act + (h.keep || 0)), FX_I[h.fx] || 0, h.brief || 0, h.num || 0].concat(h.kind === 'poly' ? [h.pts.map(q => [r2(q[0]), r2(q[1])])] : []));
+      r2(h.t), r2(h.warn), r2(h.act + (h.keep || 0)), FX_I[h.fx] || 0, h.brief || 0, h.num || 0, h.kind === 'poly' ? h.pts.map(q => [r2(q[0]), r2(q[1])]) : 0, h.safe ? h.safe.map(c => [r2(c[0]), r2(c[1]), r2(c[2])]) : 0]); // v8：円の安全地帯も送る
     const T = sim.traps.map(t => [t.id, t.kind === 'mine' ? 1 : 0, r2(t.x), r2(t.z), t.t >= t.arm ? 1 : 0]);
     const K = sim.pickups.map(p => [p.id, PK_I[p.kind] || 0, r2(p.x), r2(p.z), p.item ? IT_I[p.item] : -1]);
     const L = [sim.lanterns.reduce((s, l, i) => s | (l.lit ? 1 << i : 0), 0), r1(sim.lanternT), r1(sim.lanternCool), sim.lanternOrder > sim.t ? 1 : 0];
@@ -71,7 +72,7 @@ const PROTO = (() => {
     v.allies = s.a.map(r => ({
       slot: r[0], ch: CH_IDS[r[1]], x: r[2], z: r[3], yaw: r[4], st: ST[r[5]], act: ACTS[r[6]], actT: r[7], hpR: r[8] / 1000, sp: r[9], stam: r[10], f: r[11],
       guard: !!(r[11] & 1), stealth: !!(r[11] & 2), inv: !!(r[11] & 4), strBuff: !!(r[11] & 8), defBuff: !!(r[11] & 16), taunt: !!(r[11] & 32), hurt: !!(r[11] & 64), dash: !!(r[11] & 128), tired: !!(r[11] & 256),
-      gLockX: !!(r[11] & 512), gLockY: !!(r[11] & 1024), ramune: !!(r[11] & 2048), moving: !!(r[11] & 4096), lanHold: !!(r[11] & 8192), ai: !!(r[11] & 16384), reflect: !!(r[11] & 32768), gOn: !!(r[11] & 65536),
+      gLockX: !!(r[11] & 512), gLockY: !!(r[11] & 1024), ramune: !!(r[11] & 2048), moving: !!(r[11] & 4096), lanHold: !!(r[11] & 8192), ai: !!(r[11] & 16384), reflect: !!(r[11] & 32768), gOn: !!(r[11] & 65536), held: !!(r[11] & 131072), sealX: !!(r[11] & 262144), fmark: !!(r[11] & 524288),
       downT: r[12], cdX: r[13], cdY: r[14], gX: r[15] / 100, gY: r[16] / 100, items: [{ id: DATA.ITEM_IDS[r[17]], n: r[18] }, { id: DATA.ITEM_IDS[r[19]], n: r[20] }],
       ctx: CTX[r[21]], revP: r[22] / 100, revT: r[23], chg: r[24] / 100, actSlot: r[25] === 1 ? 'X' : r[25] === 2 ? 'Y' : '', lastEv: r[26], cdMaxX: r[27], cdMaxY: r[28],
       sk: { X: SK_IDS[r[29]], Y: SK_IDS[r[30]] }, lanP: r[31] / 100, aq: r[32], item: r[33] >= 0 ? DATA.ITEM_IDS[r[33]] : null, stealthT: r[34], lv: r[35] || 1, kills: r[36] || 0, gT: r[37] || 0,
@@ -80,7 +81,7 @@ const PROTO = (() => {
     v.boss = b ? { x: b[0], z: b[1], y: b[2], yaw: b[3], hpR: b[4] / 1000, st: BST[b[5]], mv: BMV[b[6]], t: b[7], phase: b[8], defDown: !!(b[9] & 1), stun: !!(b[9] & 2), dot: !!(b[9] & 4), fl: b[10] ? { ph: FLPH[b[10][0]], yaw: b[10][1], i: b[10][2], n: b[10][3], len: b[10][4], t: b[10][5] } : null, target: b[11], downT: b[12] } : null;
     v.mobs = s.m.map(r => ({ id: r[0], x: r[1], z: r[2], yaw: r[3], hpR: r[4] / 1000, dying: !!r[5], wind: !!r[6], para: !!r[7], kind: MK[r[8] || 0], yoshi: r.length > 8 && r[8] <= 4, akiba: r.length > 8 && r[8] >= 5, ph: r[9] || 0, enter: r[8] >= 5 ? false : !!r[10], mv: r[8] >= 5 ? (Object.keys(DATA.AKIBA.moves)[(r[10] || 0) - 1] || '') : '', moving: !!r[11], guard: r[8] >= 5 ? false : !!r[12], down: r[8] >= 5 ? r[12] : 0, buff: r[8] >= 5 ? !!r[13] : false, scale: r[8] >= 5 ? 1 : (r[13] || 100) / 100, air: r[8] >= 5 ? r[14] || 0 : r[14] || 0, maxHp: r[8] >= 5 ? r[15] : 0 }));
     v.projs = s.p.map(r => ({ id: r[0], kind: PJ[r[1]], x: r[2], z: r[3], yaw: r[4], team: r[5] ? 'enemy' : 'ally', owner: r[6], r: r[7] }));
-    v.hz = s.h.map(r => ({ id: r[0], kind: HZ[r[1]], x: r[2], z: r[3], yaw: r[4], a: r[5], b: r[6], c: r[7], t: r[8], warn: r[9], act: r[10], fx: FX[r[11]], brief: r[12], num: r[13] || 0, pts: r[14] || null }));
+    v.hz = s.h.map(r => ({ id: r[0], kind: HZ[r[1]], x: r[2], z: r[3], yaw: r[4], a: r[5], b: r[6], c: r[7], t: r[8], warn: r[9], act: r[10], fx: FX[r[11]], brief: r[12], num: r[13] || 0, pts: r[14] || null, safe: r[15] || null }));
     v.traps = s.k.map(r => ({ id: r[0], kind: r[1] ? 'mine' : 'para', x: r[2], z: r[3], armed: !!r[4] }));
     v.pickups = s.u.map(r => ({ id: r[0], kind: PK[r[1]] || 'food', x: r[2], z: r[3], item: r[4] >= 0 ? DATA.ITEM_IDS[r[4]] : null }));
     v.lan = { lit: [0, 1, 2, 3].map(i => !!(s.l[0] & (1 << i))), T: s.l[1], cool: s.l[2], order: !!s.l[3] };

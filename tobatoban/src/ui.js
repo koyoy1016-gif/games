@@ -663,7 +663,7 @@ function notice(txt, kind, ms) {
 }
 function banner(t, small, ms) { const b = $('#banner'); b.textContent = t; if (small) { const s = el('small', '', small); b.appendChild(s); } b.classList.add('show'); clearTimeout(G.bannerT); G.bannerT = setTimeout(() => b.classList.remove('show'), ms || 1800); }
 /** v7 P6：敵の大技（必殺）。画面の中央に2.5秒だけ名前を出す。小技は今までどおり小さく */
-const ENEMY_SP = { otoshi: 1, kousen: 1, junkou: 1, stamp: 1, shosha: 1, tengai: 1, throw50: 1, sleep: 1, barrier: 1, benibana: 1, meguri: 1, hoshirai: 1, hyoutei: 1 };
+const ENEMY_SP = { otoshi: 1, kousen: 1, junkou: 1, stamp: 1, shosha: 1, tengai: 1, throw50: 1, sleep: 1, barrier: 1, benibana: 1, meguri: 1, hoshirai: 1, hyoutei: 1, n_wheel: 1, n_bite: 1, h_warp: 1, h_steal: 1, k_rush: 1, o_parade: 1, o_mark: 1, o_land: 1 }; /* v8：秋葉原の大技も中央に名前 */
 function enemySp(who, nm) { const d = $('#eSp'); d.textContent = ''; d.append(el('small', '', who + 'の必殺'), el('span', '', nm)); d.classList.remove('show'); void d.offsetWidth; d.classList.add('show'); }
 /** v7 P6：仲間（自分以外）が必殺を撃った：「P2 キャラ名 必殺名」を右上に流す（3件まで） */
 function spFeed(slot, nm) {
@@ -823,7 +823,7 @@ function updateHud(v, dt) {
     const circ = $('#c' + k), t = $('#t' + k);
     let ratio = 0, txt = '';
     if (sk.kind === 'guard') { const g = k === 'X' ? me.gX : me.gY, lock = k === 'X' ? me.gLockX : me.gLockY; ratio = 1 - g; b.classList.toggle('off', lock || me.st !== 'ok'); if (lock) txt = Math.ceil((1 - g) * sk.refill) + 's'; }
-    else { const cd = k === 'X' ? me.cdX : me.cdY, mx = k === 'X' ? me.cdMaxX : me.cdMaxY; ratio = mx > 0 ? cd / mx : 0; b.classList.toggle('off', cd > 0 || me.st !== 'ok'); if (cd > 0) txt = cd.toFixed(cd < 3 ? 1 : 0); }
+    else { const cd = k === 'X' ? me.cdX : me.cdY, mx = k === 'X' ? me.cdMaxX : me.cdMaxY; ratio = mx > 0 ? cd / mx : 0; b.classList.toggle('off', cd > 0 || me.st !== 'ok' || (k === 'X' && !!me.sealX)); if (cd > 0) txt = cd.toFixed(cd < 3 ? 1 : 0); if (k === 'X' && me.sealX) txt = '封'; }
     if (me.act === 'charge' && me.actSlot === k) { ratio = 1 - me.chg; circ.setAttribute('stroke', me.chg >= 1 ? '#ffe27a' : '#fff'); } else circ.setAttribute('stroke', 'rgba(255,255,255,.9)');
     circ.setAttribute('stroke-dashoffset', String(113 * (1 - ratio)));
     t.hidden = !txt; t.textContent = txt;

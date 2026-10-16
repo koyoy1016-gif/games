@@ -109,7 +109,7 @@ const R = (() => {
     let geo, fill;
     const isPath = h.kind === 'path';
     const base = new THREE.MeshBasicMaterial({ map: isPath ? chevT() : stripeT(), transparent: true, opacity: isPath ? 0.75 : 0.42, depthWrite: false, side: THREE.DoubleSide });
-    if (h.kind === 'poly' && h.pts) { const sh = new THREE.Shape(); h.pts.forEach((q, i) => i ? sh.lineTo(q[0], -q[1]) : sh.moveTo(q[0], -q[1])); sh.closePath(); geo = new THREE.ShapeGeometry(sh); geo.rotateX(-Math.PI / 2); g.position.set(0, 0.05, 0); g.rotation.y = 0; }
+    if (h.kind === 'poly' && h.pts) { const sh = new THREE.Shape(); h.pts.forEach((q, i) => i ? sh.lineTo(q[0], -q[1]) : sh.moveTo(q[0], -q[1])); sh.closePath(); if (h.safe) for (const c of h.safe) { const hp = new THREE.Path(); hp.absarc(c[0], -c[1], c[2], 0, Math.PI * 2, true); sh.holes.push(hp); } geo = new THREE.ShapeGeometry(sh); geo.rotateX(-Math.PI / 2); g.position.set(0, 0.05, 0); g.rotation.y = 0; }
     else if (h.kind === 'fan') { geo = new THREE.RingGeometry(Math.max(0.01, h.a), h.b, 28, 1, -Math.PI / 2 - h.c, 2 * h.c); geo.rotateX(-Math.PI / 2); }
     else if (h.kind === 'circle') { geo = new THREE.CircleGeometry(h.a, 36); geo.rotateX(-Math.PI / 2); }
     else { geo = new THREE.PlaneGeometry(h.b, h.a); geo.rotateX(-Math.PI / 2); geo.translate(0, 0, h.a / 2); if (isPath) { base.map = chevT().clone(); base.map.needsUpdate = true; base.map.repeat.set(1, h.a / 3); } }
@@ -118,10 +118,12 @@ const R = (() => {
     fill = new THREE.Mesh(geo, fm); fill.position.y = 0.005; g.add(fill);
     const ol = h.kind === 'poly' && h.pts ? polyOutline(h.pts) : outline(h.kind === 'fan' ? 'fan' : h.kind === 'circle' ? 'circle' : 'rect', h.a, h.b, h.c); ol.position.y = 0.01; g.add(ol);
     if (h.fx === 'quad4' || h.fx === 'tri3' || h.fx === 'link2') { base.color = new THREE.Color(h.fx === 'quad4' ? 0xff7a2a : h.fx === 'tri3' ? 0xffd84a : 0xb89aff); }
+    if (h.fx === 'wave2' || h.fx === 'net4') base.color = new THREE.Color(h.fx === 'wave2' ? 0xff8ad8 : 0xff5a7a); /* v8：連携技（ツイン・ウェーブ／結界網） */
     if (h.fx === 'water') { base.map = null; base.color = new THREE.Color(0x6ac8ff); fm.color.set(0x6ac8ff); }
     if (h.fx === 'debuffMark') { base.color = new THREE.Color(0xd89aff); }
     scene.add(g);
     const o = { g, base, fill, fm, ol, kind: h.kind, fx: h.fx };
+    if (h.safe && h.safe.length) o.safeG = safeZones(h.safe); // v8：安全地帯＝青緑の円＋盾マーク（色と形の両方で区別）
     if (h.fx === 'otoshi' || h.fx === 'bomb') { const l = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffb060 })); l.scale.set(1, 1.3, 1); scene.add(l); o.lant = l; }
     return o;
   }
@@ -135,8 +137,34 @@ const R = (() => {
     else if (pre) { if (o.kind === 'fan' || o.kind === 'circle') o.fill.scale.set(p, 1, p); else o.fill.scale.set(1, 1, p); o.fm.opacity = 0.32; o.base.opacity = 0.32 + Math.sin(T * 14) * 0.08; o.ol.userData.mat.color.set(0xffc7a0); }
     else { o.fill.scale.set(1, 1, 1); o.fm.color.set(0xfff0c8); o.fm.opacity = 0.55 + Math.sin(T * 30) * 0.15; o.ol.userData.mat.color.set(0xffffff); }
     if (o.lant) { o.lant.visible = pre; const k = p; o.lant.position.set(h.x, 9 * (1 - k * k) + 0.3, h.z); }
+    if (o.safeG) { o.safeG.visible = visible; o.safeG.userData.mat.opacity = pre ? 0.75 + Math.sin(T * 6) * 0.2 : 1; }
   }
-  function dropHz(o) { scene.remove(o.g); if (o.lant) scene.remove(o.lant); o.g.traverse(m => { if (m.geometry) m.geometry.dispose(); }); }
+  let SAFE_T = null;
+  function safeZones(list) {
+    if (!SAFE_T) SAFE_T = GFX.tex(128, 128, (g, w) => { g.clearRect(0, 0, w, w); g.fillStyle = 'rgba(40,220,200,0.28)'; g.beginPath(); g.arc(64, 64, 62, 0, 7); g.fill(); g.lineWidth = 7; g.strokeStyle = '#5ff8e0'; g.beginPath(); g.arc(64, 64, 58, 0, 7); g.stroke();
+      g.fillStyle = '#e8fffb'; g.strokeStyle = '#1a8a7a'; g.lineWidth = 4; g.beginPath(); g.moveTo(64, 34); g.lineTo(88, 44); g.quadraticCurveTo(88, 80, 64, 96); g.quadraticCurveTo(40, 80, 40, 44); g.closePath(); g.fill(); g.stroke(); });
+    const grp = new THREE.Group(), mat = new THREE.MeshBasicMaterial({ map: SAFE_T, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+    for (const c of list) { const m = new THREE.Mesh(new THREE.PlaneGeometry(c[2] * 2, c[2] * 2), mat); m.rotation.x = -Math.PI / 2; m.position.set(c[0], 0.09, c[1]); m.renderOrder = 5; grp.add(m); }
+    grp.userData.mat = mat; scene.add(grp); return grp;
+  }
+  function akStatus(m, a, T) {
+    const on = a.st === 'ok';
+    if (a.held || m.akHeld) { m.root.visible = !(on && a.held); }
+    m.akHeld = !!a.held;
+    if (on && a.held && Math.random() < 0.5) emit('add', { x: a.x + (Math.random() - 0.5) * 0.9, y: 0.4 + Math.random() * 1.2, z: a.z + (Math.random() - 0.5) * 0.9, vy: 0.8, life: 0.6, s0: 0.22, s1: 0.04, c: 0x9ad8ff });
+    if (!m.akIco) { m.akIco = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false })); m.akIco.scale.set(0.55, 0.55, 1); m.akIco.renderOrder = 9; scene.add(m.akIco); }
+    const k = on && a.sealX ? 'seal' : on && a.fmark ? 'flower' : '';
+    m.akIco.visible = !!k; if (!k) return;
+    if (m.akIcoK !== k) { m.akIcoK = k; m.akIco.material.map = akIcon(k); m.akIco.material.needsUpdate = true; }
+    m.akIco.position.set(a.x, 2.15 + Math.sin(T * 5) * 0.05, a.z);
+  }
+  const AK_ICON = {};
+  function akIcon(k) {
+    return AK_ICON[k] || (AK_ICON[k] = GFX.tex(64, 64, (g) => { g.clearRect(0, 0, 64, 64);
+      if (k === 'seal') { g.fillStyle = '#2a1d5a'; g.beginPath(); g.arc(32, 32, 28, 0, 7); g.fill(); g.fillStyle = '#ffd84a'; g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('X', 32, 34); g.strokeStyle = '#ff4a5a'; g.lineWidth = 6; g.beginPath(); g.moveTo(12, 52); g.lineTo(52, 12); g.stroke(); }
+      else { for (let i = 0; i < 5; i++) { const an = i / 5 * Math.PI * 2; g.fillStyle = '#ff8ab0'; g.beginPath(); g.arc(32 + Math.sin(an) * 14, 32 - Math.cos(an) * 14, 11, 0, 7); g.fill(); } g.fillStyle = '#ffe27a'; g.beginPath(); g.arc(32, 32, 9, 0, 7); g.fill(); } }));
+  }
+  function dropHz(o) { if (o.safeG) { scene.remove(o.safeG); o.safeG.traverse(m => { if (m.geometry) m.geometry.dispose(); }); }  scene.remove(o.g); if (o.lant) scene.remove(o.lant); o.g.traverse(m => { if (m.geometry) m.geometry.dispose(); }); }
 
   /* ---------- 弾・ワナ・拾い物 ---------- */
   const PJM = {};
@@ -293,6 +321,7 @@ const R = (() => {
       if (!m.gAura) { const gm = new THREE.MeshBasicMaterial({ color: 0xffc83a, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }); m.gAura = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.62, 1.5, 18, 1, true), gm); m.gAura.position.y = 0.75; m.root.add(m.gAura); }
       { const on = a.gT > 0 && a.st === 'ok'; m.gAura.visible = on; if (on) { m.gAura.material.opacity = 0.28 + Math.sin(T * 9 + i) * 0.1; m.gAura.rotation.y = T * 2; m.gAura.scale.setScalar(1 / (m.h || 1)); m.gAura.position.y = 0.75 / (m.h || 1); if (Math.random() < 0.6) emit('add', { x: a.x + (Math.random() - 0.5) * 0.7, y: 0.15, z: a.z + (Math.random() - 0.5) * 0.7, vy: 2.2, life: 0.5, s0: 0.22, s1: 0.04, c: Math.random() < 0.5 ? 0xffd84a : 0xff9a2a }); } }
       reviveRing(i, a, T);
+      akStatus(m, a, T); // v8：歌の中・Xの封印・花の印
       if (a.strBuff && Math.random() < 0.12) emit('add', { x: a.x + (Math.random() - 0.5) * 0.6, y: 0.2, z: a.z + (Math.random() - 0.5) * 0.6, vy: 1.2, life: 0.5, s0: 0.14, s1: 0.03, c: 0xff5a4a });
     });
     // ボス

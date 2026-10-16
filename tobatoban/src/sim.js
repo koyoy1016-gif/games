@@ -60,6 +60,7 @@ function bossParts(b) {
 }
 function contactPt(q, ox, oz) { const d = dist2(ox, oz, q.x, q.z); if (d < 1e-4) return { x: q.x, z: q.z }; return { x: q.x + (ox - q.x) / d * q.r, z: q.z + (oz - q.z) / d * q.r }; }
 /** v8：行動から発動元を決める。A＝通常攻撃（三連・近接・射撃）、X／Y＝ボタンの技（入れ替え設定後の実際のボタン）、SP＝必殺 */
+const NOSEAL = ['heal', 'healRing', 'regen', 'guard', 'dodge', 'protect', 'stealth', 'zone', 'parry'];
 const ORIGIN = A => !A ? null : (A.k === 'combo' || A.k === 'melee' || A.k === 'shot') ? 'A' : A.k === 'sp' ? 'SP' : (A.slot === 'X' || A.slot === 'Y') ? A.slot : null;
 class Sim {
   constructor(o) {
@@ -213,6 +214,13 @@ class Sim {
       this.processEvents(a, inp, true); return;
     }
     if (a.st === 'gone') { this.processEvents(a, inp, true); return; }
+    if (a.sealX > 0) a.sealX -= dt; if (a.sealImm > 0) a.sealImm -= dt;
+    if (a.held) { // v8：ナカの「歌喰い」で一時的に歌の中へ（約1秒で必ず出る・中では攻撃を受けない・出た直後に短い無敵）。気絶・死亡では代用しない
+      const H = a.held, m = this.mobs.find(e => e.id === H.by); H.t -= dt; a.act = null; a.moving = false; a.inv = Math.max(a.inv, 0.05);
+      if (m && m.st === 'ok') { a.x = m.x + Math.sin(m.yaw) * 1.0; a.z = m.z + Math.cos(m.yaw) * 1.0; }
+      if (H.t <= 0 || !m || m.st !== 'ok') { a.held = null; a.inv = Math.max(a.inv, 0.9); this.ev('akFree', { slot: a.slot, x: a.x, z: a.z }); }
+      this.processEvents(a, inp, true); return;
+    }
     // 入力イベント
     this.processEvents(a, inp, false);
     // 行動の進行
@@ -357,6 +365,7 @@ class Sim {
   }
   pressSkill(a, inp, k) {
     const sk = DATA.SKILLS[a.slots[k]];
+    if (k === 'X' && a.sealX > 0 && !NOSEAL.includes(sk.kind)) { this.ev('sealed', { slot: a.slot }); return; } // v8：ホシの「星うばい」＝攻撃のXだけ短く封じる（回復・守り・回避は封じない）
     if (!this.free(a)) { if (sk.kind !== 'guard') a.buf = { code: k + '+', t: this.t }; return; }
     if (sk.kind === 'guard') {
       if (a.gLock[k] || a.g[k] < sk.threshold) return;
@@ -821,6 +830,7 @@ class Sim {
   updateProjs(dt) {
     for (const p of this.projs) {
       p.life -= dt; p.x += p.vx * dt; p.z += p.vz * dt;
+      if (p.seek != null && p.team === 'enemy') { const o = this.allies[p.seek]; if (o && o.st === 'ok') { const sp = Math.hypot(p.vx, p.vz), want = yawTo(o.x - p.x, o.z - p.z), y = p.yaw + clamp(angDiff(p.yaw, want), -p.turn * dt, p.turn * dt); p.yaw = y; p.vx = Math.sin(y) * sp; p.vz = Math.cos(y) * sp; } } // v8：ゆっくり追う星の玉（数秒で消える・急に曲がらない）
       if (p.tgt) { // 追尾：いまの敵の体へ向きを直す（敵が倒れた・飛んだら、そのまままっすぐ）
         const tg = this.findTarget(p.tgt); p.homeT += dt;
         if (!tg || p.homeT > DATA.SIM.homeMaxT) p.tgt = null;
@@ -848,7 +858,7 @@ class Sim {
       } else {
         for (const o of this.allies) {
           if (o.st !== 'ok' || p.hit.has(o.id)) continue;
-          if (dist2(p.x, p.z, o.x, o.z) <= DATA.MOB.allyR + p.r) { p.hit.add(o.id); this.dealToAlly(o, p.pw, p.stat, p.src, { src: p.srcEnt }); p.life = 0; break; }
+          if (dist2(p.x, p.z, o.x, o.z) <= DATA.MOB.allyR + p.r) { p.hit.add(o.id); if (p.pw) this.dealToAlly(o, p.pw, p.stat, p.src, { src: p.srcEnt, mul: p.mul }); if (p.onHit && this[p.onHit]) this[p.onHit](p, o); p.life = 0; break; }
         }
       }
       if (Math.abs(p.x) > 40 || p.z < -80 || p.z > 50) p.life = 0;
@@ -1273,10 +1283,12 @@ class Sim {
         else if (h.kind === 'circle') inside = dist2(o.x, o.z, h.x, h.z) <= h.r + DATA.MOB.allyR;
         else if (h.kind === 'line' || h.kind === 'rect') inside = inLine(o.x, o.z, h.x, h.z, h.yaw, h.len, h.w / 2, DATA.MOB.allyR);
         else if (h.kind === 'poly') inside = inPoly(o.x, o.z, h.pts, DATA.MOB.allyR);
+        if (inside && h.safe && h.safe.some(c => dist2(o.x, o.z, c[0], c[1]) <= c[2] - DATA.MOB.allyR * 0.5)) inside = false; // v8：円の安全地帯の中には判定なし（表示と同じ円）
         if (!inside) continue;
         h.hits[o.slot] = { n: (rec ? rec.n : 0) + 1, last: h.t }; if (h.grp) h.grp.hits[o.slot] = gr + 1;
         if (h.eff) { if (this.hazardEffect) this.hazardEffect(h, o); continue; } // ダメージのない状態マーク（秋葉原の星まどい・迷いの銀札）
-        this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: h.kx != null ? h.kx : o.x - h.x, kz: h.kz != null ? h.kz : o.z - h.z, src: h.src === 'boss' ? b : (h.srcEnt || null), mul: h.mul });
+        if (h.pw) this.dealToAlly(o, h.pw, h.stat, srcStats, { knock: h.knock || 0, kx: h.kx != null ? h.kx : o.x - h.x, kz: h.kz != null ? h.kz : o.z - h.z, src: h.src === 'boss' ? b : (h.srcEnt || null), mul: h.mul });
+        if (h.onHit && this[h.onHit]) this[h.onHit](h, o); // v8：当たったときの追加（捕まえる・印）
       }
       if (this.minionHitBoss && h.srcEnt && h.srcEnt.kind === 'yoshi' && !h.eff && !h.bossHit) this.minionHitBoss(h); // 上野：部下の攻撃がヨシノシン本体にも当たる
     }

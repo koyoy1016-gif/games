@@ -424,9 +424,22 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   place([[-4, 0], [0, 0], [4, 0]]); ok(!g.geoShape(F.slice(0, 3)), '3点が一直線なら三角は使わない');
   place([[-5, -5], [5, -5], [0, 5], [0, -2]]); ok(!g.geoShape(F), '1点が内側にある四角は使わない');
   place([[-5, -5], [5, -5], [5, 5], [-5, 5]]); const Q = g.geoShape(F); ok(Q && Q.n === 4 && SIMLIB.inPoly(0, 0, Q.pts, 0) && !SIMLIB.inPoly(0, 6, Q.pts, 0.35), '4人：凸四角形の内側（順番がばらばらでも凸包の順に並べる）');
-  place([[-5, -5], [5, -5], [5, 5], [-5, 5]]); g.startGeo(F, Q); const hz = g.AK.geo.hz; g.allies.forEach(a => { a.inv = 0; a.x = 0; a.z = 0; a.hp = a.maxHp; a.act = null; }); const hp0 = g.allies[0].hp; let ticks = 0;
-  for (let i = 0; i < 60 * 6; i++) { g.updateHazards(1 / 60); g.allies.forEach(a => { a.inv = 0; if (a.st !== 'ok') { a.st = 'ok'; a.hp = a.maxHp; } a.x = 0; a.z = 0; }); }
-  ok(hz.hits[0] && hz.hits[0].n === 4, `四角結界の火床は居続けると最大4回（${hz.hits[0] && hz.hits[0].n}回）`);
+  { // v8：4人技は2種類。どちらも床全体は覆わず、安全地帯（青緑の円）か網のすき間が残る。1発動で1人1回
+    const run = (v, spots) => { const S = mk(); for (let i = 0; i < 60 * 3.2; i++) S.step(); const FF = ['hoshi', 'naka', 'oga', 'kae'].map(w => S.foe(w)); [[-5, -5], [5, -5], [5, 5], [-5, 5]].forEach((q, i) => { FF[i].x = q[0]; FF[i].z = q[1]; }); S.hazards = [];
+      const sh = S.geoShape(FF); sh.v = v; sh.plan = null; S.startGeo(FF, sh); const hzs = S.AK.geo.hzs; S.allies.forEach((a, i) => { a.inv = 0; a.hp = a.maxHp; a.act = null; });
+      for (let t = 0; t < 60 * 5; t++) { S.updateHazards(1 / 60); S.allies.forEach((a, i) => { a.inv = 0; if (a.st !== 'ok') { a.st = 'ok'; a.hp = a.maxHp; } a.x = spots[i][0]; a.z = spots[i][1]; }); }
+      return { n: S.allies.map(a => hzs.reduce((c, h) => c + (h.hits[a.slot] ? h.hits[a.slot].n : 0), 0)), hzs }; };
+    const q = run('quad', [[0, 0], [0, -3.5], [2.75, -2.75], [-1, 3.6]]);
+    ok(q.hzs.length === 1 && q.hzs[0].safe.length === 5 && q.n[0] === 0 && q.n[1] === 1 && q.n[2] === 0 && q.n[3] === 1, `四重奏フィナーレ：安全地帯5か所（中央と4か所は0回）・外れると居続けても1回（${q.n.join('/')}）`);
+    const nt = run('net', [[0, -5], [-3, -5], [0, 0], [5, 0]]);
+    ok(nt.hzs.length === 8 && nt.n[0] === 0 && nt.n[1] === 1 && nt.n[2] === 0 && nt.n[3] === 0, `四重の結界網：4辺×2本・辺のまん中のすき間と内側は安全・線の上は1回（${nt.n.join('/')}）`);
+    const S = mk(); for (let i = 0; i < 60 * 3.2; i++) S.step(); const FF = ['hoshi', 'naka', 'oga'].map(w => S.foe(w)); FF[0].x = -5; FF[0].z = -4; FF[1].x = 5; FF[1].z = -4; FF[2].x = 0; FF[2].z = 6;
+    const T = S.geoShape(FF), tp = S.geoPlan(T)[0]; ok(T.v === 'tri' && tp.safe.length === 2 && tp.safe.every(c => SIMLIB.inPoly(c[0], c[1], T.pts, 0) && c[2] >= 1.4), '三角結界：内側に安全地帯2か所（半径1.4m・三角の中）');
+    const W = S.geoShape(FF.slice(0, 2)); W.v = 'wave'; const wp = S.geoPlan(W); ok(wp.length === 4 && wp.every(h => h.kind === 'fan' && h.r0 >= 2 && h.half < Math.PI) && new Set(wp.map(h => h.warn)).size > 1, 'ツイン・ウェーブ：すき間のある輪を2重×2人・時間差（足もとと輪の外は安全）');
+    const vs = []; for (let k = 0; k < 6; k++) { S.AK.geo = null; S.AK.geoT = 0; S.mobs.forEach(m => { m.act = null; m.geo = false; }); S.hazards = []; S.allies.forEach(a => { a.x = 9; a.z = 9; }); S.updateGeo(1 / 60); if (S.AK.geo) { vs.push(S.AK.geo.v); S.cancelGeo('t'); } }
+    ok(vs.length >= 4 && vs.every((v, i) => i === 0 || v !== vs[i - 1]), `連携技は同じ種類を続けない（${vs.join('→')}）`);
+    const gt = []; for (let k = 0; k < 200; k++) gt.push(S.geoNext()); ok(Math.min(...gt) >= 15 && Math.max(...gt) <= 25, `連携技の間隔は約15〜25秒（${Math.min(...gt).toFixed(1)}〜${Math.max(...gt).toFixed(1)}）`);
+  }
   const g2 = mk(); for (let i = 0; i < 60 * 3.2; i++) g2.step(); const F2 = ['hoshi', 'naka', 'oga'].map(w => g2.foe(w)); F2[0].x = -5; F2[0].z = -4; F2[1].x = 5; F2[1].z = -4; F2[2].x = 0; F2[2].z = 6; const T3 = g2.geoShape(F2); g2.startGeo(F2, T3); const h3z = g2.AK.geo.hz;
   g2.dealToEnemy(g2.allies[0], F2[2], 1e6, 'str', 'A', null); ok(!g2.AK.geo && h3z.dead, '予兆中に参加者が倒れたら、その図形の技は取り消し');
   // 同時に通常攻撃するのは全体で2人まで
@@ -436,6 +449,66 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   ok(sn.stageId === 'akiba_plaza' && sn.X && sn.X.kind === 'akiba' && sn.mobs.filter(m => m.akiba).length === 4, 'スナップショットに秋葉原の状態（4人・双子・図形）');
   const lv = [40, 50, 60, 70].map(P => { const k = DATA.lvAdjust('akiba', P); return k.out.toFixed(3) + '/' + k.in.toFixed(3); });
   ok(lv.join(' ') === '0.358/2.191 0.599/1.480 1.000/1.000 1.150/0.900', `秋葉原のLv補正（Lv40・50・60・70）：${lv.join('　')}`);
+}
+// 7.98) v8 第3優先：4人の個別攻撃（各5種類）・捕獲・封印・スタンド・暴走・花の印
+{
+  const party = ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(ch => ({ ch, lv: 60 }));
+  const mk8 = () => { const s = new Sim({ party, seed: 9, stageId: 'akiba_plaza' }); s.allies.forEach(a => a.inv = 1e9); for (let i = 0; i < 60 * (DATA.AKIBA.introT.akiba_plaza + 0.2); i++) s.step();
+    s.akibaRevive && s.foe('oga').st !== 'ok' && s.akibaRevive(); s.AK.geoT = 1e9; s.mobs.forEach(m => { if (m.kind === 'akiba') { m.st = 'ok'; m.hp = m.maxHp; m.act = null; m.gap = 1e9; m.x = 0; m.z = 6; m.yaw = Math.PI; } }); s.hazards = []; s.projs = []; return s; };
+  const AM = DATA.AKIBA.moves, MV = { hoshi: ['h_staff', 'h_tri', 'h_chase', 'h_steal', 'h_warp'], naka: ['n_swing', 'n_notes', 'n_stand', 'n_bite', 'n_wheel'], oga: ['o_bouquet', 'o_bud', 'o_parade', 'o_land', 'o_mark'], kae: ['k_boots', 'k_cups', 'k_cafe', 'k_spin', 'k_rush'] };
+  ok(Object.values(MV).every(l => l.length === 5 && l.every(k => AM[k] && AM[k].v8 && AM[k].nm)), '4人それぞれ5種類の技（名前つき）');
+  const bad = [], firstHit = {}, cover = {};
+  for (const who in MV) for (const k of MV[who]) {
+    const s = mk8(), m = s.foe(who), a = s.allies[0]; a.x = 0; a.z = 3.6; a.inv = 0; s.allies.slice(1).forEach((o, i) => { o.x = -8 + i * 8; o.z = -8; });
+    let t0 = null, maxA = 0;
+    try { s.akibaStart(m, k, a); for (let i = 0; i < 60 * 9; i++) { const e0 = s.events.length; s.step(); a.x = 0; a.z = 3.6; if (a.st !== 'ok') { a.st = 'ok'; a.hp = a.maxHp; } if (a.held) a.held.t = Math.min(a.held.t, 1.05);
+        if (t0 == null && s.events.slice(e0).some(e => e.type === 'hurt' && e.slot === 0)) t0 = i / 60;
+        let ar = 0; for (const h of s.hazards) if (h.src === 'akiba' && h.t >= h.warn && h.pw) ar += h.kind === 'circle' ? Math.PI * h.r * h.r : h.kind === 'fan' ? h.half * (h.r1 * h.r1 - (h.r0 || 0) ** 2) : h.kind === 'line' ? h.len * h.w : 0; maxA = Math.max(maxA, ar); } }
+    catch (e) { bad.push(k + ':' + e.message); }
+    if (m.act && m.act.t > 30) bad.push(k + ':stuck'); firstHit[k] = t0; cover[k] = maxA;
+  }
+  const half = DATA.AKIBA.plaza.half, floor = (half * 2) ** 2;
+  ok(!bad.length, `20種類すべて開始→終了まで動く（エラーなし）${bad.join(' ')}`);
+  ok(Object.values(cover).every(v => v < floor * 0.25), `どの技も同時に危険なのは床の25%未満（最大 ${(Math.max(...Object.values(cover)) / floor * 100).toFixed(0)}%）`);
+  const hitN = Object.values(firstHit).filter(t => t != null).length; ok(hitN >= 12 && Object.entries(firstHit).every(([k, t]) => t == null || t >= 0.7), `どの技も予告0.7秒以上たってから当たる（${hitN}種類が命中・最短 ${Math.min(...Object.values(firstHit).filter(t => t != null)).toFixed(2)}秒）`);
+  { // 円どうしの間に通り道
+    const s = mk8(), m = s.foe('naka'), a = s.allies[0]; a.x = 0; a.z = 0; s.akibaStart(m, 'n_notes', a); const cs = s.hazards.filter(h => h.kind === 'circle' && h.pw); let gapMin = 99;
+    for (let i = 0; i < cs.length; i++) for (let j = i + 1; j < cs.length; j++) gapMin = Math.min(gapMin, Math.hypot(cs[i].x - cs[j].x, cs[i].z - cs[j].z) - cs[i].r - cs[j].r);
+    ok(cs.length >= 2 && gapMin >= 1.0 && Math.abs(cs[0].r - AM.n_notes.r * 1.15) < 1e-9, `音符隕石：円の間に${gapMin.toFixed(2)}mの通り道（範囲×1.15のあと）`);
+  }
+  { // 歌喰い：1人だけ約1秒、出た直後に無敵
+    const s = mk8(), m = s.foe('naka'); s.allies.forEach((o, i) => { o.inv = 0; o.x = (i - 1.5) * 0.3; o.z = 4; }); m.x = 0; m.z = 6.5; s.akibaStart(m, 'n_bite', s.allies[0]); let held = 0, freeT = null, inv = 0;
+    for (let i = 0; i < 60 * 4; i++) { s.step(); s.allies.forEach((o, j) => { if (!o.held) { o.x = (j - 1.5) * 0.3; o.z = 4; } }); held = Math.max(held, s.allies.filter(o => o.held).length); const f = s.events.find(e => e.type === 'akFree'); if (f && freeT == null) { freeT = i / 60; inv = s.allies[f.slot].inv; } }
+    ok(held === 1 && freeT != null && inv >= 0.8, `歌喰い：捕まるのは最大1人・必ず出る（${freeT && freeT.toFixed(2)}秒）・出た直後に無敵${inv.toFixed(2)}秒`);
+  }
+  { // 星うばい：Xだけ封じる・6秒の耐性
+    const s = mk8(), m = s.foe('hoshi'), a = s.allies[0]; a.inv = 0; a.x = 0; a.z = 2; m.x = 0; m.z = 6; s.akibaStart(m, 'h_steal', a);
+    for (let i = 0; i < 60 * 4 && !(a.sealX > 0); i++) { s.step(); a.x = 0; a.z = 2; a.inv = 0; }
+    const sealed = a.sealX > 0; const e1 = s.events.length; a.inp = a.inp || {}; s.pressSkill(a, a.inp, 'X'); const blocked = s.events.slice(e1).some(e => e.type === 'sealed');
+    s.akSeal({ srcEnt: m }, a); const again = a.sealX; a.sealX = 0; s.akSeal({ srcEnt: m }, a);
+    ok(sealed && blocked && a.sealX === 0 && a.sealImm > 4, `星うばい：当たるとXが約2秒使えない・6秒の耐性で続けて封じない（${sealed}/${blocked}/${a.sealX}）`);
+  }
+  { // 大車輪：スタンドに当たると約2秒ダウン
+    const s = mk8(), m = s.foe('naka'), a = s.allies[0]; m.x = 0; m.z = 6; a.x = 0; a.z = -6; s.AK.stands = [{ x: 0, z: 2, t: 6 }]; s.akibaStart(m, 'n_wheel', a); let crash = null;
+    for (let i = 0; i < 60 * 6 && !crash; i++) { s.step(); a.x = 0; a.z = -6; crash = s.events.find(e => e.type === 'akCrash'); }
+    ok(crash && m.stunT > 1.5 && !s.AK.stands.length && s.akibaSnap()[9].length === 0, `大車輪ライブ：残ったマイクスタンドに激突するとダウン（${m.stunT.toFixed(2)}秒）`);
+    const s2 = mk8(); s2.AK.stands = [{ x: 1.234, z: -2, t: 5 }]; const sn = SIMLIB.akibaDecode(s2.akibaSnap()); ok(sn.stands.length === 1 && sn.stands[0][0] === 1.23, 'スタンドの位置は参加者にも同じ値で届く');
+  }
+  { // 暴走：6秒速くなり、そのあと疲れて止まる
+    const s = mk8(), m = s.foe('kae'), a = s.allies[0]; s.akibaStart(m, 'k_rush', a); let mx = 0, tired = null;
+    for (let i = 0; i < 60 * 9 && !tired; i++) { s.step(); mx = Math.max(mx, m.spdMul || 1); tired = s.events.find(e => e.type === 'akTired'); }
+    ok(Math.abs(mx - 1.3) < 1e-9 && tired && m.stunT > 1.5, `サブカル大暴走：移動×${mx}を約6秒→疲れて約2秒止まる`);
+  }
+  { // 花の印：4回まで、移動すれば外れる位置（前方）
+    const s = mk8(), m = s.foe('oga'), a = s.allies[0]; a.inv = 0; a.x = 0; a.z = 2; m.x = 0; m.z = 5; s.akibaStart(m, 'o_mark', a); let n = 0, mk1 = false;
+    for (let i = 0; i < 60 * 12; i++) { const h0 = s.hazards.length; s.step(); a.x = 0; a.z = 2; a.yaw = 0; if (a.fmark) a.inv = 1e9; mk1 = mk1 || !!a.fmark; n += s.hazards.slice(h0).filter(h => h.r && Math.abs(h.r - AM.o_mark.fr) < 1e-9).length; }
+    ok(mk1 && n === AM.o_mark.n && !a.fmark, `花冠のしるし：花は${n}回まで（増え続けない）・時間で消える`);
+  }
+  { // 通信：捕獲・封印・印・安全地帯
+    const s = mk8(), a = s.allies[0]; a.held = { t: 1, by: 'x' }; a.sealX = 1; a.fmark = { t: 2, n: 1, next: 1 }; s.hz({ kind: 'poly', x: 0, z: 0, pts: [[-3, -3], [3, -3], [0, 3]], warn: 2, act: 0.3, pw: 9, src: 'akiba', safe: [[0, -1, 1.4]] });
+    const sn = PROTO.decodeSnap(JSON.parse(JSON.stringify(PROTO.encodeSnap(s)))), A0 = sn.allies[0], hz = sn.hz ? sn.hz[sn.hz.length - 1] : (sn.hazards || []).slice(-1)[0];
+    ok(A0.held && A0.sealX && A0.fmark && hz && hz.safe && hz.safe[0][2] === 1.4, '捕獲・封印・花の印・安全地帯の円がスナップショットで届く');
+  }
 }
 // 7.99) v7 P3：ダメージ数値（本体は胸の高さ・バリアと段階ロックは理由を出す・参加者にも同じ数値が届く）
 {

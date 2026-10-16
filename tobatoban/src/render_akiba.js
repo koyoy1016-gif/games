@@ -55,8 +55,17 @@
     const pl = v.stageId === 'akiba_plaza';
     if (pl) { W0.plaza = W0.plaza || buildPlaza(scene); W0.plaza.visible = true; if (W0.platform) W0.platform.visible = false; }
     else { W0.platform = W0.platform || buildPlatform(scene); W0.platform.visible = true; if (W0.plaza) W0.plaza.visible = false; }
+    syncStands(scene, v, T);
   };
-  GFX.hideAkibaWorld = function () { if (W0.plaza) W0.plaza.visible = false; if (W0.platform) W0.platform.visible = false; };
+  /* v8：ナカのマイクスタンド（数秒だけ残る柱。大車輪がぶつかると壊れる） */
+  const ST = new Map();
+  function standMesh(scene) { const g = new THREE.Group(); GFX.parts.C(g, 0.06, 0.06, 1.6, GFX.lam(0xd8e0f0, { emissive: 0x404858 }), 0, 0.8, 0, null, 10); GFX.parts.C(g, 0.4, 0.5, 0.08, GFX.lam(0x5a6a8a), 0, 0.04, 0, null, 18); GFX.parts.S(g, 0.16, GFX.lam(0x9ad8ff, { emissive: 0x3a7aa8 }), 0, 1.7, 0, 1, 1.3, 1); scene.add(g); return g; }
+  function syncStands(scene, v, T) {
+    const list = v.X && v.X.stands || [], seen = new Set();
+    list.forEach((q, i) => { const key = q[0] + ',' + q[1]; seen.add(key); let g = ST.get(key); if (!g) { g = standMesh(scene); ST.set(key, g); g.position.set(q[0], 0, q[1]); g.scale.set(1, 0.01, 1); } g.scale.y = Math.min(1, g.scale.y + 0.12); g.visible = q[2] > 1 || Math.floor(T * 8) % 2 === 0; });
+    for (const [k, g] of ST) if (!seen.has(k)) { scene.remove(g); ST.delete(k); }
+  }
+  GFX.hideAkibaWorld = function () { for (const [k, g] of ST) { if (g.parent) g.parent.remove(g); ST.delete(k); } if (W0.plaza) W0.plaza.visible = false; if (W0.platform) W0.platform.visible = false; };
 
   /* ---------- 敵の4人：約2.8頭身・かわいい目と丸い手足 ---------- */
   const LOOK = {

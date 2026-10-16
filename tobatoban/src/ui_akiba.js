@@ -60,13 +60,22 @@ function akibaEvent(e, v) {
     case 'akRevive': notice(`星と中が光の糸で${N(e.who)}を起こした（HP7,500）`, 'boss', 2200); break;
     case 'akGuard': notice(`${N(e.who)}が相方を守る！ ようりょく↑（6秒）`, 'boss', 1800); break;
     case 'geo': {
-      const whos = (e.whos || []).map(N).join('・'), nm = e.n === 2 ? '二点結び' : e.n === 3 ? '三角結界' : '四角結界';
-      const how = e.n === 2 ? '光の線から横へ離れろ！' : e.n === 3 ? '三角の外へ出ろ！' : '四角の火床から出ろ！（3秒続く）';
+      const whos = (e.whos || []).map(N).join('・'), nm = e.nm || (e.n === 2 ? '二点結び' : e.n === 3 ? '三角結界' : '四角結界');
+      const how = { line: '光の線から横へ離れろ！', wave: '輪のすき間を通るか、輪の内側・外側へ！', tri: '三角の外か、青緑の安全地帯へ！', quad: '青緑の安全地帯（盾マーク）へ入れ！', net: '網の線を避けて、辺のまん中のすき間へ！' }[e.v] || (e.n === 3 ? '三角の外へ出ろ！' : '火床から出ろ！');
       enemySp(whos, nm); notice(how, 'warn', 2400); break; // v7 P6：連携の大技は中央に名前、逃げ方は小さく
     }
     case 'akMove': { const M = DATA.AKIBA.moves[e.mv]; if (M && ENEMY_SP[e.mv]) enemySp(N(e.who), M.nm); break; } // v7 P6：大技は中央に名前
     case 'geoCancel': notice('図形の必殺が途切れた（結ぶ相手が倒れた）', 'sp', 1500); break;
     case 'akMark': if (e.slot === G.my) notice('足もとに印！ その場から離れよう', 'warn', 1200); break;
+    case 'akHeld': notice(e.slot === G.my ? '歌の中に取り込まれた！（約1秒で出られる）' : `P${e.slot + 1} ${(DATA.CHI[(v.allies[e.slot] || {}).ch] || {}).nm || ''}がナカの歌に取り込まれた`, 'warn', 1300); break; // v8
+    case 'sealed': if (e.slot === G.my) notice('Xは封じられている（もう少しで戻る）', 'info', 700); break;
+    case 'akFree': if (e.slot === G.my) notice('歌の中から出た（少しのあいだ無敵）', 'sp', 1000); break;
+    case 'akSeal': if (e.slot === G.my) notice('星うばい！ 攻撃のXが約2秒使えない', 'warn', 1400); break;
+    case 'akFmark': if (e.slot === G.my && e.n > 0) notice(`花冠のしるし：あと${e.n}回、足もとの少し前に花が咲く。動き続けよう`, 'warn', 1200); break;
+    case 'akCrash': notice(`${N(e.who)}がマイクスタンドに激突！ 約2秒のチャンス`, 'sp', 1800); break;
+    case 'akTired': notice(`${N(e.who)}が疲れて止まった！ 約2秒のチャンス`, 'sp', 1800); break;
+    case 'akRush': notice(`${N(e.who)}が大暴走！ しばらく素早くなる`, 'warn', 1600); break;
+    case 'akWarp': notice(`${N(e.who)}がワープ！ 光の輪のまん中か外へ`, 'warn', 1400); break;
   }
 }
 /** ミニマップ：ホーム（18m×26m）／広場（28m四方）。上が奥 */
