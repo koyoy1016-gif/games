@@ -166,7 +166,7 @@ function gcShowChar() {
 }
 function gcShowResult(res, sample) {
   const c = DATA.CHI[res.id], box = $('#gcRes'); box.textContent = ''; box.hidden = false; $('#gcSkip').hidden = true;
-  const hd = el('div', 'hd'); hd.append(rankBadge(c.rank, 'dt-rk'), el('b', '', c.nm), el('span', 'chip', DATA.ROLES[c.roleId].ic + ' ' + DATA.ROLES[c.roleId].label), el('span', 'small', 'Lv1')); if (!sample) hd.appendChild(el('span', 'tix', 'NEW')); box.appendChild(hd);
+  const hd = el('div', 'hd'); hd.append(rankBadge(c.rank, 'dt-rk'), el('b', '', c.nm), el('span', 'chip', DATA.ROLES[c.roleId].ic + ' ' + DATA.ROLES[c.roleId].label), el('span', 'chip sty ' + (c.style || ''), c.style === 'cute' ? 'かわいい系' : 'かっこいい系'), el('span', 'small', 'Lv1')); if (!sample) hd.appendChild(el('span', 'tix', 'NEW')); box.appendChild(hd);
   box.appendChild(el('span', 'small', `得意：${(c.tags || []).join('・')}　${c.form}`));
   if (sample) box.appendChild(el('span', 'small', '演出見本です（入手・チケットの消費はありません）'));
   G.gcLast = sample ? null : res.id;

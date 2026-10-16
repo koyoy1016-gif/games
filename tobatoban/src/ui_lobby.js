@@ -225,7 +225,7 @@ function renderChara() {
   // 左：名前・ランク・役割・Lv・EXP・短い説明
   const L = $('#chLeft'); L.textContent = '';
   L.appendChild(el('div', 'nm ol', own ? c.nm : '？？？'));
-  const tg = el('div', 'tags'); const rb = el('span', 'rkbig', c.rank + 'ランク'); rb.style.background = DATA.RANK_INFO[c.rank].col; tg.append(rb, el('span', '', DATA.ROLES[c.roleId].ic + ' ' + DATA.ROLES[c.roleId].label)); const e = el('span', '', c.el + '属性'); e.style.background = DATA.ELEM_COL[c.el] || '#6a8ab0'; tg.appendChild(e); L.appendChild(tg);
+  const tg = el('div', 'tags'); const rb = el('span', 'rkbig', c.rank + 'ランク'); rb.style.background = DATA.RANK_INFO[c.rank].col; tg.append(rb, el('span', '', DATA.ROLES[c.roleId].ic + ' ' + DATA.ROLES[c.roleId].label)); if (c.style) tg.appendChild(el('span', 'sty ' + c.style, c.style === 'cute' ? 'かわいい系' : 'かっこいい系')); const e = el('span', '', c.el + '属性'); e.style.background = DATA.ELEM_COL[c.el] || '#6a8ab0'; tg.appendChild(e); L.appendChild(tg);
   if (own) {
     const pr = DATA.GROWTH.progress(c.rank, rec.exp), r = el('div', 'lvrow'), xb = el('span', 'xpb'), xi = el('i'); xi.style.width = Math.round(pr.r * 100) + '%'; xb.appendChild(xi); r.append(el('b', 'ol', 'Lv.' + lv), xb); L.appendChild(r);
     L.appendChild(el('div', 'xpt', pr.need == null ? 'Lv.99 MAX' : `次のLvまで あと${(pr.need - pr.in).toLocaleString()} EXP（${pr.in.toLocaleString()} / ${pr.need.toLocaleString()}）`));
