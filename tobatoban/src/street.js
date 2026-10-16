@@ -10,7 +10,7 @@
     this.stage = o.test ? 'street' : 'intro'; this.barrier = 'none'; this.lanterns = [];
     this.kills = 0; this.total = D.n; this.queue = null; this.grpKills = {}; this.grpN = {};
     this.ycfg = { types: {}, rights: J.rights };
-    for (const k in J.types) { const T = J.types[k]; this.ycfg.types[k] = Object.assign({}, T, { hp: Math.round(T.hp * D.mul), str: Math.round(T.str * D.mul), yo: Math.round(T.yo * D.mul) }); } // まもり・移動・技の威力はそのまま
+    for (const k in J.types) { const T = J.types[k]; this.ycfg.types[k] = Object.assign({}, T, { hp: Math.round(Math.round(T.hp * D.mul) * D.hpUp), str: Math.round(T.str * D.mul), yo: Math.round(T.yo * D.mul), dmgMul: D.dmgUp }); } // v7：HPは通りの値×1.5、1発の最終ダメージ×1.25（まもり・移動・技の威力はそのまま）
     this.gate = 0; // 開いている結界の数（0：最初の地点だけ戦える）
     for (const a of this.allies) { const q = D.start[a.slot]; a.x = a.px = q[0]; a.z = a.pz = q[1]; a.yaw = 0; a.ai.tx = a.x; a.ai.tz = a.z + 1; }
     // 剣10・パンチ10・ビーム10を、10体ずつ3地点へ（各地点の内訳も最大剰余法でおおむね均等）

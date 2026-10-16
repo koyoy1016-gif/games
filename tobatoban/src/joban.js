@@ -211,7 +211,7 @@
     const J = DATA.JOBAN, W = J.wpn[m.wpn], T = m.T;
     m.yaw = yawTo(tg.x - m.x, tg.z - m.z);
     const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), warn = T.warn;
-    const base = { warn, act: W.act, pw: T.pw, stat: T.stat, srcStats: { str: m.str, yo: m.yo }, src: 'mob', srcEnt: m, srcId: m.id, knock: W.knock, kx: fx, kz: fz, max: 1, iv: 99 };
+    const base = { warn, act: W.act, pw: T.pw, stat: T.stat, srcStats: { str: m.str, yo: m.yo }, src: 'mob', srcEnt: m, srcId: m.id, knock: W.knock, kx: fx, kz: fz, max: 1, iv: 99, mul: T.dmgMul || 1 }; // v7：上野の部下×0.4・通りの部下×1.25（最終ダメージに一度だけ）
     let h;
     if (m.wpn === 'sword') h = this.hz(Object.assign(base, { kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: W.r, half: W.half, fx: 'ysword', dodge: true }));
     else if (m.wpn === 'fist' || m.wpn === 'shield') h = this.hz(Object.assign(base, { kind: 'rect', x: m.x + fx * 0.25, z: m.z + fz * 0.25, yaw: m.yaw, len: W.len, w: W.w, fx: 'yfist', single: true, dodge: true }));

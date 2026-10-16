@@ -619,7 +619,7 @@ class Sim {
   dealToEnemy(a, e, pw, stat, kind, log, hit, opt) {
     if (e === this.boss && !this.bossHittable()) return 0;
     if (e.st && e.st !== 'ok' && e !== this.boss) return 0;
-    if (this.uenoBlock && this.uenoBlock(e, a)) return 0; // 上野：完全指揮バリア中の本体
+    if (this.uenoBlock && this.uenoBlock(e, a)) { this.ev('dmg', { v: 'バリア', blk: 1, x: e.x, z: e.z, y: 2.6, src: a.slot, kind }); return 0; } // 上野：完全指揮バリア中の本体（防いだことを表示）
     const S = DATA.SIM, P = DATA.PASSIVE;
     let atk = stat === 'yo' ? this.stat(a, 'yo') : stat === 'mix' ? (this.stat(a, 'str') + this.stat(a, 'yo')) / 2 : this.stat(a, 'str');
     let state = 1;
@@ -635,12 +635,12 @@ class Sim {
     const cm = crit ? (a.c.passive === 'critPower' ? P.critPower : S.critMul) : 1;
     const extra = (this.lvOut || 1) * (this.enemyDmgMul ? this.enemyDmgMul(e) : 1); // 上野だけ：平均Lvの補正・睡眠中の隙
     let dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm * extra * (opt && opt.heavy ? 1 : 1)));
-    if (this.capEnemyDmg) dmg = this.capEnemyDmg(e, dmg); // 上野：HP段階ロック（未判定の睡眠しきい値より下へは進めない。0もあり）
+    let capped = false; if (this.capEnemyDmg) { const d0 = dmg; dmg = this.capEnemyDmg(e, dmg); capped = dmg < d0; } // 上野：HP段階ロック（未判定の睡眠しきい値より下へは進めない。0もあり）
     e.hp -= dmg; a.threat += dmg; a.stats.dmg += dmg;
     if (kind === 'A' && a.c.passive === 'lifesteal' && a.hp < a.maxHp) { const v = Math.floor(dmg * 0.1); if (v > 0) this.healAlly(a, v, null, true); } // 固有：通常攻撃でHP吸収
     if (this.afterEnemyHit) this.afterEnemyHit(e, dmg, a, kind);
     if (log) { log.hits.push(+this.t.toFixed(3)); log.dmg.push(dmg); log.def = Math.round(def); log.buff = (state !== 1 ? '×' + state.toFixed(2) : '') + (crit ? ' 会心' : '') + (elem !== 1 ? ' 属性×' + elem : ''); }
-    this.ev('dmg', { v: dmg, crit: crit ? 1 : 0, x: hit ? hit.x : e.x, z: hit ? hit.z : e.z, y: e === this.boss ? (e.st === 'down' ? 1.6 : 1.0) : 0.6, src: a.slot, kind, el: elem > 1 ? 1 : elem < 1 ? -1 : 0 });
+    this.ev('dmg', { v: capped && dmg === 0 ? '段階ロック' : dmg, blk: capped && dmg === 0 ? 1 : 0, crit: crit ? 1 : 0, x: hit ? hit.x : e.x, z: hit ? hit.z : e.z, y: e === this.boss ? (e.kind === 'yoshinoshin' ? 2.6 : e.st === 'down' ? 1.6 : 1.0) : 0.6, src: a.slot, kind, el: elem > 1 ? 1 : elem < 1 ? -1 : 0, boss: e === this.boss ? 1 : 0 }); // 巨大な本体は数値を胸の高さに。睡眠段階で止まったときは理由を出す
     if (e.hp <= 0) { e.hp = 0; if (e === this.boss) this.bossDie(); else this.mobDie(e, a); }
     return dmg;
   }

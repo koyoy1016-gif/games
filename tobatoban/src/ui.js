@@ -649,8 +649,8 @@ function onNotice(o) {
 function onEvent(e, v) {
   const me = G.my;
   switch (e.type) {
-    case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.kind === 'sp' ? 'sp' : e.crit ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e); break;
-    case 'hurt': dmgNum(e.x, 1.2, e.z, e.v, 'hurt'); if (e.slot === me) vib(25); break;
+    case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.blk ? 'blk' : e.kind === 'sp' ? 'sp' : e.crit ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e, e.src === me || e.boss ? 2 : 1); break;
+    case 'hurt': dmgNum(e.x, 1.2, e.z, e.v, 'hurt', null, e.slot === me ? 2 : 0); if (e.slot === me) vib(25); break;
     case 'wave': if (e.n >= 2) notice(`1号車から${e.cnt}体が来る！（第${e.n}波）`, 'warn', 2200); break;
     case 'board': notice(`${DATA.JOBAN.stations[e.st]}：ホームから部下が${e.n}体乗ってくる！`, 'warn', 2200); break;
     case 'jev': if (e.id && e.id.startsWith('mid_')) notice(`前の車両に潜んでいた部下${e.n}体が出てくる！`, 'warn', 2200); break;
@@ -682,9 +682,15 @@ function onEvent(e, v) {
 }
 /* ---------- ダメージ数字 ---------- */
 const DMG = [];
-function dmgNum(x, y, z, v, cls, e) {
-  const box = $('#dmgs'); let d = DMG.find(o => !o.alive); if (!d) { if (DMG.length > 40) return; d = { e: el('div', 'dmg') }; box.appendChild(d.e); DMG.push(d); }
-  d.alive = true; d.t = 0; d.x = x + (Math.random() - 0.5) * 0.6; d.y = y; d.z = z + (Math.random() - 0.5) * 0.6; d.e.className = 'dmg ' + cls; d.e.textContent = v; d.life = cls === 'sp' ? 0.6 : 0.9;
+/** ダメージ数値。空きがなければ（同時に60個まで）優先度の低い・古いものから使い回す。自分の攻撃とボスへの数値は優先（敵が多い上野でも消えない） */
+function dmgNum(x, y, z, v, cls, e, pri) {
+  pri = pri || 0;
+  const box = $('#dmgs'); let d = DMG.find(o => !o.alive);
+  if (!d) {
+    if (DMG.length < 60) { d = { e: el('div', 'dmg') }; box.appendChild(d.e); DMG.push(d); }
+    else { let best = null; for (const o of DMG) if ((o.pri || 0) <= pri && (!best || (o.pri || 0) < (best.pri || 0) || ((o.pri || 0) === (best.pri || 0) && o.t > best.t))) best = o; if (!best) return; d = best; }
+  }
+  d.pri = pri; d.alive = true; d.t = 0; d.x = x + (Math.random() - 0.5) * 0.6; d.y = y; d.z = z + (Math.random() - 0.5) * 0.6; d.e.className = 'dmg ' + cls; d.e.textContent = v; d.life = cls === 'sp' ? 0.6 : 0.9;
   if (cls === 'sp' && e) { // 多段の合計
     const k = e.src; const T = G.spTotals[k] || (G.spTotals[k] = { sum: 0, t: 0, d: null });
     T.sum += e.v; T.t = 1.3; T.x = e.x; T.z = e.z;

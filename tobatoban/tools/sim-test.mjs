@@ -213,10 +213,12 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   const party = ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(c => ({ ch: c, lv: 20 }));
   const s = new Sim({ party, seed: 5, stageId: 'ueno_street', test: true });
   const ys = s.mobs.filter(m => m.kind === 'yoshi'), cnt = k => ys.filter(m => m.typ === k).length;
-  ok(ys.length === 30 && cnt('sword') === 10 && cnt('punch') === 10 && cnt('beam') === 10 && ys.every(m => m.maxHp === 250 && m.str === 240 && m.yo === 261 && m.def === 45), `通りの部下30体（剣${cnt('sword')}・パンチ${cnt('punch')}・ビーム${cnt('beam')}、HP250・ちから240・ようりょく261・まもり45）`);
+  ok(ys.length === 30 && cnt('sword') === 10 && cnt('punch') === 10 && cnt('beam') === 10 && ys.every(m => m.maxHp === 375 && m.str === 240 && m.yo === 261 && m.def === 45), `v7：通りの部下30体（剣${cnt('sword')}・パンチ${cnt('punch')}・ビーム${cnt('beam')}、HP250→375・ちから240・ようりょく261・まもり45）`);
   const o = s.allies[0]; o.ctrlAI = false; s.syncAi(o); o.inv = 0; o.stt.def = 89;
-  const vals = ['sword', 'punch', 'beam'].map(k => { const T = s.ycfg.types[k]; o.hp = o.maxHp; o.act = null; const h0 = o.hp; s.hz({ kind: 'circle', x: o.x, z: o.z, r: 1, warn: 0, act: 0.1, pw: T.pw, stat: T.stat, srcStats: { str: T.str, yo: T.yo }, src: 'mob' }); s.updateHazards(1 / 60); s.hazards = []; return h0 - o.hp; });
-  ok(vals.join('/') === '69/82/100', `まもり89への1発：剣・パンチ・ビーム＝${vals.join('/')}（基準69/82/100）`);
+  const vals = ['sword', 'punch', 'beam'].map(k => { const T = s.ycfg.types[k]; o.hp = o.maxHp; o.act = null; const h0 = o.hp; s.hz({ kind: 'circle', x: o.x, z: o.z, r: 1, warn: 0, act: 0.1, pw: T.pw, stat: T.stat, srcStats: { str: T.str, yo: T.yo }, src: 'mob', mul: T.dmgMul }); s.updateHazards(1 / 60); s.hazards = []; return h0 - o.hp; });
+  const raw = k => { const T = s.ycfg.types[k]; return T.pw * (T.stat === 'yo' ? T.yo : T.str) / (120 + 89) * (s.lvIn || 1); };
+  const ex = ['sword', 'punch', 'beam'].map(k => Math.max(1, Math.round(raw(k) * 1.25))), old = ['sword', 'punch', 'beam'].map(k => Math.max(1, Math.round(raw(k))));
+  ok(vals.join('/') === ex.join('/') && old.join('/') === '69/82/100', `v7：まもり89への1発：剣・パンチ・ビーム＝${old.join('/')} → ${vals.join('/')}（×1.25を最終ダメージに一度だけ）`);
   const c = s.clampStreet(0, 10, 0, 40, 0.35); ok(c[1] < DATA.STREET.gates[0], '最初の地点を片付けるまで、暖簾の結界の先へは行けない');
   const g1 = s.mobs.filter(m => m.grpI === 1); for (let i = 0; i < 60; i++) s.step(); ok(g1.every(m => !m.moving), '奥の地点の部下は、結界が開くまで動かない');
   let gates = 0; for (let g = 0; g < 3; g++) { for (const m of s.mobs.filter(m => m.grpI === g && m.st === 'ok')) s.dealToEnemy(o, m, 1e6, 'str', 'A', null); s.step(); for (const e of s.events) if (!e._c && e.type === 'gate') { e._c = 1; gates++; } }
@@ -227,7 +229,13 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   const U = DATA.UENO, mk = (lv, o) => new Sim(Object.assign({ party: ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'].map(ch => ({ ch, lv })), seed: 21, stageId: 'ueno' }, o || {}));
   const s = mk(40); const cnt = k => s.mobs.filter(m => m.typ === k).length;
   ok(s.stage === 'intro' && s.boss.hp === 22000 && s.boss.str === 500 && s.boss.yo === 500 && s.boss.def === 150, 'ヨシノシン：HP22,000・ちから500・ようりょく500・まもり150（v6）');
-  ok(s.mobs.length === 36 && cnt('beam') === 22 && cnt('sword') === 7 && cnt('punch') === 7 && s.mobs.every(m => m.maxHp === 170 && m.str === 163 && m.yo === 178 && m.def === 45), `最初の部下36体（ビーム${cnt('beam')}・剣${cnt('sword')}・パンチ${cnt('punch')}、HP170・ちから163・ようりょく178）`);
+  ok(s.mobs.length === 36 && cnt('beam') === 22 && cnt('sword') === 7 && cnt('punch') === 7 && s.mobs.every(m => m.maxHp === 68 && m.str === 163 && m.yo === 178 && m.def === 45), `v7：最初の部下36体（ビーム${cnt('beam')}・剣${cnt('sword')}・パンチ${cnt('punch')}、HP170→68・ちから163・ようりょく178）`);
+  { // 上野の部下の1発：まもり89・同じLv補正で、変更前と後（×0.4は最終ダメージに一度だけ）
+    const q = mk(40), o = q.allies[0]; o.ctrlAI = false; q.syncAi(o); o.stt.def = 89; q.stage = 'boss';
+    const one = (k, mul) => { const T = q.ycfg.types[k]; o.hp = o.maxHp; o.inv = 0; o.act = null; const h0 = o.hp; q.hz({ kind: 'circle', x: o.x, z: o.z, r: 1, warn: 0, act: 0.1, pw: T.pw, stat: T.stat, srcStats: { str: T.str, yo: T.yo }, src: 'mob', mul }); q.updateHazards(1 / 60); q.hazards = []; return h0 - o.hp; };
+    const before = ['sword', 'punch', 'beam'].map(k => one(k, 1)), after = ['sword', 'punch', 'beam'].map(k => one(k, q.ycfg.types[k].dmgMul));
+    const ex = ['sword', 'punch', 'beam'].map(k => { const T = q.ycfg.types[k]; return Math.max(1, Math.round(T.pw * (T.stat === 'yo' ? T.yo : T.str) / (120 + 89) * q.lvIn * 0.4)); });
+    ok(after.join('/') === ex.join('/'), `v7：上野の部下の1発（まもり89・Lv40）剣/パンチ/ビーム＝${before.join('/')} → ${after.join('/')}（×0.4・四捨五入後）`); }
   const lvk = [2, 20, 30, 40, 50].map(lv => { const q = mk(lv); return q.lvOut.toFixed(3) + '/' + q.lvIn.toFixed(3); });
   ok(lvk.join(' ') === '0.142/4.000 0.358/2.191 0.599/1.480 1.000/1.000 1.200/0.850', `Lv補正（Lv2・20・30・40・50）：与/被 ${lvk.join('　')}`);
   let early = 0; for (let i = 0; i < 60 * (U.introT - 0.1); i++) { s.step(); early += s.hazards.length + s.projs.filter(p => p.team === 'enemy').length; }
@@ -493,7 +501,7 @@ if (PROTO) {
   ok(base.join(' ') === 'ueno:40=1/1 akiba_platform:50=1/1 akiba_plaza:60=1/1', `Lv補正の基準：${base.join(' ')}`);
   // 部下の歩く速さ（電車・居酒屋通り・上野で旧値の50%、二重に掛けない）
   const sp = ['joban', 'ueno_street', 'ueno'].map(st => { const q = new Sim({ party, seed: 2, stageId: st, test: true }); const T = q.ycfg.types; return Object.keys(T).map(k => T[k].spd).join('/'); });
-  ok(sp.every(x => x === '1.3/1.3/1.2'), `部下の歩く速さ 剣/パンチ/ビーム：${sp.join('・')} m/秒`);
+  ok(sp[0] === '1.3/1.3/1.2' && sp[1] === '1.3/1.3/1.2' && sp[2] === '0.78/0.78/0.72', `部下の歩く速さ 剣/パンチ/ビーム（電車・通り・上野）：${sp.join('・')} m/秒（v7：上野だけ×0.6）`);
   // 部下の攻撃がヨシノシン本体へ（1攻撃1回・手前の味方で止まる・バリア中は0）
   const mk = () => { const q = new Sim({ party, seed: 3, stageId: 'ueno', test: true, idle: true }); q.mobs = []; q.allies.forEach(a => { a.x = -14; a.z = 2; a.inv = 1e9; }); q.boss.st = 'idle'; q.boss.x = 0; q.boss.z = 14; q.boss.hp = 21000; return q; };
   const q = mk(), m = q.spawnYoshi(0, 12, 'test', 'drop', 'sword'); m.yaw = 0; m.enterT = 0;

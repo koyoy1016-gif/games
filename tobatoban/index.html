@@ -316,7 +316,7 @@ a{color:var(--shu)}
 .label3d .prog{width:44px;height:6px;border-radius:3px;background:rgba(0,0,0,.6);overflow:hidden}.label3d .prog i{display:block;height:100%;background:#ffe27a}
 .dmg{position:absolute;font-family:var(--f-disp);font-size:18px;color:#fff;-webkit-text-stroke:1.2px #2a0f0a;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap}
 .dmg.crit{color:#ffeb6a;font-size:23px}.dmg.weak{color:#ffd28a}.dmg.resist{color:#c8c8d8;font-size:15px}
-.dmg.hurt{color:#ff7070;font-size:16px}.dmg.heal{color:#7dff9a}.dmg.sp{color:#ffe6a0;font-size:15px}
+.dmg.hurt{color:#ff7070;font-size:16px}.dmg.blk{color:#bfe0ff;font-size:15px;font-family:var(--f-body);font-weight:900}.dmg.heal{color:#7dff9a}.dmg.sp{color:#ffe6a0;font-size:15px}
 .dmg.total{font-size:26px;color:#ffd84a;-webkit-text-stroke:1.6px #3a1a00}
 .dmg.total small{font-family:var(--f-body);font-size:12px;font-weight:900;-webkit-text-stroke:0;color:#fff;margin-right:4px}
 .edge{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;pointer-events:none;display:flex;align-items:center;justify-content:center}
@@ -1328,6 +1328,8 @@ const STREET = {
   nm: '上野の居酒屋通り', halfX: 4.6, zMax: 64, start: [[-1.0, 3.2], [1.0, 3.2], [-0.4, 2.0], [0.4, 2.0]],
   groups: p('居酒屋通り', '部下を置く3地点（奥行きz）', [16, 33, 50], 'm', 'proto'), gates: [24, 41, 58],
   mul: p('居酒屋通り', '電車の部下に対する倍率（HP・ちから・ようりょくだけ）', 1.25, '倍', 'spec', null, '技の威力・周期・まもり・移動はそのまま'),
+  hpUp: p('居酒屋通り', 'v7：さらにHP（上の倍率のあとで）', 1.5, '倍', 'spec', null, '通りの部下 HP250→375'),
+  dmgUp: p('居酒屋通り', 'v7：1発の最終ダメージ', 1.25, '倍', 'spec', null, '与ダメージ計算で一度だけ。ちから・ようりょくには重ねない'),
   n: 30, per: 10,
   introT: p('居酒屋通り', '始まりの演出（ホーム→改札→通りへ）', 5, 's', 'proto'),
 };
@@ -1343,10 +1345,12 @@ const UENO = {
   introT: p('上野', '登場の演出（指を鳴らす→部下が走り出す）', 3.2, 's', 'spec', null, '最初の予告より前に攻撃しない'),
   minGap: p('ヨシノシン', '直接攻撃どうしの開始間隔（最低）', 3.0, 's', 'spec'),
   rec: 40,
-  minions: { // 電車の部下の型別データから HP・ちから・ようりょくだけ×0.85（四捨五入）。技の威力・周期はそのまま
-    sword: { nm: '剣', wpn: 'sword', hp: 170, str: 163, yo: 178, def: 45, pw: 60, stat: 'str', warn: 0.70, period: 3.2, spd: 1.3, scale: 0.85 / U_H, r: 0.32 },
-    punch: { nm: 'パンチ', wpn: 'fist', hp: 170, str: 163, yo: 178, def: 45, pw: 71, stat: 'str', warn: 0.65, period: 3.5, spd: 1.3, scale: 0.9 / U_H, r: 0.33 },
-    beam: { nm: 'ビーム', wpn: 'beam', hp: 170, str: 163, yo: 178, def: 45, pw: 80, stat: 'yo', warn: 1.20, period: 5.0, spd: 1.2, scale: 0.85 / U_H, r: 0.32, len: 13 },
+  // v7（P3）：上野駅前の小さな部下だけ弱く。HP×0.4（170→68）、1発の最終ダメージ×0.4（与ダメージ計算で一度だけ。ちから・威力は変えない）、移動×0.6（1.3→0.78・1.2→0.72）。まもり・攻撃周期はそのまま
+  minionNerf: p('上野', '小さな部下の弱体化（HP・1発のダメージ・移動）', { hp: 0.4, dmg: 0.4, spd: 0.6 }, '倍', 'spec', null, 'ヨシノシン本体の技（部下丸投げの着地など）には掛けない'),
+  minions: { // 電車の部下の型別データから HP・ちから・ようりょくだけ×0.85（四捨五入）→ v7で HP×0.4・移動×0.6・与ダメージ×0.4
+    sword: { nm: '剣', wpn: 'sword', hp: 68, str: 163, yo: 178, def: 45, pw: 60, stat: 'str', warn: 0.70, period: 3.2, spd: 0.78, dmgMul: 0.4, scale: 0.85 / U_H, r: 0.32 },
+    punch: { nm: 'パンチ', wpn: 'fist', hp: 68, str: 163, yo: 178, def: 45, pw: 71, stat: 'str', warn: 0.65, period: 3.5, spd: 0.78, dmgMul: 0.4, scale: 0.9 / U_H, r: 0.33 },
+    beam: { nm: 'ビーム', wpn: 'beam', hp: 68, str: 163, yo: 178, def: 45, pw: 80, stat: 'yo', warn: 1.20, period: 5.0, spd: 0.72, dmgMul: 0.4, scale: 0.85 / U_H, r: 0.32, len: 13 },
   },
   init: p('上野', '最初の部下（ビーム・剣・パンチ）', { beam: 22, sword: 7, punch: 7 }, '体', 'spec', null, '36体が同時に前進する'),
   cap: p('上野', '部下の生存上限（予約を含む）', 100, '体', 'spec'),
@@ -2903,7 +2907,7 @@ class Sim {
   dealToEnemy(a, e, pw, stat, kind, log, hit, opt) {
     if (e === this.boss && !this.bossHittable()) return 0;
     if (e.st && e.st !== 'ok' && e !== this.boss) return 0;
-    if (this.uenoBlock && this.uenoBlock(e, a)) return 0; // 上野：完全指揮バリア中の本体
+    if (this.uenoBlock && this.uenoBlock(e, a)) { this.ev('dmg', { v: 'バリア', blk: 1, x: e.x, z: e.z, y: 2.6, src: a.slot, kind }); return 0; } // 上野：完全指揮バリア中の本体（防いだことを表示）
     const S = DATA.SIM, P = DATA.PASSIVE;
     let atk = stat === 'yo' ? this.stat(a, 'yo') : stat === 'mix' ? (this.stat(a, 'str') + this.stat(a, 'yo')) / 2 : this.stat(a, 'str');
     let state = 1;
@@ -2919,12 +2923,12 @@ class Sim {
     const cm = crit ? (a.c.passive === 'critPower' ? P.critPower : S.critMul) : 1;
     const extra = (this.lvOut || 1) * (this.enemyDmgMul ? this.enemyDmgMul(e) : 1); // 上野だけ：平均Lvの補正・睡眠中の隙
     let dmg = Math.max(1, Math.round(pw * atk / (S.defBase + def) * elem * state * cm * extra * (opt && opt.heavy ? 1 : 1)));
-    if (this.capEnemyDmg) dmg = this.capEnemyDmg(e, dmg); // 上野：HP段階ロック（未判定の睡眠しきい値より下へは進めない。0もあり）
+    let capped = false; if (this.capEnemyDmg) { const d0 = dmg; dmg = this.capEnemyDmg(e, dmg); capped = dmg < d0; } // 上野：HP段階ロック（未判定の睡眠しきい値より下へは進めない。0もあり）
     e.hp -= dmg; a.threat += dmg; a.stats.dmg += dmg;
     if (kind === 'A' && a.c.passive === 'lifesteal' && a.hp < a.maxHp) { const v = Math.floor(dmg * 0.1); if (v > 0) this.healAlly(a, v, null, true); } // 固有：通常攻撃でHP吸収
     if (this.afterEnemyHit) this.afterEnemyHit(e, dmg, a, kind);
     if (log) { log.hits.push(+this.t.toFixed(3)); log.dmg.push(dmg); log.def = Math.round(def); log.buff = (state !== 1 ? '×' + state.toFixed(2) : '') + (crit ? ' 会心' : '') + (elem !== 1 ? ' 属性×' + elem : ''); }
-    this.ev('dmg', { v: dmg, crit: crit ? 1 : 0, x: hit ? hit.x : e.x, z: hit ? hit.z : e.z, y: e === this.boss ? (e.st === 'down' ? 1.6 : 1.0) : 0.6, src: a.slot, kind, el: elem > 1 ? 1 : elem < 1 ? -1 : 0 });
+    this.ev('dmg', { v: capped && dmg === 0 ? '段階ロック' : dmg, blk: capped && dmg === 0 ? 1 : 0, crit: crit ? 1 : 0, x: hit ? hit.x : e.x, z: hit ? hit.z : e.z, y: e === this.boss ? (e.kind === 'yoshinoshin' ? 2.6 : e.st === 'down' ? 1.6 : 1.0) : 0.6, src: a.slot, kind, el: elem > 1 ? 1 : elem < 1 ? -1 : 0, boss: e === this.boss ? 1 : 0 }); // 巨大な本体は数値を胸の高さに。睡眠段階で止まったときは理由を出す
     if (e.hp <= 0) { e.hp = 0; if (e === this.boss) this.bossDie(); else this.mobDie(e, a); }
     return dmg;
   }
@@ -3993,7 +3997,7 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
     const J = DATA.JOBAN, W = J.wpn[m.wpn], T = m.T;
     m.yaw = yawTo(tg.x - m.x, tg.z - m.z);
     const fx = Math.sin(m.yaw), fz = Math.cos(m.yaw), warn = T.warn;
-    const base = { warn, act: W.act, pw: T.pw, stat: T.stat, srcStats: { str: m.str, yo: m.yo }, src: 'mob', srcEnt: m, srcId: m.id, knock: W.knock, kx: fx, kz: fz, max: 1, iv: 99 };
+    const base = { warn, act: W.act, pw: T.pw, stat: T.stat, srcStats: { str: m.str, yo: m.yo }, src: 'mob', srcEnt: m, srcId: m.id, knock: W.knock, kx: fx, kz: fz, max: 1, iv: 99, mul: T.dmgMul || 1 }; // v7：上野の部下×0.4・通りの部下×1.25（最終ダメージに一度だけ）
     let h;
     if (m.wpn === 'sword') h = this.hz(Object.assign(base, { kind: 'fan', x: m.x, z: m.z, yaw: m.yaw, r0: 0, r1: W.r, half: W.half, fx: 'ysword', dodge: true }));
     else if (m.wpn === 'fist' || m.wpn === 'shield') h = this.hz(Object.assign(base, { kind: 'rect', x: m.x + fx * 0.25, z: m.z + fz * 0.25, yaw: m.yaw, len: W.len, w: W.w, fx: 'yfist', single: true, dodge: true }));
@@ -4028,7 +4032,7 @@ const SIMLIB = { Sim, inPoly, bossParts, contactPt, ACTS, ACT_I, BST, BST_I, BMV
     this.stage = o.test ? 'street' : 'intro'; this.barrier = 'none'; this.lanterns = [];
     this.kills = 0; this.total = D.n; this.queue = null; this.grpKills = {}; this.grpN = {};
     this.ycfg = { types: {}, rights: J.rights };
-    for (const k in J.types) { const T = J.types[k]; this.ycfg.types[k] = Object.assign({}, T, { hp: Math.round(T.hp * D.mul), str: Math.round(T.str * D.mul), yo: Math.round(T.yo * D.mul) }); } // まもり・移動・技の威力はそのまま
+    for (const k in J.types) { const T = J.types[k]; this.ycfg.types[k] = Object.assign({}, T, { hp: Math.round(Math.round(T.hp * D.mul) * D.hpUp), str: Math.round(T.str * D.mul), yo: Math.round(T.yo * D.mul), dmgMul: D.dmgUp }); } // v7：HPは通りの値×1.5、1発の最終ダメージ×1.25（まもり・移動・技の威力はそのまま）
     this.gate = 0; // 開いている結界の数（0：最初の地点だけ戦える）
     for (const a of this.allies) { const q = D.start[a.slot]; a.x = a.px = q[0]; a.z = a.pz = q[1]; a.yaw = 0; a.ai.tx = a.x; a.ai.tz = a.z + 1; }
     // 剣10・パンチ10・ビーム10を、10体ずつ3地点へ（各地点の内訳も最大剰余法でおおむね均等）
@@ -9355,8 +9359,8 @@ function onNotice(o) {
 function onEvent(e, v) {
   const me = G.my;
   switch (e.type) {
-    case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.kind === 'sp' ? 'sp' : e.crit ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e); break;
-    case 'hurt': dmgNum(e.x, 1.2, e.z, e.v, 'hurt'); if (e.slot === me) vib(25); break;
+    case 'dmg': dmgNum(e.x, (e.y || 1) + 0.3, e.z, e.v, e.blk ? 'blk' : e.kind === 'sp' ? 'sp' : e.crit ? 'crit' : e.el > 0 ? 'weak' : e.el < 0 ? 'resist' : '', e, e.src === me || e.boss ? 2 : 1); break;
+    case 'hurt': dmgNum(e.x, 1.2, e.z, e.v, 'hurt', null, e.slot === me ? 2 : 0); if (e.slot === me) vib(25); break;
     case 'wave': if (e.n >= 2) notice(`1号車から${e.cnt}体が来る！（第${e.n}波）`, 'warn', 2200); break;
     case 'board': notice(`${DATA.JOBAN.stations[e.st]}：ホームから部下が${e.n}体乗ってくる！`, 'warn', 2200); break;
     case 'jev': if (e.id && e.id.startsWith('mid_')) notice(`前の車両に潜んでいた部下${e.n}体が出てくる！`, 'warn', 2200); break;
@@ -9388,9 +9392,15 @@ function onEvent(e, v) {
 }
 /* ---------- ダメージ数字 ---------- */
 const DMG = [];
-function dmgNum(x, y, z, v, cls, e) {
-  const box = $('#dmgs'); let d = DMG.find(o => !o.alive); if (!d) { if (DMG.length > 40) return; d = { e: el('div', 'dmg') }; box.appendChild(d.e); DMG.push(d); }
-  d.alive = true; d.t = 0; d.x = x + (Math.random() - 0.5) * 0.6; d.y = y; d.z = z + (Math.random() - 0.5) * 0.6; d.e.className = 'dmg ' + cls; d.e.textContent = v; d.life = cls === 'sp' ? 0.6 : 0.9;
+/** ダメージ数値。空きがなければ（同時に60個まで）優先度の低い・古いものから使い回す。自分の攻撃とボスへの数値は優先（敵が多い上野でも消えない） */
+function dmgNum(x, y, z, v, cls, e, pri) {
+  pri = pri || 0;
+  const box = $('#dmgs'); let d = DMG.find(o => !o.alive);
+  if (!d) {
+    if (DMG.length < 60) { d = { e: el('div', 'dmg') }; box.appendChild(d.e); DMG.push(d); }
+    else { let best = null; for (const o of DMG) if ((o.pri || 0) <= pri && (!best || (o.pri || 0) < (best.pri || 0) || ((o.pri || 0) === (best.pri || 0) && o.t > best.t))) best = o; if (!best) return; d = best; }
+  }
+  d.pri = pri; d.alive = true; d.t = 0; d.x = x + (Math.random() - 0.5) * 0.6; d.y = y; d.z = z + (Math.random() - 0.5) * 0.6; d.e.className = 'dmg ' + cls; d.e.textContent = v; d.life = cls === 'sp' ? 0.6 : 0.9;
   if (cls === 'sp' && e) { // 多段の合計
     const k = e.src; const T = G.spTotals[k] || (G.spTotals[k] = { sum: 0, t: 0, d: null });
     T.sum += e.v; T.t = 1.3; T.x = e.x; T.z = e.z;
