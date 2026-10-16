@@ -233,7 +233,7 @@ with sync_playwright() as p:
             ev("() => { const s = document.getElementById('rsSort'); s.value = 'str'; s.dispatchEvent(new Event('change')); return 1; }"), wait(0.2), ev(cards, 'cards_str'),
             ev("() => { const s = document.getElementById('rsSort'); s.value = 'recent'; s.dispatchEvent(new Event('change')); return 1; }"), wait(0.2), ev(cards, 'cards_recent'),
             ev("() => document.querySelectorAll('#cards .rs-card.unowned').length", 'unowned'),
-            ev("() => { document.querySelectorAll('#rsSlots button')[2].click(); [...document.querySelectorAll('#cards .rs-card')].find(c => c.querySelector('.nm').textContent === 'サヤノスケ').click(); return document.querySelector('#chLeft .nm').textContent; }", 'detail'), wait(0.6), shot('h08_detail'),
+            ev("() => { document.querySelectorAll('#rsSlots button')[2].click(); [...document.querySelectorAll('#cards .rs-card')].find(c => c.querySelector('.nm').textContent === '刀の付喪神').click(); return document.querySelector('#chLeft .nm').textContent; }", 'detail'), wait(0.6), shot('h08_detail'),
             ev("() => { document.getElementById('btnChPick').click(); return __tb.G.party.join(','); }", 'party_after_pick'),
             click('#btnRosterHome'), wait(0.3), click('#btnStageSel'), wait(0.3), shot('h10_stagesel'), ev("() => document.querySelectorAll('#stages .ss-card .lockov').length", 'ueno_locked'),
             ev("() => { document.querySelectorAll('#stages .ss-card')[0].click(); return [...document.querySelectorAll('.screen')].filter(s => !s.hidden).map(s => s.id).join(','); }", 'after_pick_stage'),

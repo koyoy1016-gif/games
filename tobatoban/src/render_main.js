@@ -76,7 +76,7 @@ const R = (() => {
     const g1 = new THREE.BoxGeometry(2.6, 1.4, 1); g1.translate(0, 0.7, 0.5); W.kousenGround = new THREE.Mesh(g1, bm); W.kousen.add(W.kousenGround);
     const core = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }); const g3 = new THREE.BoxGeometry(0.9, 0.6, 1); g3.translate(0, 0.6, 0.5); W.kousenCore = new THREE.Mesh(g3, core); W.kousen.add(W.kousenCore);
     const g2 = new THREE.CylinderGeometry(0.5, 1.2, 1, 12, 1, true); g2.translate(0, 0.5, 0); W.kousenDrop = new THREE.Mesh(g2, bm); W.kousen.add(W.kousenDrop);
-    // ホシスズメの光（8回の脈動）
+    // 提灯火の光（8回の脈動）
     W.sbeams = [];
     return { renderer, scene, camera };
   }
@@ -143,7 +143,7 @@ const R = (() => {
   function projMesh(kind) {
     if (!PJM.star) {
       PJM.star = [new THREE.OctahedronGeometry(0.16), new THREE.MeshBasicMaterial({ color: 0xffe27a })];
-      PJM.can = [new THREE.CylinderGeometry(0.18, 0.18, 0.05, 14), GFX.lam(0xc9d1d8, { emissive: 0x334455 })];
+      PJM.can = [new THREE.DodecahedronGeometry(0.13), GFX.lam(0x8a8478, { emissive: 0x2a2620, flatShading: true })]; // v7：自分の部品（石片・籠手）を投げる
       PJM.focus = [new THREE.SphereGeometry(0.28, 12, 10), new THREE.MeshBasicMaterial({ color: 0xfff6c0 })];
       PJM.fire = [new THREE.SphereGeometry(0.26, 12, 10), new THREE.MeshBasicMaterial({ color: 0xff7a2a })];
       PJM.mark = [new THREE.TorusGeometry(0.16, 0.05, 6, 16), new THREE.MeshBasicMaterial({ color: 0xff4a2a })];

@@ -36,7 +36,7 @@ with sync_playwright() as p:
     B.evaluate(f"() => {{ document.getElementById('btnFriend').click(); document.getElementById('btnFrCoop2').click(); document.getElementById('nick').value='さんか'; document.getElementById('code').value='{code}'; document.getElementById('btnJoin').click(); }}")
     B.wait_for_function('window.__tb.G.session && window.__tb.G.session.mySlot >= 0', timeout=15000)
     time.sleep(1.0); one_rects = A.evaluate(rects)
-    B.evaluate("() => { document.getElementById('btnTeam').click(); [...document.querySelectorAll('#cards .rs-card')].find(b => b.querySelector('.nm').textContent === 'ホシスズメ').click(); document.getElementById('btnChPick').click(); document.getElementById('btnRosterHome').click(); }")  # ホシスズメを選ぶ
+    B.evaluate("() => { document.getElementById('btnTeam').click(); [...document.querySelectorAll('#cards .rs-card')].find(b => b.querySelector('.nm').textContent === '提灯火').click(); document.getElementById('btnChPick').click(); document.getElementById('btnRosterHome').click(); }")  # 提灯火を選ぶ
     time.sleep(2.0); two_rects = A.evaluate(rects)
     print('rects solo', solo_rects); print('rects host 1p', one_rects); print('rects host 2p', two_rects)
     print('same layout', solo_rects == one_rects == two_rects)

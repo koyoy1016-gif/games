@@ -2,7 +2,7 @@
 // 使い方: node tobatoban/tools/joban-battle.mjs [seed] [party] [lv]
 import fs from 'fs'; import vm from 'vm'; import path from 'path'; import { fileURLToPath } from 'url';
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
-const src = ['data.js', 'roster_data.js', 'roster.js', 'sim.js', 'joban.js', 'street.js', 'ueno.js', 'akiba.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+const src = ['data.js', 'roster_data.js', 'roster_v7.js', 'roster.js', 'sim.js', 'joban.js', 'street.js', 'ueno.js', 'akiba.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console, Math, Set, Map, JSON, Object, Array, Number, String, Date });
 vm.runInContext(src + ';globalThis.__={DATA,SIMLIB}', ctx);
 const { DATA, SIMLIB } = ctx.__;

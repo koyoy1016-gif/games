@@ -149,7 +149,7 @@ function renderRoster(keepScroll) {
     ss.appendChild(b);
   }
   const cur = coop ? G.party[0] : G.party[G.selSlot];
-  $('#rsNote').textContent = coop ? `あなたのキャラ：${DATA.CHI[cur].nm}（カードを押して「このキャラを選ぶ」）` : `P${G.selSlot + 1}（${G.selSlot === 0 ? 'あなたが操作' : 'AI：能力90%・EXP80%'}）の枠：${DATA.CHI[cur].nm}　カードを押すと詳しく見て選べます`;
+  $('#rsNote').textContent = coop ? `あなたのキャラ：${DATA.CHI[cur].nm}（カードを押して「このキャラを選ぶ」）` : `P${G.selSlot + 1}（${G.selSlot === 0 ? 'あなたが操作' : 'AI：能力95%・EXP80%'}）の枠：${DATA.CHI[cur].nm}　カードを押すと詳しく見て選べます`;
   const ft = $('#rsFoot'); ft.hidden = !(G.rosterBack === 'akiba' || G.rosterBack === 'prep');
   $('#btnGo').textContent = G.rosterBack === 'akiba' ? '秋葉原へ向かう ▶' : '準備へもどる ▶';
   rosterSize(); g.textContent = '';
@@ -195,7 +195,13 @@ function aShort(c) { const M = DATA.MOVES[c.A]; const tm = M && M.end ? `・${M.
 function skShort(s) {
   const cd = s.cd ? `・再使用${s.cd}秒` : '';
   switch (s.kind) {
-    case 'charge': return `ため（最大${DATA.CHARGE.max}秒・×2.5）威力${s.pw}${cd}`;
+    case 'charge': return `ため（最大${DATA.CHARGE.max}秒・×${DATA.CHARGE.mul}）威力${s.pw}${cd}`;
+    case 'lunge': return `踏み込み 威力${s.pw}${cd}`;
+    case 'breaker': return `威力${s.pw}＋${s.stats.includes('def') ? 'まもり' : 'ちから・ようりょく'}↓${cd}`;
+    case 'zone': return `押している間の陣（最大${s.max}秒）${cd}`;
+    case 'aura': return `${s.side === 'ally' ? '味方強化' : '敵弱体'} ${s.dur}秒${cd}`;
+    case 'regen': return `継続回復${cd}`;
+    case 'protect': return `${s.self ? '自分を' : '周りを'}無敵${cd}`;
     case 'dodge': return '押した方向へ回避（一瞬無敵）';
     case 'guard': return `押している間ガード${s.reflect ? '・反射' : ''}`;
     case 'heal': case 'healRing': return `ためて回復 基礎${s.pw}${cd}`;
@@ -208,8 +214,8 @@ function spShort(c) { const S = DATA.SPECIALS[c.sp]; if (!S) return ''; return S
 function charaMoves(c) {
   const slot = G.coop ? 0 : G.selSlot, sw = G.swap[slot] && G.party[slot] === c.id;
   const X = DATA.SKILLS[sw ? c.Y : c.X], Y = DATA.SKILLS[sw ? c.X : c.Y];
-  const long = s => c.isNew ? `${s.nm}：${s === DATA.SKILLS[c.X] ? c.fx.X : c.fx.Y}` : skillDesc(s);
-  const aLong = c.A === 'combo3' ? `三連：Aを続けて押すと2発目・3発目（威力 ${c.Apw.join('/')}）` : c.A === 'shotn' || c.A === 'shot' ? `${c.Anm || '射撃'}：前へ撃つ（威力 ${c.Apw[0]}）` : `${c.Anm || '近接打撃'}：前の敵を打つ（威力 ${c.Apw[0]}）`;
+  const long = s => s.desc ? `${s.nm}：${s.desc}` : c.isNew ? `${s.nm}：${s === DATA.SKILLS[c.X] ? c.fx.X : c.fx.Y}` : skillDesc(s); // v7：設定表の技は説明（desc）を出す
+  const aLong = c.Adesc ? `${c.Anm}：${c.Adesc}` : c.A === 'combo3' ? `三連：Aを続けて押すと2発目・3発目（威力 ${c.Apw.join('/')}）` : c.A === 'shotn' || c.A === 'shot' ? `${c.Anm || '射撃'}：前へ撃つ（威力 ${c.Apw[0]}）` : `${c.Anm || '近接打撃'}：前の敵を打つ（威力 ${c.Apw[0]}）`;
   const SP = DATA.SPECIALS[c.sp], spLong = c.isNew ? `${c.spNm}：${c.fx.SP}` : SP.type === 'multi' ? `${c.spNm}（${SP.pw}×${SP.n}${SP.defDown ? '＋守り低下' : ''}）` : SP.type === 'buff' ? `${c.spNm}（周りの味方のちから強化）` : SP.type === 'guardup' ? `${c.spNm}（自分の守り強化＋敵を引きつける）` : `${c.spNm}（全員を回復＋気絶した仲間を蘇生）`;
   return [['A', 'kA', c.Anm || '通常攻撃', aShort(c), aLong], ['X', 'kX', X.nm, skShort(X), long(X)], ['Y', 'kY', Y.nm, skShort(Y), long(Y)], ['必殺', 'kS', c.spNm, spShort(c), spLong]];
 }
@@ -262,7 +268,7 @@ function openInfo() {
   const c = DATA.CHI[G.chId], b = $('#infoBody'); b.textContent = ''; $('#infoT').textContent = ownsCh(c.id) ? c.nm : '？？？';
   for (const [k, cls, , , lg] of charaMoves(c)) { const r = el('div', 'mv-row'); r.append(el('span', 'k ' + cls, k), el('span', '', lg)); b.appendChild(r); }
   const r = el('div', 'mv-row'); r.append(el('span', 'k kP', '特性'), el('span', '', c.psv || 'なし')); b.appendChild(r);
-  const s99 = DATA.GROWTH.stats(c, 99); b.appendChild(el('div', '', `Lv99の能力：HP${s99.hp}・ちから${s99.str}・ようりょく${s99.yo}・まもり${s99.def}。AIが操作するときは各90%。`));
+  const s99 = DATA.GROWTH.stats(c, 99); b.appendChild(el('div', '', `Lv99の能力：HP${s99.hp}・ちから${s99.str}・ようりょく${s99.yo}・まもり${s99.def}。AIが操作するときは各95%。`));
   if (c.form) b.appendChild(el('div', '', c.form + (c.isNew ? `（身長${c.h.toFixed(2)}m・${c.hr}頭身）` : '')));
   $('#infoPop').hidden = false;
 }

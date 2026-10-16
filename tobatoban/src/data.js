@@ -52,13 +52,13 @@ const SIM = {
   chargeMoveMul: p('移動', 'ため中の移動速度倍率', 0.5, 'ratio', 'proto'),
   inputBuffer: p('入力', '技の入力バッファ', 0.10, 'seconds', 'proto'),
   reviveTime: p('救助', '気絶した仲間のまわりの円に入って復活させるまで', 4.0, 'seconds', 'proto', null, 'ボタンは不要。円に誰もいないとゲージはゆっくり減る'),
-  reviveTimeMomiji: p('救助', 'モミジ翁が円に入っているときの復活まで', 2.7, 'seconds', 'proto', 24, 'パッシブ「救助が速い」'),
+  reviveTimeMomiji: p('救助', '木霊〈花守〉が円に入っているときの復活まで', 2.7, 'seconds', 'proto', 24, 'パッシブ「救助が速い」'),
   reviveRange: p('救助', '救助の円の半径', 1.6, 'm', 'proto'),
   reviveDrain: 0.5,
   reviveFaster: p('救助', '円に入っている人数ごとの速さ（かかる時間を減らす割合）', [0, 0, 0.25, 0.5], 'ratio', 'proto', null, '1人は4秒、2人なら25%短く（3秒）、3人なら50%短く（2秒）'),
   ascendTime: p('救助', '気絶から昇天まで', 30, 'seconds', 'proto', 2, '気絶と昇天の区別は資料。秒数は仮値'),
   reviveHp: p('救助', '救助後のHP割合', 1 / 3, 'ratio', 'proto', null, '最大HPの3分の1'),
-  reviveHpMomiji: p('救助', 'モミジ翁が救助したときのHP割合', 0.5, 'ratio', 'proto', 24),
+  reviveHpMomiji: p('救助', '木霊〈花守〉が救助したときのHP割合', 0.5, 'ratio', 'proto', 24),
   critRate: p('ダメージ', '通常の会心率', 0.05, 'ratio', 'proto'),
   critMul: p('ダメージ', '通常の会心倍率', 1.5, 'ratio', 'proto'),
   elemGood: p('ダメージ', '属性有利倍率（ボスの弱点：土）', 1.25, 'ratio', 'proto', null, '弱点の属性は資料準拠、倍率は原作未測定'),
@@ -77,15 +77,15 @@ const SIM = {
   lanternHold: p('灯籠', '灯すためにBを押す時間', 0.4, 'seconds', 'proto'),
   itemMax: p('アイテム', '1枠に持てる数', 3, 'count', 'proto'),
   itemStart: p('アイテム', '持ち込み数（各枠）', 2, 'count', 'proto', 2, '2枠は資料、数は仮値'),
-  foodHeal: p('パッシブ', 'ブリキドンの食べ物の回復量', 0.10, 'ratio(最大HP)', 'proto', 21, '30秒ごとの生成は資料'),
-  foodPeriod: p('パッシブ', 'ブリキドンの食べ物生成周期', 30, 'seconds', 'doc', 21),
+  foodHeal: p('パッシブ', '甲冑の付喪神の食べ物の回復量', 0.10, 'ratio(最大HP)', 'proto', 21, '30秒ごとの生成は資料'),
+  foodPeriod: p('パッシブ', '甲冑の付喪神の食べ物生成周期', 30, 'seconds', 'doc', 21),
   candyPeriod: p('キャンディー', '出てくる間隔', 20, 'seconds', 'proto', null, 'いま遊んでいる場所（通り／祭り広場）のどこかにランダム'),
   candyMax: p('キャンディー', '同時に置かれる最大数', 3, 'count', 'proto'),
   candyHeal: p('キャンディー', '回復量', 1, 'ratio(最大HP)', 'proto', null, '全回復。HPが満タンの仲間は拾わない'),
   homeRange: p('追尾', 'タップした敵へ弾が追尾する距離（体の表面まで）', 12, 'm', 'proto', null, 'これより遠い敵はタップしても狙えない。人が操作するキャラの弾だけ（AIの弾は追尾しない）'),
   homeMaxT: p('追尾', '追尾する弾の最長の飛行時間', 2.5, 'seconds', 'proto'),
   hitStagger: p('被弾', '重い攻撃でのけぞる時間', 0.45, 'seconds', 'proto'),
-  aiMul: p('AI', 'AIが動かすキャラの能力', 0.9, 'ratio', 'proto', null, 'ちから・ようりょく・まもり・体力・移動速度をすべて90%にする（操作を交代すると元に戻る）'),
+  aiMul: p('AI', 'AIが動かすキャラの能力', 0.95, 'ratio', 'proto', null, 'ちから・ようりょく・まもり・体力・移動速度をすべて95%にする（v7。操作を交代すると元に戻る）'),
 };
 
 /* ---------------- 難易度・ボス ---------------- */
@@ -150,7 +150,7 @@ const CHARGE = {
 const DODGE = {
   iv0: p('回避', '無敵開始', 0.10, 's', 'proto'), iv1: p('回避', '無敵終了', 0.32, 's', 'proto'),
   end: p('回避', '動作終了', 0.45, 's', 'proto'), cd: p('回避', '再使用', 3, 's', 'proto'), dist: p('回避', '移動距離', 2.4, 'm', 'proto'), moveT: 0.30,
-  kogePlus: p('パッシブ', 'コゲマル：回避無敵の延長', 0.08, 's', 'proto', 15, '「回避を成功させやすい」効果の仮値'),
+  kogePlus: p('パッシブ', '地縛霊：回避無敵の延長', 0.08, 's', 'proto', 15, '「回避を成功させやすい」効果の仮値'),
 };
 const RETREAT = { hit: p('後退攻撃', '発生', 0.12, 's', 'proto'), dist: p('後退攻撃', '後退距離', 2.0, 'm', 'proto'), end: p('後退攻撃', '動作終了', 0.55, 's', 'proto'), iv0: 0.10, iv1: p('後退攻撃', '無敵終了', 0.35, 's', 'proto'), cd: p('後退攻撃', '再使用', 5, 's', 'proto') };
 const SKILLS = {
@@ -190,16 +190,16 @@ const SP_INVULN = p('必殺', '本人の無敵区間', '発動〜動作終了', 
 // col=体の主色, acc=差し色, h=身長(基準味方=1), el=属性（新作の仮割当）
 function ch(o) { return o; }
 const CHARS = [
-  ch({ id: 'kogemaru', nm: 'コゲマル', role: '近接', blurb: '炭の小狸。三連と、ためた掌で押し込む', src: 15, h: 1.0, el: '火', str: 223, yo: 61, def: 124, A: 'combo3', Apw: [30, 30, 60], X: 'kogeShou', Y: 'dodge', sp: 'hits10', spNm: '炭火十連掌', passive: 'dodgePlus', psv: '回避の無敵が少し長い', col: 0x3b3a40, acc: 0xff7a2a, ai: 'melee' }),
-  ch({ id: 'hoshisuzume', nm: 'ホシスズメ', role: '射撃', blurb: '真鍮の星灯を持つ雀。離れて撃つ', src: 16, h: 0.9, el: '風', str: 229, yo: 81, def: 132, A: 'shot', Apw: [35], X: 'hoshiShot', Y: 'dodge', sp: 'hits8', spNm: '星灯大放射', passive: 'xPower', psv: 'X技の威力が上がる', col: 0x9a6a3e, acc: 0xf2c94c, ai: 'ranged' }),
-  ch({ id: 'akaneten', nm: 'アカネテン', role: '炎・継続', blurb: '夕焼け色のテン。妖術の炎と焦げつき印', src: 17, h: 1.15, el: '火', str: 143, yo: 241, def: 176, A: 'melee1', Apw: [50], X: 'akaneFire', Y: 'kogetsuki', sp: 'hits4', spNm: '紅灯四重陣', passive: 'fullHp', psv: 'HP満タンで攻撃が上がる', col: 0xe8683a, acc: 0xffe0b0, ai: 'mage' }),
-  ch({ id: 'kagetsubame', nm: 'カゲツバメ', role: '隠密', blurb: '影をまとう燕。狙われていない間は会心', src: 18, h: 1.05, el: '風', str: 240, yo: 146, def: 167, A: 'combo3', Apw: [30, 30, 60], X: 'kaeshiBane', Y: 'kageKakure', sp: 'hits10', spNm: '影羽十連', passive: 'stealthCrit', psv: '見つかっていない間の攻撃が必ず会心', col: 0x2a2f55, acc: 0xc9d4ff, ai: 'melee' }),
-  ch({ id: 'sayanosuke', nm: 'サヤノスケ', role: '反撃', blurb: '古い刀の鞘の付喪神。受け流して返す', src: 19, h: 1.15, el: '土', str: 246, yo: 144, def: 152, A: 'combo3', Apw: [30, 30, 60], X: 'ukenagashi', Y: 'hikiGiri', sp: 'one400', spNm: '鞘の一閃', passive: 'critPower', psv: '会心の威力が上がる', col: 0x2b1d1a, acc: 0xd8b04a, ai: 'melee' }),
-  ch({ id: 'taiko', nm: 'タイコ番長', role: '強打・支援', blurb: '太鼓を背負う小熊。重い一撃と麻痺のワナ', src: 20, h: 1.25, el: '土', str: 255, yo: 81, def: 158, A: 'melee1', Apw: [50], X: 'konshin', Y: 'shibire', sp: 'buff', spNm: '囃子の大号令', passive: 'partyStr', psv: '味方全員のちからが上がる', col: 0x7b4a2a, acc: 0xd23a3a, ai: 'melee' }),
-  ch({ id: 'burikidon', nm: 'ブリキドン', role: '射撃・防御', blurb: 'ブリキ缶の店番人形。ガードで敵を引きつける', src: 21, h: 1.1, el: '雷', str: 191, yo: 112, def: 213, A: 'shot', Apw: [70], X: 'daihigo', Y: 'guard', sp: 'guardup', spNm: '鉄壁店番', passive: 'food', psv: '30秒に一度、回復の食べ物を出す', col: 0xb9c2c9, acc: 0x2f6fb5, ai: 'tank' }),
-  ch({ id: 'norenbou', nm: 'ノレン坊', role: '誘導・反射', blurb: '暖簾をまとう付喪神。呼び込んで跳ね返す', src: 22, h: 1.2, el: '水', str: 196, yo: 119, def: 241, A: 'melee1', Apw: [50], X: 'yobikomi', Y: 'hansha', sp: 'guardup', spNm: '暖簾大結界', passive: 'guardPlus', psv: 'ガードの効果が上がる', col: 0x23407a, acc: 0xf4efe2, ai: 'tank' }),
-  ch({ id: 'kemuridama', nm: 'ケムリダマ', role: '吸収・地雷', blurb: '小さな煙のやかん。吸い取りと置き火薬', src: 23, h: 0.95, el: '風', str: 83, yo: 215, def: 131, A: 'melee1', Apw: [50], X: 'suiKemuri', Y: 'okiKayaku', sp: 'weaken', spNm: '煙払いの息', passive: 'partyCrit', psv: '味方全員の会心が出やすい', col: 0x8f9aa3, acc: 0xeae6dc, ai: 'mage' }),
-  ch({ id: 'momiji', nm: 'モミジ翁', role: '回復・蘇生', blurb: '楓の葉をまとう翁。ためて回復、救助が速い', src: 24, h: 1.05, el: '土', str: 117, yo: 256, def: 157, A: 'melee1', Apw: [50], X: 'megumi', Y: 'kaedeWa', sp: 'healall', spNm: '楓舞う祝福', passive: 'reviver', psv: '救助が速く、復活時のHPも多い', col: 0xc8452a, acc: 0xf6e6c8, ai: 'healer' }),
+  ch({ id: 'kogemaru', nm: '地縛霊', role: '近接', blurb: '炭の小狸。三連と、ためた掌で押し込む', src: 15, h: 1.0, el: '火', str: 223, yo: 61, def: 124, A: 'combo3', Apw: [30, 30, 60], X: 'kogeShou', Y: 'dodge', sp: 'hits10', spNm: '炭火十連掌', passive: 'dodgePlus', psv: '回避の無敵が少し長い', col: 0x3b3a40, acc: 0xff7a2a, ai: 'melee' }),
+  ch({ id: 'hoshisuzume', nm: '提灯火', role: '射撃', blurb: '真鍮の星灯を持つ雀。離れて撃つ', src: 16, h: 0.9, el: '風', str: 229, yo: 81, def: 132, A: 'shot', Apw: [35], X: 'hoshiShot', Y: 'dodge', sp: 'hits8', spNm: '星灯大放射', passive: 'xPower', psv: 'X技の威力が上がる', col: 0x9a6a3e, acc: 0xf2c94c, ai: 'ranged' }),
+  ch({ id: 'akaneten', nm: '九尾の狐', role: '炎・継続', blurb: '夕焼け色のテン。妖術の炎と焦げつき印', src: 17, h: 1.15, el: '火', str: 143, yo: 241, def: 176, A: 'melee1', Apw: [50], X: 'akaneFire', Y: 'kogetsuki', sp: 'hits4', spNm: '紅灯四重陣', passive: 'fullHp', psv: 'HP満タンで攻撃が上がる', col: 0xe8683a, acc: 0xffe0b0, ai: 'mage' }),
+  ch({ id: 'kagetsubame', nm: '大蛇', role: '隠密', blurb: '影をまとう燕。狙われていない間は会心', src: 18, h: 1.05, el: '風', str: 240, yo: 146, def: 167, A: 'combo3', Apw: [30, 30, 60], X: 'kaeshiBane', Y: 'kageKakure', sp: 'hits10', spNm: '影羽十連', passive: 'stealthCrit', psv: '見つかっていない間の攻撃が必ず会心', col: 0x2a2f55, acc: 0xc9d4ff, ai: 'melee' }),
+  ch({ id: 'sayanosuke', nm: '刀の付喪神', role: '反撃', blurb: '古い刀の鞘の付喪神。受け流して返す', src: 19, h: 1.15, el: '土', str: 246, yo: 144, def: 152, A: 'combo3', Apw: [30, 30, 60], X: 'ukenagashi', Y: 'hikiGiri', sp: 'one400', spNm: '鞘の一閃', passive: 'critPower', psv: '会心の威力が上がる', col: 0x2b1d1a, acc: 0xd8b04a, ai: 'melee' }),
+  ch({ id: 'taiko', nm: '鬼神', role: '強打・支援', blurb: '太鼓を背負う小熊。重い一撃と麻痺のワナ', src: 20, h: 1.25, el: '土', str: 255, yo: 81, def: 158, A: 'melee1', Apw: [50], X: 'konshin', Y: 'shibire', sp: 'buff', spNm: '囃子の大号令', passive: 'partyStr', psv: '味方全員のちからが上がる', col: 0x7b4a2a, acc: 0xd23a3a, ai: 'melee' }),
+  ch({ id: 'burikidon', nm: '甲冑の付喪神', role: '射撃・防御', blurb: 'ブリキ缶の店番人形。ガードで敵を引きつける', src: 21, h: 1.1, el: '雷', str: 191, yo: 112, def: 213, A: 'shot', Apw: [70], X: 'daihigo', Y: 'guard', sp: 'guardup', spNm: '鉄壁店番', passive: 'food', psv: '30秒に一度、回復の食べ物を出す', col: 0xb9c2c9, acc: 0x2f6fb5, ai: 'tank' }),
+  ch({ id: 'norenbou', nm: '唐傘', role: '誘導・反射', blurb: '暖簾をまとう付喪神。呼び込んで跳ね返す', src: 22, h: 1.2, el: '水', str: 196, yo: 119, def: 241, A: 'melee1', Apw: [50], X: 'yobikomi', Y: 'hansha', sp: 'guardup', spNm: '暖簾大結界', passive: 'guardPlus', psv: 'ガードの効果が上がる', col: 0x23407a, acc: 0xf4efe2, ai: 'tank' }),
+  ch({ id: 'kemuridama', nm: '幽霊', role: '吸収・地雷', blurb: '小さな煙のやかん。吸い取りと置き火薬', src: 23, h: 0.95, el: '風', str: 83, yo: 215, def: 131, A: 'melee1', Apw: [50], X: 'suiKemuri', Y: 'okiKayaku', sp: 'weaken', spNm: '煙払いの息', passive: 'partyCrit', psv: '味方全員の会心が出やすい', col: 0x8f9aa3, acc: 0xeae6dc, ai: 'mage' }),
+  ch({ id: 'momiji', nm: '木霊〈花守〉', role: '回復・蘇生', blurb: '楓の葉をまとう翁。ためて回復、救助が速い', src: 24, h: 1.05, el: '土', str: 117, yo: 256, def: 157, A: 'melee1', Apw: [50], X: 'megumi', Y: 'kaedeWa', sp: 'healall', spNm: '楓舞う祝福', passive: 'reviver', psv: '救助が速く、復活時のHPも多い', col: 0xc8452a, acc: 0xf6e6c8, ai: 'healer' }),
 ];
 const CHI = Object.fromEntries(CHARS.map(c => [c.id, c]));
 for (const c of CHARS) {
@@ -210,15 +210,15 @@ for (const c of CHARS) {
 p('技', '三連通常攻撃の威力', '30 / 30 / 60', 'power', 'doc', 27);
 p('技', '必殺 40×10 / 60×8 / 100×4 / 400×1 / 250', '技表のとおり', 'power×hits', 'doc', 15);
 const PASSIVE = {
-  xPower: p('パッシブ', 'ホシスズメ：X威力', 1.2, 'ratio', 'proto', 16),
-  fullHp: p('パッシブ', 'アカネテン：満タン時攻撃', 1.2, 'ratio', 'proto', 17),
-  critPower: p('パッシブ', 'サヤノスケ：会心倍率', 2.25, 'ratio', 'proto', 19),
-  partyStr: p('パッシブ', 'タイコ番長：味方ちから', 1.1, 'ratio', 'proto', 20),
-  guardPlus: p('パッシブ', 'ノレン坊：ガード中の被ダメージ倍率', 0.4, 'ratio', 'proto', 22),
-  partyCrit: p('パッシブ', 'ケムリダマ：味方の会心率加算', 0.10, 'ratio', 'proto', 23),
+  xPower: p('パッシブ', '提灯火：X威力', 1.2, 'ratio', 'proto', 16),
+  fullHp: p('パッシブ', '九尾の狐：満タン時攻撃', 1.2, 'ratio', 'proto', 17),
+  critPower: p('パッシブ', '刀の付喪神：会心倍率', 2.25, 'ratio', 'proto', 19),
+  partyStr: p('パッシブ', '鬼神：味方ちから', 1.1, 'ratio', 'proto', 20),
+  guardPlus: p('パッシブ', '唐傘：ガード中の被ダメージ倍率', 0.4, 'ratio', 'proto', 22),
+  partyCrit: p('パッシブ', '幽霊：味方の会心率加算', 0.10, 'ratio', 'proto', 23),
 };
 const DEFAULT_PARTY = ['kogemaru', 'hoshisuzume', 'burikidon', 'momiji'];
-const ELEM_COL = { 火: '#E4572E', 風: '#3FA37C', 土: '#B07A3A', 雷: '#D9B526', 水: '#3A86C8' };
+const ELEM_COL = { 火: '#E4572E', 風: '#3FA37C', 土: '#B07A3A', 雷: '#D9B526', 水: '#3A86C8', 氷: '#6FC6E8' };
 const PCOL = ['#E4572E', '#3F78D6', '#2FA36B', '#C98A12'];
 
 /* ---------------- アイテム ---------------- */

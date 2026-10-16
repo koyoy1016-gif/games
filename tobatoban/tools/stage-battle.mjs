@@ -3,7 +3,7 @@
 //   stage: senju / joban / ueno_street / ueno / akiba_platform / akiba_plaza
 import fs from 'fs'; import vm from 'vm'; import path from 'path'; import { fileURLToPath } from 'url';
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
-const src = ['data.js', 'roster_data.js', 'roster.js', 'sim.js', 'joban.js', 'street.js', 'ueno.js', 'akiba.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+const src = ['data.js', 'roster_data.js', 'roster_v7.js', 'roster.js', 'sim.js', 'joban.js', 'street.js', 'ueno.js', 'akiba.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console, Math, Set, Map, JSON, Object, Array, Number, String, Date });
 vm.runInContext(src + ';globalThis.__={DATA,SIMLIB}', ctx);
 const { DATA, SIMLIB } = ctx.__;
@@ -20,7 +20,7 @@ if (flags.why) { const orig = s.dealToAlly.bind(s); s.dealToAlly = function (o, 
 const st = { hurt: 0, downs: 0, sleep: [], twinFail: 0, orbs: 0, orbUse: 0, guns: 0, geo: [0, 0, 0, 0, 0] }, log = [];
 let lastMin = -1;
 for (let i = 0; i < 60 * 60 * 20; i++) {
-  s.allies.forEach((a, k) => s.setInput(k, s.aiInput(a, inputs[k])));
+  s.allies.forEach((a, k) => { const inp = s.aiInput(a, inputs[k]); if (k === 0 && s.stageId === 'senju' && s.stage === 'street' && !s.mobs.some(m => m.st === 'ok')) { inp.mx = 0; inp.mz = 1; } s.setInput(k, inp); }); // 北千住の通り：敵がいないときは人のように前へ歩く（AIは先頭について行くだけなので）
   s.step();
   for (const e of s.events) if (!e._c) { e._c = 1;
     if (e.type === 'hurt') st.hurt++; if (e.type === 'down') st.downs++; if (e.type === 'orbGet') st.orbs++; if (e.type === 'sp' && e.heavy) st.orbUse++; if (e.type === 'gun') st.guns++;

@@ -2,7 +2,7 @@
 // 使い方: node tobatoban/tools/sim-test.mjs
 import fs from 'fs'; import vm from 'vm'; import path from 'path'; import { fileURLToPath } from 'url';
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
-const src = ['data.js', 'roster_data.js', 'roster.js', 'sim.js', 'joban.js', 'street.js', 'ueno.js', 'akiba.js', 'proto.js'].filter(f => fs.existsSync(path.join(dir, f))).map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+const src = ['data.js', 'roster_data.js', 'roster_v7.js', 'roster.js', 'sim.js', 'joban.js', 'street.js', 'ueno.js', 'akiba.js', 'proto.js'].filter(f => fs.existsSync(path.join(dir, f))).map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console, Math, Set, Map, JSON, Object, Array, Number, String, Date });
 vm.runInContext(src + '\n;globalThis.__ = { DATA, SIMLIB, PROTO: typeof PROTO!=="undefined"?PROTO:null };', ctx);
 const { DATA, SIMLIB, PROTO } = ctx.__;
@@ -132,11 +132,11 @@ for (const [ch, n] of [['kogemaru', 10], ['hoshisuzume', 8], ['akaneten', 4], ['
   s.allies[2].x = a.x - 9; s.allies[3].x = a.x + 9;
   o.x = a.x + 1; o.z = a.z; o.hp = 1; s.dealToAlly(o, 999, 'str', s.boss, {});
   for (let i = 0; i < 60 * 2.8; i++) s.step();
-  ok(o.st === 'ok' && a.stats.revives === 1, `モミジ翁が円に入ると約2.7秒で救助（${o.st}・HP${Math.round(o.hp / o.maxHp * 100)}%）`);
+  ok(o.st === 'ok' && a.stats.revives === 1, `木霊〈花守〉が円に入ると約2.7秒で救助（${o.st}・HP${Math.round(o.hp / o.maxHp * 100)}%）`);
 }
 // 7.2) 円に入る人数が多いほど早い（1人4秒・2人3秒・3人2秒）
 for (const [n, sec] of [[2, 3], [3, 2]]) {
-  const s = testSim('kogemaru'); const o = s.allies[1]; // モミジ翁を気絶させ、ほかの3人で助ける
+  const s = testSim('kogemaru'); const o = s.allies[1]; // 木霊〈花守〉を気絶させ、ほかの3人で助ける
   s.allies.forEach((a, i) => { if (i !== 1) { a.x = 30; a.z = 30; } });
   o.x = 0; o.z = 8; o.hp = 1; o.inv = 0; s.dealToAlly(o, 999, 'str', s.boss, {});
   [0, 2, 3].slice(0, n).forEach((i, k) => { const a = s.allies[i]; a.x = o.x + [1, -1, 0][k]; a.z = o.z + [0, 0, 1][k]; });
@@ -171,10 +171,10 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   ok(s.stage === 'train' && ys.length === 30 && ys.filter(m => m.z > 1).length === 15 && ys.filter(m => m.z < -1).length === 15, `乗車直後に車内に30体（2号車側${ys.filter(m => m.z > 1).length}・3号車側${ys.filter(m => m.z < -1).length}）`);
   ok(s.allies.every(a => ys.every(m => dist(a, m) >= 2)), '味方の開始地点の周り2mには出さない');
   ok(ys.every(m => m.maxHp === 200 && m.def === 45 && m.str === 192 && m.yo === 209) && ys.every(m => (m.typ === 'sword' && m.wpn === 'sword') || (m.typ === 'punch' && m.wpn === 'fist') || (m.typ === 'beam' && m.wpn === 'beam')), '部下はHP200・ちから192・ようりょく209・まもり45、武器は型どおり');
-  // 基準：人が操作するLv20コゲマル（まもり89）への1発 55/65/80
-  const o = s.allies[0]; o.ctrlAI = false; s.syncAi(o); o.inv = 0; o.act = null;
+  // 基準：人が操作するLv20地縛霊（まもり89）への1発 55/65/80
+  const o = s.allies[0]; o.ctrlAI = false; s.syncAi(o); o.inv = 0; o.act = null; o.stt.def = 89; // 部下の式の基準（v7で成長式が変わったので、まもりを基準値に固定して比べる）
   const vals = ['sword', 'punch', 'beam'].map(k => { const T = J.types[k]; o.hp = o.maxHp; const h0 = o.hp; s.hz({ kind: 'circle', x: o.x, z: o.z, r: 1, warn: 0, act: 0.1, pw: T.pw, stat: T.stat, srcStats: { str: T.str, yo: T.yo }, src: 'mob' }); s.updateHazards(1 / 60); s.hazards = []; return h0 - o.hp; });
-  ok(s.stat(o, 'def') === 89 && vals.join('/') === '55/65/80', `Lv20コゲマル（まもり${s.stat(o, 'def')}）への1発：剣・パンチ・ビーム＝${vals.join('/')}（基準55/65/80）`);
+  ok(s.stat(o, 'def') === 89 && vals.join('/') === '55/65/80', `Lv20地縛霊（まもり${s.stat(o, 'def')}）への1発：剣・パンチ・ビーム＝${vals.join('/')}（基準55/65/80）`);
   // 攻撃権：剣・パンチ4体・ビーム2体
   { let maxM = 0, maxB = 0; s.allies.forEach(a => { a.inv = 1e9; });
     for (let i = 0; i < 60 * 12; i++) { s.step(); const at = s.mobs.filter(m => m.kind === 'yoshi' && m.act && m.st === 'ok'); maxM = Math.max(maxM, at.filter(m => m.typ !== 'beam').length); maxB = Math.max(maxB, at.filter(m => m.typ === 'beam').length); }
@@ -214,7 +214,7 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   const s = new Sim({ party, seed: 5, stageId: 'ueno_street', test: true });
   const ys = s.mobs.filter(m => m.kind === 'yoshi'), cnt = k => ys.filter(m => m.typ === k).length;
   ok(ys.length === 30 && cnt('sword') === 10 && cnt('punch') === 10 && cnt('beam') === 10 && ys.every(m => m.maxHp === 250 && m.str === 240 && m.yo === 261 && m.def === 45), `通りの部下30体（剣${cnt('sword')}・パンチ${cnt('punch')}・ビーム${cnt('beam')}、HP250・ちから240・ようりょく261・まもり45）`);
-  const o = s.allies[0]; o.ctrlAI = false; s.syncAi(o); o.inv = 0;
+  const o = s.allies[0]; o.ctrlAI = false; s.syncAi(o); o.inv = 0; o.stt.def = 89;
   const vals = ['sword', 'punch', 'beam'].map(k => { const T = s.ycfg.types[k]; o.hp = o.maxHp; o.act = null; const h0 = o.hp; s.hz({ kind: 'circle', x: o.x, z: o.z, r: 1, warn: 0, act: 0.1, pw: T.pw, stat: T.stat, srcStats: { str: T.str, yo: T.yo }, src: 'mob' }); s.updateHazards(1 / 60); s.hazards = []; return h0 - o.hp; });
   ok(vals.join('/') === '69/82/100', `まもり89への1発：剣・パンチ・ビーム＝${vals.join('/')}（基準69/82/100）`);
   const c = s.clampStreet(0, 10, 0, 40, 0.35); ok(c[1] < DATA.STREET.gates[0], '最初の地点を片付けるまで、暖簾の結界の先へは行けない');
@@ -242,7 +242,7 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
   const M = U.moves, list = [[M.reiko.pw, 'yo'], [M.shosho.pw, 'str'], [M.stamp.pw, 'str'], [M.shosha.pw, 'yo'], [M.tengai.pw, 'yo'], [M.throw50.pw, 'yo']];
   const v1 = list.map(([p, st]) => hitBy(s, ko, p, st)).join('/'), v2 = list.map(([p, st]) => hitBy(nr, n0, p, st)).join('/');
   const ex = (o, sim) => list.map(([p, st]) => Math.max(1, Math.round(p * (st === 'yo' ? sim.boss.yo : sim.boss.str) / (DATA.SIM.defBase + sim.stat(o, 'def'))))).join('/');
-  ok(v1 === ex(ko, s) && v2 === ex(n0, nr), `Lv40：コゲマル ${v1}／ノレン坊 ${v2}（式どおり ${ex(ko, s)}・${ex(n0, nr)}）`);
+  ok(v1 === ex(ko, s) && v2 === ex(n0, nr), `Lv40：地縛霊 ${v1}／唐傘 ${v2}（式どおり ${ex(ko, s)}・${ex(n0, nr)}）`);
   ok(M.reiko.r === 0.6 && M.stamp.r === 5 && M.shosha.cd === 8 && M.tengai.per * M.tengai.waves.length === 36, '霊光の判定半径0.60・スタンプ半径5.0m・四連の再使用8秒・三十六光（12本×3波）');
 }
 { // HP段階ロック・3段階の睡眠（2,500/3,500/4,000）・成功ごとに4秒ダウン・失敗は全回復でやり直し
@@ -382,9 +382,9 @@ for (const [n, sec] of [[2, 3], [3, 2]]) {
     ok(mn >= M.dmg[0] / avg - 1e-9 && mx <= M.dmg[1] / avg + 1e-9 && mx - mn > 0.05, `1発ごとの幅：×${mn.toFixed(3)}〜×${mx.toFixed(3)}`);
     pf.hazards = []; og.act = null;
     const d = hit(M.pw, 'str'), ex = Math.round(M.pw * 600 / (120 + pf.stat(kg, 'def')) * pf.lvIn);
-    ok(d === ex && Math.abs(pf.lvIn - 0.9) < 1e-9, `Lv60カゲツバメ（まもり${pf.stat(kg, 'def')}）へ紅扇たたきの基準 ${d}（式どおり。ホームの基準Lv50なので被ダメージ×${pf.lvIn.toFixed(2)}）`);
+    ok(d === ex && Math.abs(pf.lvIn - 0.9) < 1e-9, `Lv60大蛇（まもり${pf.stat(kg, 'def')}）へ紅扇たたきの基準 ${d}（式どおり。ホームの基準Lv50なので被ダメージ×${pf.lvIn.toFixed(2)}）`);
   }
-  { const eqp = new Sim({ party: party(60, { eq: ['charm_gold', 'bracer_gold'] }), seed: 2, stageId: 'akiba_platform', test: true }); const k2 = eqp.allies[0]; k2.ctrlAI = false; eqp.syncAi(k2); k2.hp = k2.maxHp; const h0 = k2.hp; eqp.dealToAlly(k2, 49, 'yo', eqp.foe('oga'), {}); const ex2 = Math.round(49 * 600 / (120 + 214) * eqp.lvIn); ok(eqp.stat(k2, 'def') === 214 && h0 - k2.hp === ex2, `まもり＋50%装備（まもり${eqp.stat(k2, 'def')}）では妖術49が${h0 - k2.hp}（式どおり${ex2}）`); }
+  { const eqp = new Sim({ party: party(60, { eq: ['charm_gold', 'bracer_gold'] }), seed: 2, stageId: 'akiba_platform', test: true }); const k2 = eqp.allies[0]; k2.ctrlAI = false; eqp.syncAi(k2); k2.hp = k2.maxHp; const h0 = k2.hp; eqp.dealToAlly(k2, 49, 'yo', eqp.foe('oga'), {}); const dq = DATA.GROWTH.withEquip(DATA.GROWTH.stats(DATA.CHI[k2.ch], 60), ['charm_gold', 'bracer_gold']).def, ex2 = Math.round(49 * 600 / (120 + dq) * eqp.lvIn); ok(eqp.stat(k2, 'def') === dq && h0 - k2.hp === ex2, `まもり＋50%装備（まもり${eqp.stat(k2, 'def')}）では妖術49が${h0 - k2.hp}（式どおり${ex2}）`); }
   pf.dealToEnemy(kg, og, 1e6, 'str', 'A', null); for (let i = 0; i < 60 * 20; i++) pf.step();
   ok(og.st === 'down' && pf.stage !== 'won', 'オガだけ倒しても復活しないし、まだ勝ちではない');
   pf.dealToEnemy(kg, ka, 1e6, 'str', 'A', null);
@@ -521,6 +521,43 @@ if (PROTO) {
   const stop = go(1 / 60, 0, 0), again = go(0.5, 0, 1);
   ok(!w99 && w105 && !stop && !again, `自動ダッシュ：0.99秒は歩き（${w99}）→1秒を超えるとダッシュ（${w105}）→止めると解除（${stop}）→また歩きから（${again}）`);
   p0.tired = true; p0.stam = 0; go(1.2, 0, 1); ok(!p0.dashing, '息切れ中は自動でもダッシュしない');
+}
+// v7：設定表の技（神速アタック・よろい砕き／刀狩り・陣・無敵）と固有スキル
+{
+  const byKind = (kind, f) => DATA.CHARS.find(c => ['X', 'Y'].some(k => DATA.SKILLS[c[k]].kind === kind && (!f || f(DATA.SKILLS[c[k]]))));
+  const slotOf = (c, kind) => ['X', 'Y'].find(k => DATA.SKILLS[c[k]].kind === kind);
+  // 神速アタック：4m先の敵へ踏み込んで当てる
+  { const c = byKind('lunge'), k = slotOf(c, 'lunge'), s = testSim(c.id), a = s.allies[0]; s.boss.z = 14; s.barrier = 'none'; const z0 = a.z, hp0 = s.boss.hp;
+    run(s, 0, [[0, k + '+'], [0.02, k + '-']], 0.8);
+    ok(a.z - z0 > 2.5 && s.boss.hp < hp0 && a.cd[k] > 0, `神速アタック（${c.nm}）：${(a.z - z0).toFixed(1)}m踏み込んで命中（${hp0 - s.boss.hp}）・再使用待ち${a.cd[k].toFixed(1)}秒`); }
+  // よろい砕き：当てた敵のまもりが下がる
+  { const c = byKind('breaker', sk => sk.stats[0] === 'def'), k = slotOf(c, 'breaker'), s = testSim(c.id);
+    run(s, 0, [[0, k + '+'], [0.02, k + '-']], 0.6);
+    ok(s.debuffMul(s.boss, 'def') < 1 && s.boss.hp < 1e9, `よろい砕き（${c.nm}）：当てた敵のまもり×${s.debuffMul(s.boss, 'def').toFixed(2)}`); }
+  { const c = byKind('breaker', sk => sk.stats.includes('str')), k = slotOf(c, 'breaker'), s = testSim(c.id);
+    run(s, 0, [[0, k + '+'], [0.02, k + '-']], 0.6);
+    ok(s.debuffMul(s.boss, 'str') < 1 && s.debuffMul(s.boss, 'yo') < 1, `刀狩り（${c.nm}）：ちから×${s.debuffMul(s.boss, 'str').toFixed(2)}・ようりょく×${s.debuffMul(s.boss, 'yo').toFixed(2)}`); }
+  // 陣：押している間だけ効果・離すと終わって再使用待ち
+  { const c = byKind('zone', sk => sk.side === 'ally'), k = slotOf(c, 'zone'), s = testSim(c.id), a = s.allies[0], o = s.allies[1]; o.x = a.x + 1; o.z = a.z;
+    run(s, 0, [[0, k + '+', 2.0]], 1.0); const during = s.buffMul(o, 'str'), act = a.act && a.act.k;
+    run(s, 0, [[0, k + '-']], 0.2); run(s, 0, [], 1.2);
+    ok(during > 1 && act === 'zone' && !a.act && a.cd[k] > 0 && s.buffMul(o, 'str') === 1, `${DATA.SKILLS[c[k]].nm}（${c.nm}）：押している間だけ味方のちから×${during.toFixed(2)}、離すと終わり再使用待ち`); }
+  { const c = byKind('zone', sk => sk.side === 'heal'), k = slotOf(c, 'zone'), s = testSim(c.id), a = s.allies[0], o = s.allies[1]; o.x = a.x + 1; o.z = a.z; o.hp = Math.round(o.maxHp / 2); const h0 = o.hp;
+    run(s, 0, [[0, k + '+', 9]], 8); ok(o.hp > h0 && !a.act && a.cd[k] > 0, `回復の陣（${c.nm}）：周りの味方が回復（${h0}→${o.hp}）・最大${DATA.SKILLS[c[k]].max}秒で自動で終わる`); }
+  // 無敵：自分だけ3秒
+  { const c = byKind('protect', sk => sk.self), k = slotOf(c, 'protect'), s = testSim(c.id), a = s.allies[0];
+    run(s, 0, [[0, k + '+'], [0.02, k + '-']], 0.5); const d = s.dealToAlly(a, 500, 'str', s.boss, {});
+    ok(d === 0 && a.inv > 2, `無敵（${c.nm}）：受けるダメージ0（残り${a.inv.toFixed(1)}秒）`); }
+  // 固有：ためが速い（同じためで比率が大きい）
+  { const c = DATA.CHARS.find(q => q.passive === 'fastCharge'), k = ['X', 'Y'].find(k => DATA.SKILLS[c[k]].kind === 'charge'), s = testSim(c.id), a = s.allies[0];
+    run(s, 0, [[0, k + '+', 0.3]], 0.25); const r = a.act && a.act.ratio;
+    ok(r > 0.25 / DATA.CHARGE.max * 1.3, `固有「ためが速い」（${c.nm}）：0.25秒で${(r * 100).toFixed(0)}%（ふつうは${(0.25 / DATA.CHARGE.max * 100).toFixed(0)}%）`); }
+  // すべての60体：X・Yを押して離してもエラーにならない
+  { let bad = []; for (const c of DATA.CHARS) { try { const s = testSim(c.id); run(s, 0, [[0, 'X+', 0.4], [0.4, 'X-'], [1.2, 'Y+', 1.6], [1.6, 'Y-'], [2.4, 'A']], 3.2); } catch (e) { bad.push(c.id + ':' + e.message); } }
+    ok(!bad.length, `60体すべてで A・X・Y が動く（${bad.join(' ') || 'エラーなし'}）`); }
+  // 初期10体・ガチャ50体・役職の数
+  const cnt = r => DATA.CHARS.filter(c => c.isNew && c.roleId === r).length;
+  ok(DATA.GACHA_IDS.length === 50 && DATA.GACHA_IDS.every(id => DATA.CHI[id].isNew) && DATA.CHARS.filter(c => !c.isNew).length === 10 && cnt('attacker') === 20 && cnt('healer') === 10 && cnt('ranger') === 10 && cnt('tank') === 10, `初期10体＋ガチャ50体、追加50体はアタッカー${cnt('attacker')}・ヒーラー${cnt('healer')}・レンジャー${cnt('ranger')}・タンク${cnt('tank')}`);
 }
 console.log(fails ? `\n${fails}件の失敗` : '\nすべて合格');
 process.exit(fails ? 1 : 0);

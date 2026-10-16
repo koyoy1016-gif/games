@@ -34,7 +34,7 @@ const SAVE = (() => {
   const STAGES = ['senju', 'joban', 'ueno_street', 'ueno', 'akiba_platform', 'akiba_plaza']; // クリアした回数をステージごとに持つ
   const INIT_IDS = () => DATA.CHARS.filter(c => !c.isNew).map(c => c.id); // 既存10体（いつも所持）
   const charRec = (got, seen) => ({ lv: 1, exp: 0, got: got || 0, seen: seen ? 1 : 0, b: 0, w: 0, k: 0, eq: [] });
-  function freshChars(now) { const o = {}; for (const id of INIT_IDS()) o[id] = charRec(0, 1); for (const id of DATA.NEW_D_IDS) o[id] = charRec(now, 0); return o; }
+  function freshChars(now) { const o = {}; for (const id of INIT_IDS()) o[id] = charRec(0, 1); return o; } // v7：新しいアカウントは既存10体だけ（追加50体はガチャ）
   function freshClear() { const o = {}; for (const k of STAGES) o[k] = 0; return o; }
   const freshPrefs = () => ({ sort: 'level_desc', rank: [], role: [], tags: [], q: '', newOnly: false });
   function fresh(id, pw) {
@@ -56,11 +56,11 @@ const SAVE = (() => {
     o.rewarded = Array.isArray(s.rewarded) ? s.rewarded.slice(-40) : []; o.gacha = { log: Array.isArray(s.gacha && s.gacha.log) ? s.gacha.log.slice(-30) : [] };
     o.uenoOpen = !!s.uenoOpen || o.clear.ueno_street > 0 || o.clear.ueno > 0; // 旧版でボスを解放済みならそのまま（新規は通りのクリアで解放）
     o.akibaOpen = !!s.akibaOpen || o.clear.ueno > 0; o.walkSeen = !!s.walkSeen; mig.v5 = 1; o.fcode = typeof s.fcode === 'string' ? s.fcode.slice(0, 8) : '';
-    // キャラ：既存10体は必ず所持。追加Dの10体は一度だけ配る（もう持っていれば Lv1 に戻さない）
+    // キャラ：既存10体は必ず所持。追加キャラは持っている分だけ残す（v7からDも配らない。v6までに配られた分は取り上げない）
     const ch = {}; const src = s.chars || {};
     for (const id of INIT_IDS()) ch[id] = Object.assign(charRec(0, 1), src[id] || {});
     for (const c of DATA.CHARS) if (c.isNew && src[c.id]) ch[c.id] = Object.assign(charRec(0, 1), src[c.id]);
-    if (!mig.d) { const now = Date.now(); for (const id of DATA.NEW_D_IDS) if (!ch[id]) ch[id] = charRec(now, 0); mig.d = 1; }
+    mig.d = 1;
     for (const id in ch) {
       const x = ch[id], c = DATA.CHI[id]; if (!c) { delete ch[id]; continue; }
       for (const k of ['b', 'w', 'k', 'got', 'used']) x[k] = int(x[k]); x.seen = x.seen ? 1 : 0;
@@ -148,7 +148,7 @@ const SAVE = (() => {
   function gachaPool(s) { return DATA.GACHA_IDS.filter(id => !owns(s, id)); }
   /** いまの実際のランク別割合（未所持の数×重みを正規化）。全員所持のランクは0% */
   function gachaRates(s) {
-    const pool = gachaPool(s), W = DATA.GACHA.weight; let tot = 0; const r = { C: 0, B: 0, A: 0, S: 0 };
+    const pool = gachaPool(s), W = DATA.GACHA.weight; let tot = 0; const r = { D: 0, C: 0, B: 0, A: 0, S: 0 };
     for (const id of pool) { const k = DATA.CHI[id].rank; r[k] += W[k]; tot += W[k]; }
     for (const k in r) r[k] = tot > 0 ? r[k] / tot : 0; return r;
   }
@@ -156,7 +156,7 @@ const SAVE = (() => {
   function gachaDraw(s, reqId, rnd) {
     const done = s.gacha.log.find(g => g.req === reqId); if (done) return { ok: true, again: true, res: done };
     if (s.tickets < 1) return { ok: false, msg: 'チケットがありません' };
-    const pool = gachaPool(s); if (!pool.length) return { ok: false, complete: true, msg: '全40体を入手済みです' };
+    const pool = gachaPool(s); if (!pool.length) return { ok: false, complete: true, msg: '全50体を入手済みです' };
     const W = DATA.GACHA.weight; let tot = 0; for (const id of pool) tot += W[DATA.CHI[id].rank];
     let x = (rnd == null ? Math.random() : rnd) * tot, pick = pool[pool.length - 1];
     for (const id of pool) { x -= W[DATA.CHI[id].rank]; if (x < 0) { pick = id; break; } }
@@ -164,7 +164,7 @@ const SAVE = (() => {
     const res = { req: reqId, id: pick, rank: DATA.CHI[pick].rank, t: now }; s.gacha.log.push(res); if (s.gacha.log.length > 30) s.gacha.log = s.gacha.log.slice(-30);
     return { ok: true, res };
   }
-  /** 40体すべて入手済みのとき：1枚を、選んだ所持キャラ1体のEXP10,000と交換（協力・AI倍率は付けない） */
+  /** 50体すべて入手済みのとき：1枚を、選んだ所持キャラ1体のEXP10,000と交換（協力・AI倍率は付けない） */
   function gachaExchange(s, id, reqId) {
     const done = s.gacha.log.find(g => g.req === reqId); if (done) return { ok: true, again: true, res: done };
     if (gachaPool(s).length) return { ok: false, msg: 'まだ入手していないキャラがいます' };

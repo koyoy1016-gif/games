@@ -1,6 +1,6 @@
 /* =====================================================================
    render_models.js — もののけ10体・トバトーバ・札小僧（すべて新規の造形）
-   基準味方（コゲマル）の身長=1。ボスは同じ単位で高さ5.0。
+   基準味方（地縛霊）の身長=1。ボスは同じ単位で高さ5.0。
    ===================================================================== */
 (() => {
   const L = (c, o) => GFX.lam(c, o);
@@ -156,7 +156,8 @@
   };
   GFX.bipedParts = { biped, limbs, eyes };
   GFX.makeChar = (c) => {
-    const d = DIMS[c.id] || GFX.newDims(c), m = biped(d); (BUILDERS[c.id] || GFX.NEW_BUILDERS[c.id] || GFX.NEW_BUILDERS._default)(m, c, d);
+    const V = GFX.V7 && GFX.V7[c.id]; // v7：60体の確定仕様の造形（render_v7.js）
+    const d = V ? V.dims(c) : (DIMS[c.id] || GFX.newDims(c)), m = biped(d); (V ? V.build : (BUILDERS[c.id] || GFX.NEW_BUILDERS[c.id] || GFX.NEW_BUILDERS._default))(m, c, d);
     m.root.scale.setScalar(c.h); m.c = c; m.h = c.h; m.d = d;
     m.shadow = GFX.blob(0.45 * c.h); m.shadow.position.y = 0.02;
     m.mats = []; m.root.traverse(o => { if (o.material && !Array.isArray(o.material)) { o.material = o.material.clone(); o.material.transparent = true; m.mats.push(o.material); } });
@@ -196,6 +197,8 @@
       case 'dodge': { const k = sat(t / 0.32); P.roll = k * Math.PI * 2; P.bodyY -= 0.12 * Math.sin(k * Math.PI); P.aLx = P.aRx = -1.0; break; }
       case 'retreat': { const k = sat(1 - Math.abs(t - 0.12) / 0.12); P.aRx = -1.8 * k; P.aRz = 0.6 * k; P.lean = t > 0.15 ? -0.25 : 0.2; break; }
       case 'cast': case 'stealth': P.aLz = -1.6; P.aRz = 1.6; P.bodyY += 0.03; break;
+      case 'lunge': { const k = sat(t / 0.08) * (1 - sat((t - 0.3) / 0.25)); P.lean = 0.45 * k; P.aRx = t < 0.3 ? -0.6 : -2.2 * (1 - sat((t - 0.3) / 0.2)); P.aLx = 0.8 * k; break; } // 神速アタック：前のめりに踏み込む
+      case 'zone': { const w = Math.sin(T * 6) * 0.15; P.aLz = -2.2 + w; P.aRz = 2.2 - w; P.bodyY += 0.04; break; } // 陣：両手を広げて保つ
       case 'parry': P.aLx = -1.3; P.aRx = -1.3; P.aLz = 0.6; P.aRz = -0.6; P.lean = -0.05; break;
       case 'counter': { const k = sat(1 - t / 0.3); P.aRx = -2.0 * k; P.tw = -0.6 * k; P.lean = 0.3 * k; break; }
       case 'heavy': { if (t < 1.1) { const k = sat(t / 0.6); P.aLx = P.aRx = -2.8 * k; P.lean = -0.25 * k; P.bodyY += 0.03 * k; } else { const k = sat((t - 1.1) / 0.12); P.aLx = P.aRx = lerp(-2.8, -0.6, k); P.lean = lerp(-0.25, 0.45, k); P.bodyY -= 0.06 * k; } break; }
@@ -212,6 +215,7 @@
     if (m.extra.panels) m.extra.panels.children.forEach((p, i) => p.rotation.x = Math.sin(T * 3 + i) * 0.08 + (a.moving ? -0.25 : 0));
     if (a.hurt) P.lean -= 0.12;
     apply(m, P);
+    if (m.extra.anim) m.extra.anim(m, P, a, T, dt, act, t); // v7：四足・蛇・道具などの固有の動き
     // 透明度（隠密）・被弾の赤
     const alpha = a.stealth ? (opts && opts.me ? 0.5 : 0.32) : 1;
     setAlpha(m, alpha);

@@ -30,11 +30,11 @@ function renderGachaInfo() {
     const d = el('div', 'pg'); d.append(el('span', '', nm)); const pp = el('span', 'pips'); for (let i = 0; i < per; i++) pp.appendChild(el('i', i < w % per ? 'on' : '')); d.append(pp, el('span', 'small', `${w % per}/${per}勝で1枚`)); pg.appendChild(d);
   }
   const pool = SAVE.gachaPool(a || G.guest).length, done = pool === 0;
-  $('#gcNote').textContent = (a ? '' : 'ログインすると、チケットを使って引けます（いまは説明と演出見本だけ）。') + `トバトーバ3勝・ヨシノシン2勝ごとにチケット1枚。チケットは貯められます。まだ持っていない仲間から1体が出ます（未入手 ${pool} / 40体）。`;
+  $('#gcNote').textContent = (a ? '' : 'ログインすると、チケットを使って引けます（いまは説明と演出見本だけ）。') + `トバトーバ3勝・ヨシノシン2勝ごとにチケット1枚。チケットは貯められます。まだ持っていない仲間から1体が出ます（未入手 ${pool} / 50体）。`;
   const dr = $('#btnGcDraw'); dr.hidden = done; dr.textContent = !a ? 'ログインして引く' : '1回まわす（1枚）'; dr.disabled = !!a && (a.tickets < 1 || GC.busy);
   const ex = $('#gcEx'); ex.hidden = !(done && a); ex.textContent = '';
-  if (done && a) { // 全40体を入手したら、1枚を選んだキャラのEXP10,000と交換
-    ex.appendChild(el('b', '', '全40体を入手済みです')); ex.appendChild(el('span', '', 'チケット1枚を、選んだ1体のEXP 10,000と交換できます（協力・AIの倍率は付きません）。'));
+  if (done && a) { // 全50体を入手したら、1枚を選んだキャラのEXP10,000と交換
+    ex.appendChild(el('b', '', '全50体を入手済みです')); ex.appendChild(el('span', '', 'チケット1枚を、選んだ1体のEXP 10,000と交換できます（協力・AIの倍率は付きません）。'));
     const sel = el('select'); for (const c of DATA.CHARS) if (a.chars[c.id]) { const o = el('option', '', `${c.nm}（Lv${a.chars[c.id].lv}）`); o.value = c.id; sel.appendChild(o); } ex.appendChild(sel);
     const b = el('button', 'btn gold', '1枚と交換する'); b.type = 'button'; b.disabled = a.tickets < 1; b.onclick = async () => { const req = 'x' + Date.now().toString(36); const r = SAVE.gachaExchange(a, sel.value, req); if (!r.ok) { mtoast(r.msg); return; } const ok = await persist(); mtoast(ok ? `${DATA.CHI[sel.value].nm}に EXP 10,000（Lv${r.res.lv0}→${r.res.lv1}）` : '保存できませんでした。「セーブ」を押してください', 3000); renderGachaInfo(); }; ex.appendChild(b);
   }
@@ -194,7 +194,7 @@ async function gcDraw() {
   gcPlay(r.res, false);
   STORE.set('gcPending', null);
 }
-function gcSample() { const ks = ['C', 'B', 'A', 'S'], rk = ks[(Math.random() * 4) | 0], ids = DATA.GACHA_IDS.filter(id => DATA.CHI[id].rank === rk); gcPlay({ id: ids[(Math.random() * ids.length) | 0], rank: rk }, true); }
+function gcSample() { const ks = ['D', 'C', 'B', 'A', 'S'], rk = ks[(Math.random() * 5) | 0], ids = DATA.GACHA_IDS.filter(id => DATA.CHI[id].rank === rk); gcPlay({ id: ids[(Math.random() * ids.length) | 0], rank: rk }, true); }
 function bindGacha() {
   $('#btnGcDraw').onclick = () => gcDraw();
   $('#btnGcAgain').onclick = () => { gcReset(); gcDraw(); };

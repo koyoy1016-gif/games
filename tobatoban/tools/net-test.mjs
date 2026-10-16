@@ -1,7 +1,7 @@
 // 通信の自動検査：往復100ms/200ms・重複・欠落があっても二重ダメージやHP不一致が起きないか
 import fs from 'fs'; import vm from 'vm'; import path from 'path'; import { fileURLToPath } from 'url';
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
-const src = ['data.js', 'roster_data.js', 'roster.js', 'sim.js', 'joban.js', 'street.js', 'ueno.js', 'akiba.js', 'proto.js', 'net.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+const src = ['data.js', 'roster_data.js', 'roster_v7.js', 'roster.js', 'sim.js', 'joban.js', 'street.js', 'ueno.js', 'akiba.js', 'proto.js', 'net.js'].map(f => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
 const ctx = vm.createContext({ console, Math, Set, Map, JSON, Object, Array, Number, String, Date, performance });
 vm.runInContext(src + ';globalThis.__={DATA,SIMLIB,PROTO,NETLIB,Sim}', ctx);
 const { DATA, SIMLIB, NETLIB, Sim } = ctx.__;
@@ -31,9 +31,9 @@ function scenario(lat, dup, drop) {
   cli.local.push('SP'); cli2.local.push('SP'); host.local.push('SP');
   run(0.05); cli.local.push('A');
   run(4);
-  const n1 = s.mlog.filter(l => l.slot === cs1 && l.nm === '星灯大放射');
-  const n2 = s.mlog.filter(l => l.slot === cs2 && l.nm === '紅灯四重陣');
-  const n0 = s.mlog.filter(l => l.slot === 0 && l.nm === '炭火十連掌');
+  const n1 = s.mlog.filter(l => l.slot === cs1 && l.nm === DATA.CHI.hoshisuzume.spNm);
+  const n2 = s.mlog.filter(l => l.slot === cs2 && l.nm === DATA.CHI.akaneten.spNm);
+  const n0 = s.mlog.filter(l => l.slot === 0 && l.nm === DATA.CHI.kogemaru.spNm);
   ok(n1.length === 1 && n1[0].hits.length === 8, `参加者1の必殺は1回だけ・8回命中（${n1.length}回, ${n1[0] && n1[0].hits.length}hit）`);
   ok(n2.length === 1 && n2[0].hits.length === 4, `参加者2の必殺は1回だけ・4回命中（${n2.length}回, ${n2[0] && n2[0].hits.length}hit）`);
   ok(n0.length === 1 && n0[0].hits.length === 10, `ホストの必殺は1回だけ・10回命中`);
