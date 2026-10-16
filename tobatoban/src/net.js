@@ -8,25 +8,51 @@
 const NETLIB = (() => {
   const VERSION = 'tb6'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
   const hashStr = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
-  const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+  let clock = null; // 検査用に時計を差しかえられる
+  const now = () => clock ? clock() : (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
+  /* ---------- 開発者向けの通信ログ（?debug=net で画面にも出す） ---------- */
+  const LOG = []; let logT0 = 0; const logL = new Set();
+  function log(tag, msg) {
+    const T = now(); if (!logT0) logT0 = T;
+    const e = { t: +((T - logT0) / 1000).toFixed(2), tag, msg: msg == null ? '' : String(msg).slice(0, 200) };
+    LOG.push(e); if (LOG.length > 300) LOG.shift();
+    try { if (typeof location !== 'undefined' && /debug=net/.test(location.search)) console.debug('[net]', e.t, tag, e.msg); } catch (er) { }
+    for (const f of logL) try { f(e); } catch (er) { }
+  }
   /* ---------- トランスポート ---------- */
+  // 追加のICEサーバー（TURNなど）。公開HTMLへ長期の秘密は書かない。短期の認証情報を返すURLを使うときは ICE_URL へ
+  const ICE = { turn: [], url: '' };
   class P2PTransport {
     static async open(code, base) {
+      const t0 = now(); log('lib', '読み込み開始');
       const mod = await import(base || './trystero-nostr.js');
-      const room = mod.joinRoom({ appId: 'kitasenju-tobatoban-v1', password: code }, 'tb-' + hashStr(code));
-      return new P2PTransport(room, mod.selfId);
+      log('lib', `読み込み完了 ${Math.round(now() - t0)}ms`);
+      let turn = ICE.turn.slice();
+      if (ICE.url) { try { const r = await fetch(ICE.url); const j = await r.json(); if (Array.isArray(j.iceServers)) turn = turn.concat(j.iceServers); log('ice', `TURN設定を取得 ${turn.length}件`); } catch (e) { log('ice', 'TURN設定を取得できない: ' + (e && e.message)); } }
+      const holder = { tr: null, err: [] };
+      const cfg = { appId: 'kitasenju-tobatoban-v1', password: code };
+      if (turn.length) cfg.turnConfig = turn;
+      const room = mod.joinRoom(cfg, 'tb-' + hashStr(code), {
+        onJoinError: e => { const m = (e && e.error) || 'join error'; log('join-error', m); holder.err.push(m); if (holder.tr && holder.tr.h.err) holder.tr.h.err(m, e && e.peerId); },
+      });
+      log('room', `参加要求（ルーム tb-${hashStr(code)}・自分 ${String(mod.selfId).slice(0, 6)}）`);
+      const tr = new P2PTransport(room, mod.selfId); holder.tr = tr; tr.errs = holder.err; return tr;
     }
     constructor(room, self) {
-      this.kind = 'p2p'; this.self = self; this.room = room; this.h = {};
+      this.kind = 'p2p'; this.self = self; this.room = room; this.h = {}; this.failN = 0;
       this.act = room.makeAction('m');
       this.act.onMessage = (d, ctx) => { if (d && typeof d === 'object' && ctx && ctx.peerId && this.h.msg) this.h.msg(d, ctx.peerId); };
-      room.onPeerJoin = id => this.h.join && this.h.join(id);
-      room.onPeerLeave = id => this.h.leave && this.h.leave(id);
+      room.onPeerJoin = id => { log('peer-join', String(id).slice(0, 6)); this.h.join && this.h.join(id); };
+      room.onPeerLeave = id => { log('peer-leave', String(id).slice(0, 6)); this.h.leave && this.h.leave(id); };
     }
     on(k, f) { this.h[k] = f; }
-    send(msg, target) { try { const p = this.act.send(msg, target ? { target } : undefined); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
-    leave() { try { this.room.leave(); } catch (e) { } }
+    sendFail(e, t) { this.failN++; if (this.failN <= 5 || this.failN % 50 === 0) log('send-fail', `${t || ''} ${(e && e.message) || e}（${this.failN}回目）`); }
+    send(msg, target) {
+      try { const p = this.act.send(msg, target ? { target } : undefined); if (p && p.catch) p.catch(e => this.sendFail(e, msg && msg.t)); } catch (e) { this.sendFail(e, msg && msg.t); }
+    }
+    peerIds() { try { return Object.keys(this.room.getPeers() || {}); } catch (e) { return []; } }
+    leave() { log('room', '退出'); try { this.room.leave(); } catch (e) { } }
   }
   /** claude.ai room: 送信は presence の各欄（型ごと）に置き、受信は presence の変化で知る */
   class RoomTransport {
@@ -57,21 +83,23 @@ const NETLIB = (() => {
     static async open(code) { return new BCTransport(code); }
     constructor(code) {
       this.kind = 'bc'; this.self = Math.random().toString(36).slice(2, 10); this.ch = new BroadcastChannel('tb-' + code); this.h = {}; this.peers = new Map();
-      this.ch.onmessage = e => { const d = e.data; if (!d || d.from === this.self || (d.to && d.to !== this.self)) return;
+      this.ch.onmessage = e => { const d = e.data; if (!d || d.from === this.self || (d.to && d.to !== this.self) || this.mute) return;
         if (d.k === 'bye') { if (this.peers.delete(d.from)) this.h.leave && this.h.leave(d.from); return; }
         if (!this.peers.has(d.from)) { this.peers.set(d.from, 1); this.h.join && this.h.join(d.from); }
         if (d.k === 'm' && this.h.msg) this.h.msg(d.m, d.from); };
-      this.hb = setInterval(() => this.ch.postMessage({ from: this.self, k: 'hb' }), 1000); this.ch.postMessage({ from: this.self, k: 'hb' });
+      this.hb = setInterval(() => { if (!this.mute) this.ch.postMessage({ from: this.self, k: 'hb' }); }, 1000); this.ch.postMessage({ from: this.self, k: 'hb' }); // mute：検査用に通信の途切れを作る
     }
     on(k, f) { this.h[k] = f; }
-    send(m, target) { if (this.closed) return; try { this.ch.postMessage({ from: this.self, to: target || null, k: 'm', m }); } catch (e) { } }
+    send(m, target) { if (this.closed) return; if (this.mute) return; try { this.ch.postMessage({ from: this.self, to: target || null, k: 'm', m }); } catch (e) { } }
+    peerIds() { return [...this.peers.keys()]; }
     leave() { if (this.closed) return; try { this.ch.postMessage({ from: this.self, k: 'bye' }); } catch (e) { } this.closed = true; clearInterval(this.hb); this.ch.close(); }
   }
   /** テスト用：メモリ内で遅延・重複・欠落を再現する */
   class LoopHub { constructor(o) { this.o = Object.assign({ lat: 0.05, dup: 0, drop: 0 }, o); this.nodes = new Map(); this.q = []; this.t = 0; this.rng = new SIMLIB.RNG(9); }
     add(id) { const tr = new LoopTransport(this, id); for (const [oid, o] of this.nodes) { this.q.push({ at: this.t, f: () => { o.h.join && o.h.join(id); tr.h.join && tr.h.join(oid); } }); } this.nodes.set(id, tr); return tr; }
-    deliver(from, msg, target) { const copies = this.rng.next() < this.o.dup ? 2 : 1; for (const [id, n] of this.nodes) { if (id === from || (target && target !== id)) continue; for (let c = 0; c < copies; c++) { if (this.rng.next() < this.o.drop) continue; const m = JSON.parse(JSON.stringify(msg)); this.q.push({ at: this.t + this.o.lat * (0.8 + 0.4 * this.rng.next()) + c * 0.01, f: () => n.h.msg && n.h.msg(m, from) }); } } }
+    deliver(from, msg, target) { if (this.muted && this.muted.has(from)) return; const copies = this.rng.next() < this.o.dup ? 2 : 1; for (const [id, n] of this.nodes) { if (id === from || (target && target !== id) || (this.muted && this.muted.has(id))) continue; for (let c = 0; c < copies; c++) { if (this.rng.next() < this.o.drop) continue; const m = JSON.parse(JSON.stringify(msg)); this.q.push({ at: this.t + this.o.lat * (0.8 + 0.4 * this.rng.next()) + c * 0.01, f: () => n.h.msg && n.h.msg(m, from) }); } } }
     advance(dt) { this.t += dt; this.q.sort((a, b) => a.at - b.at); while (this.q.length && this.q[0].at <= this.t) this.q.shift().f(); }
+    mute(id, on) { this.muted = this.muted || new Set(); if (on) this.muted.add(id); else this.muted.delete(id); } // 検査用：一時的な途切れ
     remove(id) { this.nodes.delete(id); for (const [, n] of this.nodes) n.h.leave && n.h.leave(id); } }
   class LoopTransport { constructor(hub, id) { this.kind = 'loop'; this.hub = hub; this.self = id; this.h = {}; } on(k, f) { this.h[k] = f; } send(m, target) { this.hub.deliver(this.self, m, target); } leave() { this.hub.remove(this.self); } }
 
@@ -94,7 +122,8 @@ const NETLIB = (() => {
       if (this.tr) {
         this.tr.on('msg', (m, from) => this.onMsg(m, from));
         this.tr.on('leave', id => this.onLeave(id));
-        this.tr.on('join', id => { this.dirtyLobby = true; });
+        this.tr.on('join', id => { this.dirtyLobby = true; try { this.tr.send(this.lobbyMsg(), id); } catch (e) { } log('host', `相手を発見 → ロビー情報を送信 ${String(id).slice(0, 6)}`); }); // 見つけたらすぐ知らせる（1秒待たない）
+        this.tr.on('err', m => this.notice('通信の準備に失敗した相手がいます（' + String(m).slice(0, 60) + '）'));
       }
     }
     onMsg(m, from) {
@@ -107,7 +136,7 @@ const NETLIB = (() => {
           const free = this.lobby.slots.findIndex((s, i) => i > 0 && !s);
           if (free < 0) { this.tr.send({ t: 'no', why: 'full' }, from); return; }
           c = { peer: from, slot: free, lastSeen: now(), inp: null, q: 0, pt: 0, st: '' };
-          this.clients.set(from, c); this.notice(`${String(m.nick || '').slice(0, 10) || '参加者'}さんが入りました`);
+          this.clients.set(from, c); this.notice(`${String(m.nick || '').slice(0, 10) || '参加者'}さんが入りました`); log('host', `参加 P${free + 1} ${String(from).slice(0, 6)}`);
         }
         c.lastSeen = now();
         const ch = DATA.CHI[m.ch] ? m.ch : 'kogemaru';
@@ -117,6 +146,7 @@ const NETLIB = (() => {
       } else if (m.t === 'in') {
         const c = this.clients.get(from); if (!c) return;
         c.lastSeen = now();
+        if (c.stale) { c.stale = false; if (this.sim) { const a = this.sim.allies[c.slot]; if (a) a.ctrlAI = false; } this.notice(`P${c.slot + 1}の通信が戻りました`); log('host', `P${c.slot + 1} 復帰`); }
         if (m.g !== this.gid || !this.sim) return;
         c.loaded = true; c.st = m.st || '';
         if (m.q <= c.q) return; // 古い・重複した入力は捨てる
@@ -128,7 +158,7 @@ const NETLIB = (() => {
     }
     onLeave(id) {
       const c = this.clients.get(id); if (!c) return;
-      this.clients.delete(id);
+      this.clients.delete(id); log('host', `P${c.slot + 1} を外す`);
       if (this.lobby.phase === 'lobby') this.lobby.slots[c.slot] = null;
       else if (this.sim) { const a = this.sim.allies[c.slot]; a.ctrlAI = true; this.notice(`P${c.slot + 1}の通信が切れたため、AIが引き継ぎます`); this.sim.ev('sig', { slot: c.slot, code: 'left' }); }
       this.dirtyLobby = true;
@@ -163,7 +193,14 @@ const NETLIB = (() => {
         if (this.tr.tick) this.tr.tick();
         const T = now();
         if (this.dirtyLobby || T - this.lastLobbySend > 1000) this.sendLobby();
-        for (const c of [...this.clients.values()]) if (T - c.lastSeen > DATA.NET.timeout * 1000) this.onLeave(c.peer);
+        for (const c of [...this.clients.values()]) {
+          const gap = T - c.lastSeen;
+          if (gap > DATA.NET.hostDropT * 1000) this.onLeave(c.peer);
+          else if (gap > DATA.NET.timeout * 1000 && this.sim && this.lobby.phase === 'game' && !c.stale) { // 一時的な途切れ：AIが代わりに動き、戻れば操作に戻る
+            c.stale = true; const a = this.sim.allies[c.slot]; if (a) a.ctrlAI = true;
+            this.notice(`P${c.slot + 1}の通信がとだえています（戻るまでAIが動かします）`); log('host', `P${c.slot + 1} 無応答 ${Math.round(gap / 1000)}秒`);
+          }
+        }
       }
       const sim = this.sim; if (!sim || this.paused) return;
       // 参加者の読み込み待ち（最大8秒）
@@ -200,45 +237,69 @@ const NETLIB = (() => {
       return n > 1 ? PROTO.interp(this.views[n - 2], this.views[n - 1], k) : this.views[n - 1];
     }
     ping() { return 0; }
+    /** 画面を裏にしていた分は無応答に数えない */
+    resume(ms) { for (const c of this.clients.values()) c.lastSeen += ms || 0; }
+    get state() { return !this.tr ? 'solo' : this.lobby.phase === 'game' ? 'game' : 'lobby'; }
     leave() { if (this.closed) return; this.closed = true; if (this.tr) { this.tr.send({ t: 'end' }); this.tr.leave(); } }
   }
 
-  /* ---------- 参加者 ---------- */
+  /* ---------- 参加者 ----------
+     状態：connecting（相手を探している）→ handshake（相手は見つかった・ロビー情報待ち）→ lobby → game、
+     接続後に無応答が続くと reconnecting、さらに続くと lost。接続前と接続後で待つ時間を分ける */
   class ClientSession {
     constructor(o) {
       this.tr = o.transport; this.kind = 'client'; this.code = o.code || ''; this.me = o.me; this.local = new LocalInput();
-      this.lobby = null; this.mySlot = -1; this.buf = []; this.gid = 0; this.q = 0; this.sendAcc = 0; this.hiAcc = 99; this.lastRecv = now(); this.rejected = null;
+      this.lobby = null; this.mySlot = -1; this.buf = []; this.gid = 0; this.q = 0; this.sendAcc = 0; this.hiAcc = 99; this.t0 = now(); this.lastRecv = 0; this.rejected = null;
       this.offset = null; this.pred = null; this.hist = []; this.rtt = 0; this.lastStage = ''; this.lastV = null; this.hostPeer = null;
+      this.peerSeen = false; this.joinErr = null; this.st = 'connecting'; this.gotSnap = false;
       this.tr.on('msg', (m, from) => this.onMsg(m, from));
-      this.tr.on('leave', id => { if (id === this.hostPeer) this.lost = 'host_left'; });
+      this.tr.on('join', id => { this.peerSeen = true; if (this.st === 'connecting') this.setSt('handshake'); if (this.helloMsg) { this.tr.send(this.helloMsg, id); this.hiAcc = 0; log('client', `相手を発見 → あいさつ送信 ${String(id).slice(0, 6)}`); } });
+      this.tr.on('leave', id => { if (id === this.hostPeer) log('client', 'ホストとの接続が切れた（戻るのを待つ）'); });
+      this.tr.on('err', m => { this.joinErr = m; });
+      if (this.tr.errs && this.tr.errs.length) this.joinErr = this.tr.errs[0];
+      log('client', `参加開始 合言葉 ${this.code}`);
     }
+    setSt(s) { if (this.st !== s) { log('state', `${this.st} → ${s}`); this.st = s; } }
+    get state() { return this.st; }
     onMsg(m, from) {
       if (!m || typeof m !== 'object') return;
       if (m.t === 'lb') {
-        if (m.v !== VERSION) { this.rejected = 'version'; return; }
-        this.lastRecv = now(); this.hostPeer = from; this.lobby = m;
+        if (m.v !== VERSION) { this.rejected = 'version'; log('client', `版が違う ${m.v}`); return; }
+        if (!this.lobby) log('client', `ロビー情報を受信（${((now() - this.t0) / 1000).toFixed(1)}秒）`);
+        this.lastRecv = now(); this.hostPeer = from; this.lobby = m; this.peerSeen = true;
         const i = (m.slots || []).findIndex(s => s && s.peer === this.tr.self); this.mySlot = i;
-        if (m.phase === 'game' && m.gid !== this.gid) { this.gid = m.gid; this.buf = []; this.q = 0; this.local = new LocalInput(); this.pred = null; this.hist = []; this.offset = null; this.started = true; }
+        if (m.phase === 'game' && m.gid !== this.gid) { this.gid = m.gid; this.buf = []; this.q = 0; this.local = new LocalInput(); this.pred = null; this.hist = []; this.offset = null; this.started = true; this.gotSnap = false; log('client', '戦闘開始'); }
         if (m.phase === 'lobby') { this.started = false; }
       } else if (m.t === 'sn') {
         if (m.g !== this.gid) return;
         this.lastRecv = now(); this.hostPeer = from;
+        if (!this.gotSnap) { this.gotSnap = true; log('client', '最初の戦闘状態を受信'); }
         const T = now() / 1000, off = T - m.tm;
         this.offset = this.offset == null ? off : Math.min(off, this.offset + 0.002); // 遅延の少ない方へ寄せる
         if (this.buf.length && m.tm <= this.buf[this.buf.length - 1].tm) return; // 重複・逆順は捨てる
         const v = PROTO.decodeSnap(m); this.buf.push(v); if (this.buf.length > 30) this.buf.shift();
         if (m.pe && this.mySlot >= 0 && m.pe[this.mySlot]) this.rtt = this.rtt ? this.rtt * 0.8 + (now() - m.pe[this.mySlot]) * 0.2 : now() - m.pe[this.mySlot];
         this.reconcile(v);
-      } else if (m.t === 'no') this.rejected = m.why;
-      else if (m.t === 'end') this.lost = 'host_left';
+      } else if (m.t === 'no') { this.rejected = m.why; log('client', `入室を断られた ${m.why}`); }
+      else if (m.t === 'end') { this.lost = 'host_left'; log('client', 'ホストが部屋を閉じた'); }
     }
     hello(o) { this.helloMsg = Object.assign({ t: 'hi', v: VERSION }, o); this.hiAcc = 99; }
+    /** 画面を裏にしていた分は無応答に数えない */
+    resume(ms) { ms = ms || 0; this.t0 += ms; if (this.lastRecv) this.lastRecv += ms; }
     update(dt) {
       if (this.closed) return;
       if (this.tr.tick) this.tr.tick();
-      if (now() - this.lastRecv > DATA.NET.timeout * 1000) this.lost = this.lost || 'timeout';
+      const T = now();
+      if (!this.lobby) { // 接続前：相手探し・接続・最初のロビー情報まで
+        if (T - this.t0 > DATA.NET.connectTimeout * 1000 && !this.lost) { this.lost = this.joinErr ? 'p2p_failed' : this.peerSeen ? 'no_lobby' : 'no_peer'; log('client', `接続できない（${this.lost}${this.joinErr ? '：' + this.joinErr : ''}）`); this.setSt('lost'); }
+      } else { // 接続後：とだえたら「再接続中」、長く続けば切断
+        const gap = T - this.lastRecv;
+        if (gap > DATA.NET.dropT * 1000) { if (!this.lost) { this.lost = 'timeout'; log('client', `無応答 ${Math.round(gap / 1000)}秒で切断`); } this.setSt('lost'); }
+        else if (gap > DATA.NET.timeout * 1000) this.setSt('reconnecting');
+        else this.setSt(this.started ? 'game' : 'lobby');
+      }
       this.hiAcc += dt;
-      if (this.helloMsg && this.hiAcc > 1) { this.hiAcc = 0; this.tr.send(this.helloMsg, this.hostPeer || undefined); }
+      if (this.helloMsg && this.hiAcc > 1 && (!this.started || this.st === 'reconnecting')) { this.hiAcc = 0; this.tr.send(this.helloMsg, this.st === 'reconnecting' ? undefined : (this.hostPeer || undefined)); }
       if (!this.started || this.mySlot < 0) return;
       // 自分の移動を予測
       const v = this.latest();
@@ -291,7 +352,7 @@ const NETLIB = (() => {
       return v;
     }
     ping() { return Math.round(this.rtt); }
-    leave() { if (this.closed) return; this.closed = true; try { this.tr.send({ t: 'bye' }, this.hostPeer || undefined); } catch (e) { } this.tr.leave(); }
+    leave() { if (this.closed) return; this.closed = true; log('client', '退出'); try { this.tr.send({ t: 'bye' }, this.hostPeer || undefined); } catch (e) { } this.tr.leave(); }
   }
-  return { VERSION, hashStr, P2PTransport, RoomTransport, BCTransport, LoopHub, LocalInput, HostSession, ClientSession };
+  return { VERSION, LOG, log, onLog: f => logL.add(f), ICE, setClock: f => { clock = f; }, hashStr, P2PTransport, RoomTransport, BCTransport, LoopHub, LocalInput, HostSession, ClientSession };
 })();

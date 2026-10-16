@@ -178,11 +178,15 @@ const CLOUD = (() => {
       } catch (e) { console.warn('friend req', e); return { ok: false, msg: errMsg(e) }; }
     }
     async function getF(p) { const sn = await L.fs.getDoc(L.fs.doc(db, 'friends', p)); if (!sn.exists()) throw Object.assign(new Error('gone'), { code: 'gone' }); return sn.data(); }
-    async function accept(p) { const d = await getF(p); d.st = 'ok'; d.t = Date.now(); await L.fs.setDoc(L.fs.doc(db, 'friends', p), d); return true; }
+    // 承認・招待は必要な欄だけ書きかえる（同時に書かれた別の欄を上書きしない）
+    async function accept(p) { const d = await getF(p); if (d.st !== 'req') return true; await L.fs.updateDoc(L.fs.doc(db, 'friends', p), { st: 'ok', t: Date.now() }); return true; }
     async function remove(p) { await L.fs.deleteDoc(L.fs.doc(db, 'friends', p)); return true; }
-    async function invite(p, room) { const d = await getF(p); if (d.st !== 'ok') return false; d.inv = { by: user.uid, room: String(room).slice(0, 8), t: Date.now() }; await L.fs.setDoc(L.fs.doc(db, 'friends', p), d); return true; }
+    /** 招待：部屋の合言葉と時刻（＝招待ID。5分有効）。相手の端末が実際につながったかどうかは、ここでは分からない */
+    async function invite(p, room) { const t = Date.now(); await L.fs.updateDoc(L.fs.doc(db, 'friends', p), { inv: { by: user.uid, room: String(room).slice(0, 8), t } }); return t; }
+    /** フレンド1人の最新の状態（招待に応える直前の確認用） */
+    async function profile(uid) { const sn = await L.fs.getDoc(L.fs.doc(db, 'profiles', uid)); if (!sn.exists()) return null; const p = sn.data(); p.on = Date.now() - (p.seen || 0) < ONLINE; return p; }
     const wrap = f => async (...a) => { try { return { ok: true, v: await f(...a) } } catch (e) { console.warn('friend', e); return { ok: false, msg: /gone|permission/i.test(e.code || '') ? '相手が取り消したか、すでに削除されています' : errMsg(e) }; } };
-    return { ensure, publish, offline, lookup, list, request, accept: wrap(accept), remove: wrap(remove), invite: wrap(invite), norm, fmt, valid, gen, pid, ONLINE, INV, MAX,
+    return { ensure, publish, offline, lookup, list, request, accept: wrap(accept), remove: wrap(remove), invite: wrap(invite), profile: wrap(profile), norm, fmt, valid, gen, pid, ONLINE, INV, MAX,
       reset() { code = ''; card = ''; ok = null; last = null; closing = false; }, get code() { return code; }, get ready() { return ok; } };
   })();
   return { init, register, login, write, logout, email, errMsg, FR, get user() { return user; } };

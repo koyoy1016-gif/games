@@ -505,6 +505,20 @@ a{color:var(--shu)}
 .fr-h{font-weight:900;font-size:14px;margin:4px 2px 2px;text-shadow:0 2px 0 var(--bk)}
 .fr-empty{font-size:13px;font-weight:700;background:rgba(11,20,64,.45);border-radius:10px;padding:10px}
 .fr-row{display:flex;align-items:center;gap:10px;background:linear-gradient(#2d63dc,#1c46b4);border:3px solid var(--bk);border-radius:14px;padding:6px 8px;margin-bottom:6px;box-shadow:0 3px 0 var(--bk)}
+.fr-who{display:flex;align-items:center;gap:10px;flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;cursor:pointer}
+.fr-who:active{opacity:.8}
+.fr-offbtn{display:flex;gap:8px;flex-wrap:wrap}
+.fr-coop{align-self:flex-start;background:#4a5684}
+.pop{position:absolute;inset:0;z-index:20;background:rgba(5,10,30,.6);display:flex;align-items:center;justify-content:center}
+.pop[hidden]{display:none}
+.pop-card{background:linear-gradient(#2d63dc,#173a9c);border:3px solid var(--bk);border-radius:16px;box-shadow:0 5px 0 var(--bk);padding:12px;color:#fff;max-width:calc(100% - 24px)}
+.frp{display:flex;gap:12px;align-items:center;width:min(460px,100%)}
+.frp img{width:120px;height:120px;border-radius:12px;border:3px solid var(--bk);background:#0f2a74;object-fit:cover;flex:0 0 auto}
+.frp-tx{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.frp-tx>b{font-size:20px}
+.frp-kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:13px;font-weight:700}
+.frp-kv b{font-size:12px;opacity:.85}
+.frp-btn{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 .fr-av{width:46px;height:46px;flex:0 0 46px;border-radius:10px;border:2px solid var(--bk);background:#0f2a74;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:24px}
 .fr-av img{width:100%;height:100%;object-fit:cover}
 .fr-tx{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -695,11 +709,10 @@ a{color:var(--shu)}
   </div>
   <div class="hm-left">
     <button class="hm-mb" id="btnTeam" type="button"><span class="mi mi-team" aria-hidden="true"></span><b>編成</b></button>
-    <button class="hm-mb" id="btnCoop" type="button"><span class="mi mi-coop" aria-hidden="true"></span><b id="btnCoopLbl">協力プレイ</b></button>
     <button class="hm-mb" id="btnGacha" type="button"><span class="mi mi-gacha" aria-hidden="true"></span><b>ガチャ</b><span class="hm-badge" id="gTixBadge" hidden></span></button>
     <button class="hm-mb" id="btnFriend" type="button"><span class="mi mi-friend" aria-hidden="true"></span><b>フレンド</b><span class="hm-badge" id="fBadge" hidden></span></button>
   </div>
-  <div class="hm-room" id="hmRoom" hidden><span class="rm-code" id="hmRoomCode">----</span><span class="rm-st" id="hmRoomSt"></span><button class="hm-chip" id="btnRoomLeave" type="button">退出</button></div>
+  <div class="hm-room" id="hmRoom" hidden><span class="rm-code" id="hmRoomCode">----</span><span class="rm-st" id="hmRoomSt"></span><button class="hm-chip" id="btnRoomShare" type="button" hidden>リンク</button><button class="hm-chip" id="btnRoomLeave" type="button">退出</button></div>
   <div class="hm-tags" id="hmTags"></div>
   <div class="hm-bottom">
     <button class="hm-stage" id="btnStageSel" type="button" aria-label="ステージを選ぶ"><span class="st-thumb" id="hmStThumb"></span><span class="st-txt"><small id="hmStCh">北千住編</small><b id="hmStNm">商店街と祭り広場</b><span id="hmStSub">推奨Lv1</span></span><span class="st-chg">変更</span></button>
@@ -717,8 +730,8 @@ a{color:var(--shu)}
     <label class="cp-l" for="nick">なまえ（10文字まで）</label>
     <input type="text" id="nick" maxlength="10" autocomplete="off" placeholder="なまえ">
     <div class="cp-cols">
-      <div class="cp-card"><b>ルームを作る</b><span>合言葉（4けた）が決まります。友だちに伝えてください。</span><button class="bl-btn yellow" id="btnHost" type="button">ルームを作る</button></div>
-      <div class="cp-card"><b>パスワードで参加</b><span>友だちのルームの合言葉（4けた）を入れます。</span><input type="text" id="code" maxlength="8" inputmode="numeric" autocomplete="off" placeholder="1234"><button class="bl-btn" id="btnJoin" type="button">参加する</button></div>
+      <div class="cp-card"><b>ルームを作る</b><span>合言葉（6けた）が決まります。友だちに伝えるか、部屋の「リンク」を送ってください。</span><button class="bl-btn yellow" id="btnHost" type="button">ルームを作る</button></div>
+      <div class="cp-card"><b>パスワードで参加</b><span>友だちのルームの合言葉（数字）を入れます。</span><input type="text" id="code" maxlength="8" inputmode="numeric" autocomplete="off" placeholder="123456"><button class="bl-btn" id="btnJoin" type="button">参加する</button></div>
     </div>
     <div class="cp-st"><span class="dot" id="netDot"></span><span id="netMsg">通信の準備を確認しています…</span></div>
   </div>
@@ -729,7 +742,7 @@ a{color:var(--shu)}
 <section class="screen lobby" id="friend" hidden>
   <div class="bl-bar"><button class="bl-back" id="btnFrBack" type="button" aria-label="もどる"></button><b>フレンド</b><button class="hm-chip fr-reload" id="btnFrReload" type="button">更新</button></div>
   <div class="cp-wrap fr-wrap">
-    <div class="fr-off" id="frOff" hidden><p id="frOffTxt"></p><button class="bl-btn yellow" id="btnFrLogin" type="button">ログイン</button></div>
+    <div class="fr-off" id="frOff" hidden><p id="frOffTxt"></p><div class="fr-offbtn"><button class="bl-btn yellow" id="btnFrLogin" type="button">ログイン</button><button class="bl-btn" id="btnFrCoop2" type="button">合言葉で協力プレイ</button></div></div>
     <div id="frBody" hidden>
       <div class="fr-col1">
       <div class="fr-me">
@@ -741,11 +754,20 @@ a{color:var(--shu)}
       </div>
       <div class="fr-add"><input type="text" id="frIn" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="例 K7Q4-2MPX" aria-label="友だちのフレンドコード"><button class="bl-btn" id="btnFrAdd" type="button">申請</button></div>
       <div class="fr-msg" id="frMsg" role="status"></div>
+      <button class="hm-chip fr-coop" id="btnFrCoop" type="button">合言葉で協力プレイ（フレンド以外と遊ぶ）</button>
       </div>
       <div class="fr-col2"><div id="frReq"></div><div id="frList"></div></div>
     </div>
   </div>
 </section>
+
+<div class="pop" id="frProf" hidden role="dialog" aria-label="フレンドのプロフィール">
+  <div class="pop-card frp">
+    <img id="frpImg" alt="">
+    <div class="frp-tx"><b id="frpName">—</b><div class="frp-kv" id="frpKv"></div>
+      <div class="frp-btn"><button class="bl-btn yellow sm" id="btnFrpInv" type="button">協力プレイに招待</button><button class="hm-chip" id="btnFrpX" type="button">閉じる</button></div></div>
+  </div>
+</div>
 
 <!-- 編成：キャラクター一覧（横スワイプ）。上の並べ替え・戻る・ホームは固定 -->
 <section class="screen lobby" id="roster" hidden>

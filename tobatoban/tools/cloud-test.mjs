@@ -67,6 +67,7 @@ const fakeFs = {
   doc: (db, col, id) => ({ path: col + '/' + id }),
   async getDoc(ref) { if (!canRead(ref.path)) { denied++; throw perm('read ' + ref.path); } const d = store.get(ref.path); return { exists: () => !!d, data: () => d && JSON.parse(JSON.stringify(d)) }; },
   async setDoc(ref, data) { const w = new Map([[ref.path, JSON.parse(JSON.stringify(data))]]); const e = check(w); if (e) { denied++; throw perm(e); } store.set(ref.path, w.get(ref.path)); },
+  async updateDoc(ref, part) { const old = store.get(ref.path); if (!old) { denied++; throw Object.assign(new Error('not-found'), { code: 'not-found' }); } if (!canRead(ref.path) && !ref.path.startsWith('friends/')) { denied++; throw perm('update ' + ref.path); } const d = Object.assign(JSON.parse(JSON.stringify(old)), JSON.parse(JSON.stringify(part))); const w = new Map([[ref.path, d]]); const e = check(w); if (e) { denied++; throw perm(e); } store.set(ref.path, d); },
   async deleteDoc(ref) { if (!canDelete(ref.path)) { denied++; throw perm('delete ' + ref.path); } store.delete(ref.path); },
   collection: (db, col) => ({ col }), where: (f, op, v) => ({ f, op, v }), query: (c, ...w) => ({ col: c.col, w }),
   async getDocs(q) {
@@ -161,6 +162,11 @@ ok(L2b.friends[0].uid === uid3, 'オンラインの人が上に並ぶ');
 ok((await FR.remove(p12)).ok && !store.get('friends/' + p12), 'フレンドを解除できる');
 let e14 = null; try { await fakeFs.getDoc({ path: 'profiles/' + uid1 }); } catch (e) { e14 = e; } ok(!!e14, '解除したら相手の状態は読めない');
 ok(!(await FR.accept(p12)).ok, '消えた申請は承認できない（メッセージを返す）');
+// 招待は inv だけを部分更新する（ほかの欄は変わらない）
+{ const p23 = FR.pid(uid2, uid3), before = JSON.stringify(Object.assign({}, store.get('friends/' + p23), { inv: null }));
+  const r = await FR.invite(p23, '123456'); const d = store.get('friends/' + p23);
+  ok(r.ok && d.inv.room === '123456' && d.inv.by === uid2 && JSON.stringify(Object.assign({}, d, { inv: null })) === before, '招待は inv だけを書きかえる（6けたの合言葉）');
+  const pr = await FR.profile(uid3); ok(pr.ok && pr.v && pr.v.nm === 'トリ', 'フレンド1人の状態を確認できる（招待に応える前）'); }
 await CLOUD.logout();
 // 10000人でいっぱい
 store.set('meta/counter', { next: 10000 });

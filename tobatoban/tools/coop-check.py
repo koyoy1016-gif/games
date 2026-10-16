@@ -27,13 +27,13 @@ with sync_playwright() as p:
         pg.on('console', lambda m, nm=nm: errs.append(f'{nm} [{m.type}] {m.text}') if m.type == 'error' and 'ERR_FAILED' not in m.text else None)
         pg.goto(URL, wait_until='domcontentloaded', timeout=120000); pg.wait_for_function('window.__tb && window.__tb.G.mode === "title"', timeout=60000); print(nm, 'loaded', flush=True)
     if os.environ.get('STAGE') == 'joban': A.evaluate("() => { __tb.G.sessClear.senju = true; }")  # ホストはトバトーバを倒している
-    rects = "() => JSON.stringify(['btnSolo','btnStageSel','btnTeam','btnCoop','btnGacha'].map(id => { const r = document.getElementById(id).getBoundingClientRect(); return [id, Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; }).concat([...document.querySelectorAll('#hmTags .hm-tag')].map((t, i) => ['tag' + i, Math.round(parseFloat(t.style.left)), Math.round(parseFloat(t.style.top))])))"
+    rects = "() => JSON.stringify(['btnSolo','btnStageSel','btnTeam','btnFriend','btnGacha'].map(id => { const r = document.getElementById(id).getBoundingClientRect(); return [id, Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; }).concat([...document.querySelectorAll('#hmTags .hm-tag')].map((t, i) => ['tag' + i, Math.round(parseFloat(t.style.left)), Math.round(parseFloat(t.style.top))])))"
     for pg in (A, B): pg.evaluate("() => document.getElementById('btnGuest').click()")
     time.sleep(1.0); solo_rects = A.evaluate(rects)
-    A.evaluate("() => { document.getElementById('btnCoop').click(); document.getElementById('nick').value='ホスト'; document.getElementById('btnHost').click(); }")
+    A.evaluate("() => { document.getElementById('btnFriend').click(); document.getElementById('btnFrCoop2').click(); document.getElementById('nick').value='ホスト'; document.getElementById('btnHost').click(); }")
     A.wait_for_function('window.__tb.G.session && window.__tb.G.session.code', timeout=10000)
     code = A.evaluate('__tb.G.session.code'); print('code', code)
-    B.evaluate(f"() => {{ document.getElementById('btnCoop').click(); document.getElementById('nick').value='さんか'; document.getElementById('code').value='{code}'; document.getElementById('btnJoin').click(); }}")
+    B.evaluate(f"() => {{ document.getElementById('btnFriend').click(); document.getElementById('btnFrCoop2').click(); document.getElementById('nick').value='さんか'; document.getElementById('code').value='{code}'; document.getElementById('btnJoin').click(); }}")
     B.wait_for_function('window.__tb.G.session && window.__tb.G.session.mySlot >= 0', timeout=15000)
     time.sleep(1.0); one_rects = A.evaluate(rects)
     B.evaluate("() => { document.getElementById('btnTeam').click(); [...document.querySelectorAll('#cards .rs-card')].find(b => b.querySelector('.nm').textContent === 'ホシスズメ').click(); document.getElementById('btnChPick').click(); document.getElementById('btnRosterHome').click(); }")  # ホシスズメを選ぶ

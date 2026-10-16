@@ -8,7 +8,7 @@ const { DATA, SIMLIB, NETLIB, Sim } = ctx.__;
 let fails = 0; const ok = (c, m) => { console.log((c ? '✅ ' : '❌ ') + m); if (!c) fails++; };
 
 function scenario(lat, dup, drop) {
-  const hub = new NETLIB.LoopHub({ lat, dup, drop });
+  const hub = new NETLIB.LoopHub({ lat, dup, drop }); NETLIB.setClock(() => hub.t * 1000); // 通信の時計を検査の時間に合わせる
   const host = new NETLIB.HostSession({ transport: hub.add('H'), code: '1234', nick: 'ホスト', ch: 'kogemaru' });
   const cli = new NETLIB.ClientSession({ transport: hub.add('C') });
   const cli2 = new NETLIB.ClientSession({ transport: hub.add('D') });
@@ -41,13 +41,50 @@ function scenario(lat, dup, drop) {
   const hostR = Math.round(s.boss.hp / s.boss.maxHp * 1000) / 1000;
   const v1 = cli.latest(), v2 = cli2.latest();
   ok(v1 && Math.abs(v1.boss.hpR - hostR) < 0.0015 && Math.abs(v2.boss.hpR - hostR) < 0.0015, `全員が同じボスHPを受け取る（host ${hostR} / ${v1 && v1.boss.hpR} / ${v2 && v2.boss.hpR}）`);
+  // 一時的な途切れ（8秒）：ホストはAIで代わりに動かし、戻れば操作に戻る。参加者は「再接続中」になり、切断にはならない
+  hub.mute('C', true); run(8);
+  ok(s.allies[cs1].ctrlAI === true && cli.state === 'reconnecting' && !cli.lost, `8秒とだえる → ホスト側はAIが代行・参加者は再接続中（${cli.state}）`);
+  hub.mute('C', false); run(1.5);
+  ok(s.allies[cs1].ctrlAI === false && cli.state === 'game' && !cli.lost, `通信が戻ると操作も戻る（${cli.state}）`);
   // 切断：AIへ引き継ぎ
   hub.remove('D'); run(0.5);
   ok(s.allies[cs2].ctrlAI === true, '参加者が切断したらAIが引き継ぐ');
-  // ホスト切断
-  hub.remove('H'); run(0.3);
-  ok(cli.lost === 'host_left', 'ホスト切断は参加者側で中断扱い');
+  // ホストが突然いなくなる：すぐには切らず、とだえたまま25秒で切断
+  hub.remove('H'); hub.mute('H', true); run(10);
+  ok(!cli.lost && cli.state === 'reconnecting', `ホストが突然消えても10秒は再接続中（${cli.state}）`);
+  run(17);
+  ok(cli.lost === 'timeout', `とだえたまま25秒で切断（${cli.lost}）`);
 }
+function connectScenario() {
+  // 接続前：相手が見つからない／見つかったがロビー情報が来ない／ホストが部屋を閉じる
+  const hub = new NETLIB.LoopHub({ lat: 0.05 }); NETLIB.setClock(() => hub.t * 1000);
+  const cli = new NETLIB.ClientSession({ transport: hub.add('C') }); cli.hello({ nick: 'x', ch: 'kogemaru' });
+  const dt = 1 / 60; const run = (s, ...ss) => { for (let i = 0; i < s * 60; i++) { hub.advance(dt); for (const x of ss) x.update(dt); } };
+  run(10, cli); ok(!cli.lost && cli.state === 'connecting', `相手探し中の10秒は切らない（旧：6秒で切断）（${cli.state}）`);
+  run(21, cli); ok(cli.lost === 'no_peer', `30秒たっても相手が見つからない → 「見つからない」（${cli.lost}）`);
+  const hub2 = new NETLIB.LoopHub({ lat: 0.05 }); NETLIB.setClock(() => hub2.t * 1000);
+  const mute = hub2.add('H'); mute.h = {}; // 相手はいるが何も返さない
+  const c2 = new NETLIB.ClientSession({ transport: hub2.add('C') }); c2.hello({ nick: 'x', ch: 'kogemaru' });
+  const run2 = s => { for (let i = 0; i < s * 60; i++) { hub2.advance(dt); c2.update(dt); } };
+  run2(1); ok(c2.state === 'handshake', `相手は見つかった → 「接続確立中」（${c2.state}）`);
+  run2(31); ok(c2.lost === 'no_lobby', `ロビー情報が来ない → 「接続できない」（${c2.lost}）`);
+  // 遅い接続（12秒後にホストが現れる）でも入れる
+  const hub3 = new NETLIB.LoopHub({ lat: 0.1 }); NETLIB.setClock(() => hub3.t * 1000);
+  const c3 = new NETLIB.ClientSession({ transport: hub3.add('C') }); c3.hello({ nick: 'x', ch: 'kogemaru' });
+  const run3 = (s, h) => { for (let i = 0; i < s * 60; i++) { hub3.advance(dt); c3.update(dt); if (h) h.update(dt); } };
+  run3(12);
+  const h3 = new NETLIB.HostSession({ transport: hub3.add('H'), code: '1234', nick: 'ホスト', ch: 'kogemaru' });
+  run3(2, h3); ok(c3.state === 'lobby' && h3.lobby.slots[1], `相手が見つかるのに12秒かかっても入れる（${c3.state}）`);
+  // 満員・開始済み・版違い
+  h3.startGame(); const c4 = new NETLIB.ClientSession({ transport: hub3.add('E') }); c4.hello({ nick: 'y', ch: 'kogemaru' });
+  for (let i = 0; i < 120; i++) { hub3.advance(dt); c3.update(dt); c4.update(dt); h3.update(dt); }
+  ok(c4.rejected === 'started', `戦闘が始まった部屋には「開始済み」（${c4.rejected}）`);
+  // ホストが部屋を閉じる → すぐ「ホストが閉じた」
+  h3.leave(); for (let i = 0; i < 60; i++) { hub3.advance(dt); c3.update(dt); }
+  ok(c3.lost === 'host_left', `ホストが部屋を閉じたらすぐ知らせる（${c3.lost}）`);
+  ok(NETLIB.LOG.some(e => e.tag === 'state') && NETLIB.LOG.some(e => /ロビー情報を受信/.test(e.msg)), '接続の経過がログに残る');
+}
+connectScenario();
 scenario(0.05, 0.3, 0.03);
 scenario(0.10, 0.5, 0.05);
 console.log(fails ? `\n${fails}件の失敗` : '\nすべて合格');

@@ -72,11 +72,12 @@ function renderHome() {
   const gb = $('#gTixBadge'); gb.hidden = !(a.tickets > 0); gb.textContent = String(a.tickets || 0);
   // 協力プレイの部屋
   const rm = $('#hmRoom'); rm.hidden = !G.coop;
-  $('#btnCoopLbl').textContent = G.coop ? 'ルーム' : '協力プレイ';
+  $('#btnRoomShare').hidden = !(G.coop && S && S.kind === 'host');
   if (G.coop && S) {
     $('#hmRoomCode').textContent = S.code || '----';
     const n = lob && lob.slots ? lob.slots.filter(Boolean).length : 0;
-    $('#hmRoomSt').textContent = S.kind === 'host' ? `ホスト・${n}/4人（空きはAI）` : !S.lobby ? 'ホストを探しています…' : S.mySlot >= 0 ? `P${S.mySlot + 1}で参加中・${n}/4人・ホストの出動待ち` : '入っています…';
+    const cs = S.kind === 'client' ? S.state : '';
+    $('#hmRoomSt').textContent = S.kind === 'host' ? `ホスト・${n}/4人（空きはAI）` : cs === 'connecting' ? '接続準備中…（ホストを探しています）' : cs === 'handshake' ? '接続確立中…' : cs === 'reconnecting' ? '再接続中…' : !S.lobby ? '接続準備中…' : S.mySlot >= 0 ? `P${S.mySlot + 1}で参加中・${n}/4人・ホストの出動待ち` : '入っています…';
   }
   // 4体（3D）と名札
   const sl = homeSlots(); G.homeSlots = sl;
@@ -347,7 +348,6 @@ function openLgPanel(reg) { $('#lgPanel').hidden = false; showDone(false); setRe
 function bindLobby() {
   $('#btnSolo').onclick = () => homeGo();
   $('#btnTeam').onclick = () => { AUDIO.sfx('ok'); openRoster('home'); };
-  $('#btnCoop').onclick = () => { AUDIO.sfx('ok'); openCoop(); };
   $('#btnGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { mtoast('協力プレイのルームにいる間はガチャを開けません', 2200); return; } openGacha(); };
   $('#btnStageSel').onclick = () => { AUDIO.sfx('ui'); openStageSel(); };
   $('#btnRoomLeave').onclick = () => { AUDIO.sfx('back'); goTitle(); mtoast('ルームから退出しました'); };

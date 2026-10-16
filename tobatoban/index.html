@@ -505,6 +505,20 @@ a{color:var(--shu)}
 .fr-h{font-weight:900;font-size:14px;margin:4px 2px 2px;text-shadow:0 2px 0 var(--bk)}
 .fr-empty{font-size:13px;font-weight:700;background:rgba(11,20,64,.45);border-radius:10px;padding:10px}
 .fr-row{display:flex;align-items:center;gap:10px;background:linear-gradient(#2d63dc,#1c46b4);border:3px solid var(--bk);border-radius:14px;padding:6px 8px;margin-bottom:6px;box-shadow:0 3px 0 var(--bk)}
+.fr-who{display:flex;align-items:center;gap:10px;flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;cursor:pointer}
+.fr-who:active{opacity:.8}
+.fr-offbtn{display:flex;gap:8px;flex-wrap:wrap}
+.fr-coop{align-self:flex-start;background:#4a5684}
+.pop{position:absolute;inset:0;z-index:20;background:rgba(5,10,30,.6);display:flex;align-items:center;justify-content:center}
+.pop[hidden]{display:none}
+.pop-card{background:linear-gradient(#2d63dc,#173a9c);border:3px solid var(--bk);border-radius:16px;box-shadow:0 5px 0 var(--bk);padding:12px;color:#fff;max-width:calc(100% - 24px)}
+.frp{display:flex;gap:12px;align-items:center;width:min(460px,100%)}
+.frp img{width:120px;height:120px;border-radius:12px;border:3px solid var(--bk);background:#0f2a74;object-fit:cover;flex:0 0 auto}
+.frp-tx{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.frp-tx>b{font-size:20px}
+.frp-kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:13px;font-weight:700}
+.frp-kv b{font-size:12px;opacity:.85}
+.frp-btn{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
 .fr-av{width:46px;height:46px;flex:0 0 46px;border-radius:10px;border:2px solid var(--bk);background:#0f2a74;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:24px}
 .fr-av img{width:100%;height:100%;object-fit:cover}
 .fr-tx{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -695,11 +709,10 @@ a{color:var(--shu)}
   </div>
   <div class="hm-left">
     <button class="hm-mb" id="btnTeam" type="button"><span class="mi mi-team" aria-hidden="true"></span><b>編成</b></button>
-    <button class="hm-mb" id="btnCoop" type="button"><span class="mi mi-coop" aria-hidden="true"></span><b id="btnCoopLbl">協力プレイ</b></button>
     <button class="hm-mb" id="btnGacha" type="button"><span class="mi mi-gacha" aria-hidden="true"></span><b>ガチャ</b><span class="hm-badge" id="gTixBadge" hidden></span></button>
     <button class="hm-mb" id="btnFriend" type="button"><span class="mi mi-friend" aria-hidden="true"></span><b>フレンド</b><span class="hm-badge" id="fBadge" hidden></span></button>
   </div>
-  <div class="hm-room" id="hmRoom" hidden><span class="rm-code" id="hmRoomCode">----</span><span class="rm-st" id="hmRoomSt"></span><button class="hm-chip" id="btnRoomLeave" type="button">退出</button></div>
+  <div class="hm-room" id="hmRoom" hidden><span class="rm-code" id="hmRoomCode">----</span><span class="rm-st" id="hmRoomSt"></span><button class="hm-chip" id="btnRoomShare" type="button" hidden>リンク</button><button class="hm-chip" id="btnRoomLeave" type="button">退出</button></div>
   <div class="hm-tags" id="hmTags"></div>
   <div class="hm-bottom">
     <button class="hm-stage" id="btnStageSel" type="button" aria-label="ステージを選ぶ"><span class="st-thumb" id="hmStThumb"></span><span class="st-txt"><small id="hmStCh">北千住編</small><b id="hmStNm">商店街と祭り広場</b><span id="hmStSub">推奨Lv1</span></span><span class="st-chg">変更</span></button>
@@ -717,8 +730,8 @@ a{color:var(--shu)}
     <label class="cp-l" for="nick">なまえ（10文字まで）</label>
     <input type="text" id="nick" maxlength="10" autocomplete="off" placeholder="なまえ">
     <div class="cp-cols">
-      <div class="cp-card"><b>ルームを作る</b><span>合言葉（4けた）が決まります。友だちに伝えてください。</span><button class="bl-btn yellow" id="btnHost" type="button">ルームを作る</button></div>
-      <div class="cp-card"><b>パスワードで参加</b><span>友だちのルームの合言葉（4けた）を入れます。</span><input type="text" id="code" maxlength="8" inputmode="numeric" autocomplete="off" placeholder="1234"><button class="bl-btn" id="btnJoin" type="button">参加する</button></div>
+      <div class="cp-card"><b>ルームを作る</b><span>合言葉（6けた）が決まります。友だちに伝えるか、部屋の「リンク」を送ってください。</span><button class="bl-btn yellow" id="btnHost" type="button">ルームを作る</button></div>
+      <div class="cp-card"><b>パスワードで参加</b><span>友だちのルームの合言葉（数字）を入れます。</span><input type="text" id="code" maxlength="8" inputmode="numeric" autocomplete="off" placeholder="123456"><button class="bl-btn" id="btnJoin" type="button">参加する</button></div>
     </div>
     <div class="cp-st"><span class="dot" id="netDot"></span><span id="netMsg">通信の準備を確認しています…</span></div>
   </div>
@@ -729,7 +742,7 @@ a{color:var(--shu)}
 <section class="screen lobby" id="friend" hidden>
   <div class="bl-bar"><button class="bl-back" id="btnFrBack" type="button" aria-label="もどる"></button><b>フレンド</b><button class="hm-chip fr-reload" id="btnFrReload" type="button">更新</button></div>
   <div class="cp-wrap fr-wrap">
-    <div class="fr-off" id="frOff" hidden><p id="frOffTxt"></p><button class="bl-btn yellow" id="btnFrLogin" type="button">ログイン</button></div>
+    <div class="fr-off" id="frOff" hidden><p id="frOffTxt"></p><div class="fr-offbtn"><button class="bl-btn yellow" id="btnFrLogin" type="button">ログイン</button><button class="bl-btn" id="btnFrCoop2" type="button">合言葉で協力プレイ</button></div></div>
     <div id="frBody" hidden>
       <div class="fr-col1">
       <div class="fr-me">
@@ -741,11 +754,20 @@ a{color:var(--shu)}
       </div>
       <div class="fr-add"><input type="text" id="frIn" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="例 K7Q4-2MPX" aria-label="友だちのフレンドコード"><button class="bl-btn" id="btnFrAdd" type="button">申請</button></div>
       <div class="fr-msg" id="frMsg" role="status"></div>
+      <button class="hm-chip fr-coop" id="btnFrCoop" type="button">合言葉で協力プレイ（フレンド以外と遊ぶ）</button>
       </div>
       <div class="fr-col2"><div id="frReq"></div><div id="frList"></div></div>
     </div>
   </div>
 </section>
+
+<div class="pop" id="frProf" hidden role="dialog" aria-label="フレンドのプロフィール">
+  <div class="pop-card frp">
+    <img id="frpImg" alt="">
+    <div class="frp-tx"><b id="frpName">—</b><div class="frp-kv" id="frpKv"></div>
+      <div class="frp-btn"><button class="bl-btn yellow sm" id="btnFrpInv" type="button">協力プレイに招待</button><button class="hm-chip" id="btnFrpX" type="button">閉じる</button></div></div>
+  </div>
+</div>
 
 <!-- 編成：キャラクター一覧（横スワイプ）。上の並べ替え・戻る・ホームは固定 -->
 <section class="screen lobby" id="roster" hidden>
@@ -1357,7 +1379,10 @@ const NET = {
   snapHz: p('通信', '状態スナップショット', 15, 'Hz', 'proto', null, '原作のネットワーク周期ではない'),
   inputHz: p('通信', '入力送信', 30, 'Hz', 'proto'),
   interp: p('通信', '補間バッファ', 0.10, 's', 'proto'),
-  timeout: p('通信', '無応答で切断とみなす', 6, 's', 'proto'),
+  timeout: p('通信', '接続後：無応答で「再接続中」にする', 6, 's', 'proto'),
+  connectTimeout: p('通信', '接続前：ホストのロビー情報を待つ猶予', 30, 's', 'proto', null, 'WebRTCの相手探し（Nostr）と接続は10秒以上かかることがある。実測で調整する出発点'),
+  dropT: p('通信', '接続後：無応答で切断とみなす', 25, 's', 'proto', null, '「再接続中」のまま待つ上限。画面を裏にしていた時間は数えない'),
+  hostDropT: p('通信', 'ホスト：参加者を外すまで', 30, 's', 'proto', null, '6秒でAIが一時的に代わり、30秒で枠を外す。戻ればそのまま操作に戻る'),
 };
 p('UI', '主要タッチ領域の最小', 48, 'CSS px（≒pt/dp）', 'approx', 10, 'Apple 44pt / Android 48dp の目安より大きく');
 
@@ -2059,11 +2084,15 @@ const CLOUD = (() => {
       } catch (e) { console.warn('friend req', e); return { ok: false, msg: errMsg(e) }; }
     }
     async function getF(p) { const sn = await L.fs.getDoc(L.fs.doc(db, 'friends', p)); if (!sn.exists()) throw Object.assign(new Error('gone'), { code: 'gone' }); return sn.data(); }
-    async function accept(p) { const d = await getF(p); d.st = 'ok'; d.t = Date.now(); await L.fs.setDoc(L.fs.doc(db, 'friends', p), d); return true; }
+    // 承認・招待は必要な欄だけ書きかえる（同時に書かれた別の欄を上書きしない）
+    async function accept(p) { const d = await getF(p); if (d.st !== 'req') return true; await L.fs.updateDoc(L.fs.doc(db, 'friends', p), { st: 'ok', t: Date.now() }); return true; }
     async function remove(p) { await L.fs.deleteDoc(L.fs.doc(db, 'friends', p)); return true; }
-    async function invite(p, room) { const d = await getF(p); if (d.st !== 'ok') return false; d.inv = { by: user.uid, room: String(room).slice(0, 8), t: Date.now() }; await L.fs.setDoc(L.fs.doc(db, 'friends', p), d); return true; }
+    /** 招待：部屋の合言葉と時刻（＝招待ID。5分有効）。相手の端末が実際につながったかどうかは、ここでは分からない */
+    async function invite(p, room) { const t = Date.now(); await L.fs.updateDoc(L.fs.doc(db, 'friends', p), { inv: { by: user.uid, room: String(room).slice(0, 8), t } }); return t; }
+    /** フレンド1人の最新の状態（招待に応える直前の確認用） */
+    async function profile(uid) { const sn = await L.fs.getDoc(L.fs.doc(db, 'profiles', uid)); if (!sn.exists()) return null; const p = sn.data(); p.on = Date.now() - (p.seen || 0) < ONLINE; return p; }
     const wrap = f => async (...a) => { try { return { ok: true, v: await f(...a) } } catch (e) { console.warn('friend', e); return { ok: false, msg: /gone|permission/i.test(e.code || '') ? '相手が取り消したか、すでに削除されています' : errMsg(e) }; } };
-    return { ensure, publish, offline, lookup, list, request, accept: wrap(accept), remove: wrap(remove), invite: wrap(invite), norm, fmt, valid, gen, pid, ONLINE, INV, MAX,
+    return { ensure, publish, offline, lookup, list, request, accept: wrap(accept), remove: wrap(remove), invite: wrap(invite), profile: wrap(profile), norm, fmt, valid, gen, pid, ONLINE, INV, MAX,
       reset() { code = ''; card = ''; ok = null; last = null; closing = false; }, get code() { return code; }, get ready() { return ok; } };
   })();
   return { init, register, login, write, logout, email, errMsg, FR, get user() { return user; } };
@@ -4715,25 +4744,51 @@ const PROTO = (() => {
 const NETLIB = (() => {
   const VERSION = 'tb6'; // 通信の形が変わったら上げる（古い版とは同じ部屋に入れない）
   const hashStr = s => { let h = 2166136261; for (const c of String(s)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
-  const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+  let clock = null; // 検査用に時計を差しかえられる
+  const now = () => clock ? clock() : (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
+  /* ---------- 開発者向けの通信ログ（?debug=net で画面にも出す） ---------- */
+  const LOG = []; let logT0 = 0; const logL = new Set();
+  function log(tag, msg) {
+    const T = now(); if (!logT0) logT0 = T;
+    const e = { t: +((T - logT0) / 1000).toFixed(2), tag, msg: msg == null ? '' : String(msg).slice(0, 200) };
+    LOG.push(e); if (LOG.length > 300) LOG.shift();
+    try { if (typeof location !== 'undefined' && /debug=net/.test(location.search)) console.debug('[net]', e.t, tag, e.msg); } catch (er) { }
+    for (const f of logL) try { f(e); } catch (er) { }
+  }
   /* ---------- トランスポート ---------- */
+  // 追加のICEサーバー（TURNなど）。公開HTMLへ長期の秘密は書かない。短期の認証情報を返すURLを使うときは ICE_URL へ
+  const ICE = { turn: [], url: '' };
   class P2PTransport {
     static async open(code, base) {
+      const t0 = now(); log('lib', '読み込み開始');
       const mod = await import(base || './trystero-nostr.js');
-      const room = mod.joinRoom({ appId: 'kitasenju-tobatoban-v1', password: code }, 'tb-' + hashStr(code));
-      return new P2PTransport(room, mod.selfId);
+      log('lib', `読み込み完了 ${Math.round(now() - t0)}ms`);
+      let turn = ICE.turn.slice();
+      if (ICE.url) { try { const r = await fetch(ICE.url); const j = await r.json(); if (Array.isArray(j.iceServers)) turn = turn.concat(j.iceServers); log('ice', `TURN設定を取得 ${turn.length}件`); } catch (e) { log('ice', 'TURN設定を取得できない: ' + (e && e.message)); } }
+      const holder = { tr: null, err: [] };
+      const cfg = { appId: 'kitasenju-tobatoban-v1', password: code };
+      if (turn.length) cfg.turnConfig = turn;
+      const room = mod.joinRoom(cfg, 'tb-' + hashStr(code), {
+        onJoinError: e => { const m = (e && e.error) || 'join error'; log('join-error', m); holder.err.push(m); if (holder.tr && holder.tr.h.err) holder.tr.h.err(m, e && e.peerId); },
+      });
+      log('room', `参加要求（ルーム tb-${hashStr(code)}・自分 ${String(mod.selfId).slice(0, 6)}）`);
+      const tr = new P2PTransport(room, mod.selfId); holder.tr = tr; tr.errs = holder.err; return tr;
     }
     constructor(room, self) {
-      this.kind = 'p2p'; this.self = self; this.room = room; this.h = {};
+      this.kind = 'p2p'; this.self = self; this.room = room; this.h = {}; this.failN = 0;
       this.act = room.makeAction('m');
       this.act.onMessage = (d, ctx) => { if (d && typeof d === 'object' && ctx && ctx.peerId && this.h.msg) this.h.msg(d, ctx.peerId); };
-      room.onPeerJoin = id => this.h.join && this.h.join(id);
-      room.onPeerLeave = id => this.h.leave && this.h.leave(id);
+      room.onPeerJoin = id => { log('peer-join', String(id).slice(0, 6)); this.h.join && this.h.join(id); };
+      room.onPeerLeave = id => { log('peer-leave', String(id).slice(0, 6)); this.h.leave && this.h.leave(id); };
     }
     on(k, f) { this.h[k] = f; }
-    send(msg, target) { try { const p = this.act.send(msg, target ? { target } : undefined); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
-    leave() { try { this.room.leave(); } catch (e) { } }
+    sendFail(e, t) { this.failN++; if (this.failN <= 5 || this.failN % 50 === 0) log('send-fail', `${t || ''} ${(e && e.message) || e}（${this.failN}回目）`); }
+    send(msg, target) {
+      try { const p = this.act.send(msg, target ? { target } : undefined); if (p && p.catch) p.catch(e => this.sendFail(e, msg && msg.t)); } catch (e) { this.sendFail(e, msg && msg.t); }
+    }
+    peerIds() { try { return Object.keys(this.room.getPeers() || {}); } catch (e) { return []; } }
+    leave() { log('room', '退出'); try { this.room.leave(); } catch (e) { } }
   }
   /** claude.ai room: 送信は presence の各欄（型ごと）に置き、受信は presence の変化で知る */
   class RoomTransport {
@@ -4764,21 +4819,23 @@ const NETLIB = (() => {
     static async open(code) { return new BCTransport(code); }
     constructor(code) {
       this.kind = 'bc'; this.self = Math.random().toString(36).slice(2, 10); this.ch = new BroadcastChannel('tb-' + code); this.h = {}; this.peers = new Map();
-      this.ch.onmessage = e => { const d = e.data; if (!d || d.from === this.self || (d.to && d.to !== this.self)) return;
+      this.ch.onmessage = e => { const d = e.data; if (!d || d.from === this.self || (d.to && d.to !== this.self) || this.mute) return;
         if (d.k === 'bye') { if (this.peers.delete(d.from)) this.h.leave && this.h.leave(d.from); return; }
         if (!this.peers.has(d.from)) { this.peers.set(d.from, 1); this.h.join && this.h.join(d.from); }
         if (d.k === 'm' && this.h.msg) this.h.msg(d.m, d.from); };
-      this.hb = setInterval(() => this.ch.postMessage({ from: this.self, k: 'hb' }), 1000); this.ch.postMessage({ from: this.self, k: 'hb' });
+      this.hb = setInterval(() => { if (!this.mute) this.ch.postMessage({ from: this.self, k: 'hb' }); }, 1000); this.ch.postMessage({ from: this.self, k: 'hb' }); // mute：検査用に通信の途切れを作る
     }
     on(k, f) { this.h[k] = f; }
-    send(m, target) { if (this.closed) return; try { this.ch.postMessage({ from: this.self, to: target || null, k: 'm', m }); } catch (e) { } }
+    send(m, target) { if (this.closed) return; if (this.mute) return; try { this.ch.postMessage({ from: this.self, to: target || null, k: 'm', m }); } catch (e) { } }
+    peerIds() { return [...this.peers.keys()]; }
     leave() { if (this.closed) return; try { this.ch.postMessage({ from: this.self, k: 'bye' }); } catch (e) { } this.closed = true; clearInterval(this.hb); this.ch.close(); }
   }
   /** テスト用：メモリ内で遅延・重複・欠落を再現する */
   class LoopHub { constructor(o) { this.o = Object.assign({ lat: 0.05, dup: 0, drop: 0 }, o); this.nodes = new Map(); this.q = []; this.t = 0; this.rng = new SIMLIB.RNG(9); }
     add(id) { const tr = new LoopTransport(this, id); for (const [oid, o] of this.nodes) { this.q.push({ at: this.t, f: () => { o.h.join && o.h.join(id); tr.h.join && tr.h.join(oid); } }); } this.nodes.set(id, tr); return tr; }
-    deliver(from, msg, target) { const copies = this.rng.next() < this.o.dup ? 2 : 1; for (const [id, n] of this.nodes) { if (id === from || (target && target !== id)) continue; for (let c = 0; c < copies; c++) { if (this.rng.next() < this.o.drop) continue; const m = JSON.parse(JSON.stringify(msg)); this.q.push({ at: this.t + this.o.lat * (0.8 + 0.4 * this.rng.next()) + c * 0.01, f: () => n.h.msg && n.h.msg(m, from) }); } } }
+    deliver(from, msg, target) { if (this.muted && this.muted.has(from)) return; const copies = this.rng.next() < this.o.dup ? 2 : 1; for (const [id, n] of this.nodes) { if (id === from || (target && target !== id) || (this.muted && this.muted.has(id))) continue; for (let c = 0; c < copies; c++) { if (this.rng.next() < this.o.drop) continue; const m = JSON.parse(JSON.stringify(msg)); this.q.push({ at: this.t + this.o.lat * (0.8 + 0.4 * this.rng.next()) + c * 0.01, f: () => n.h.msg && n.h.msg(m, from) }); } } }
     advance(dt) { this.t += dt; this.q.sort((a, b) => a.at - b.at); while (this.q.length && this.q[0].at <= this.t) this.q.shift().f(); }
+    mute(id, on) { this.muted = this.muted || new Set(); if (on) this.muted.add(id); else this.muted.delete(id); } // 検査用：一時的な途切れ
     remove(id) { this.nodes.delete(id); for (const [, n] of this.nodes) n.h.leave && n.h.leave(id); } }
   class LoopTransport { constructor(hub, id) { this.kind = 'loop'; this.hub = hub; this.self = id; this.h = {}; } on(k, f) { this.h[k] = f; } send(m, target) { this.hub.deliver(this.self, m, target); } leave() { this.hub.remove(this.self); } }
 
@@ -4801,7 +4858,8 @@ const NETLIB = (() => {
       if (this.tr) {
         this.tr.on('msg', (m, from) => this.onMsg(m, from));
         this.tr.on('leave', id => this.onLeave(id));
-        this.tr.on('join', id => { this.dirtyLobby = true; });
+        this.tr.on('join', id => { this.dirtyLobby = true; try { this.tr.send(this.lobbyMsg(), id); } catch (e) { } log('host', `相手を発見 → ロビー情報を送信 ${String(id).slice(0, 6)}`); }); // 見つけたらすぐ知らせる（1秒待たない）
+        this.tr.on('err', m => this.notice('通信の準備に失敗した相手がいます（' + String(m).slice(0, 60) + '）'));
       }
     }
     onMsg(m, from) {
@@ -4814,7 +4872,7 @@ const NETLIB = (() => {
           const free = this.lobby.slots.findIndex((s, i) => i > 0 && !s);
           if (free < 0) { this.tr.send({ t: 'no', why: 'full' }, from); return; }
           c = { peer: from, slot: free, lastSeen: now(), inp: null, q: 0, pt: 0, st: '' };
-          this.clients.set(from, c); this.notice(`${String(m.nick || '').slice(0, 10) || '参加者'}さんが入りました`);
+          this.clients.set(from, c); this.notice(`${String(m.nick || '').slice(0, 10) || '参加者'}さんが入りました`); log('host', `参加 P${free + 1} ${String(from).slice(0, 6)}`);
         }
         c.lastSeen = now();
         const ch = DATA.CHI[m.ch] ? m.ch : 'kogemaru';
@@ -4824,6 +4882,7 @@ const NETLIB = (() => {
       } else if (m.t === 'in') {
         const c = this.clients.get(from); if (!c) return;
         c.lastSeen = now();
+        if (c.stale) { c.stale = false; if (this.sim) { const a = this.sim.allies[c.slot]; if (a) a.ctrlAI = false; } this.notice(`P${c.slot + 1}の通信が戻りました`); log('host', `P${c.slot + 1} 復帰`); }
         if (m.g !== this.gid || !this.sim) return;
         c.loaded = true; c.st = m.st || '';
         if (m.q <= c.q) return; // 古い・重複した入力は捨てる
@@ -4835,7 +4894,7 @@ const NETLIB = (() => {
     }
     onLeave(id) {
       const c = this.clients.get(id); if (!c) return;
-      this.clients.delete(id);
+      this.clients.delete(id); log('host', `P${c.slot + 1} を外す`);
       if (this.lobby.phase === 'lobby') this.lobby.slots[c.slot] = null;
       else if (this.sim) { const a = this.sim.allies[c.slot]; a.ctrlAI = true; this.notice(`P${c.slot + 1}の通信が切れたため、AIが引き継ぎます`); this.sim.ev('sig', { slot: c.slot, code: 'left' }); }
       this.dirtyLobby = true;
@@ -4870,7 +4929,14 @@ const NETLIB = (() => {
         if (this.tr.tick) this.tr.tick();
         const T = now();
         if (this.dirtyLobby || T - this.lastLobbySend > 1000) this.sendLobby();
-        for (const c of [...this.clients.values()]) if (T - c.lastSeen > DATA.NET.timeout * 1000) this.onLeave(c.peer);
+        for (const c of [...this.clients.values()]) {
+          const gap = T - c.lastSeen;
+          if (gap > DATA.NET.hostDropT * 1000) this.onLeave(c.peer);
+          else if (gap > DATA.NET.timeout * 1000 && this.sim && this.lobby.phase === 'game' && !c.stale) { // 一時的な途切れ：AIが代わりに動き、戻れば操作に戻る
+            c.stale = true; const a = this.sim.allies[c.slot]; if (a) a.ctrlAI = true;
+            this.notice(`P${c.slot + 1}の通信がとだえています（戻るまでAIが動かします）`); log('host', `P${c.slot + 1} 無応答 ${Math.round(gap / 1000)}秒`);
+          }
+        }
       }
       const sim = this.sim; if (!sim || this.paused) return;
       // 参加者の読み込み待ち（最大8秒）
@@ -4907,45 +4973,69 @@ const NETLIB = (() => {
       return n > 1 ? PROTO.interp(this.views[n - 2], this.views[n - 1], k) : this.views[n - 1];
     }
     ping() { return 0; }
+    /** 画面を裏にしていた分は無応答に数えない */
+    resume(ms) { for (const c of this.clients.values()) c.lastSeen += ms || 0; }
+    get state() { return !this.tr ? 'solo' : this.lobby.phase === 'game' ? 'game' : 'lobby'; }
     leave() { if (this.closed) return; this.closed = true; if (this.tr) { this.tr.send({ t: 'end' }); this.tr.leave(); } }
   }
 
-  /* ---------- 参加者 ---------- */
+  /* ---------- 参加者 ----------
+     状態：connecting（相手を探している）→ handshake（相手は見つかった・ロビー情報待ち）→ lobby → game、
+     接続後に無応答が続くと reconnecting、さらに続くと lost。接続前と接続後で待つ時間を分ける */
   class ClientSession {
     constructor(o) {
       this.tr = o.transport; this.kind = 'client'; this.code = o.code || ''; this.me = o.me; this.local = new LocalInput();
-      this.lobby = null; this.mySlot = -1; this.buf = []; this.gid = 0; this.q = 0; this.sendAcc = 0; this.hiAcc = 99; this.lastRecv = now(); this.rejected = null;
+      this.lobby = null; this.mySlot = -1; this.buf = []; this.gid = 0; this.q = 0; this.sendAcc = 0; this.hiAcc = 99; this.t0 = now(); this.lastRecv = 0; this.rejected = null;
       this.offset = null; this.pred = null; this.hist = []; this.rtt = 0; this.lastStage = ''; this.lastV = null; this.hostPeer = null;
+      this.peerSeen = false; this.joinErr = null; this.st = 'connecting'; this.gotSnap = false;
       this.tr.on('msg', (m, from) => this.onMsg(m, from));
-      this.tr.on('leave', id => { if (id === this.hostPeer) this.lost = 'host_left'; });
+      this.tr.on('join', id => { this.peerSeen = true; if (this.st === 'connecting') this.setSt('handshake'); if (this.helloMsg) { this.tr.send(this.helloMsg, id); this.hiAcc = 0; log('client', `相手を発見 → あいさつ送信 ${String(id).slice(0, 6)}`); } });
+      this.tr.on('leave', id => { if (id === this.hostPeer) log('client', 'ホストとの接続が切れた（戻るのを待つ）'); });
+      this.tr.on('err', m => { this.joinErr = m; });
+      if (this.tr.errs && this.tr.errs.length) this.joinErr = this.tr.errs[0];
+      log('client', `参加開始 合言葉 ${this.code}`);
     }
+    setSt(s) { if (this.st !== s) { log('state', `${this.st} → ${s}`); this.st = s; } }
+    get state() { return this.st; }
     onMsg(m, from) {
       if (!m || typeof m !== 'object') return;
       if (m.t === 'lb') {
-        if (m.v !== VERSION) { this.rejected = 'version'; return; }
-        this.lastRecv = now(); this.hostPeer = from; this.lobby = m;
+        if (m.v !== VERSION) { this.rejected = 'version'; log('client', `版が違う ${m.v}`); return; }
+        if (!this.lobby) log('client', `ロビー情報を受信（${((now() - this.t0) / 1000).toFixed(1)}秒）`);
+        this.lastRecv = now(); this.hostPeer = from; this.lobby = m; this.peerSeen = true;
         const i = (m.slots || []).findIndex(s => s && s.peer === this.tr.self); this.mySlot = i;
-        if (m.phase === 'game' && m.gid !== this.gid) { this.gid = m.gid; this.buf = []; this.q = 0; this.local = new LocalInput(); this.pred = null; this.hist = []; this.offset = null; this.started = true; }
+        if (m.phase === 'game' && m.gid !== this.gid) { this.gid = m.gid; this.buf = []; this.q = 0; this.local = new LocalInput(); this.pred = null; this.hist = []; this.offset = null; this.started = true; this.gotSnap = false; log('client', '戦闘開始'); }
         if (m.phase === 'lobby') { this.started = false; }
       } else if (m.t === 'sn') {
         if (m.g !== this.gid) return;
         this.lastRecv = now(); this.hostPeer = from;
+        if (!this.gotSnap) { this.gotSnap = true; log('client', '最初の戦闘状態を受信'); }
         const T = now() / 1000, off = T - m.tm;
         this.offset = this.offset == null ? off : Math.min(off, this.offset + 0.002); // 遅延の少ない方へ寄せる
         if (this.buf.length && m.tm <= this.buf[this.buf.length - 1].tm) return; // 重複・逆順は捨てる
         const v = PROTO.decodeSnap(m); this.buf.push(v); if (this.buf.length > 30) this.buf.shift();
         if (m.pe && this.mySlot >= 0 && m.pe[this.mySlot]) this.rtt = this.rtt ? this.rtt * 0.8 + (now() - m.pe[this.mySlot]) * 0.2 : now() - m.pe[this.mySlot];
         this.reconcile(v);
-      } else if (m.t === 'no') this.rejected = m.why;
-      else if (m.t === 'end') this.lost = 'host_left';
+      } else if (m.t === 'no') { this.rejected = m.why; log('client', `入室を断られた ${m.why}`); }
+      else if (m.t === 'end') { this.lost = 'host_left'; log('client', 'ホストが部屋を閉じた'); }
     }
     hello(o) { this.helloMsg = Object.assign({ t: 'hi', v: VERSION }, o); this.hiAcc = 99; }
+    /** 画面を裏にしていた分は無応答に数えない */
+    resume(ms) { ms = ms || 0; this.t0 += ms; if (this.lastRecv) this.lastRecv += ms; }
     update(dt) {
       if (this.closed) return;
       if (this.tr.tick) this.tr.tick();
-      if (now() - this.lastRecv > DATA.NET.timeout * 1000) this.lost = this.lost || 'timeout';
+      const T = now();
+      if (!this.lobby) { // 接続前：相手探し・接続・最初のロビー情報まで
+        if (T - this.t0 > DATA.NET.connectTimeout * 1000 && !this.lost) { this.lost = this.joinErr ? 'p2p_failed' : this.peerSeen ? 'no_lobby' : 'no_peer'; log('client', `接続できない（${this.lost}${this.joinErr ? '：' + this.joinErr : ''}）`); this.setSt('lost'); }
+      } else { // 接続後：とだえたら「再接続中」、長く続けば切断
+        const gap = T - this.lastRecv;
+        if (gap > DATA.NET.dropT * 1000) { if (!this.lost) { this.lost = 'timeout'; log('client', `無応答 ${Math.round(gap / 1000)}秒で切断`); } this.setSt('lost'); }
+        else if (gap > DATA.NET.timeout * 1000) this.setSt('reconnecting');
+        else this.setSt(this.started ? 'game' : 'lobby');
+      }
       this.hiAcc += dt;
-      if (this.helloMsg && this.hiAcc > 1) { this.hiAcc = 0; this.tr.send(this.helloMsg, this.hostPeer || undefined); }
+      if (this.helloMsg && this.hiAcc > 1 && (!this.started || this.st === 'reconnecting')) { this.hiAcc = 0; this.tr.send(this.helloMsg, this.st === 'reconnecting' ? undefined : (this.hostPeer || undefined)); }
       if (!this.started || this.mySlot < 0) return;
       // 自分の移動を予測
       const v = this.latest();
@@ -4998,9 +5088,9 @@ const NETLIB = (() => {
       return v;
     }
     ping() { return Math.round(this.rtt); }
-    leave() { if (this.closed) return; this.closed = true; try { this.tr.send({ t: 'bye' }, this.hostPeer || undefined); } catch (e) { } this.tr.leave(); }
+    leave() { if (this.closed) return; this.closed = true; log('client', '退出'); try { this.tr.send({ t: 'bye' }, this.hostPeer || undefined); } catch (e) { } this.tr.leave(); }
   }
-  return { VERSION, hashStr, P2PTransport, RoomTransport, BCTransport, LoopHub, LocalInput, HostSession, ClientSession };
+  return { VERSION, LOG, log, onLog: f => logL.add(f), ICE, setClock: f => { clock = f; }, hashStr, P2PTransport, RoomTransport, BCTransport, LoopHub, LocalInput, HostSession, ClientSession };
 })();
 
 /* ===== audio.js ===== */
@@ -8171,28 +8261,43 @@ async function openTransport(code) {
   if (G.netMode === 'room') return NETLIB.RoomTransport.open(G.roomCap, code);
   return NETLIB.P2PTransport.open(code);
 }
-async function startHost() {
-  AUDIO.init(); AUDIO.sfx('ok');
-  G.nick = ($('#nick').value.trim() || 'もののけ').slice(0, 10); STORE.set('nick', G.nick);
-  const code = String(1000 + Math.floor(Math.random() * 9000));
-  const b = $('#btnHost'); b.disabled = true; b.textContent = '部屋を準備しています…';
+/** 協力プレイの部屋を用意する（すでに自分の部屋があればそれを使う）。フレンドの「招待」からも呼ぶ。成功したら合言葉を返す */
+async function startHost(opt) {
+  opt = opt || {};
+  if (G.coop && G.session && G.session.kind === 'host' && !G.session.closed) { if (!opt.quiet) openLobby(); return G.session.code; } // 部屋を増やさない
+  if (G.netBusy) return null; // 連打でセッションを重ねない
+  if (G.coop && G.session) { try { G.session.leave(); } catch (e) { } G.session = null; G.coop = false; }
+  AUDIO.init(); if (!opt.quiet) AUDIO.sfx('ok');
+  G.nick = (($('#nick').value || G.nick || '').trim() || 'もののけ').slice(0, 10); STORE.set('nick', G.nick);
+  const code = String(100000 + Math.floor(Math.random() * 900000)); // 6けた（他の人の部屋と重なりにくく）
+  const b = $('#btnHost'); b.disabled = true; b.textContent = '部屋を準備しています…'; G.netBusy = true;
+  let ok = null;
   try {
+    NETLIB.log('ui', `部屋を作る #${code}`);
     const tr = await openTransport(code);
     G.session = new NETLIB.HostSession({ transport: tr, code, nick: G.nick, ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2), aiParty: G.party.slice(1), lv: lvOf(G.party[0]), lvs: Object.fromEntries(DATA.CHARS.map(c => [c.id, lvOf(c.id)])) });
-    G.session.lobby.diff = G.diff; G.coop = true; openLobby();
-  } catch (e) { console.error(e); toast('部屋を作れませんでした。電波のよい所でもう一度。'); }
-  b.disabled = false; b.textContent = '部屋を作る';
+    G.session.lobby.diff = G.diff; G.coop = true; ok = code;
+    if (opt.quiet) { G.mode = 'lobby'; if (!$('#title').hidden) renderHome(); frPublish(true); } else openLobby();
+  } catch (e) { console.error(e); NETLIB.log('ui', '部屋を作れない: ' + (e && e.message)); toast('部屋を作れませんでした。電波のよい所でもう一度。'); if (opt.quiet) mtoast('部屋を作れませんでした（通信の部品を読み込めません）', 2800); }
+  G.netBusy = false; b.disabled = false; b.textContent = '部屋を作る';
+  return ok;
 }
-async function startJoin() {
+/** 合言葉の部屋に入る（フレンドの「参加」・招待リンクからも呼ぶ） */
+async function startJoin(codeArg) {
+  if (G.netBusy) return false;
   AUDIO.init(); AUDIO.sfx('ok');
-  const code = $('#code').value.trim(); if (!/^\d{4,8}$/.test(code)) { toast('4けたの合言葉を入れてください'); return; }
-  G.nick = ($('#nick').value.trim() || 'もののけ').slice(0, 10); STORE.set('nick', G.nick);
-  const b = $('#btnJoin'); b.disabled = true; b.textContent = 'つないでいます…';
+  const code = String(codeArg || $('#code').value).trim(); if (!/^\d{4,8}$/.test(code)) { toast('合言葉（数字）を入れてください'); mtoast('合言葉（数字）を入れてください', 2000); return false; }
+  if (G.coop && G.session) { if (G.session.code === code) { openLobby(); return true; } try { G.session.leave(); } catch (e) { } G.session = null; G.coop = false; }
+  G.nick = (($('#nick').value || G.nick || '').trim() || 'もののけ').slice(0, 10); STORE.set('nick', G.nick);
+  const b = $('#btnJoin'); b.disabled = true; b.textContent = 'つないでいます…'; G.netBusy = true;
+  let ok = false;
   try {
+    NETLIB.log('ui', `部屋に入る #${code}`);
     const tr = await openTransport(code);
-    G.session = new NETLIB.ClientSession({ transport: tr, code }); G.coop = true; sendMine(); G.joinT = performance.now(); openLobby();
-  } catch (e) { console.error(e); toast('つなげませんでした。もう一度ためしてください。'); }
-  b.disabled = false; b.textContent = '部屋に入る';
+    G.session = new NETLIB.ClientSession({ transport: tr, code }); G.coop = true; sendMine(); G.joinT = performance.now(); openLobby(); ok = true;
+  } catch (e) { console.error(e); NETLIB.log('ui', 'つなげない: ' + (e && e.message)); toast('つなげませんでした。もう一度ためしてください。'); mtoast('通信の部品を読み込めませんでした。電波のよい所でもう一度', 2800); }
+  G.netBusy = false; b.disabled = false; b.textContent = '部屋に入る';
+  return ok;
 }
 function toast(s) { const n = $('#netMsg'); n.textContent = s; }
 
@@ -8777,6 +8882,27 @@ function showResult(v) {
   refreshResSave();
   $('#hud').hidden = true; show('result');
 }
+/** 協力プレイの接続失敗・切断の表示（理由を開発用ログにも残す） */
+function netFail(title, msg, code) {
+  NETLIB.log('ui', `表示：${title}（${code}）`);
+  $('#lostTitle').textContent = title; $('#lostMsg').textContent = msg; G.mode = 'lost'; show('netlost');
+  if (typeof frNetFail === 'function') frNetFail(code);
+}
+/* 開発者向け：?debug=net で接続の経過を画面の隅に出す */
+if (/[?&]debug=net/.test(location.search)) {
+  const box = document.createElement('div'); box.id = 'netDbg';
+  box.style.cssText = 'position:fixed;left:4px;bottom:4px;z-index:99;max-width:min(96vw,520px);max-height:40vh;overflow:auto;background:rgba(0,0,0,.78);color:#9f9;font:11px/1.35 monospace;padding:4px 6px;border-radius:6px;pointer-events:auto;white-space:pre-wrap';
+  document.body.appendChild(box);
+  const draw = () => { const S = G.session; box.textContent = `状態: ${S ? S.kind + ' ' + (S.state || '') + (S.code ? ' #' + S.code : '') : 'なし'}\n` + NETLIB.LOG.slice(-14).map(e => `${e.t.toFixed(1)} ${e.tag} ${e.msg}`).join('\n'); };
+  NETLIB.onLog(draw); setInterval(draw, 1000);
+}
+/* 画面を裏にしていた時間は、通信の無応答に数えない（戻った直後に切れないように） */
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { hiddenAt = performance.now(); NETLIB.log('ui', '画面が裏へ'); return; }
+  if (!hiddenAt) return; const ms = performance.now() - hiddenAt; hiddenAt = 0; NETLIB.log('ui', `画面へ戻る（${(ms / 1000).toFixed(1)}秒）`);
+  const S = G.session; if (S && S.resume) S.resume(ms);
+});
 /* ---------- メインループ ---------- */
 let last = performance.now();
 function frame(ts) {
@@ -8786,12 +8912,20 @@ function frame(ts) {
     if (S && (G.mode === 'play' || G.mode === 'pause' || G.mode === 'result' || G.mode === 'lobby')) {
       if (G.mode === 'play') applyInput();
       S.update(dtRaw);
+      if (S.notices && S.notices.length) for (const n of S.notices.splice(0)) { if (G.mode === 'play') notice(n.s, 'info', 3000); else mtoast(n.s, 2400); } // 参加・通信の途切れ・復帰
       if (S.kind === 'client') {
-        if (S.rejected) { const why = { version: '版が違います。ページを再読み込みしてください。', started: 'すでに戦闘が始まっています。', full: '部屋が満員です（4人まで）。' }[S.rejected] || '入れませんでした。'; S.rejected = null; $('#lostTitle').textContent = '部屋に入れませんでした'; $('#lostMsg').textContent = why; G.mode = 'lost'; show('netlost'); }
-        else if (S.lost) { $('#lostTitle').textContent = 'ホストとの接続が切れました'; $('#lostMsg').textContent = S.lost === 'timeout' ? '通信が6秒以上とだえたため中断しました。電波のよい所でもう一度入ってください。' : 'ホストが部屋を閉じました。戦闘は中断されました。'; G.mode = 'lost'; S.lost = null; show('netlost'); }
+        if (S.rejected) { const why = { version: '版が違います。両方の端末でページを再読み込みしてください。', started: 'すでに戦闘が始まっています。終わってロビーに戻ってから、もう一度招待してもらってください。', full: '部屋が満員です（4人まで）。' }[S.rejected] || '入れませんでした。'; netFail('部屋に入れませんでした', why, S.rejected); S.rejected = null; }
+        else if (S.lost) {
+          const L = S.lost, started = !!S.started;
+          const msg = { no_peer: [`ホストが見つかりませんでした（${DATA.NET.connectTimeout}秒）`, 'ホストが部屋を閉じたか、合言葉がちがう可能性があります。招待をもう一度送ってもらうか、合言葉を確認してください。'],
+            no_lobby: ['ホストとつながりませんでした', 'ホストは見つかりましたが、通信がつながりませんでした。両方の電波を確認して、もう一度ためしてください。'],
+            p2p_failed: ['ホストと直接つながりませんでした', '回線の組み合わせ（モバイル回線・学校や会社のWi-Fiなど）によっては直接の通信ができません。同じWi-Fiでためすか、別の回線でもう一度。'],
+            timeout: ['ホストとの接続が切れました', `通信が${DATA.NET.dropT}秒以上とだえたため${started ? '戦闘を' : ''}中断しました。電波のよい所でもう一度入ってください。`],
+            host_left: ['ホストが部屋を閉じました', started ? '戦闘は中断されました。' : 'もう一度招待してもらってください。'] }[L] || ['ホストとの接続が切れました', ''];
+          S.lost = null; netFail(msg[0], msg[1], L);
+        }
         else if (G.mode === 'lobby' && S.started && S.mySlot >= 0) enterGame();
         else if ((G.mode === 'result' || G.mode === 'play') && S.lobby && S.lobby.phase === 'lobby' && G.resultShown) { openLobby(); }
-        else if (G.mode === 'lobby' && !S.lobby && performance.now() - (G.joinT || 0) > 15000) { $('#lostTitle').textContent = '部屋が見つかりません'; $('#lostMsg').textContent = '合言葉が同じか、ホストが「部屋を作る」を押しているか確認してください。'; G.mode = 'lost'; show('netlost'); }
       }
       if (G.mode === 'lobby') { G.lobT = (G.lobT || 0) + dt; if (G.lobT > 0.5) { G.lobT = 0; if (!$('#title').hidden) renderHome(); } }
       G.my = S.kind === 'client' ? Math.max(0, S.mySlot) : S.mySlot;
@@ -9391,11 +9525,12 @@ function renderHome() {
   const gb = $('#gTixBadge'); gb.hidden = !(a.tickets > 0); gb.textContent = String(a.tickets || 0);
   // 協力プレイの部屋
   const rm = $('#hmRoom'); rm.hidden = !G.coop;
-  $('#btnCoopLbl').textContent = G.coop ? 'ルーム' : '協力プレイ';
+  $('#btnRoomShare').hidden = !(G.coop && S && S.kind === 'host');
   if (G.coop && S) {
     $('#hmRoomCode').textContent = S.code || '----';
     const n = lob && lob.slots ? lob.slots.filter(Boolean).length : 0;
-    $('#hmRoomSt').textContent = S.kind === 'host' ? `ホスト・${n}/4人（空きはAI）` : !S.lobby ? 'ホストを探しています…' : S.mySlot >= 0 ? `P${S.mySlot + 1}で参加中・${n}/4人・ホストの出動待ち` : '入っています…';
+    const cs = S.kind === 'client' ? S.state : '';
+    $('#hmRoomSt').textContent = S.kind === 'host' ? `ホスト・${n}/4人（空きはAI）` : cs === 'connecting' ? '接続準備中…（ホストを探しています）' : cs === 'handshake' ? '接続確立中…' : cs === 'reconnecting' ? '再接続中…' : !S.lobby ? '接続準備中…' : S.mySlot >= 0 ? `P${S.mySlot + 1}で参加中・${n}/4人・ホストの出動待ち` : '入っています…';
   }
   // 4体（3D）と名札
   const sl = homeSlots(); G.homeSlots = sl;
@@ -9666,7 +9801,6 @@ function openLgPanel(reg) { $('#lgPanel').hidden = false; showDone(false); setRe
 function bindLobby() {
   $('#btnSolo').onclick = () => homeGo();
   $('#btnTeam').onclick = () => { AUDIO.sfx('ok'); openRoster('home'); };
-  $('#btnCoop').onclick = () => { AUDIO.sfx('ok'); openCoop(); };
   $('#btnGacha').onclick = () => { AUDIO.sfx('ok'); if (G.coop) { mtoast('協力プレイのルームにいる間はガチャを開けません', 2200); return; } openGacha(); };
   $('#btnStageSel').onclick = () => { AUDIO.sfx('ui'); openStageSel(); };
   $('#btnRoomLeave').onclick = () => { AUDIO.sfx('back'); goTitle(); mtoast('ルームから退出しました'); };
@@ -9706,7 +9840,9 @@ function bindLobby() {
 /* =====================================================================
    ui_friend.js — フレンド（サーバー版でログイン中だけ）
    ・フレンドコード（ランダム8文字）か招待リンク（?friend=コード）で申請 → 相手が承認
-   ・フレンドのオンライン／募集中のルームが見え、「参加」でそのまま協力プレイへ。ホスト中は「招待」を送れる
+   ・フレンドのオンライン／募集中のルームが見え、「参加」でそのまま協力プレイへ
+   ・各フレンドの「招待」：自分の部屋を裏で自動で用意して（あれば使い回す）、その合言葉で招待を送る。先に部屋を作る必要はない
+   ・招待は5分有効。相手は通知の「参加」か参加リンク（?join=合言葉）で入る。期限切れ・部屋が閉じた・戦闘中・満員を見分けて知らせる
    ・通信は読み込みだけ（常時接続はしない）：フレンド画面は20秒ごと（相手の状態も読む）、ほかの画面は90秒ごと（申請・招待だけ）、戦闘中は読まない
    ・自分の状態は変わったときと2分ごとに知らせる（Firestore の無料枠の読み書き回数を使いすぎないように）
    ===================================================================== */
@@ -9752,22 +9888,24 @@ function frBadge() {
   const d = FRND.data, n = d ? d.incoming.length + d.friends.filter(f => f.inv && !FRND.dismissed.has(f.pid + f.inv.t)).length : 0;
   const b = $('#fBadge'); b.hidden = !n; b.textContent = n > 9 ? '9+' : String(n);
 }
-/** フレンドからの招待（5分以内）を、ホームにいるときだけ知らせる */
+/** フレンドからの招待（5分以内）・参加リンクを、ホームにいるときだけ知らせる */
 function frInviteCheck() {
-  const d = FRND.data, box = $('#frInv');
-  const f = d && !G.coop && (G.mode === 'title') && d.friends.find(x => x.inv && !FRND.dismissed.has(x.pid + x.inv.t));
+  const d = FRND.data, box = $('#frInv'), home = !G.coop && G.mode === 'title';
+  if (home && G.joinPending) { FRND.invShown = { link: true, inv: { room: G.joinPending } }; box.hidden = false; $('#frInvTxt').textContent = `招待リンクの部屋（合言葉 ${G.joinPending}）に参加しますか？`; return; }
+  const f = home && d && d.friends.find(x => x.inv && !FRND.dismissed.has(x.pid + x.inv.t) && Date.now() - x.inv.t < CLOUD.FR.INV);
   if (!f) { box.hidden = true; FRND.invShown = null; return; }
   FRND.invShown = f; box.hidden = false;
-  $('#frInvTxt').textContent = `${f.nm} さんから協力プレイの招待（ルーム ${f.inv.room}）`;
+  $('#frInvTxt').textContent = `${f.nm} さんから協力プレイの招待（ルーム ${f.inv.room}・あと${Math.max(1, Math.ceil((CLOUD.FR.INV - (Date.now() - f.inv.t)) / 60000))}分）`;
 }
 function frTick() {
-  if (!ACCT.FR) { if (!$('#frInv').hidden) $('#frInv').hidden = true; return; }
+  if (!ACCT.FR) { frInviteCheck(); return; } // 参加リンク（?join=）はログインしなくても使える
   frPublish(false);
   if (document.hidden) return;
   const inBattle = ['play', 'pause', 'walk'].includes(G.mode);
   const open = !$('#friend').hidden, every = open ? 20000 : 90000;
   if (!inBattle && Date.now() - FRND.lastList > every) frRefresh(false, !open);
   if (inBattle && !$('#frInv').hidden) $('#frInv').hidden = true;
+  else if (!inBattle) frInviteCheck(); // 残り時間・期限切れを表示に反映
 }
 /* ---------- 画面 ---------- */
 function openFriend(prefill) {
@@ -9815,31 +9953,90 @@ function renderFriend() {
   ls.appendChild(el('div', 'fr-h', d ? `フレンド（${fs.length}／${CLOUD.FR.MAX}）` : 'フレンド（読み込み中…）'));
   if (FRND.err) ls.appendChild(el('div', 'fr-empty', FRND.err));
   else if (d && !fs.length) ls.appendChild(el('div', 'fr-empty', 'まだフレンドがいません。上のコードを友だちに送るか、友だちのコードを入れて申請しましょう。'));
-  const mine = frMine();
+  const S = G.session, client = G.coop && S && S.kind === 'client', inGame = G.coop && S && S.kind === 'host' && S.lobby.phase === 'game';
   for (const f of fs) {
-    const st = f.light ? '確認中…' : f.act === 'room' ? `募集中（ルーム${f.room}）` : f.act === 'play' ? 'プレイ中' : f.on ? 'オンライン' : frAgo(f.seen, now);
-    const row = frRow(f.ch, f.nm, (f.lv && f.act !== 'room' ? `Lv${f.lv} ・ ` : '') + st, f.act === 'room' ? 'room' : f.act === 'play' ? 'play' : f.on ? 'on' : 'off');
+    const invOk = f.inv && now - f.inv.t < CLOUD.FR.INV;
+    const st = f.light ? '確認中…' : invOk ? `招待が届いています（ルーム${f.inv.room}）` : f.act === 'room' ? `募集中（ルーム${f.room}）` : f.act === 'play' ? 'プレイ中' : f.on ? 'オンライン' : frAgo(f.seen, now);
+    const row = frRow(f.ch, f.nm, (f.lv && f.act !== 'room' && !invOk ? `Lv${f.lv} ・ ` : '') + st, invOk || f.act === 'room' ? 'room' : f.act === 'play' ? 'play' : f.on ? 'on' : 'off');
+    row.querySelector('.fr-who').onclick = () => frProfile(f);
     const act = row.querySelector('.fr-act');
-    if (f.act === 'room' && !G.coop) { const j = el('button', 'bl-btn yellow sm', '参加'); j.type = 'button'; j.onclick = () => frJoin(f, f.room); act.appendChild(j); }
-    if (mine.act === 'room' && f.on && f.act !== 'play' && f.act !== 'room') {
-      const sent = f.invSent && now - f.invSent < 60000;
-      const v = el('button', 'bl-btn sm', sent ? '招待ずみ' : '招待'); v.type = 'button'; v.disabled = sent;
-      v.onclick = async () => { v.disabled = true; const r = await CLOUD.FR.invite(f.pid, mine.room); if (r.ok) { f.invSent = Date.now(); AUDIO.sfx('ok'); frMsg(`${f.nm} さんに招待を送りました（ルーム ${mine.room}）`, true); v.textContent = '招待ずみ'; } else { frMsg(r.msg, false); v.disabled = false; } };
+    if ((invOk || f.act === 'room') && !G.coop) { const j = el('button', 'bl-btn yellow sm', '参加'); j.type = 'button'; j.onclick = e => { e.stopPropagation(); invOk ? frAcceptInvite(f) : frJoin(f, f.room); }; act.appendChild(j); }
+    if (!client) {
+      const sent = f.invSent && now - f.invSent < 30000;
+      const v = el('button', 'bl-btn sm', sent ? '招待ずみ' : '招待'); v.type = 'button'; v.disabled = sent || inGame || FRND.inviting;
+      if (inGame) v.title = '戦闘中は招待できません';
+      v.onclick = e => { e.stopPropagation(); frInvite(f, v); };
       act.appendChild(v);
     }
     const armed = FRND.rmArm === f.pid;
     const rm = el('button', 'hm-chip fr-rm' + (armed ? ' armed' : ''), armed ? '本当に解除？' : '解除'); rm.type = 'button';
-    rm.onclick = () => { if (FRND.rmArm !== f.pid) { FRND.rmArm = f.pid; AUDIO.sfx('ui'); renderFriend(); return; } FRND.rmArm = null; frDo(() => CLOUD.FR.remove(f.pid), `${f.nm} さんとのフレンドを解除しました`); };
+    rm.onclick = e => { e.stopPropagation(); if (FRND.rmArm !== f.pid) { FRND.rmArm = f.pid; AUDIO.sfx('ui'); renderFriend(); return; } FRND.rmArm = null; frDo(() => CLOUD.FR.remove(f.pid), `${f.nm} さんとのフレンドを解除しました`); };
     act.appendChild(rm);
     ls.appendChild(row);
   }
 }
 function frRow(ch, nm, sub, dot) {
-  const row = el('div', 'fr-row'), av = el('div', 'fr-av');
+  const row = el('div', 'fr-row'), who = el('button', 'fr-who'), av = el('span', 'fr-av'); who.type = 'button'; // 名前とアイコン（押すとプロフィール）と、右のボタンは別の場所
   if (ch && G.thumbs[ch]) { const im = el('img'); im.src = G.thumbs[ch]; im.alt = ''; av.appendChild(im); } else av.textContent = '👤';
-  const tx = el('div', 'fr-tx'); tx.append(el('b', '', nm || '？'));
+  const tx = el('span', 'fr-tx'); tx.append(el('b', '', nm || '？'));
   const s = el('span', 'fr-sub'); if (dot) s.appendChild(el('i', 'fr-dot ' + dot)); s.append(sub); tx.appendChild(s);
-  row.append(av, tx, el('div', 'fr-act')); return row;
+  who.append(av, tx); row.append(who, el('div', 'fr-act')); return row;
+}
+/** フレンドのプロフィール（profiles から：名前・先頭キャラ・Lv・状態・フレンドになった日） */
+function frProfile(f) {
+  AUDIO.sfx('ui'); const now = Date.now(), c = DATA.CHI[f.ch];
+  const im = $('#frpImg'); im.src = (f.ch && (G.busts[f.ch] || G.thumbs[f.ch])) || ''; im.hidden = !im.src;
+  $('#frpName').textContent = f.nm || '？';
+  const kv = $('#frpKv'); kv.textContent = '';
+  const st = f.light ? '確認中' : f.act === 'room' ? `募集中（ルーム${f.room}）` : f.act === 'play' ? 'プレイ中' : f.on ? 'オンライン' : frAgo(f.seen, now);
+  for (const [k, v] of [['先頭キャラ', c ? `${c.nm}（Lv${f.lv || 1}）` : '—'], ['いまの状態', st], ['フレンドになった日', f.since ? new Date(f.since).toLocaleDateString('ja-JP') : '—']]) { kv.appendChild(el('b', '', k)); kv.appendChild(el('span', '', v)); }
+  const S = G.session, client = G.coop && S && S.kind === 'client';
+  const b = $('#btnFrpInv'); b.hidden = client; b.disabled = !!(G.coop && S && S.kind === 'host' && S.lobby.phase === 'game');
+  b.onclick = () => { $('#frProf').hidden = true; frInvite(f, null); };
+  $('#frProf').hidden = false;
+}
+/** 招待：部屋を裏で用意して（あれば使い回す）、合言葉を送る */
+async function frInvite(f, btn) {
+  if (FRND.inviting) return; FRND.inviting = true; if (btn) btn.disabled = true;
+  try {
+    const S = G.session;
+    if (G.coop && S && S.kind === 'client') { frMsg('参加中のルームでは招待できません（ホストだけが招待できます）', false); return; }
+    if (G.coop && S && S.kind === 'host' && S.lobby.phase === 'game') { frMsg('戦闘中は招待できません。ロビーに戻ってから招待してください', false); return; }
+    if ($('#btnHost').disabled && !(G.coop && S)) { frMsg('このブラウザでは協力プレイを使えません', false); return; }
+    frMsg(G.coop ? '招待を送っています…' : '部屋を用意しています…', true);
+    const code = await startHost({ quiet: true });
+    if (!code) { frMsg('部屋を用意できませんでした。電波のよい所でもう一度', false); return; }
+    if (G.session && G.session.lobby && G.session.lobby.slots.every(Boolean)) { frMsg('部屋が満員（4人）です', false); return; }
+    const r = await CLOUD.FR.invite(f.pid, code);
+    if (!r.ok) { frMsg('招待を送れませんでした：' + r.msg, false); return; }
+    f.invSent = Date.now(); AUDIO.sfx('ok');
+    frMsg(f.on ? `${f.nm} さんに招待を送りました（ルーム ${code}・5分有効）。相手が「参加」を押すとロビーに入ります` : `${f.nm} さんはオフラインです。招待は5分間有効です（その間にゲームを開けば参加できます）。上の部屋の「リンク」で参加リンクも送れます`, true);
+    frPublish(true);
+  } finally { FRND.inviting = false; if (!$('#friend').hidden) renderFriend(); }
+}
+/** 招待に応える：期限・部屋が開いているか・戦闘中かを確かめてから入る */
+async function frAcceptInvite(f) {
+  const inv = f.inv; if (!inv) return;
+  FRND.dismissed.add(f.pid + inv.t); $('#frInv').hidden = true; frBadge();
+  if (Date.now() - inv.t > CLOUD.FR.INV) { frNote(`${f.nm} さんの招待は期限（5分）が切れました。もう一度招待してもらってください`); return; }
+  const p = await CLOUD.FR.profile(f.uid);
+  if (p.ok && p.v) {
+    if (p.v.act === 'play') { frNote(`${f.nm} さんは戦闘中です。終わってロビーに戻ってから、もう一度招待してもらってください`); return; }
+    if (!(p.v.act === 'room' && p.v.room === inv.room) || !p.v.on) { frNote(`${f.nm} さんの部屋は閉じられています（招待は無効になりました）。もう一度招待してもらってください`); return; }
+  }
+  G.joinFrom = { nm: f.nm, room: inv.room };
+  await frJoin(f, inv.room);
+}
+function frNote(s) { if (!$('#friend').hidden) frMsg(s, false); else mtoast(s, 3600); AUDIO.sfx('back'); }
+/** 協力プレイの接続に失敗したとき（ui.js の netFail から） */
+function frNetFail(code) { if (G.joinFrom) { NETLIB.log('ui', `招待からの参加に失敗：${G.joinFrom.nm} #${G.joinFrom.room} ${code}`); G.joinFrom = null; } }
+/** 参加リンク（?join=合言葉）を送る（ホストだけ） */
+async function frShareJoin() {
+  const S = G.session; if (!(G.coop && S && S.kind === 'host')) return;
+  const url = location.origin + location.pathname + '?join=' + S.code, text = `BIGバスターズで一緒に遊ぼう！ 合言葉 ${S.code}（リンクを開くと参加できます）`;
+  try { if (navigator.share) { await navigator.share({ title: 'BIGバスターズ', text, url }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  let ok = false; try { await navigator.clipboard.writeText(text + '\n' + url); ok = true; } catch (e) { }
+  mtoast(ok ? '参加リンクをコピーしました。LINEなどに貼りつけて送ってください' : `合言葉 ${S.code} を伝えてください`, 3000);
 }
 async function frDo(fn, okMsg) {
   if (FRND.busy) return; AUDIO.sfx('ui');
@@ -9853,14 +10050,14 @@ async function frAdd() {
   frMsg(r.msg, r.ok); if (r.ok) { AUDIO.sfx('ok'); $('#frIn').value = ''; } else AUDIO.sfx('back');
   await frRefresh(true);
 }
-/** フレンドのルームへ（協力プレイの「パスワードで参加」と同じ） */
+/** フレンドのルームへ（協力プレイの「パスワードで参加」と同じ。合言葉の入力はいらない） */
 async function frJoin(f, room) {
   if (G.coop) { mtoast('いまのルームから退出してから参加してください', 2400); return; }
   if ($('#btnJoin').disabled) { mtoast('このブラウザでは協力プレイを使えません', 2600); return; }
-  $('#frInv').hidden = true; if (f.inv) FRND.dismissed.add(f.pid + f.inv.t);
-  $('#code').value = room; $('#nick').value = G.nick || '';
-  await startJoin();
-  if (!G.coop) mtoast('ルームにつなげませんでした。もう一度ためしてください', 2800);
+  $('#frInv').hidden = true; if (f && f.inv) FRND.dismissed.add(f.pid + f.inv.t);
+  $('#nick').value = G.nick || '';
+  const ok = await startJoin(room);
+  if (!ok) mtoast('ルームにつなげませんでした。もう一度ためしてください', 2800);
 }
 function frShareUrl(code) { return location.origin + location.pathname + '?friend=' + code; }
 async function frShare() {
@@ -9876,11 +10073,13 @@ async function frCopy(s, msg) {
   }
   frMsg(ok ? msg : `コピーできませんでした。${s.split('\n')[0]}`, ok); if (ok) AUDIO.sfx('ok');
 }
-/** 招待リンク（?friend=コード）で開いたとき：ログイン後にフレンド画面へ（コードを入れておく） */
+/** リンクで開いたとき：?friend=コード（フレンド申請。ログイン後にフレンド画面へ）／?join=合言葉（協力プレイの部屋。ホームで「参加」をたずねる）。
+    2つは別の役割。値はそのまま（大文字化・ハイフン除去以外の変換はしない）で引き継ぐ */
 function frTakeLink() {
-  const m = /[?&]friend=([A-Za-z0-9-]{8,9})/.exec(location.search); if (!m) return;
-  const c = CLOUD.FR.norm(m[1]); if (CLOUD.FR.valid(c)) G.frPending = c;
-  try { const u = new URL(location.href); u.searchParams.delete('friend'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
+  const q = new URLSearchParams(location.search), fr = q.get('friend'), jn = q.get('join');
+  if (fr) { const c = CLOUD.FR.norm(fr); if (CLOUD.FR.valid(c)) G.frPending = c; }
+  if (jn && /^\d{4,8}$/.test(jn.trim())) G.joinPending = jn.trim();
+  if (fr || jn) try { const u = new URL(location.href); u.searchParams.delete('friend'); u.searchParams.delete('join'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
 }
 /** ログインできたとき（ui.js の loginOk から） */
 function frOnLogin() {
@@ -9902,8 +10101,12 @@ function bindFriend() {
   $('#btnFrShare').onclick = () => frShare();
   $('#btnFrLogin').onclick = () => { AUDIO.sfx('ui'); openLogin('friend', 'ログインするとフレンドを使えます'); };
   $('#frNick').onchange = () => { G.nick = ($('#frNick').value.trim() || '').slice(0, 10); $('#frNick').value = G.nick; $('#nick').value = G.nick; STORE.set('nick', G.nick); frPublish(true); if (G.acct) persist(); frMsg('なまえを変えました', true); };
-  $('#btnFrInvGo').onclick = () => { const f = FRND.invShown; if (f && f.inv) { AUDIO.sfx('ok'); frJoin(f, f.inv.room); } };
-  $('#btnFrInvX').onclick = () => { const f = FRND.invShown; if (f && f.inv) FRND.dismissed.add(f.pid + f.inv.t); $('#frInv').hidden = true; frBadge(); };
+  $('#btnFrInvGo').onclick = () => { const f = FRND.invShown; if (!f || !f.inv) return; AUDIO.sfx('ok'); if (f.link) { const r = G.joinPending; G.joinPending = null; $('#frInv').hidden = true; frJoin(null, r); } else frAcceptInvite(f); };
+  $('#btnFrInvX').onclick = () => { const f = FRND.invShown; if (f && f.link) G.joinPending = null; else if (f && f.inv) FRND.dismissed.add(f.pid + f.inv.t); $('#frInv').hidden = true; frBadge(); };
+  $('#btnFrpX').onclick = () => { AUDIO.sfx('back'); $('#frProf').hidden = true; };
+  $('#btnFrCoop').onclick = () => { AUDIO.sfx('ok'); openCoop(); };
+  $('#btnFrCoop2').onclick = () => { AUDIO.sfx('ok'); openCoop(); };
+  $('#btnRoomShare').onclick = () => { AUDIO.sfx('ui'); frShareJoin(); };
   setInterval(() => { try { frTick(); } catch (e) { console.warn(e); } }, 2000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden && ACCT.FR) { frPublish(true); frRefresh(false, $('#friend').hidden); } });
 }

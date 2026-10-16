@@ -27,6 +27,7 @@ INIT = '''window.__TB_CLOUD_TEST = { cfg: { apiKey: 'demo-key', authDomain: 'loc
   async getDoc(ref) { const d = await window.__fsGet(ref.path); return { exists: () => d != null, data: () => d }; },
   async setDoc(ref, data) { await window.__fsSet(ref.path, JSON.parse(JSON.stringify(data))); },
   async deleteDoc(ref) { await window.__fsDel(ref.path); },
+  async updateDoc(ref, part) { const d = await window.__fsGet(ref.path); if (d == null) throw Object.assign(new Error('not-found'), { code: 'not-found' }); await window.__fsSet(ref.path, Object.assign(d, JSON.parse(JSON.stringify(part)))); },
   collection: (db, c) => ({ c }), where: (f, op, v) => ({ f, op, v }), query: (c, w) => ({ c: c.c, w }),
   async getDocs(q) { const r = await window.__fsList(q.w.v); return { docs: r.map(x => ({ id: x.id, data: () => x.d })) }; },
   async runTransaction(db, fn) { const w = {}; const tx = { async get(ref) { const d = await window.__fsGet(ref.path); return { exists: () => d != null, data: () => d }; }, set(ref, data) { w[ref.path] = JSON.parse(JSON.stringify(data)); } }; const r = await fn(tx); for (const p in w) await window.__fsSet(p, w[p]); return r; },
@@ -103,34 +104,55 @@ with sync_playwright() as p:
     J(A, "() => [...document.querySelectorAll('#frReq button')].find(b => b.textContent === '承認').click()")
     until(A, "() => document.querySelectorAll('#frList .fr-row').length > 0")
     res['A_msg_accept'] = J(A, "() => document.querySelector('#frMsg').textContent"); res['A_friends'] = rows(A, '#frList')
-    # A：ルームを作る → 状態が「募集中」になる
-    clk(A, '#btnFrBack'); time.sleep(0.2); clk(A, '#btnCoop'); time.sleep(0.3); clk(A, '#btnHost')
-    until(A, "() => __tb.G.mode === 'lobby' && __tb.G.coop"); res['A_room'] = J(A, "() => __tb.G.session.code")
-    res['A_hidden'] = J(A, '() => document.visibilityState')
-    time.sleep(4)  # 状態を知らせる（2秒ごとの見回り）
-    uidA = [k.split('/')[1] for k, v in store.items() if k.startswith('profiles/') and v.get('nm') == 'ネコ']
-    res['A_profile'] = store.get('profiles/' + uidA[0]) if uidA else None
-    # B：一覧に「ルーム○○で募集中」＋参加ボタン
-    clk(B, '#btnFrReload'); until(B, "() => document.querySelectorAll('#frList .fr-row').length > 0 && /募集中/.test(document.querySelector('#frList').innerText)")
-    res['B_friends'] = rows(B, '#frList'); B.screenshot(path=os.path.join(OUT, 'f4_B_list_room.png'))
-    # A：フレンド画面から招待（ホスト中）
-    clk(A, '#btnFriend'); until(A, "() => [...document.querySelectorAll('#frList button')].some(b => b.textContent === '招待')")
-    A.screenshot(path=os.path.join(OUT, 'f5_A_invite_btn.png'))
+    # A：部屋を作らずに、フレンド行の「招待」を押すだけ（部屋は裏で自動で用意される）
+    res['A_before_invite_coop'] = J(A, "() => __tb.G.coop")
     J(A, "() => [...document.querySelectorAll('#frList button')].find(b => b.textContent === '招待').click()")
-    until(A, "() => /招待を送りました/.test(document.querySelector('#frMsg').textContent)"); res['A_invite'] = J(A, "() => document.querySelector('#frMsg').textContent")
-    clk(A, '#btnFrBack')
-    # B：ホームに戻ると招待の通知 → 参加
-    clk(B, '#btnFrReload'); time.sleep(1.0); clk(B, '#btnFrBack'); time.sleep(1.2)
+    until(A, "() => /招待を送りました|オフライン/.test(document.querySelector('#frMsg').textContent)", 30)
+    res['A_invite'] = J(A, "() => document.querySelector('#frMsg').textContent")
+    res['A_room'] = J(A, "() => __tb.G.coop && [__tb.G.session.kind, __tb.G.session.code, __tb.G.mode]")
+    A.screenshot(path=os.path.join(OUT, 'f4_A_invited.png'))
+    # 2回目の招待は同じ部屋を使う（部屋を増やさない）
+    time.sleep(0.3); J(A, "() => { const b = [...document.querySelectorAll('#frList button')].find(b => b.textContent === '招待'); if (b) { b.disabled = false; b.click(); } }")
+    until(A, "() => !__tb.FRND.inviting", 10); time.sleep(0.5)
+    res['A_room_reused'] = J(A, "() => __tb.G.session.code") == (res['A_room'] or [0, 0])[1]
+    pid = [k for k in store if k.startswith('friends/')][0]; res['inv_doc'] = store[pid].get('inv')
+    time.sleep(3); uidA = [k.split('/')[1] for k, v in store.items() if k.startswith('profiles/') and v.get('nm') == 'ネコ']
+    res['A_profile'] = store.get('profiles/' + uidA[0]) if uidA else None
+    clk(A, '#btnFrBack'); time.sleep(0.5); res['A_home_room'] = J(A, "() => [!document.querySelector('#hmRoom').hidden, document.querySelector('#hmRoomCode').textContent, !document.querySelector('#btnRoomShare').hidden]")
+    A.screenshot(path=os.path.join(OUT, 'f5_A_home_room.png'))
+    # B：一覧で「招待が届いています」＋参加、プロフィール
+    clk(B, '#btnFrReload'); until(B, "() => /招待が届いています/.test(document.querySelector('#frList').innerText)")
+    res['B_friends'] = rows(B, '#frList'); B.screenshot(path=os.path.join(OUT, 'f5b_B_list_invite.png'))
+    J(B, "() => document.querySelector('#frList .fr-who').click()"); time.sleep(0.4)
+    res['B_profile_pop'] = J(B, "() => [!document.querySelector('#frProf').hidden, document.querySelector('#frpName').textContent, document.querySelector('#frpKv').innerText.replace(/\\s+/g, ' ')]")
+    B.screenshot(path=os.path.join(OUT, 'f5c_B_profile.png')); clk(B, '#btnFrpX')
+    # B：ホームに戻ると招待の通知 → 参加（合言葉の入力なし）
+    clk(B, '#btnFrBack'); time.sleep(2.5)
     res['B_banner'] = J(B, "() => [document.querySelector('#frInv').hidden, document.querySelector('#frInvTxt').textContent]")
     res['B_badge'] = J(B, "() => document.querySelector('#fBadge').textContent")
     B.screenshot(path=os.path.join(OUT, 'f6_B_invite_banner.png'))
-    clk(B, '#btnFrInvGo'); until(B, "() => __tb.G.coop && __tb.G.session && __tb.G.session.lobby", 20)
+    clk(B, '#btnFrInvGo'); until(B, "() => __tb.G.coop && __tb.G.session && __tb.G.session.lobby && __tb.G.session.mySlot > 0", 30)
     time.sleep(1.5)
-    res['B_joined'] = J(B, "() => [__tb.G.coop, __tb.G.session && __tb.G.session.kind, __tb.G.session && __tb.G.session.code]")
+    res['B_joined'] = J(B, "() => [__tb.G.coop, __tb.G.session && __tb.G.session.kind, __tb.G.session && __tb.G.session.code, __tb.G.session && __tb.G.session.state]")
     res['A_lobby_players'] = J(A, "() => __tb.G.session.lobby.slots.filter(Boolean).map(s => s.nick)")
+    res['B_room_status'] = J(B, "() => document.querySelector('#hmRoomSt').textContent")
+    # C：ログインせずに参加リンク（?join=合言葉）で開く
+    code = J(A, "() => __tb.G.session.code")
+    C = page(URL + '&join=' + code); clk(C, '#btnGuest'); time.sleep(2.6)
+    res['C_banner'] = J(C, "() => [document.querySelector('#frInv').hidden, document.querySelector('#frInvTxt').textContent, location.search]")
+    C.screenshot(path=os.path.join(OUT, 'f6c_C_join_link.png'))
+    clk(C, '#btnFrInvGo'); until(C, "() => __tb.G.coop && __tb.G.session && __tb.G.session.mySlot > 0", 30); time.sleep(1.0)
+    res['C_joined'] = J(C, "() => [__tb.G.session.kind, __tb.G.session.mySlot]")
+    res['A_lobby_players3'] = J(A, "() => __tb.G.session.lobby.slots.filter(Boolean).map(s => s.nick)")
+    J(C, "() => document.getElementById('btnRoomLeave').click()"); C.close()
     A.screenshot(path=os.path.join(OUT, 'f7_A_lobby_with_B.png'))
-    # 解除
+    # 期限切れの招待：古い時刻に書きかえる → 通知に出ない・押しても入らない
     J(B, "() => document.getElementById('btnRoomLeave').click()"); time.sleep(0.5)
+    inv = dict(store[pid]['inv']); inv['t'] = inv['t'] - 6 * 60 * 1000; store[pid]['inv'] = inv
+    clk(B, '#btnFriend'); clk(B, '#btnFrReload'); time.sleep(1.5)
+    res['B_expired_row'] = rows(B, '#frList'); clk(B, '#btnFrBack'); time.sleep(2.5)
+    res['B_expired_banner_hidden'] = J(B, "() => document.querySelector('#frInv').hidden")
+    # 解除
     clk(B, '#btnFriend'); until(B, "() => document.querySelectorAll('#frList .fr-rm').length > 0")
     J(B, "() => document.querySelector('#frList .fr-rm').click()"); time.sleep(0.2); res['B_rm_armed'] = J(B, "() => document.querySelector('#frList .fr-rm').textContent")
     J(B, "() => document.querySelector('#frList .fr-rm').click()"); until(B, "() => /解除しました/.test(document.querySelector('#frMsg').textContent)")

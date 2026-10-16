@@ -350,28 +350,43 @@ async function openTransport(code) {
   if (G.netMode === 'room') return NETLIB.RoomTransport.open(G.roomCap, code);
   return NETLIB.P2PTransport.open(code);
 }
-async function startHost() {
-  AUDIO.init(); AUDIO.sfx('ok');
-  G.nick = ($('#nick').value.trim() || 'もののけ').slice(0, 10); STORE.set('nick', G.nick);
-  const code = String(1000 + Math.floor(Math.random() * 9000));
-  const b = $('#btnHost'); b.disabled = true; b.textContent = '部屋を準備しています…';
+/** 協力プレイの部屋を用意する（すでに自分の部屋があればそれを使う）。フレンドの「招待」からも呼ぶ。成功したら合言葉を返す */
+async function startHost(opt) {
+  opt = opt || {};
+  if (G.coop && G.session && G.session.kind === 'host' && !G.session.closed) { if (!opt.quiet) openLobby(); return G.session.code; } // 部屋を増やさない
+  if (G.netBusy) return null; // 連打でセッションを重ねない
+  if (G.coop && G.session) { try { G.session.leave(); } catch (e) { } G.session = null; G.coop = false; }
+  AUDIO.init(); if (!opt.quiet) AUDIO.sfx('ok');
+  G.nick = (($('#nick').value || G.nick || '').trim() || 'もののけ').slice(0, 10); STORE.set('nick', G.nick);
+  const code = String(100000 + Math.floor(Math.random() * 900000)); // 6けた（他の人の部屋と重なりにくく）
+  const b = $('#btnHost'); b.disabled = true; b.textContent = '部屋を準備しています…'; G.netBusy = true;
+  let ok = null;
   try {
+    NETLIB.log('ui', `部屋を作る #${code}`);
     const tr = await openTransport(code);
     G.session = new NETLIB.HostSession({ transport: tr, code, nick: G.nick, ch: G.party[0], swap: !!G.swap[0], items: G.items.slice(0, 2), aiParty: G.party.slice(1), lv: lvOf(G.party[0]), lvs: Object.fromEntries(DATA.CHARS.map(c => [c.id, lvOf(c.id)])) });
-    G.session.lobby.diff = G.diff; G.coop = true; openLobby();
-  } catch (e) { console.error(e); toast('部屋を作れませんでした。電波のよい所でもう一度。'); }
-  b.disabled = false; b.textContent = '部屋を作る';
+    G.session.lobby.diff = G.diff; G.coop = true; ok = code;
+    if (opt.quiet) { G.mode = 'lobby'; if (!$('#title').hidden) renderHome(); frPublish(true); } else openLobby();
+  } catch (e) { console.error(e); NETLIB.log('ui', '部屋を作れない: ' + (e && e.message)); toast('部屋を作れませんでした。電波のよい所でもう一度。'); if (opt.quiet) mtoast('部屋を作れませんでした（通信の部品を読み込めません）', 2800); }
+  G.netBusy = false; b.disabled = false; b.textContent = '部屋を作る';
+  return ok;
 }
-async function startJoin() {
+/** 合言葉の部屋に入る（フレンドの「参加」・招待リンクからも呼ぶ） */
+async function startJoin(codeArg) {
+  if (G.netBusy) return false;
   AUDIO.init(); AUDIO.sfx('ok');
-  const code = $('#code').value.trim(); if (!/^\d{4,8}$/.test(code)) { toast('4けたの合言葉を入れてください'); return; }
-  G.nick = ($('#nick').value.trim() || 'もののけ').slice(0, 10); STORE.set('nick', G.nick);
-  const b = $('#btnJoin'); b.disabled = true; b.textContent = 'つないでいます…';
+  const code = String(codeArg || $('#code').value).trim(); if (!/^\d{4,8}$/.test(code)) { toast('合言葉（数字）を入れてください'); mtoast('合言葉（数字）を入れてください', 2000); return false; }
+  if (G.coop && G.session) { if (G.session.code === code) { openLobby(); return true; } try { G.session.leave(); } catch (e) { } G.session = null; G.coop = false; }
+  G.nick = (($('#nick').value || G.nick || '').trim() || 'もののけ').slice(0, 10); STORE.set('nick', G.nick);
+  const b = $('#btnJoin'); b.disabled = true; b.textContent = 'つないでいます…'; G.netBusy = true;
+  let ok = false;
   try {
+    NETLIB.log('ui', `部屋に入る #${code}`);
     const tr = await openTransport(code);
-    G.session = new NETLIB.ClientSession({ transport: tr, code }); G.coop = true; sendMine(); G.joinT = performance.now(); openLobby();
-  } catch (e) { console.error(e); toast('つなげませんでした。もう一度ためしてください。'); }
-  b.disabled = false; b.textContent = '部屋に入る';
+    G.session = new NETLIB.ClientSession({ transport: tr, code }); G.coop = true; sendMine(); G.joinT = performance.now(); openLobby(); ok = true;
+  } catch (e) { console.error(e); NETLIB.log('ui', 'つなげない: ' + (e && e.message)); toast('つなげませんでした。もう一度ためしてください。'); mtoast('通信の部品を読み込めませんでした。電波のよい所でもう一度', 2800); }
+  G.netBusy = false; b.disabled = false; b.textContent = '部屋に入る';
+  return ok;
 }
 function toast(s) { const n = $('#netMsg'); n.textContent = s; }
 
@@ -956,6 +971,27 @@ function showResult(v) {
   refreshResSave();
   $('#hud').hidden = true; show('result');
 }
+/** 協力プレイの接続失敗・切断の表示（理由を開発用ログにも残す） */
+function netFail(title, msg, code) {
+  NETLIB.log('ui', `表示：${title}（${code}）`);
+  $('#lostTitle').textContent = title; $('#lostMsg').textContent = msg; G.mode = 'lost'; show('netlost');
+  if (typeof frNetFail === 'function') frNetFail(code);
+}
+/* 開発者向け：?debug=net で接続の経過を画面の隅に出す */
+if (/[?&]debug=net/.test(location.search)) {
+  const box = document.createElement('div'); box.id = 'netDbg';
+  box.style.cssText = 'position:fixed;left:4px;bottom:4px;z-index:99;max-width:min(96vw,520px);max-height:40vh;overflow:auto;background:rgba(0,0,0,.78);color:#9f9;font:11px/1.35 monospace;padding:4px 6px;border-radius:6px;pointer-events:auto;white-space:pre-wrap';
+  document.body.appendChild(box);
+  const draw = () => { const S = G.session; box.textContent = `状態: ${S ? S.kind + ' ' + (S.state || '') + (S.code ? ' #' + S.code : '') : 'なし'}\n` + NETLIB.LOG.slice(-14).map(e => `${e.t.toFixed(1)} ${e.tag} ${e.msg}`).join('\n'); };
+  NETLIB.onLog(draw); setInterval(draw, 1000);
+}
+/* 画面を裏にしていた時間は、通信の無応答に数えない（戻った直後に切れないように） */
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { hiddenAt = performance.now(); NETLIB.log('ui', '画面が裏へ'); return; }
+  if (!hiddenAt) return; const ms = performance.now() - hiddenAt; hiddenAt = 0; NETLIB.log('ui', `画面へ戻る（${(ms / 1000).toFixed(1)}秒）`);
+  const S = G.session; if (S && S.resume) S.resume(ms);
+});
 /* ---------- メインループ ---------- */
 let last = performance.now();
 function frame(ts) {
@@ -965,12 +1001,20 @@ function frame(ts) {
     if (S && (G.mode === 'play' || G.mode === 'pause' || G.mode === 'result' || G.mode === 'lobby')) {
       if (G.mode === 'play') applyInput();
       S.update(dtRaw);
+      if (S.notices && S.notices.length) for (const n of S.notices.splice(0)) { if (G.mode === 'play') notice(n.s, 'info', 3000); else mtoast(n.s, 2400); } // 参加・通信の途切れ・復帰
       if (S.kind === 'client') {
-        if (S.rejected) { const why = { version: '版が違います。ページを再読み込みしてください。', started: 'すでに戦闘が始まっています。', full: '部屋が満員です（4人まで）。' }[S.rejected] || '入れませんでした。'; S.rejected = null; $('#lostTitle').textContent = '部屋に入れませんでした'; $('#lostMsg').textContent = why; G.mode = 'lost'; show('netlost'); }
-        else if (S.lost) { $('#lostTitle').textContent = 'ホストとの接続が切れました'; $('#lostMsg').textContent = S.lost === 'timeout' ? '通信が6秒以上とだえたため中断しました。電波のよい所でもう一度入ってください。' : 'ホストが部屋を閉じました。戦闘は中断されました。'; G.mode = 'lost'; S.lost = null; show('netlost'); }
+        if (S.rejected) { const why = { version: '版が違います。両方の端末でページを再読み込みしてください。', started: 'すでに戦闘が始まっています。終わってロビーに戻ってから、もう一度招待してもらってください。', full: '部屋が満員です（4人まで）。' }[S.rejected] || '入れませんでした。'; netFail('部屋に入れませんでした', why, S.rejected); S.rejected = null; }
+        else if (S.lost) {
+          const L = S.lost, started = !!S.started;
+          const msg = { no_peer: [`ホストが見つかりませんでした（${DATA.NET.connectTimeout}秒）`, 'ホストが部屋を閉じたか、合言葉がちがう可能性があります。招待をもう一度送ってもらうか、合言葉を確認してください。'],
+            no_lobby: ['ホストとつながりませんでした', 'ホストは見つかりましたが、通信がつながりませんでした。両方の電波を確認して、もう一度ためしてください。'],
+            p2p_failed: ['ホストと直接つながりませんでした', '回線の組み合わせ（モバイル回線・学校や会社のWi-Fiなど）によっては直接の通信ができません。同じWi-Fiでためすか、別の回線でもう一度。'],
+            timeout: ['ホストとの接続が切れました', `通信が${DATA.NET.dropT}秒以上とだえたため${started ? '戦闘を' : ''}中断しました。電波のよい所でもう一度入ってください。`],
+            host_left: ['ホストが部屋を閉じました', started ? '戦闘は中断されました。' : 'もう一度招待してもらってください。'] }[L] || ['ホストとの接続が切れました', ''];
+          S.lost = null; netFail(msg[0], msg[1], L);
+        }
         else if (G.mode === 'lobby' && S.started && S.mySlot >= 0) enterGame();
         else if ((G.mode === 'result' || G.mode === 'play') && S.lobby && S.lobby.phase === 'lobby' && G.resultShown) { openLobby(); }
-        else if (G.mode === 'lobby' && !S.lobby && performance.now() - (G.joinT || 0) > 15000) { $('#lostTitle').textContent = '部屋が見つかりません'; $('#lostMsg').textContent = '合言葉が同じか、ホストが「部屋を作る」を押しているか確認してください。'; G.mode = 'lost'; show('netlost'); }
       }
       if (G.mode === 'lobby') { G.lobT = (G.lobT || 0) + dt; if (G.lobT > 0.5) { G.lobT = 0; if (!$('#title').hidden) renderHome(); } }
       G.my = S.kind === 'client' ? Math.max(0, S.mySlot) : S.mySlot;
